@@ -1,0 +1,93 @@
+import pool from '../config/database.js';
+
+class HomeworkSubmission {
+  // Сдать домашнее задание
+  static async submit(homeworkId, userId, submissionText) {
+    const result = await pool.query(
+      `INSERT INTO homework_submissions (homework_id, user_id, submission_text, status)
+       VALUES ($1, $2, $3, 'pending')
+       RETURNING *`,
+      [homeworkId, userId, submissionText]
+    );
+    return result.rows[0];
+  }
+
+  // Получить сдачу студента
+  static async getByUserAndHomework(homeworkId, userId) {
+    const result = await pool.query(
+      `SELECT * FROM homework_submissions 
+       WHERE homework_id = $1 AND user_id = $2 
+       ORDER BY submitted_at DESC 
+       LIMIT 1`,
+      [homeworkId, userId]
+    );
+    return result.rows[0];
+  }
+
+  // Принять/отклонить домашнее задание
+  static async check(submissionId, status, checkedBy, reason, pointsEarned) {
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+
+      // Обновляем статус сдачи
+      const result = await client.query(
+        `UPDATE homework_submissions 
+         SET status = $1, checked_by = $2, checked_at = NOW(), reason = $3, points_earned = $4
+         WHERE id = $5
+         RETURNING *`,
+        [status, checkedBy, reason, pointsEarned || 0, submissionId]
+      );
+
+      const submission = result.rows[0];
+
+      // Если принято, начисляем баллы студенту
+      if (status === 'accepted' && pointsEarned > 0) {
+        await client.query(
+          'UPDATE users SET points = COALESCE(points, 0) + $1 WHERE id = $2',
+          [pointsEarned, submission.user_id]
+        );
+      }
+
+      await client.query('COMMIT');
+      return submission;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Получить историю сдач студента
+  static async getUserHistory(userId) {
+    const result = await pool.query(
+      `SELECT hs.*, h.title, h.points as max_points
+       FROM homework_submissions hs
+       JOIN homeworks h ON hs.homework_id = h.id
+       WHERE hs.user_id = $1
+       ORDER BY hs.submitted_at DESC`,
+      [userId]
+    );
+    return result.rows;
+  }
+
+  // Получить детали сдачи
+  static async getDetails(submissionId) {
+    const result = await pool.query(
+      `SELECT hs.*, h.title, h.description, h.points as max_points, 
+              u.full_name, u.username,
+              checker.full_name as checker_name
+       FROM homework_submissions hs
+       JOIN homeworks h ON hs.homework_id = h.id
+       JOIN users u ON hs.user_id = u.id
+       LEFT JOIN users checker ON hs.checked_by = checker.id
+       WHERE hs.id = $1`,
+      [submissionId]
+    );
+    return result.rows[0];
+  }
+}
+
+export default HomeworkSubmission;
