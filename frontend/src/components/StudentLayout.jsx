@@ -49,6 +49,12 @@ function StudentLayout({ children }) {
               </NavLink>
             </li>
             <li>
+              <NavLink to="/student/typing">
+                <span className="menu-icon">⌨️</span>
+                Клавиатурный тренажер
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/student/leaderboard">
                 <span className="menu-icon"><FaTrophy /></span>
                 Топы

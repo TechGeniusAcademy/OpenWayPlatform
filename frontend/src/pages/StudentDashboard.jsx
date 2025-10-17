@@ -4,6 +4,7 @@ import StudentHome from './student/StudentHome';
 import StudentProfile from './student/StudentProfile';
 import StudentGroup from './student/StudentGroup';
 import StudentCourses from './student/StudentCourses';
+import StudentTyping from './student/StudentTyping';
 import Chat from './student/Chat';
 import Leaderboard from '../components/Leaderboard';
 import StudentTests from './student/StudentTests';
@@ -18,6 +19,7 @@ function StudentDashboard() {
         <Route path="/profile" element={<StudentProfile />} />
         <Route path="/group" element={<StudentGroup />} />
         <Route path="/courses" element={<StudentCourses />} />
+        <Route path="/typing" element={<StudentTyping />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/tests" element={<StudentTests />} />

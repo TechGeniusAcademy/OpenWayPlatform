@@ -1,20 +1,28 @@
 .login-container {
   display: flex;
-  justify-content: center;
+  justify-content: start;
   align-items: center;
   min-height: 100vh;
-  background: #ecf0f1;
-  padding: 20px;
+  background: #2C2C54;
+  position: relative;
+  overflow: hidden;
+  perspective: 1200px;
 }
 
 .login-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   background: white;
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   padding: 40px;
   width: 100%;
+  height: 100vh;
   max-width: 400px;
   border: 1px solid #bdc3c7;
+  position: relative;
+  z-index: 20;
 }
 
 .login-header {
@@ -100,4 +108,186 @@
   text-align: center;
   color: #7f8c8d;
   padding: 20px;
+}
+
+/* Animated Background */
+.background-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.background-container::after {
+  box-shadow: inset 5px 5px 80px rgba(0,0,0,.8);
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
+
+.background-wrap {
+  position: absolute;
+  top: -60%;
+  left: -10%;
+  height: 300%;
+  width: 200%;
+  transform: rotateX(20deg) rotateY(40deg) rotateZ(-20deg);
+  z-index: 5;
+}
+
+.background-pattern {
+  background-size: 400px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 400%;
+  background-image: url('../assets/shattered-island.gif');
+  animation: scroll linear 25s infinite;
+  opacity: 0.8;
+}
+
+@keyframes scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-4000px, 0, 0);
+  }
+}
+
+
+/* Terminal Window */
+.terminal-window {
+  position: fixed;
+  right: 180px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 700px;
+  height: 500px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 25;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  cursor: text;
+}
+
+.terminal-header {
+  background: #2d2d2d;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid #404040;
+}
+
+.terminal-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.terminal-button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.terminal-button.close {
+  background: #ff5f57;
+}
+
+.terminal-button.minimize {
+  background: #ffbd2e;
+}
+
+.terminal-button.maximize {
+  background: #28ca42;
+}
+
+.terminal-title {
+  margin-left: 12px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.terminal-content {
+  height: calc(100% - 30px);
+  padding: 12px;
+  background: #1e1e1e;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-y: auto;
+}
+
+.terminal-line {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+}
+
+.terminal-prompt {
+  color: #4CAF50;
+}
+
+.terminal-command {
+  color: #ffffff;
+}
+
+.terminal-output {
+  color: #cccccc;
+  margin-left: 0;
+}
+
+.terminal-error {
+  color: #ff6b6b;
+}
+
+.terminal-cursor {
+  background: #ffffff;
+  animation: blink 1s infinite;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+  width: 100%;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .login-container {
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .login-card {
+    max-width: 100%;
+    height: auto;
+    min-height: 80vh;
+  }
+  
+  .background-wrap {
+    transform: rotateX(10deg) rotateY(20deg) rotateZ(-10deg);
+  }
+  
+  .terminal-window {
+    display: none;
+  }
 }

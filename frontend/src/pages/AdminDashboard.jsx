@@ -4,9 +4,9 @@ import UsersManagement from '../components/UsersManagement';
 import GroupsManagement from '../components/GroupsManagement';
 import Leaderboard from '../components/Leaderboard';
 import AdminChat from '../components/AdminChat';
-
 import TestsManagement from '../components/TestsManagement';
 import HomeworksManagement from '../components/HomeworksManagement';
+import TypingManagement from '../components/TypingManagement';
 
 function AdminDashboard() {
   return (
@@ -18,6 +18,7 @@ function AdminDashboard() {
         <Route path="/chat" element={<AdminChat />} />
         <Route path="/tests" element={<TestsManagement />} />
         <Route path="/homeworks" element={<HomeworksManagement />} />
+        <Route path="/typing" element={<TypingManagement />} />
         {/* Здесь можно добавлять новые маршруты */}
       </Routes>
     </AdminLayout>

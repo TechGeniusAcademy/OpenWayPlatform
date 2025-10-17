@@ -60,6 +60,12 @@ function AdminLayout({ children }) {
                 Домашние задания
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/admin/typing">
+                <span className="menu-icon">⌨️</span>
+                Клавиатурный тренажер
+              </NavLink>
+            </li>
             {/* Здесь можно добавлять новые пункты меню */}
           </ul>
         </nav>

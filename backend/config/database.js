@@ -325,6 +325,20 @@ export const initDatabase = async () => {
       );
     `);
 
+    // 17. Создание таблицы результатов клавиатурного тренажера
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS typing_results (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        text_length INTEGER NOT NULL,
+        time_seconds INTEGER NOT NULL,
+        wpm INTEGER NOT NULL,
+        accuracy DECIMAL(5,2) NOT NULL,
+        errors INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     await createDefaultAdmin();
 
     console.log('✅ База данных полностью инициализирована');
