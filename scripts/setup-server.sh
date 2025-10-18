@@ -63,7 +63,7 @@ echo -e "${YELLOW}🗄️  Настройка PostgreSQL...${NC}"
 echo -e "${YELLOW}⚠️  Создайте базу данных вручную:${NC}"
 echo "sudo -u postgres psql"
 echo "CREATE DATABASE openway_platform;"
-echo "CREATE USER openway_user WITH PASSWORD 'ваш_пароль';"
+echo "CREATE USER openway_user WITH PASSWORD '00000000';"
 echo "GRANT ALL PRIVILEGES ON DATABASE openway_platform TO openway_user;"
 echo "\\q"
 

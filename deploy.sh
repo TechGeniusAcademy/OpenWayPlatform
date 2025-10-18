@@ -58,10 +58,10 @@ fi
 # 6. Перезапуск Backend с PM2
 echo -e "${YELLOW}🔄 Перезапуск Backend...${NC}"
 cd ../backend
-pm2 reload ecosystem.config.js --update-env
+pm2 reload ecosystem.config.cjs --update-env
 if [ $? -ne 0 ]; then
     echo -e "${YELLOW}⚠️  PM2 процесс не найден, запускаем заново...${NC}"
-    pm2 start ecosystem.config.js
+    pm2 start ecosystem.config.cjs
 fi
 
 # 7. Сохранение PM2 конфигурации

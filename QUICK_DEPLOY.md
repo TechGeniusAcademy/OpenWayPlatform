@@ -12,12 +12,11 @@ cd /var/www/openway
 git clone https://github.com/TechGeniusAcademy/OpenWayPlatform.git .
 
 # Настройка .env
-cd backend
-nano .env  # Вставьте настройки из .env.production и измените пароли!
+nano backend/.env  # Вставьте настройки из .env.production и измените пароли!
 
-# Запуск
-chmod +x ../deploy.sh
-../deploy.sh
+# Запуск (из корневой директории!)
+chmod +x deploy.sh
+./deploy.sh
 ```
 
 ### 2. Настройка SSL:
