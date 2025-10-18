@@ -90,29 +90,23 @@ function TypingTrainer() {
   };
 
   useEffect(() => {
-    if (isActive && timeRemaining > 0) {
+    if (isActive && timeRemaining > 0 && startTime) {
       intervalRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         const remaining = GAME_DURATION - elapsed;
         setTimeElapsed(elapsed);
         setTimeRemaining(remaining);
-        
-        if (elapsed > 0) {
-          const minutes = elapsed / 60;
-          const chars = typedText.length;
-          setWpm(Math.round(chars / minutes));
-        }
 
         if (remaining <= 0) {
           finishTest();
         }
-      }, 1000);
+      }, 100); // Обновляем каждые 100ms для плавности
     } else {
       clearInterval(intervalRef.current);
     }
 
     return () => clearInterval(intervalRef.current);
-  }, [isActive, startTime, timeRemaining, typedText.length]);
+  }, [isActive, startTime]); // Убрали зависимость от typedText.length
 
   useEffect(() => {
     // Добавляем новые слова когда осталось мало
@@ -153,6 +147,12 @@ function TypingTrainer() {
 
   const handleInputChange = (e) => {
     const value = e.target.value;
+    
+    // ЗАПРЕЩАЕМ УДАЛЕНИЕ ТЕКСТА (Backspace)
+    if (value.length < typedText.length) {
+      e.preventDefault();
+      return;
+    }
     
     if (!isActive && value.length === 1) {
       setStartTime(Date.now());
@@ -200,14 +200,19 @@ function TypingTrainer() {
     
     // Обновление статистики в реальном времени
     if (value.length > 0) {
-      const acc = Math.round(((value.length - errorCount) / value.length) * 100);
+      const totalChars = value.length;
+      const correctChars = totalChars - errorCount;
+      const acc = Math.round((correctChars / totalChars) * 100);
       setAccuracy(Math.max(0, acc));
       
       // Обновляем WPM в реальном времени если игра активна
+      // WPM = (правильные символы / 5) / минуты
+      // Делим на 5 потому что средняя длина слова = 5 символов
       if (isActive && startTime) {
-        const elapsed = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
-        const minutes = elapsed / 60;
-        const currentWpm = Math.round(value.length / minutes);
+        const elapsedSeconds = Math.max(1, (Date.now() - startTime) / 1000);
+        const minutes = elapsedSeconds / 60;
+        const wordsTyped = correctChars / 5; // Стандартная формула: 1 слово = 5 символов
+        const currentWpm = Math.round(wordsTyped / minutes);
         setWpm(currentWpm);
       }
     }
@@ -218,10 +223,16 @@ function TypingTrainer() {
     setShowResults(true);
 
     // Окончательные расчеты на основе реальных данных
-    const finalTime = GAME_DURATION; // всегда 3 минуты
+    const finalTime = timeElapsed || GAME_DURATION; // Используем реальное время
     const finalChars = typedText.length;
-    const finalWpm = Math.round((finalChars / finalTime) * 60);
-    const finalAccuracy = finalChars > 0 ? Math.round(((finalChars - errors) / finalChars) * 100) : 0;
+    const correctChars = finalChars - errors;
+    
+    // WPM = (правильные символы / 5) / минуты
+    const minutes = finalTime / 60;
+    const wordsTyped = correctChars / 5;
+    const finalWpm = Math.round(wordsTyped / minutes);
+    
+    const finalAccuracy = finalChars > 0 ? Math.round((correctChars / finalChars) * 100) : 0;
 
     setWpm(finalWpm);
     setAccuracy(Math.max(0, finalAccuracy));
@@ -325,6 +336,13 @@ function TypingTrainer() {
           ref={inputRef}
           value={typedText}
           onChange={handleInputChange}
+          onKeyDown={(e) => {
+            // БЛОКИРУЕМ BACKSPACE И DELETE
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+              e.preventDefault();
+              return false;
+            }
+          }}
           placeholder="Начните печатать здесь..."
           disabled={timeRemaining <= 0 || showResults}
           className="typing-input"

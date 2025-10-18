@@ -66,6 +66,12 @@ function AdminLayout({ children }) {
                 Клавиатурный тренажер
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/admin/game">
+                <span className="menu-icon">  </span>
+                Вопросы-Ответы
+              </NavLink>
+            </li>
             {/* Здесь можно добавлять новые пункты меню */}
           </ul>
         </nav>

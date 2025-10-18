@@ -168,18 +168,22 @@
 }
 
 .user-info {
+  color: black;
   display: flex;
   flex-direction: column;
+  height: 20px;
 }
 
 .user-info strong {
   color: #2c3e50;
   margin-bottom: 3px;
+  height: 100%;
 }
 
 .user-info small {
   color: #7f8c8d;
   font-size: 12px;
+  height: 100%;
 }
 
 .wpm {

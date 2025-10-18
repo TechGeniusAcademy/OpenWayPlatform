@@ -13,10 +13,56 @@ function Login() {
   const [terminalLines, setTerminalLines] = useState([]);
   const [currentInput, setCurrentInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [currentDirectory, setCurrentDirectory] = useState('/home/user');
   const terminalRef = useRef(null);
   
   const { login, user } = useAuth();
   const navigate = useNavigate();
+
+  // File system structure
+  const fileSystem = {
+    '/': ['bin', 'boot', 'dev', 'etc', 'home', 'lib', 'opt', 'root', 'tmp', 'usr', 'var'],
+    '/home': ['user', 'guest'],
+    '/home/user': ['Documents', 'Downloads', 'Pictures', 'Music', 'Videos', 'Desktop', 'Projects', 'Scripts'],
+    '/home/user/Documents': ['readme.txt', 'notes.txt', 'project.txt'],
+    '/home/user/Downloads': ['file1.zip', 'image.jpg', 'video.mp4'],
+    '/home/user/Pictures': ['photo1.jpg', 'photo2.png', 'screenshot.png'],
+    '/home/user/Music': ['song1.mp3', 'song2.mp3', 'playlist.m3u'],
+    '/home/user/Videos': ['movie.mp4', 'tutorial.avi'],
+    '/home/user/Desktop': ['notes.txt', 'todo.md'],
+    '/home/user/Projects': ['openway', 'website', 'app'],
+    '/home/user/Projects/openway': ['backend', 'frontend', 'README.md', 'package.json'],
+    '/home/user/Scripts': ['backup.sh', 'deploy.sh', 'monitor.sh'],
+    '/etc': ['passwd', 'hosts', 'fstab', 'crontab', 'ssh', 'nginx', 'apache2'],
+    '/var': ['log', 'www', 'tmp', 'cache'],
+    '/var/log': ['syslog', 'auth.log', 'kern.log', 'apache2'],
+    '/usr': ['bin', 'lib', 'share', 'local', 'src'],
+    '/usr/bin': ['python', 'python3', 'node', 'npm', 'git', 'vim', 'nano'],
+    '/tmp': ['temp1.txt', 'cache.dat']
+  };
+
+  // Helper function to normalize path
+  const normalizePath = (path, currentDir) => {
+    if (path === '~') return '/home/user';
+    if (path === '/') return '/';
+    if (path === '..') {
+      const parts = currentDir.split('/').filter(p => p);
+      parts.pop();
+      return '/' + parts.join('/') || '/';
+    }
+    if (path === '.') return currentDir;
+    if (path.startsWith('/')) return path;
+    if (path.startsWith('~/')) return '/home/user' + path.substring(1);
+    
+    // Relative path
+    const newPath = currentDir === '/' ? '/' + path : currentDir + '/' + path;
+    return newPath;
+  };
+
+  // Helper function to get directory contents
+  const getDirectoryContents = (path) => {
+    return fileSystem[path] || null;
+  };
 
   // Перенаправление если пользователь уже авторизован
   useEffect(() => {
@@ -185,7 +231,7 @@ function Login() {
       '─── System Info ───',
       'uname, hostname, uptime, w, whoami, id, groups',
       '─── Files & Dirs ───', 
-      'ls, pwd, find, cat, head, tail, du, locate',
+      'ls, pwd, cd, find, cat, head, tail, du, locate',
       '─── Memory & Disk ───',
       'free, df, lsblk, du',
       '─── Processes ───',
@@ -200,6 +246,11 @@ function Login() {
       'cowsay, fortune, figlet, cal',
       '─── Utilities ───',
       'clear, date, which, finger, crontab',
+      '',
+      'Navigation:',
+      'cd <dir>  - change directory (cd .., cd ~, cd /path)',
+      'pwd       - print working directory',
+      'ls        - list directory contents',
       '',
       'Type any command to try it out!'
     ],
@@ -221,15 +272,71 @@ function Login() {
   const processCommand = (command) => {
     const newLines = [...terminalLines];
     
-    // Add command line
+    // Add command line with current directory
     newLines.push({
       type: 'command',
-      content: `user@openway:~$ ${command}`
+      content: `user@openway:${currentDirectory}$ ${command}`
     });
+
+    // Handle cd command
+    if (command.trim().startsWith('cd ')) {
+      const targetPath = command.trim().substring(3).trim() || '/home/user';
+      const newPath = normalizePath(targetPath, currentDirectory);
+      
+      if (getDirectoryContents(newPath) !== null || newPath === '/') {
+        setCurrentDirectory(newPath);
+        newLines.push({ type: 'output', content: '' });
+        setTerminalLines(newLines);
+        return;
+      } else {
+        newLines.push({
+          type: 'error',
+          content: `bash: cd: ${targetPath}: No such file or directory`
+        });
+        newLines.push({ type: 'output', content: '' });
+        setTerminalLines(newLines);
+        return;
+      }
+    }
+
+    // Handle cd without arguments (go to home)
+    if (command.trim() === 'cd') {
+      setCurrentDirectory('/home/user');
+      newLines.push({ type: 'output', content: '' });
+      setTerminalLines(newLines);
+      return;
+    }
 
     // Add command output
     if (command === 'clear') {
       setTerminalLines([]);
+      return;
+    }
+
+    // Update pwd to show current directory
+    if (command.toLowerCase() === 'pwd') {
+      newLines.push({
+        type: 'output',
+        content: currentDirectory
+      });
+      newLines.push({ type: 'output', content: '' });
+      setTerminalLines(newLines);
+      return;
+    }
+
+    // Update ls to show current directory contents
+    if (command.toLowerCase() === 'ls') {
+      const contents = getDirectoryContents(currentDirectory);
+      if (contents) {
+        contents.forEach(item => {
+          newLines.push({
+            type: 'output',
+            content: item
+          });
+        });
+      }
+      newLines.push({ type: 'output', content: '' });
+      setTerminalLines(newLines);
       return;
     }
 
@@ -440,7 +547,7 @@ function Login() {
           
           {/* Current input line */}
           <div className="terminal-line">
-            <span className="terminal-prompt">user@openway:~$ </span>
+            <span className="terminal-prompt">user@openway:{currentDirectory}$ </span>
             <span className="terminal-command">{currentInput}</span>
             <span className="terminal-cursor">█</span>
           </div>

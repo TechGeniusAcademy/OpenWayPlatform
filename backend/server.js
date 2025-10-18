@@ -14,6 +14,7 @@ import chatRoutes from './routes/chat.js';
 import testsRoutes from './routes/tests.js';
 import homeworksRoutes from './routes/homeworks.js';
 import typingRoutes from './routes/typing.js';
+import gameRoutes from './routes/game.js';
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/tests', testsRoutes);
 app.use('/api/homeworks', homeworksRoutes);
 app.use('/api/typing', typingRoutes);
+app.use('/api/game', gameRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

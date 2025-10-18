@@ -7,6 +7,7 @@ import AdminChat from '../components/AdminChat';
 import TestsManagement from '../components/TestsManagement';
 import HomeworksManagement from '../components/HomeworksManagement';
 import TypingManagement from '../components/TypingManagement';
+import GameManagement from '../components/GameManagement';
 
 function AdminDashboard() {
   return (
@@ -19,6 +20,7 @@ function AdminDashboard() {
         <Route path="/tests" element={<TestsManagement />} />
         <Route path="/homeworks" element={<HomeworksManagement />} />
         <Route path="/typing" element={<TypingManagement />} />
+        <Route path="/game" element={<GameManagement />} />
         {/* Здесь можно добавлять новые маршруты */}
       </Routes>
     </AdminLayout>

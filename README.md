@@ -1,26 +1,59 @@
-# Система обучения
+# 🎓 OpenWay Platform
 
-Полноценная система управления обучением с админ-панелью и личными кабинетами.
+Образовательная платформа для изучения клавиатурного набора и работы с игровой механикой карточек.
 
-## Структура проекта
+## 🌐 Продакшен
+
+- **URL**: https://openway.kz
+- **IP**: 194.110.55.56
+- **Сервер**: Ubuntu 22.04 LTS
+
+## 🏗️ Архитектура
+
+### Frontend
+- **React** 18.2.0
+- **Vite** 5.0.8
+- **React Router** 6.21.2
+- **Axios** для API запросов
+
+### Backend
+- **Node.js** 20.x
+- **Express** 4.18.2
+- **PostgreSQL** для базы данных
+- **JWT** для аутентификации
+- **Multer** для загрузки файлов
+
+### Инфраструктура
+- **PM2** - менеджер процессов (2 инстанса, cluster mode)
+- **Nginx** - реверс-прокси и статические файлы
+- **Let's Encrypt** - SSL сертификаты
+
+## 📦 Структура проекта
 
 ```
-HAKATON/
-├── backend/          # Node.js + Express + PostgreSQL
-│   ├── config/       # Конфигурация БД
-│   ├── models/       # Модели данных
-│   ├── routes/       # API маршруты
-│   ├── middleware/   # Middleware (аутентификация)
-│   └── server.js     # Точка входа сервера
-│
-└── frontend/         # React + Vite
-    ├── src/
-    │   ├── components/   # Компоненты (AdminLayout, UsersManagement)
-    │   ├── context/      # Context API (AuthContext)
-    │   ├── pages/        # Страницы (Login, AdminDashboard, StudentDashboard)
-    │   ├── utils/        # Утилиты (API клиент)
-    │   └── App.jsx       # Главный компонент
-    └── package.json
+openway-platform/
+├── backend/
+│   ├── config/           # Конфигурация БД
+│   ├── middleware/       # Express middleware
+│   ├── models/          # Модели данных
+│   ├── routes/          # API роуты
+│   ├── migrations/      # Миграции БД
+│   ├── uploads/         # Загруженные файлы
+│   │   ├── avatars/
+│   │   └── cards/
+│   └── server.js        # Точка входа
+├── frontend/
+│   ├── src/
+│   │   ├── components/  # React компоненты
+│   │   ├── context/     # Context API
+│   │   ├── pages/       # Страницы
+│   │   └── App.jsx
+│   └── dist/            # Build артефакты
+├── nginx/               # Конфигурация Nginx
+├── scripts/             # Утилиты и скрипты
+├── ecosystem.config.js  # PM2 конфигурация
+├── deploy.sh           # Деплой скрипт
+└── DEPLOYMENT_GUIDE.md # Руководство по деплою
 ```
 
 ## Установка и запуск

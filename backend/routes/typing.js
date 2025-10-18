@@ -119,6 +119,130 @@ router.get('/top', async (req, res) => {
 
 // ========== ADMIN ENDPOINTS ==========
 
+// Получить общую статистику для админ панели
+router.get('/admin/statistics', requireAdmin, async (req, res) => {
+  try {
+    const allResults = await TypingResult.getAll(1000);
+    
+    const statistics = {
+      totalTests: allResults.length,
+      uniqueUsers: new Set(allResults.map(r => r.user_id)).size,
+      averageWpm: Math.round(allResults.reduce((sum, r) => sum + r.wpm, 0) / allResults.length || 0),
+      averageAccuracy: Math.round(allResults.reduce((sum, r) => sum + r.accuracy, 0) / allResults.length || 0),
+      bestWpm: Math.max(...allResults.map(r => r.wpm), 0),
+      bestAccuracy: Math.max(...allResults.map(r => r.accuracy), 0)
+    };
+
+    res.json(statistics);
+  } catch (error) {
+    console.error('Ошибка получения статистики:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Получить статистику пользователей
+router.get('/admin/users', requireAdmin, async (req, res) => {
+  try {
+    const { period = 'all', sortBy = 'wpm', order = 'desc' } = req.query;
+    
+    // Получаем все результаты
+    const allResults = await TypingResult.getAll(10000);
+    
+    // Группируем по пользователям
+    const userMap = new Map();
+    
+    allResults.forEach(result => {
+      if (!userMap.has(result.user_id)) {
+        userMap.set(result.user_id, {
+          id: result.user_id,
+          userId: result.user_id,
+          username: result.username || 'Unknown',
+          email: result.email || '',
+          fullName: result.full_name || '',
+          testsCount: 0,
+          totalWpm: 0,
+          totalAccuracy: 0,
+          bestWpm: 0,
+          bestAccuracy: 0,
+          results: []
+        });
+      }
+      
+      const userData = userMap.get(result.user_id);
+      userData.testsCount++;
+      userData.totalWpm += result.wpm;
+      userData.totalAccuracy += result.accuracy;
+      userData.bestWpm = Math.max(userData.bestWpm, result.wpm);
+      userData.bestAccuracy = Math.max(userData.bestAccuracy, result.accuracy);
+      userData.results.push(result);
+    });
+    
+    // Вычисляем средние значения
+    const userStats = Array.from(userMap.values()).map(user => ({
+      ...user,
+      averageWpm: Math.round(user.totalWpm / user.testsCount),
+      averageAccuracy: Math.round(user.totalAccuracy / user.testsCount),
+      lastTestDate: user.results[user.results.length - 1]?.created_at
+    }));
+    
+    // Сортировка
+    userStats.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortBy) {
+        case 'wpm':
+          aVal = a.averageWpm;
+          bVal = b.averageWpm;
+          break;
+        case 'accuracy':
+          aVal = a.averageAccuracy;
+          bVal = b.averageAccuracy;
+          break;
+        case 'testsCount':
+          aVal = a.testsCount;
+          bVal = b.testsCount;
+          break;
+        default:
+          aVal = a.averageWpm;
+          bVal = b.averageWpm;
+      }
+      return order === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+    
+    res.json(userStats);
+  } catch (error) {
+    console.error('Ошибка получения статистики пользователей:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Получить статистику по группам
+router.get('/admin/groups', requireAdmin, async (req, res) => {
+  try {
+    const groupStats = await TypingResult.getGroupStats();
+    res.json(groupStats || []);
+  } catch (error) {
+    console.error('Ошибка получения статистики групп:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Получить историю тестов пользователя
+router.get('/admin/user/:userId/history', requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Некорректный ID пользователя' });
+    }
+
+    const results = await TypingResult.getByUserId(userId, 50);
+    res.json(results);
+  } catch (error) {
+    console.error('Ошибка получения истории пользователя:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Получить все результаты (только админ)
 router.get('/all-results', requireAdmin, async (req, res) => {
   try {

@@ -102,6 +102,7 @@ class TypingResult {
         `SELECT 
           tr.*,
           u.username,
+          u.email,
           u.full_name,
           u.group_id,
           g.name as group_name

@@ -62,6 +62,7 @@ export const initDatabase = async () => {
         password VARCHAR(255) NOT NULL,
         role VARCHAR(50) NOT NULL DEFAULT 'student',
         full_name VARCHAR(255),
+        avatar_url VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -339,6 +340,85 @@ export const initDatabase = async () => {
       );
     `);
 
+    // Таблица 18: Карточки для игры
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_cards (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        image_url TEXT,
+        card_type VARCHAR(50) NOT NULL, -- 'skip_turn', 'transfer_question', 'extra_questions', 'double_points', 'steal_points', 'time_bonus', 'random_event'
+        effect_value INTEGER DEFAULT 0, -- Значение эффекта (баллы, время и т.д.)
+        drop_chance DECIMAL(5,2) NOT NULL DEFAULT 10.00, -- Шанс выпадения в процентах
+        team VARCHAR(50), -- 'team_a', 'team_b', 'neutral'
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Таблица 19: Игровые сессии
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_sessions (
+        id SERIAL PRIMARY KEY,
+        group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+        status VARCHAR(50) DEFAULT 'preparing', -- 'preparing', 'in_progress', 'finished'
+        current_team VARCHAR(50), -- 'team_a', 'team_b'
+        team_a_score INTEGER DEFAULT 0,
+        team_b_score INTEGER DEFAULT 0,
+        current_round INTEGER DEFAULT 1,
+        total_rounds INTEGER DEFAULT 10,
+        created_by INTEGER REFERENCES users(id),
+        started_at TIMESTAMP,
+        finished_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Таблица 20: Участники игры (игроки в командах)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_participants (
+        id SERIAL PRIMARY KEY,
+        session_id INTEGER REFERENCES game_sessions(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        team VARCHAR(50) NOT NULL, -- 'team_a', 'team_b'
+        points_earned INTEGER DEFAULT 0,
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(session_id, user_id)
+      );
+    `);
+
+    // Таблица 21: Раунды игры
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_rounds (
+        id SERIAL PRIMARY KEY,
+        session_id INTEGER REFERENCES game_sessions(id) ON DELETE CASCADE,
+        round_number INTEGER NOT NULL,
+        team VARCHAR(50) NOT NULL, -- Команда, которая играет в этом раунде
+        card_id INTEGER REFERENCES game_cards(id),
+        question_id INTEGER REFERENCES game_questions(id),
+        question TEXT,
+        answer TEXT,
+        status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'answered_correct', 'answered_wrong', 'skipped', 'transferred'
+        points_awarded INTEGER DEFAULT 0,
+        time_limit INTEGER DEFAULT 60, -- Секунды на ответ
+        started_at TIMESTAMP,
+        answered_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Таблица 22: Вопросы для игры
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_questions (
+        id SERIAL PRIMARY KEY,
+        question TEXT NOT NULL,
+        category VARCHAR(100),
+        difficulty VARCHAR(50) DEFAULT 'medium', -- 'easy', 'medium', 'hard'
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     await createDefaultAdmin();
 
     console.log('✅ База данных полностью инициализирована');
@@ -351,7 +431,7 @@ export const initDatabase = async () => {
 // Создание администратора по умолчанию
 const createDefaultAdmin = async () => {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'alkawmaga@gmail.com';
     
     // Проверяем, существует ли уже администратор
     const existingAdmin = await pool.query(
@@ -361,7 +441,7 @@ const createDefaultAdmin = async () => {
 
     if (existingAdmin.rows.length === 0) {
       const hashedPassword = await bcrypt.hash(
-        process.env.ADMIN_PASSWORD || 'admin123',
+        process.env.ADMIN_PASSWORD || 'Hihet1597531782',
         10
       );
 
@@ -379,7 +459,7 @@ const createDefaultAdmin = async () => {
 
       console.log('✅ Администратор по умолчанию создан');
       console.log(`📧 Email: ${adminEmail}`);
-      console.log(`🔑 Пароль: ${process.env.ADMIN_PASSWORD || 'admin123'}`);
+      console.log(`🔑 Пароль: ${process.env.ADMIN_PASSWORD || 'Hihet1597531782'}`);
     } else {
       console.log('✅ Администратор уже существует');
     }

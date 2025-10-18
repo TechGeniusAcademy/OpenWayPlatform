@@ -169,8 +169,8 @@ const TypingManagement = () => {
               return (
                 <div key={user.id} className="table-row">
                   <span className="user-info">
-                    <strong>{user.firstName} {user.lastName}</strong>
-                    <small>{user.email}</small>
+                    <strong>{user.fullName || user.username || 'Пользователь'}</strong>
+                    <small>{user.email || ''}</small>
                   </span>
                   <span className="wpm">{user.averageWpm} зн/мин</span>
                   <span className="accuracy">{user.averageAccuracy}%</span>

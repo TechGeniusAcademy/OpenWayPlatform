@@ -1,8 +1,45 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import User from '../models/User.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Настройка multer для загрузки аватарок
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/avatars';
+    // Создаем директорию если её нет
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB максимум
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Только изображения разрешены (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
 
 // Все маршруты требуют аутентификации
 router.use(authenticate);
@@ -124,6 +161,69 @@ router.delete('/:id', requireAdmin, async (req, res) => {
     res.json({ message: 'Пользователь успешно удален' });
   } catch (error) {
     console.error('Ошибка удаления пользователя:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Загрузить аватарку для пользователя (только админы)
+router.post('/:id/avatar', requireAdmin, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Файл не загружен' });
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    
+    // Обновляем пользователя с новым аватаром
+    const updatedUser = await User.update(req.params.id, { avatar_url: avatarUrl });
+    
+    if (!updatedUser) {
+      // Удаляем загруженный файл если пользователь не найден
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    res.json({
+      message: 'Аватарка успешно загружена',
+      avatar_url: avatarUrl,
+      user: updatedUser
+    });
+  } catch (error) {
+    // Удаляем файл в случае ошибки
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    console.error('Ошибка загрузки аватарки:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Удалить аватарку пользователя (только админы)
+router.delete('/:id/avatar', requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    // Удаляем файл аватарки если он существует
+    if (user.avatar_url) {
+      const filePath = path.join(process.cwd(), user.avatar_url);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Обновляем пользователя, убирая аватарку
+    const updatedUser = await User.update(req.params.id, { avatar_url: null });
+
+    res.json({
+      message: 'Аватарка успешно удалена',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Ошибка удаления аватарки:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../utils/api';
+import api, { BASE_URL } from '../utils/api';
 import './UsersManagement.css';
 
 function UsersManagement() {
@@ -22,6 +22,13 @@ function UsersManagement() {
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [pointsAmount, setPointsAmount] = useState(0);
+
+  // Для загрузки аватарок
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [selectedAvatarUser, setSelectedAvatarUser] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -157,6 +164,76 @@ function UsersManagement() {
     }
   };
 
+  // Управление аватарками
+  const openAvatarModal = (user) => {
+    setSelectedAvatarUser(user);
+    setAvatarFile(null);
+    setAvatarPreview(user.avatar_url ? `${BASE_URL}${user.avatar_url}` : null);
+    setShowAvatarModal(true);
+  };
+
+  const closeAvatarModal = () => {
+    setShowAvatarModal(false);
+    setSelectedAvatarUser(null);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadAvatar = async () => {
+    if (!avatarFile) {
+      setError('Выберите файл изображения');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
+      await api.post(`/users/${selectedAvatarUser.id}/avatar`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setSuccess('Аватарка успешно загружена');
+      closeAvatarModal();
+      loadUsers();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.error || 'Ошибка при загрузке аватарки');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteAvatar = async (userId) => {
+    if (!window.confirm('Удалить аватарку?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/users/${userId}/avatar`);
+      setSuccess('Аватарка успешно удалена');
+      loadUsers();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.error || 'Ошибка при удалении аватарки');
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-state">
@@ -193,6 +270,7 @@ function UsersManagement() {
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Аватар</th>
                 <th>Имя пользователя</th>
                 <th>Email</th>
                 <th>ФИО</th>
@@ -207,6 +285,21 @@ function UsersManagement() {
               {users.map((user) => (
                 <tr key={user.id}>
                   <td>{user.id}</td>
+                  <td>
+                    <div className="user-avatar-cell">
+                      {user.avatar_url ? (
+                        <img 
+                          src={`${BASE_URL}${user.avatar_url}`} 
+                          alt={user.username}
+                          className="user-avatar-small"
+                        />
+                      ) : (
+                        <div className="user-avatar-placeholder">
+                          {(user.full_name || user.username).charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </td>
                   <td>{user.username}</td>
                   <td>{user.email}</td>
                   <td>{user.full_name || '-'}</td>
@@ -223,25 +316,34 @@ function UsersManagement() {
                   <td>
                     <div className="action-buttons">
                       {user.role === 'student' && (
-                        <button 
-                          className="btn btn-small btn-points"
-                          onClick={() => openPointsModal(user)}
-                          title="Управление баллами"
-                        >
-                          ⭐ Баллы
-                        </button>
+                        <>
+                          <button 
+                            className="btn btn-small btn-avatar"
+                            onClick={() => openAvatarModal(user)}
+                            title="Изменить аватарку"
+                          >
+                            🖼️
+                          </button>
+                          <button 
+                            className="btn btn-small btn-points"
+                            onClick={() => openPointsModal(user)}
+                            title="Управление баллами"
+                          >
+                            ⭐
+                          </button>
+                        </>
                       )}
                       <button 
                         className="btn btn-small btn-edit"
                         onClick={() => handleEdit(user)}
                       >
-                        Изменить
+                        ✏️
                       </button>
                       <button 
                         className="btn btn-small btn-delete"
                         onClick={() => handleDelete(user.id)}
                       >
-                        Удалить
+                        🗑️
                       </button>
                     </div>
                   </td>
@@ -380,6 +482,75 @@ function UsersManagement() {
                 </button>
                 <button type="button" className="btn btn-primary" onClick={handleAddPoints}>
                   Применить
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно для загрузки аватарки */}
+      {showAvatarModal && selectedAvatarUser && (
+        <div className="modal-overlay" onClick={closeAvatarModal}>
+          <div className="modal modal-small" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🖼️ Изменить аватарку</h2>
+              <button className="close-btn" onClick={closeAvatarModal}>&times;</button>
+            </div>
+
+            <div className="modal-body">
+              <div className="user-info-box">
+                <p><strong>Студент:</strong> {selectedAvatarUser.full_name || selectedAvatarUser.username}</p>
+              </div>
+
+              <div className="avatar-upload-section">
+                <div className="avatar-preview">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Preview" />
+                  ) : (
+                    <div className="avatar-placeholder-large">
+                      {(selectedAvatarUser.full_name || selectedAvatarUser.username).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Выберите изображение</label>
+                  <input
+                    type="file"
+                    className="form-input"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleAvatarChange}
+                  />
+                  <small className="form-hint">
+                    Поддерживаемые форматы: JPEG, PNG, GIF, WebP (макс. 5MB)
+                  </small>
+                </div>
+              </div>
+
+              <div className="form-actions">
+                {selectedAvatarUser.avatar_url && (
+                  <button 
+                    type="button" 
+                    className="btn btn-danger"
+                    onClick={() => {
+                      handleDeleteAvatar(selectedAvatarUser.id);
+                      closeAvatarModal();
+                    }}
+                  >
+                    Удалить аватарку
+                  </button>
+                )}
+                <button type="button" className="btn btn-cancel" onClick={closeAvatarModal}>
+                  Отмена
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  onClick={handleUploadAvatar}
+                  disabled={!avatarFile || uploadingAvatar}
+                >
+                  {uploadingAvatar ? 'Загрузка...' : 'Загрузить'}
                 </button>
               </div>
             </div>
