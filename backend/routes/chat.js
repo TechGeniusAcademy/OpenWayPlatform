@@ -37,7 +37,31 @@ const upload = multer({
   }
 });
 
-// Все маршруты требуют аутентификации
+// Скачать файл (БЕЗ аутентификации, т.к. браузер не отправляет токены при скачивании)
+router.get('/files/*', async (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '..', req.path.replace('/chat/files/', ''));
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Файл не найден' });
+    }
+
+    const fileName = path.basename(filePath);
+    const originalFileName = fileName.split('-').slice(2).join('-'); // Убираем timestamp-random префикс
+
+    // Устанавливаем заголовки для принудительного скачивания
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(originalFileName)}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    
+    // Отправляем файл
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Ошибка скачивания файла:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Все маршруты ниже требуют аутентификации
 router.use(authenticate);
 
 // Получить все чаты (только для админов)
@@ -289,30 +313,6 @@ router.delete('/messages/:messageId', async (req, res) => {
     res.json({ message: 'Сообщение удалено' });
   } catch (error) {
     console.error('Ошибка удаления сообщения:', error);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-  }
-});
-
-// Скачать файл
-router.get('/files/*', async (req, res) => {
-  try {
-    const filePath = path.join(__dirname, '..', req.path.replace('/chat/files/', 'uploads/chat-files/'));
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Файл не найден' });
-    }
-
-    const fileName = path.basename(filePath);
-    const originalFileName = fileName.substring(fileName.indexOf('-') + 1); // Убираем timestamp префикс
-
-    // Устанавливаем заголовки для принудительного скачивания
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(originalFileName)}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
-    
-    // Отправляем файл
-    res.sendFile(filePath);
-  } catch (error) {
-    console.error('Ошибка скачивания файла:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });
