@@ -21,10 +21,12 @@ function Chat() {
   const [loading, setLoading] = useState(true);
   const [showUsersList, setShowUsersList] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
+  const [typingUser, setTypingUser] = useState(null); // Кто печатает
   
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadChats();
@@ -40,7 +42,7 @@ function Chat() {
 
     socketRef.current.on('new-message', (message) => {
       setMessages(prev => [...prev, message]);
-      scrollToBottom();
+      // scrollToBottom теперь вызывается автоматически через useEffect при изменении messages
       
       // Обновляем список чатов для обновления последнего сообщения
       setChats(prevChats => {
@@ -74,6 +76,19 @@ function Chat() {
       }
     });
 
+    // Индикатор печати
+    socketRef.current.on('user-typing', (data) => {
+      if (data.userId !== user.id && data.chatId === activeChat?.id) {
+        setTypingUser(data.userName);
+      }
+    });
+
+    socketRef.current.on('user-stop-typing', (data) => {
+      if (data.userId !== user.id) {
+        setTypingUser(null);
+      }
+    });
+
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -104,6 +119,11 @@ function Chat() {
       }
     };
   }, [activeChat]);
+
+  // Автоскролл только при изменении сообщений, НЕ при изменении typingUser
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const loadChats = async () => {
     try {
@@ -191,10 +211,47 @@ function Chat() {
     }
   };
 
+  // Обработка ввода текста (индикатор печати)
+  const handleTyping = (e) => {
+    setNewMessage(e.target.value);
+    
+    if (!activeChat || !socketRef.current) return;
+    
+    // Отправляем событие "начал печатать"
+    if (e.target.value.length > 0) {
+      socketRef.current.emit('typing-start', {
+        chatId: activeChat.id,
+        userName: user.full_name || user.username
+      });
+      
+      // Очищаем предыдущий таймер
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Через 2 секунды без ввода отправляем "перестал печатать"
+      typingTimeoutRef.current = setTimeout(() => {
+        socketRef.current.emit('typing-stop', {
+          chatId: activeChat.id
+        });
+      }, 2000);
+    } else {
+      // Если поле пустое, сразу отправляем "перестал печатать"
+      socketRef.current.emit('typing-stop', {
+        chatId: activeChat.id
+      });
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
     if (!newMessage.trim() && !selectedFile) return;
+    
+    // Отправляем "перестал печатать" при отправке сообщения
+    socketRef.current.emit('typing-stop', {
+      chatId: activeChat.id
+    });
 
     try {
       if (selectedFile) {
@@ -244,7 +301,7 @@ function Chat() {
 
       setNewMessage('');
       setMessageType('text');
-      scrollToBottom();
+      // scrollToBottom вызовется автоматически через useEffect
     } catch (error) {
       console.error('Ошибка отправки сообщения:', error);
       alert('Не удалось отправить сообщение');
@@ -463,6 +520,14 @@ function Chat() {
 
             <div className="messages-list">
               {messages.map(renderMessage)}
+              {typingUser && (
+                <div className="typing-indicator">
+                  <span className="typing-user">{typingUser}</span> печатает
+                  <span className="typing-dots">
+                    <span>.</span><span>.</span><span>.</span>
+                  </span>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -520,7 +585,7 @@ function Chat() {
               <div className="input-row">
                 <textarea
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleTyping}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();

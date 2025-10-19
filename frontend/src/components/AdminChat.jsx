@@ -20,10 +20,12 @@ function AdminChat() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all'); // 'all', 'private', 'group'
+  const [typingUser, setTypingUser] = useState(null); // Кто печатает
   
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     loadAllChats();
@@ -38,7 +40,7 @@ function AdminChat() {
 
     socketRef.current.on('new-message', (message) => {
       setMessages(prev => [...prev, message]);
-      scrollToBottom();
+      // scrollToBottom теперь вызывается автоматически через useEffect при изменении messages
       
       // Обновляем список чатов для обновления последнего сообщения
       setAllChats(prevChats => {
@@ -64,6 +66,19 @@ function AdminChat() {
       // Если кто-то прочитал сообщения, обновляем список чатов
       if (data.userId !== user.id) {
         loadAllChats();
+      }
+    });
+
+    // Индикатор печати
+    socketRef.current.on('user-typing', (data) => {
+      if (data.userId !== user.id && data.chatId === activeChat?.id) {
+        setTypingUser(data.userName);
+      }
+    });
+
+    socketRef.current.on('user-stop-typing', (data) => {
+      if (data.userId !== user.id) {
+        setTypingUser(null);
       }
     });
 
@@ -97,6 +112,11 @@ function AdminChat() {
       }
     };
   }, [activeChat]);
+
+  // Автоскролл только при изменении сообщений, НЕ при изменении typingUser
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const loadAllChats = async () => {
     try {
@@ -146,10 +166,47 @@ function AdminChat() {
     }, 100);
   };
 
+  // Обработка ввода текста (индикатор печати)
+  const handleTyping = (e) => {
+    setNewMessage(e.target.value);
+    
+    if (!activeChat || !socketRef.current) return;
+    
+    // Отправляем событие "начал печатать"
+    if (e.target.value.length > 0) {
+      socketRef.current.emit('typing-start', {
+        chatId: activeChat.id,
+        userName: user.full_name || user.username
+      });
+      
+      // Очищаем предыдущий таймер
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Через 2 секунды без ввода отправляем "перестал печатать"
+      typingTimeoutRef.current = setTimeout(() => {
+        socketRef.current.emit('typing-stop', {
+          chatId: activeChat.id
+        });
+      }, 2000);
+    } else {
+      // Если поле пустое, сразу отправляем "перестал печатать"
+      socketRef.current.emit('typing-stop', {
+        chatId: activeChat.id
+      });
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
     if (!newMessage.trim() && !selectedFile) return;
+
+    // Отправляем "перестал печатать" при отправке сообщения
+    socketRef.current.emit('typing-stop', {
+      chatId: activeChat.id
+    });
 
     try {
       if (selectedFile) {
@@ -194,7 +251,7 @@ function AdminChat() {
 
       setNewMessage('');
       setMessageType('text');
-      scrollToBottom();
+      // scrollToBottom вызовется автоматически через useEffect
     } catch (error) {
       console.error('Ошибка отправки сообщения:', error);
       alert('Не удалось отправить сообщение');
@@ -374,6 +431,14 @@ function AdminChat() {
 
             <div className="messages-list">
               {messages.map(renderMessage)}
+              {typingUser && (
+                <div className="typing-indicator">
+                  <span className="typing-user">{typingUser}</span> печатает
+                  <span className="typing-dots">
+                    <span>.</span><span>.</span><span>.</span>
+                  </span>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -431,7 +496,7 @@ function AdminChat() {
               <div className="input-row">
                 <textarea
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleTyping}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();

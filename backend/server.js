@@ -127,6 +127,22 @@ io.on('connection', (socket) => {
     console.log(`✅ Пользователь ${socket.userId} прочитал сообщения в чате ${chatId}`);
   });
 
+  // Индикатор печати
+  socket.on('typing-start', ({ chatId, userName }) => {
+    socket.to(`chat-${chatId}`).emit('user-typing', {
+      chatId: chatId,
+      userId: socket.userId,
+      userName: userName
+    });
+  });
+
+  socket.on('typing-stop', ({ chatId }) => {
+    socket.to(`chat-${chatId}`).emit('user-stop-typing', {
+      chatId: chatId,
+      userId: socket.userId
+    });
+  });
+
   // Отключение
   socket.on('disconnect', () => {
     if (socket.userId) {
