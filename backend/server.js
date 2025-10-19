@@ -23,10 +23,13 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
+
+// Настройка CORS для Socket.IO
+const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*';
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || '*',
-    methods: ["GET", "POST"],
+    origin: corsOrigin,
+    methods: ['GET', 'POST'],
     credentials: true
   }
 });
