@@ -40,7 +40,10 @@ const upload = multer({
 // Скачать файл (БЕЗ аутентификации, т.к. браузер не отправляет токены при скачивании)
 router.get('/files/*', async (req, res) => {
   try {
-    const filePath = path.join(__dirname, '..', req.path.replace('/chat/files/', ''));
+    // req.path будет '/files/uploads/chat-files/filename'
+    // Убираем '/files/' в начале, чтобы получить 'uploads/chat-files/filename'
+    const relativePath = req.path.replace('/files/', '');
+    const filePath = path.join(__dirname, '..', relativePath);
     
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'Файл не найден' });
