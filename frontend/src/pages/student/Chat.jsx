@@ -22,6 +22,7 @@ function Chat() {
   const [showUsersList, setShowUsersList] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [typingUser, setTypingUser] = useState(null); // Кто печатает
+  const [onlineUsers, setOnlineUsers] = useState(new Set()); // Онлайн пользователи
   
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
@@ -87,6 +88,19 @@ function Chat() {
       if (data.userId !== user.id) {
         setTypingUser(null);
       }
+    });
+
+    // Онлайн статус
+    socketRef.current.on('user-online', (data) => {
+      setOnlineUsers(prev => new Set([...prev, data.userId]));
+    });
+
+    socketRef.current.on('user-offline', (data) => {
+      setOnlineUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(data.userId);
+        return newSet;
+      });
     });
 
     return () => {
@@ -465,6 +479,9 @@ function Chat() {
               >
                 <div className="chat-avatar">
                   {chat.type === 'group' ? '👥' : (chat.other_user?.full_name || chat.other_user?.username)?.[0]}
+                  {chat.type === 'private' && chat.other_user && onlineUsers.has(chat.other_user.id) && (
+                    <div className="online-indicator"></div>
+                  )}
                 </div>
                 <div className="chat-info">
                   <div className="chat-name">

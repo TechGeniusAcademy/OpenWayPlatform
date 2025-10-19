@@ -21,6 +21,7 @@ function AdminChat() {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all'); // 'all', 'private', 'group'
   const [typingUser, setTypingUser] = useState(null); // Кто печатает
+  const [onlineUsers, setOnlineUsers] = useState(new Set()); // Онлайн пользователи
   
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
@@ -80,6 +81,19 @@ function AdminChat() {
       if (data.userId !== user.id) {
         setTypingUser(null);
       }
+    });
+
+    // Онлайн статус
+    socketRef.current.on('user-online', (data) => {
+      setOnlineUsers(prev => new Set([...prev, data.userId]));
+    });
+
+    socketRef.current.on('user-offline', (data) => {
+      setOnlineUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(data.userId);
+        return newSet;
+      });
     });
 
     return () => {

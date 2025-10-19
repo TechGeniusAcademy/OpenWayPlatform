@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDatabase } from './config/database.js';
+import pool from './config/database.js';
 import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import groupsRoutes from './routes/groups.js';
@@ -86,10 +87,23 @@ io.on('connection', (socket) => {
   console.log('👤 Пользователь подключился:', socket.id);
 
   // Регистрация пользователя
-  socket.on('register', (userId) => {
+  socket.on('register', async (userId) => {
     activeUsers.set(userId, socket.id);
     socket.userId = userId;
-    console.log(`✅ Пользователь ${userId} зарегистрирован`);
+    
+    // Обновляем статус пользователя на "онлайн" в БД
+    try {
+      await pool.query(
+        'UPDATE users SET is_online = TRUE, last_seen = NOW() WHERE id = $1',
+        [userId]
+      );
+      
+      // Уведомляем всех о том, что пользователь онлайн
+      io.emit('user-online', { userId, socketId: socket.id });
+      console.log(`✅ Пользователь ${userId} зарегистрирован и онлайн`);
+    } catch (error) {
+      console.error('Ошибка обновления онлайн статуса:', error);
+    }
   });
 
   // Присоединение к чату
@@ -144,10 +158,23 @@ io.on('connection', (socket) => {
   });
 
   // Отключение
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     if (socket.userId) {
       activeUsers.delete(socket.userId);
-      console.log(`👋 Пользователь ${socket.userId} отключился`);
+      
+      // Обновляем статус пользователя на "офлайн" в БД
+      try {
+        await pool.query(
+          'UPDATE users SET is_online = FALSE, last_seen = NOW() WHERE id = $1',
+          [socket.userId]
+        );
+        
+        // Уведомляем всех о том, что пользователь офлайн
+        io.emit('user-offline', { userId: socket.userId });
+        console.log(`👋 Пользователь ${socket.userId} отключился и офлайн`);
+      } catch (error) {
+        console.error('Ошибка обновления офлайн статуса:', error);
+      }
     }
   });
 });
