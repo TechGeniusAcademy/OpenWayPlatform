@@ -283,11 +283,11 @@ const TypingManagement = () => {
                 </div>
                 {userHistory.slice(0, 10).map((result, index) => (
                   <div key={index} className="table-row">
-                    <span>{new Date(result.createdAt).toLocaleDateString()}</span>
+                    <span>{new Date(result.created_at).toLocaleDateString()}</span>
                     <span>{result.wpm} зн/мин</span>
-                    <span>{result.accuracy}%</span>
-                    <span>{formatDuration(result.duration)}</span>
-                    <span>{result.errors}</span>
+                    <span>{parseFloat(result.accuracy).toFixed(2)}%</span>
+                    <span>{formatDuration(result.time_seconds)}</span>
+                    <span>{result.errors || 0}</span>
                   </div>
                 ))}
               </div>

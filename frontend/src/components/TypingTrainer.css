@@ -9,8 +9,8 @@
 
 .trainer-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 20px;
   margin-bottom: 30px;
   padding-bottom: 20px;
   border-bottom: 2px solid #e9ecef;
@@ -20,6 +20,51 @@
   color: #2c3e50;
   margin: 0;
   font-size: 28px;
+  text-align: center;
+}
+
+.time-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.time-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.time-option {
+  padding: 10px 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+  color: #495057;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.time-option:hover {
+  border-color: #007bff;
+  color: #007bff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+.time-option.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
 }
 
 .trainer-stats {
@@ -97,8 +142,18 @@
 }
 
 .char.current {
+  position: relative;
+  background-color: transparent;
+}
+
+.char.current::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
   background-color: #007bff;
-  color: white;
   animation: blink 1s infinite;
 }
 

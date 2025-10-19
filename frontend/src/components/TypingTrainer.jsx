@@ -7,8 +7,8 @@ function TypingTrainer() {
   const { user } = useAuth();
   
   // Константы
-  const GAME_DURATION = 180; // 3 минуты в секундах
   const WORDS_AHEAD = 10; // Количество слов для отображения
+  const TIME_OPTIONS = [60, 120, 180, 300]; // 1, 2, 3, 5 минут
 
   // Программистские слова для генерации
   const programmingWords = [
@@ -31,6 +31,7 @@ function TypingTrainer() {
   ];
 
   // Состояния
+  const [gameDuration, setGameDuration] = useState(180); // Выбранная длительность
   const [currentWords, setCurrentWords] = useState([]);
   const [typedText, setTypedText] = useState(''); // Весь напечатанный текст
   const [typedStatus, setTypedStatus] = useState([]); // Статус каждого символа: 'correct', 'error', 'pending'
@@ -42,12 +43,14 @@ function TypingTrainer() {
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(100);
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
+  const [timeRemaining, setTimeRemaining] = useState(180);
   const [currentChar, setCurrentChar] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [finalTimeSpent, setFinalTimeSpent] = useState(0);
   
   const inputRef = useRef(null);
   const intervalRef = useRef(null);
+  const statsRef = useRef({ typedText: '', typedStatus: [], errors: 0 }); // Для актуальных данных
 
   // Английская QWERTY раскладка
   const keyboardLayout = [
@@ -93,7 +96,7 @@ function TypingTrainer() {
     if (isActive && timeRemaining > 0 && startTime) {
       intervalRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        const remaining = GAME_DURATION - elapsed;
+        const remaining = gameDuration - elapsed;
         setTimeElapsed(elapsed);
         setTimeRemaining(remaining);
 
@@ -136,9 +139,13 @@ function TypingTrainer() {
     setWpm(0);
     setAccuracy(100);
     setTimeElapsed(0);
-    setTimeRemaining(GAME_DURATION);
+    setTimeRemaining(gameDuration);
     setCurrentChar(initialWords[0]?.[0] || '');
     setShowResults(false);
+    setFinalTimeSpent(0);
+    
+    // Сбрасываем ref
+    statsRef.current = { typedText: '', typedStatus: [], errors: 0 };
     
     if (inputRef.current) {
       inputRef.current.focus();
@@ -187,6 +194,9 @@ function TypingTrainer() {
     
     setTypedStatus(newStatus);
     setErrors(errorCount);
+    
+    // Сохраняем актуальные данные в ref для finishTest
+    statsRef.current = { typedText: value, typedStatus: newStatus, errors: errorCount };
 
     // Обновление текущего символа для подсветки клавиши
     if (value.length < expectedText.length) {
@@ -205,14 +215,11 @@ function TypingTrainer() {
       const acc = Math.round((correctChars / totalChars) * 100);
       setAccuracy(Math.max(0, acc));
       
-      // Обновляем WPM в реальном времени если игра активна
-      // WPM = (правильные символы / 5) / минуты
-      // Делим на 5 потому что средняя длина слова = 5 символов
+      // Обновляем CPM (Characters Per Minute) в реальном времени если игра активна
       if (isActive && startTime) {
         const elapsedSeconds = Math.max(1, (Date.now() - startTime) / 1000);
         const minutes = elapsedSeconds / 60;
-        const wordsTyped = correctChars / 5; // Стандартная формула: 1 слово = 5 символов
-        const currentWpm = Math.round(wordsTyped / minutes);
+        const currentWpm = Math.round(correctChars / minutes);
         setWpm(currentWpm);
       }
     }
@@ -223,28 +230,38 @@ function TypingTrainer() {
     setShowResults(true);
 
     // Окончательные расчеты на основе реальных данных
-    const finalTime = timeElapsed || GAME_DURATION; // Используем реальное время
-    const finalChars = typedText.length;
-    const correctChars = finalChars - errors;
+    // Используем реальное прошедшее время от startTime
+    const actualTimeSpent = startTime ? Math.floor((Date.now() - startTime) / 1000) : Math.max(1, gameDuration - timeRemaining);
+    setFinalTimeSpent(actualTimeSpent); // Сохраняем для отображения в модальном окне
     
-    // WPM = (правильные символы / 5) / минуты
-    const minutes = finalTime / 60;
-    const wordsTyped = correctChars / 5;
-    const finalWpm = Math.round(wordsTyped / minutes);
+    // Используем актуальные данные из ref вместо state
+    const { typedText: finalTypedText, typedStatus: finalTypedStatus, errors: finalErrors } = statsRef.current;
+    const finalChars = finalTypedText.length;
     
-    const finalAccuracy = finalChars > 0 ? Math.round((correctChars / finalChars) * 100) : 0;
+    // Пересчитываем ошибки на основе typedStatus
+    const errorCount = finalTypedStatus.filter(status => status === 'error').length;
+    const correctChars = finalChars - errorCount;
+    
+    // CPM (Characters Per Minute) = правильные символы / минуты
+    const minutes = actualTimeSpent / 60;
+    const finalWpm = minutes > 0 ? Math.round(correctChars / minutes) : 0;
+    
+    const finalAccuracy = finalChars > 0 ? ((correctChars / finalChars) * 100) : 100;
 
+    // Обновляем состояние для отображения
     setWpm(finalWpm);
-    setAccuracy(Math.max(0, finalAccuracy));
+    setAccuracy(finalAccuracy);
+    setErrors(errorCount);
+    setTypedText(finalTypedText); // Обновляем typedText для отображения в модальном окне
 
     // Отправка результатов на сервер
     try {
       await api.post('/typing/results', {
         text_length: finalChars,
-        time_seconds: finalTime,
+        time_seconds: actualTimeSpent,
         wpm: finalWpm,
-        accuracy: Math.max(0, finalAccuracy),
-        errors: errors
+        accuracy: finalAccuracy,
+        errors: errorCount
       });
     } catch (error) {
       console.error('Ошибка сохранения результата:', error);
@@ -276,6 +293,25 @@ function TypingTrainer() {
     <div className="typing-trainer">
       <div className="trainer-header">
         <h2>⌨️ Клавиатурный тренажер</h2>
+        
+        {!isActive && !showResults && (
+          <div className="time-selector">
+            <span className="time-label">Длительность теста:</span>
+            {TIME_OPTIONS.map(time => (
+              <button
+                key={time}
+                className={`time-option ${gameDuration === time ? 'active' : ''}`}
+                onClick={() => {
+                  setGameDuration(time);
+                  setTimeRemaining(time);
+                }}
+              >
+                {time / 60} мин
+              </button>
+            ))}
+          </div>
+        )}
+        
         <div className="trainer-stats">
           <div className="stat">
             <span className="stat-label">Осталось:</span>
@@ -390,7 +426,7 @@ function TypingTrainer() {
             <div className="results-grid">
               <div className="result-item">
                 <span className="result-label">Время:</span>
-                <span className="result-value">{Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}</span>
+                <span className="result-value">{Math.floor(finalTimeSpent / 60)}:{(finalTimeSpent % 60).toString().padStart(2, '0')}</span>
               </div>
               <div className="result-item">
                 <span className="result-label">Скорость:</span>
@@ -398,7 +434,7 @@ function TypingTrainer() {
               </div>
               <div className="result-item">
                 <span className="result-label">Точность:</span>
-                <span className="result-value">{accuracy}%</span>
+                <span className="result-value">{accuracy.toFixed(2)}%</span>
               </div>
               <div className="result-item">
                 <span className="result-label">Ошибки:</span>
@@ -428,7 +464,7 @@ function TypingTrainer() {
         <div className="progress-bar">
           <div 
             className="progress-fill" 
-            style={{ width: `${((GAME_DURATION - timeRemaining) / GAME_DURATION) * 100}%` }}
+            style={{ width: `${((gameDuration - timeRemaining) / gameDuration) * 100}%` }}
           ></div>
         </div>
       </div>
