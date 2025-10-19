@@ -140,6 +140,21 @@
   font-weight: bold;
   flex-shrink: 0;
   position: relative;
+  overflow: hidden;
+}
+
+.chat-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-avatar .avatar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .online-indicator {
@@ -279,6 +294,21 @@
   justify-content: center;
   font-weight: bold;
   font-size: 18px;
+  overflow: hidden;
+}
+
+.user-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar .avatar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .user-info {

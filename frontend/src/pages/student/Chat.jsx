@@ -454,7 +454,13 @@ function Chat() {
                 className="user-item"
                 onClick={() => createPrivateChat(u.id)}
               >
-                <div className="user-avatar">{(u.full_name || u.username)[0]}</div>
+                <div className="user-avatar">
+                  {u.avatar_url ? (
+                    <img src={`${import.meta.env.VITE_API_URL}${u.avatar_url}`} alt="" className="avatar-img" />
+                  ) : (
+                    <span className="avatar-icon">{(u.full_name || u.username)[0]}</span>
+                  )}
+                </div>
                 <div className="user-info">
                   <div className="user-name">{u.full_name || u.username}</div>
                   {u.group_name && <div className="user-group">{u.group_name}</div>}
@@ -478,7 +484,13 @@ function Chat() {
                 onClick={() => setActiveChat(chat)}
               >
                 <div className="chat-avatar">
-                  {chat.type === 'group' ? '👥' : (chat.other_user?.full_name || chat.other_user?.username)?.[0]}
+                  {chat.type === 'group' ? (
+                    <span className="avatar-icon">👥</span>
+                  ) : chat.other_user?.avatar_url ? (
+                    <img src={`${import.meta.env.VITE_API_URL}${chat.other_user.avatar_url}`} alt="" className="avatar-img" />
+                  ) : (
+                    <span className="avatar-icon">{(chat.other_user?.full_name || chat.other_user?.username)?.[0]}</span>
+                  )}
                   {chat.type === 'private' && chat.other_user && onlineUsers.has(chat.other_user.id) && (
                     <div className="online-indicator"></div>
                   )}

@@ -165,6 +165,42 @@ router.delete('/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// Загрузить свой аватар (доступно для всех пользователей)
+router.post('/me/avatar', upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Файл не загружен' });
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    
+    // Удаляем старый аватар если существует
+    const user = await User.findById(req.user.id);
+    if (user.avatar_url) {
+      const oldFilePath = path.join(process.cwd(), user.avatar_url);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+    
+    // Обновляем пользователя с новым аватаром
+    const updatedUser = await User.update(req.user.id, { avatar_url: avatarUrl });
+
+    res.json({
+      message: 'Аватарка успешно загружена',
+      avatar_url: avatarUrl,
+      user: updatedUser
+    });
+  } catch (error) {
+    // Удаляем файл в случае ошибки
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    console.error('Ошибка загрузки аватарки:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Загрузить аватарку для пользователя (только админы)
 router.post('/:id/avatar', requireAdmin, upload.single('avatar'), async (req, res) => {
   try {
