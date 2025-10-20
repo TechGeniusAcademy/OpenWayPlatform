@@ -78,6 +78,12 @@ function AdminLayout({ children }) {
                 Магазин косметики
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/admin/knowledge">
+                <span className="menu-icon">📚</span>
+                База знаний
+              </NavLink>
+            </li>
             {/* Здесь можно добавлять новые пункты меню */}
           </ul>
         </nav>
