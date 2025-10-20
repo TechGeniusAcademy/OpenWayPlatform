@@ -10,13 +10,14 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  width: 85vw;
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .users-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .users-table thead {
@@ -29,7 +30,31 @@
   font-weight: 600;
   color: #333;
   border-bottom: 2px solid #e0e0e0;
+  white-space: nowrap;
 }
+
+/* Фиксированные ширины для колонок */
+.users-table th:nth-child(1) { width: 50px; }  /* ID */
+.users-table th:nth-child(2) { width: 70px; }  /* Аватар */
+.users-table th:nth-child(3) { width: 150px; } /* Имя пользователя */
+.users-table th:nth-child(4) { width: 200px; } /* Email */
+.users-table th:nth-child(5) { width: 180px; } /* ФИО */
+.users-table th:nth-child(6) { width: 120px; } /* Роль */
+.users-table th:nth-child(7) { width: 200px; } /* Группа */
+.users-table th:nth-child(8) { width: 100px; } /* Баллы */
+.users-table th:nth-child(9) { width: 130px; } /* Дата создания */
+.users-table th:nth-child(10) { width: 200px; } /* Действия */
+
+.users-table td:nth-child(1) { width: 50px; }
+.users-table td:nth-child(2) { width: 70px; }
+.users-table td:nth-child(3) { width: 150px; }
+.users-table td:nth-child(4) { width: 200px; }
+.users-table td:nth-child(5) { width: 180px; }
+.users-table td:nth-child(6) { width: 120px; }
+.users-table td:nth-child(7) { width: 200px; }
+.users-table td:nth-child(8) { width: 100px; }
+.users-table td:nth-child(9) { width: 130px; }
+.users-table td:nth-child(10) { width: 200px; }
 
 .users-table td {
   padding: 15px;

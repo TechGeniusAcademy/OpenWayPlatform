@@ -414,3 +414,22 @@ sudo -u postgres psql
 - [ ] Можно войти в админ-панель
 - [ ] PM2 настроен на автозапуск
 - [ ] Скрипт deploy.sh работает корректно
+
+
+# На сервере выполните:
+cd /var/www/openway
+git pull origin main
+
+# Обновить frontend
+cd frontend
+npm install
+npm run build
+
+# Перезапустить backend (использует текущий процесс)
+pm2 restart openway-backend
+
+# Проверить статус
+pm2 status
+
+# Посмотреть логи (проверить что всё работает)
+pm2 logs openway-backend --lines 30
