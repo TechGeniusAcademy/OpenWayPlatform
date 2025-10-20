@@ -63,9 +63,47 @@ export const initDatabase = async () => {
         role VARCHAR(50) NOT NULL DEFAULT 'student',
         full_name VARCHAR(255),
         avatar_url VARCHAR(255),
+        avatar_frame VARCHAR(50) DEFAULT 'none',
+        profile_banner VARCHAR(50) DEFAULT 'default',
+        is_online BOOLEAN DEFAULT FALSE,
+        last_seen TIMESTAMP DEFAULT NOW(),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // 2.5. Добавление колонок для косметики профиля, если их нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'avatar_frame'
+        ) THEN
+          ALTER TABLE users ADD COLUMN avatar_frame VARCHAR(50) DEFAULT 'none';
+        END IF;
+        
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'profile_banner'
+        ) THEN
+          ALTER TABLE users ADD COLUMN profile_banner VARCHAR(50) DEFAULT 'default';
+        END IF;
+        
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'is_online'
+        ) THEN
+          ALTER TABLE users ADD COLUMN is_online BOOLEAN DEFAULT FALSE;
+        END IF;
+        
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'last_seen'
+        ) THEN
+          ALTER TABLE users ADD COLUMN last_seen TIMESTAMP DEFAULT NOW();
+        END IF;
+      END $$;
     `);
 
     // 3. Создание таблицы групп
@@ -417,6 +455,72 @@ export const initDatabase = async () => {
         created_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // Таблица 23: Предметы магазина (рамки и баннеры)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS shop_items (
+        id SERIAL PRIMARY KEY,
+        item_type VARCHAR(20) NOT NULL, -- 'frame' или 'banner'
+        item_key VARCHAR(50) NOT NULL UNIQUE,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        price INTEGER NOT NULL,
+        preview_url VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Таблица 24: Покупки пользователей
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_purchases (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        item_key VARCHAR(50) NOT NULL,
+        purchased_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, item_key)
+      );
+    `);
+
+    // Таблица 25: Таблица баллов (points)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS points (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        total_points INTEGER DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Индексы для магазина
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
+      CREATE INDEX IF NOT EXISTS idx_user_purchases_user ON user_purchases(user_id);
+      CREATE INDEX IF NOT EXISTS idx_users_online ON users(is_online, last_seen);
+    `);
+
+    // Вставка базовых предметов в магазин
+    await pool.query(`
+      INSERT INTO shop_items (item_type, item_key, name, description, price) VALUES
+      -- Рамки для аватара
+      ('frame', 'gold', 'Золотая рамка', 'Элегантная золотая рамка для аватара', 100),
+      ('frame', 'silver', 'Серебряная рамка', 'Стильная серебряная рамка', 75),
+      ('frame', 'rainbow', 'Радужная рамка', 'Яркая радужная рамка с переливами', 150),
+      ('frame', 'fire', 'Огненная рамка', 'Пылающая огненная рамка', 200),
+      ('frame', 'ice', 'Ледяная рамка', 'Морозная ледяная рамка', 200),
+      ('frame', 'neon', 'Неоновая рамка', 'Светящаяся неоновая рамка', 175),
+      ('frame', 'galaxy', 'Космическая рамка', 'Рамка с космическим узором', 250),
+      
+      -- Баннеры профиля
+      ('banner', 'gradient1', 'Градиент "Закат"', 'Красивый градиент заката', 50),
+      ('banner', 'gradient2', 'Градиент "Океан"', 'Морской градиент', 50),
+      ('banner', 'gradient3', 'Градиент "Аврора"', 'Северное сияние', 75),
+      ('banner', 'space', 'Космос', 'Космический фон с звездами', 100),
+      ('banner', 'nature', 'Природа', 'Природный пейзаж', 100),
+      ('banner', 'abstract', 'Абстракция', 'Абстрактный узор', 125),
+      ('banner', 'cyber', 'Киберпанк', 'Неоновый киберпанк стиль', 150),
+      ('banner', 'anime', 'Аниме', 'Аниме стиль фон', 175)
+      ON CONFLICT (item_key) DO NOTHING;
     `);
 
     await createDefaultAdmin();

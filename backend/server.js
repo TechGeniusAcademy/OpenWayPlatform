@@ -16,6 +16,7 @@ import testsRoutes from './routes/tests.js';
 import homeworksRoutes from './routes/homeworks.js';
 import typingRoutes from './routes/typing.js';
 import gameRoutes from './routes/game.js';
+import shopRoutes from './routes/shop.js';
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ app.use('/api/tests', testsRoutes);
 app.use('/api/homeworks', homeworksRoutes);
 app.use('/api/typing', typingRoutes);
 app.use('/api/game', gameRoutes);
+app.use('/api/shop', shopRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

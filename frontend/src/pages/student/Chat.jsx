@@ -363,51 +363,62 @@ function Chat() {
 
     return (
       <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'}`}>
-        <div className="message-header">
-          <span className="message-sender">{message.sender_full_name || message.sender_username}</span>
-          <span className="message-time">{new Date(message.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+        {!isOwnMessage && (
+          <div className="message-avatar">
+            {message.sender_avatar_url ? (
+              <img src={`${import.meta.env.VITE_API_URL}${message.sender_avatar_url}`} alt="" className="avatar-img" />
+            ) : (
+              <span className="avatar-icon">{(message.sender_full_name || message.sender_username)?.[0]}</span>
+            )}
+          </div>
+        )}
+        <div className="message-bubble">
+          <div className="message-header">
+            <span className="message-sender">{message.sender_full_name || message.sender_username}</span>
+            <span className="message-time">{new Date(message.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+
+          {message.message_type === 'code' ? (
+            <div className="message-code">
+              <div className="code-header">
+                <span>{message.code_language}</span>
+              </div>
+              <SyntaxHighlighter language={message.code_language} style={vscDarkPlus}>
+                {message.content}
+              </SyntaxHighlighter>
+            </div>
+          ) : message.message_type === 'file' ? (
+            <div className="message-file">
+              <span className="file-icon">📎</span>
+              <div className="file-info">
+                <div className="file-name">{message.file_name}</div>
+                <div className="file-size">{(message.file_size / 1024 / 1024).toFixed(2)} MB</div>
+                <a 
+                  href={`${SOCKET_URL}/api/chat/files${message.file_path}`} 
+                  download={message.file_name}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="file-download"
+                >
+                  Скачать
+                </a>
+              </div>
+              {message.content && <div className="file-caption">{message.content}</div>}
+            </div>
+          ) : (
+            <div className="message-content">{message.content}</div>
+          )}
+
+          {user.role === 'admin' && activeChat?.type === 'group' && (
+            <button 
+              className="pin-message-btn"
+              onClick={() => togglePinMessage(message.id)}
+              title={message.is_pinned ? 'Открепить' : 'Закрепить'}
+            >
+              📌
+            </button>
+          )}
         </div>
-
-        {message.message_type === 'code' ? (
-          <div className="message-code">
-            <div className="code-header">
-              <span>{message.code_language}</span>
-            </div>
-            <SyntaxHighlighter language={message.code_language} style={vscDarkPlus}>
-              {message.content}
-            </SyntaxHighlighter>
-          </div>
-        ) : message.message_type === 'file' ? (
-          <div className="message-file">
-            <span className="file-icon">📎</span>
-            <div className="file-info">
-              <div className="file-name">{message.file_name}</div>
-              <div className="file-size">{(message.file_size / 1024 / 1024).toFixed(2)} MB</div>
-              <a 
-                href={`${SOCKET_URL}/api/chat/files${message.file_path}`} 
-                download={message.file_name}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="file-download"
-              >
-                Скачать
-              </a>
-            </div>
-            {message.content && <div className="file-caption">{message.content}</div>}
-          </div>
-        ) : (
-          <div className="message-content">{message.content}</div>
-        )}
-
-        {user.role === 'admin' && activeChat?.type === 'group' && (
-          <button 
-            className="pin-message-btn"
-            onClick={() => togglePinMessage(message.id)}
-            title={message.is_pinned ? 'Открепить' : 'Закрепить'}
-          >
-            📌
-          </button>
-        )}
       </div>
     );
   };

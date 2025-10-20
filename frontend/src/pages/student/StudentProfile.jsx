@@ -1,14 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { BASE_URL } from '../../utils/api';
-import axios from 'axios';
+import api, { BASE_URL } from '../../utils/api';
 import './StudentProfile.css';
 
 function StudentProfile() {
-  const { user, login } = useAuth();
+  const { user, updateUser } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [userPoints, setUserPoints] = useState(0);
+
+  useEffect(() => {
+    fetchUserPoints();
+  }, []);
+
+  const fetchUserPoints = async () => {
+    try {
+      const response = await api.get('/points/my');
+      setUserPoints(response.data.totalPoints || 0);
+    } catch (error) {
+      console.error('Ошибка получения баллов:', error);
+    }
+  };
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -30,20 +43,19 @@ function StudentProfile() {
       const formData = new FormData();
       formData.append('avatar', selectedFile);
 
-      const response = await axios.post(
-        `${BASE_URL}/users/me/avatar`,
+      const response = await api.post(
+        '/users/me/avatar',
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Content-Type': 'multipart/form-data'
           }
         }
       );
 
       // Обновляем данные пользователя в контексте
       const updatedUser = { ...user, avatar_url: response.data.avatar_url };
-      login(updatedUser, localStorage.getItem('token'));
+      updateUser(updatedUser);
       
       setPreview(null);
       setSelectedFile(null);
@@ -60,12 +72,19 @@ function StudentProfile() {
     <div className="student-page">
       <div className="page-header">
         <h1>Мой профиль</h1>
-        <p>Информация о вашем аккаунте</p>
+        <div className="header-actions">
+          <div className="user-points">
+            <span className="points-icon">⭐</span>
+            <span className="points-value">{userPoints}</span>
+            <span className="points-label">баллов</span>
+          </div>
+        </div>
       </div>
 
       <div className="profile-card">
-        <div className="profile-avatar-section">
-          {preview || user?.avatar_url ? (
+        <div className={`profile-avatar-section banner-${user?.profile_banner || 'default'}`}>
+          <div className={`avatar-wrapper frame-${user?.avatar_frame || 'none'}`}>
+            {preview || user?.avatar_url ? (
             <img 
               src={preview || `${BASE_URL}${user.avatar_url}`} 
               alt={user.username}
@@ -76,6 +95,7 @@ function StudentProfile() {
               {(user?.full_name || user?.username || 'U').charAt(0).toUpperCase()}
             </div>
           )}
+          </div>
           
           <div className="avatar-upload">
             <label className="avatar-upload-btn">

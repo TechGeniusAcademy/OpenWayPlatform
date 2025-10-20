@@ -7,6 +7,43 @@ const router = express.Router();
 // Все маршруты требуют аутентификации
 router.use(authenticate);
 
+// Получить мои баллы
+router.get('/my', async (req, res) => {
+  try {
+    const student = await Points.getStudentPoints(req.user.id);
+    
+    if (!student) {
+      // Если у пользователя нет записи в points, создаем её
+      const pool = (await import('../config/database.js')).default;
+      await pool.query(
+        'INSERT INTO points (user_id, total_points) VALUES ($1, 0) ON CONFLICT (user_id) DO NOTHING',
+        [req.user.id]
+      );
+      
+      return res.json({ 
+        totalPoints: 0,
+        user: {
+          id: req.user.id,
+          username: req.user.username,
+          full_name: req.user.full_name
+        }
+      });
+    }
+
+    res.json({ 
+      totalPoints: student.total_points,
+      user: {
+        id: student.id,
+        username: student.username,
+        full_name: student.full_name
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка получения своих баллов:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Добавить баллы студенту (только админы)
 router.post('/add', requireAdmin, async (req, res) => {
   try {

@@ -9,6 +9,7 @@ import Chat from './student/Chat';
 import Leaderboard from '../components/Leaderboard';
 import StudentTests from './student/StudentTests';
 import StudentHomeworks from './student/StudentHomeworks';
+import Shop from './student/Shop';
 import './StudentDashboard.css';
 
 function StudentDashboard() {
@@ -24,6 +25,7 @@ function StudentDashboard() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/tests" element={<StudentTests />} />
         <Route path="/homeworks" element={<StudentHomeworks />} />
+        <Route path="/shop" element={<Shop />} />
       </Routes>
     </StudentLayout>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../utils/api';
+import api, { BASE_URL } from '../utils/api';
 import './Leaderboard.css';
 
 const Leaderboard = () => {
@@ -77,6 +77,13 @@ const Leaderboard = () => {
                 >
                   <div className="rank">
                     <span className="rank-number">{getMedalIcon(index + 1)}</span>
+                  </div>
+                  <div className="student-avatar">
+                    {student.avatar_url ? (
+                      <img src={`${BASE_URL}${student.avatar_url}`} alt="" className="avatar-img" />
+                    ) : (
+                      <span className="avatar-icon">{(student.full_name || student.username)?.[0]}</span>
+                    )}
                   </div>
                   <div className="student-info">
                     <div className="student-name">{student.full_name || student.username}</div>

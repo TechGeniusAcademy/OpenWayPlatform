@@ -403,19 +403,57 @@
 
 .message {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  gap: 10px;
   max-width: 70%;
   position: relative;
+  margin-bottom: 15px;
 }
 
 .message.own {
   align-self: flex-end;
-  align-items: flex-end;
+  flex-direction: row-reverse;
 }
 
 .message.other {
   align-self: flex-start;
-  align-items: flex-start;
+}
+
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  flex-shrink: 0;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.message-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.message-avatar .avatar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.message-bubble {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .message-header {

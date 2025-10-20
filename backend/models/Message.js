@@ -32,6 +32,7 @@ class Message {
           m.*,
           u.username as sender_username,
           u.full_name as sender_full_name,
+          u.avatar_url as sender_avatar_url,
           pinner.username as pinned_by_username,
           pinner.full_name as pinned_by_full_name
          FROM messages m
@@ -57,6 +58,7 @@ class Message {
           m.*,
           u.username as sender_username,
           u.full_name as sender_full_name,
+          u.avatar_url as sender_avatar_url,
           pinner.username as pinned_by_username,
           pinner.full_name as pinned_by_full_name
          FROM messages m

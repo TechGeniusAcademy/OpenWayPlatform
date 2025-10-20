@@ -44,6 +44,7 @@ class Points {
           u.username, 
           u.full_name, 
           u.points,
+          u.avatar_url,
           u.group_id,
           g.name as group_name
          FROM users u
