@@ -2,15 +2,52 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BASE_URL } from '../utils/api';
 import './StudentLayout.css';
+import '../styles/UsernameStyles.css';
 import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart } from 'react-icons/ai';
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
 import { FaTrophy } from 'react-icons/fa';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../utils/api';
 
 function StudentLayout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [frameImage, setFrameImage] = useState(null);
+  const [bannerImage, setBannerImage] = useState(null);
+
+  useEffect(() => {
+    // Загружаем изображения рамки и баннера
+    const loadCosmetics = async () => {
+      try {
+        // Загружаем рамку
+        if (user?.avatar_frame && user.avatar_frame !== 'none') {
+          const frameResponse = await api.get('/shop/items?type=frame');
+          const frame = frameResponse.data.items.find(item => item.item_key === user.avatar_frame);
+          if (frame?.image_url) {
+            setFrameImage(frame.image_url);
+          }
+        } else {
+          setFrameImage(null);
+        }
+
+        // Загружаем баннер
+        if (user?.profile_banner && user.profile_banner !== 'default') {
+          const bannerResponse = await api.get('/shop/items?type=banner');
+          const banner = bannerResponse.data.items.find(item => item.item_key === user.profile_banner);
+          if (banner?.image_url) {
+            setBannerImage(banner.image_url);
+          }
+        } else {
+          setBannerImage(null);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки косметики:', error);
+      }
+    };
+    
+    loadCosmetics();
+  }, [user?.avatar_frame, user?.profile_banner]);
 
   const handleLogout = () => {
     logout();
@@ -39,7 +76,7 @@ function StudentLayout({ children }) {
         <div className="student-sidebar-header">
           <div className="sidebar-header-content">
             <div className="sidebar-logo">
-              <div className="logo-circle">OW</div>
+              <img src="/logo.jpg" alt="OpenWay" className="logo-image" />
             </div>
             <div className="sidebar-title">
               <h2>OpenWay</h2>
@@ -133,18 +170,40 @@ function StudentLayout({ children }) {
           </ul>
         </nav>
 
-        <div className="sidebar-footer">
+        <div 
+          className="sidebar-footer"
+          style={{
+            backgroundImage: bannerImage 
+              ? `url(${BASE_URL}${bannerImage})` 
+              : user?.profile_banner === 'default' 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                : 'rgba(0, 0, 0, 0.2)'
+          }}
+        >
+          <div className="sidebar-footer-overlay"></div>
+          
           <div className="sidebar-user">
-            <div className="sidebar-user-avatar">
-              {user?.avatar_url ? (
-                <img src={`${BASE_URL}${user.avatar_url}`} alt={user.username} />
-              ) : (
-                <span>{(user?.full_name || user?.username)?.[0]?.toUpperCase()}</span>
+            <div className="sidebar-user-avatar-wrapper">
+              <div className="sidebar-user-avatar">
+                {user?.avatar_url ? (
+                  <img src={`${BASE_URL}${user.avatar_url}`} alt={user.username} />
+                ) : (
+                  <span>{(user?.full_name || user?.username)?.[0]?.toUpperCase()}</span>
+                )}
+              </div>
+              {frameImage && (
+                <img 
+                  src={`${BASE_URL}${frameImage}`}
+                  alt="Frame"
+                  className="sidebar-avatar-frame"
+                />
               )}
             </div>
             <div className="sidebar-user-info">
-              <div className="sidebar-user-name">{user?.full_name || user?.username}</div>
-              <div className="sidebar-user-role">Студент</div>
+              <div className={`sidebar-user-name styled-username ${user?.username_style || 'username-none'}`}>
+                {user?.full_name || user?.username}
+              </div>
+              <div className="sidebar-user-role">⭐ {user?.points || 0} баллов</div>
             </div>
           </div>
           <button className="sidebar-logout-btn" onClick={handleLogout} title="Выйти">

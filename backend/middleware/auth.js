@@ -32,6 +32,9 @@ export const requireAdmin = (req, res, next) => {
   next();
 };
 
+// Backwards-compatible alias: some routes import `authorizeAdmin`
+export const authorizeAdmin = requireAdmin;
+
 // Middleware для проверки роли студента
 export const requireStudent = (req, res, next) => {
   if (req.user.role !== 'student') {

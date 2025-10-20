@@ -17,6 +17,7 @@ import homeworksRoutes from './routes/homeworks.js';
 import typingRoutes from './routes/typing.js';
 import gameRoutes from './routes/game.js';
 import shopRoutes from './routes/shop.js';
+import adminShopRoutes from './routes/admin-shop.js';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads/shop', express.static(path.join(__dirname, 'uploads', 'shop')));
 
 // Логирование запросов
 app.use((req, res, next) => {
@@ -65,6 +67,7 @@ app.use('/api/homeworks', homeworksRoutes);
 app.use('/api/typing', typingRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/shop', shopRoutes);
+app.use('/api/admin/shop', adminShopRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

@@ -115,7 +115,11 @@ class Chat {
               SELECT json_build_object(
                 'id', u.id,
                 'username', u.username,
-                'full_name', u.full_name
+                'full_name', u.full_name,
+                'avatar_url', u.avatar_url,
+                'avatar_frame', u.avatar_frame,
+                'username_style', u.username_style,
+                'message_color', u.message_color
               )
               FROM chat_participants cp2
               INNER JOIN users u ON cp2.user_id = u.id

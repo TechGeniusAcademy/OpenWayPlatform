@@ -67,6 +67,18 @@
   margin-bottom: 15px;
 }
 
+.avatar-frame-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 170px;
+  height: 170px;
+  pointer-events: none;
+  z-index: 10;
+  object-fit: contain;
+}
+
 .profile-avatar-section {
   display: flex;
   flex-direction: column;

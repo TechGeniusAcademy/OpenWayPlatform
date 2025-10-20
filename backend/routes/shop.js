@@ -214,4 +214,78 @@ router.post('/apply-banner', async (req, res) => {
   }
 });
 
+// Применить стиль никнейма к профилю
+router.post('/apply-username-style', async (req, res) => {
+  try {
+    const { styleKey } = req.body;
+    
+    if (!styleKey) {
+      return res.status(400).json({ error: 'styleKey обязателен' });
+    }
+    
+    // Проверяем, куплен ли стиль (или это 'none')
+    if (styleKey !== 'none') {
+      const purchaseCheck = await pool.query(
+        'SELECT * FROM user_purchases WHERE user_id = $1 AND item_key = $2',
+        [req.user.id, styleKey]
+      );
+      
+      if (purchaseCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Стиль никнейма не куплен' });
+      }
+    }
+    
+    // Применяем стиль никнейма
+    await pool.query(
+      'UPDATE users SET username_style = $1 WHERE id = $2',
+      [styleKey, req.user.id]
+    );
+    
+    res.json({ 
+      message: 'Стиль никнейма успешно применен',
+      styleKey
+    });
+  } catch (error) {
+    console.error('Ошибка применения стиля никнейма:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Применить цвет текста сообщений к профилю
+router.post('/apply-message-color', async (req, res) => {
+  try {
+    const { colorKey } = req.body;
+    
+    if (!colorKey) {
+      return res.status(400).json({ error: 'colorKey обязателен' });
+    }
+    
+    // Проверяем, куплен ли цвет (или это 'none')
+    if (colorKey !== 'none') {
+      const purchaseCheck = await pool.query(
+        'SELECT * FROM user_purchases WHERE user_id = $1 AND item_key = $2',
+        [req.user.id, colorKey]
+      );
+      
+      if (purchaseCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Цвет текста не куплен' });
+      }
+    }
+    
+    // Применяем цвет текста
+    await pool.query(
+      'UPDATE users SET message_color = $1 WHERE id = $2',
+      [colorKey, req.user.id]
+    );
+    
+    res.json({ 
+      message: 'Цвет текста сообщений успешно применен',
+      colorKey
+    });
+  } catch (error) {
+    console.error('Ошибка применения цвета текста:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 export default router;

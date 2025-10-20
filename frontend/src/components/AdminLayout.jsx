@@ -68,8 +68,14 @@ function AdminLayout({ children }) {
             </li>
             <li>
               <NavLink to="/admin/game">
-                <span className="menu-icon">  </span>
+                <span className="menu-icon">🎮</span>
                 Вопросы-Ответы
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/admin/shop">
+                <span className="menu-icon">🛒</span>
+                Магазин косметики
               </NavLink>
             </li>
             {/* Здесь можно добавлять новые пункты меню */}

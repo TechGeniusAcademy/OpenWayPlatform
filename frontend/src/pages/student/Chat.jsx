@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
+import api, { BASE_URL } from '../../utils/api';
 import io from 'socket.io-client';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './Chat.css';
+import '../../styles/UsernameStyles.css';
+import '../../styles/MessageColors.css';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -19,19 +21,36 @@ function Chat() {
   const [codeLanguage, setCodeLanguage] = useState('javascript');
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showUsersList, setShowUsersList] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [typingUser, setTypingUser] = useState(null); // Кто печатает
   const [onlineUsers, setOnlineUsers] = useState(new Set()); // Онлайн пользователи
+  const [frameImages, setFrameImages] = useState({}); // Кэш изображений рамок
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768); // Мобильный режим
+  const [showSidebar, setShowSidebar] = useState(true); // Показ сайдбара
   
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  // Отслеживание размера окна
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setShowSidebar(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     loadChats();
     loadAllUsers();
+    loadFrameImages();
     
     // Подключение к WebSocket
     socketRef.current = io(SOCKET_URL);
@@ -42,6 +61,8 @@ function Chat() {
     });
 
     socketRef.current.on('new-message', (message) => {
+      console.log('New message via WebSocket:', message);
+      console.log('Message sender_message_color:', message.sender_message_color);
       setMessages(prev => [...prev, message]);
       // scrollToBottom теперь вызывается автоматически через useEffect при изменении messages
       
@@ -154,15 +175,39 @@ function Chat() {
   const loadAllUsers = async () => {
     try {
       const response = await api.get('/users');
-      setAllUsers(response.data.users.filter(u => u.id !== user.id && u.role === 'student'));
+      // Фильтруем только учеников из той же группы (кроме себя)
+      setAllUsers(response.data.users.filter(u => 
+        u.id !== user.id && 
+        u.role === 'student' && 
+        u.group_id === user.group_id
+      ));
     } catch (error) {
       console.error('Ошибка загрузки пользователей:', error);
+    }
+  };
+
+  const loadFrameImages = async () => {
+    try {
+      const response = await api.get('/shop/items?type=frame');
+      const frames = {};
+      response.data.items.forEach(item => {
+        if (item.image_url) {
+          frames[item.item_key] = item.image_url;
+        }
+      });
+      setFrameImages(frames);
+    } catch (error) {
+      console.error('Ошибка загрузки рамок:', error);
     }
   };
 
   const loadMessages = async (chatId) => {
     try {
       const response = await api.get(`/chat/${chatId}/messages`);
+      console.log('Loaded messages:', response.data.messages);
+      if (response.data.messages.length > 0) {
+        console.log('First message sender_message_color:', response.data.messages[0].sender_message_color);
+      }
       setMessages(response.data.messages);
       scrollToBottom();
     } catch (error) {
@@ -201,7 +246,6 @@ function Chat() {
       await loadChats();
       const newChat = chats.find(c => c.id === response.data.chat.id) || response.data.chat;
       setActiveChat(newChat);
-      setShowUsersList(false);
     } catch (error) {
       console.error('Ошибка создания чата:', error);
       alert('Не удалось создать чат');
@@ -360,21 +404,40 @@ function Chat() {
 
   const renderMessage = (message) => {
     const isOwnMessage = message.sender_id === user.id;
+    
+    // Отладочное логирование
+    console.log('Rendering message:', {
+      id: message.id,
+      sender_message_color: message.sender_message_color,
+      isOwnMessage: isOwnMessage,
+      content: message.content?.substring(0, 20)
+    });
 
     return (
       <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'}`}>
         {!isOwnMessage && (
-          <div className="message-avatar">
-            {message.sender_avatar_url ? (
-              <img src={`${import.meta.env.VITE_API_URL}${message.sender_avatar_url}`} alt="" className="avatar-img" />
-            ) : (
-              <span className="avatar-icon">{(message.sender_full_name || message.sender_username)?.[0]}</span>
+          <div className="message-avatar-wrapper">
+            <div className="message-avatar">
+              {message.sender_avatar_url ? (
+                <img src={`${BASE_URL}${message.sender_avatar_url}`} alt="" className="avatar-img" />
+              ) : (
+                <span className="avatar-icon">{(message.sender_full_name || message.sender_username)?.[0]}</span>
+              )}
+            </div>
+            {message.sender_avatar_frame && message.sender_avatar_frame !== 'none' && frameImages[message.sender_avatar_frame] && (
+              <img 
+                src={`${BASE_URL}${frameImages[message.sender_avatar_frame]}`}
+                alt="Frame"
+                className="message-avatar-frame"
+              />
             )}
           </div>
         )}
         <div className="message-bubble">
           <div className="message-header">
-            <span className="message-sender">{message.sender_full_name || message.sender_username}</span>
+            <span className={`message-sender styled-username ${message.sender_username_style || 'username-none'}`}>
+              {message.sender_full_name || message.sender_username}
+            </span>
             <span className="message-time">{new Date(message.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
 
@@ -406,7 +469,7 @@ function Chat() {
               {message.content && <div className="file-caption">{message.content}</div>}
             </div>
           ) : (
-            <div className="message-content">{message.content}</div>
+            <div className={`message-content ${message.sender_message_color || 'message-none'}`}>{message.content}</div>
           )}
 
           {user.role === 'admin' && activeChat?.type === 'group' && (
@@ -430,17 +493,10 @@ function Chat() {
   return (
     <div className="chat-container">
       {/* Сайдбар с чатами */}
-      <div className="chats-sidebar">
+      <div className={`chats-sidebar ${!showSidebar && isMobile ? 'hidden' : ''}`}>
         <div className="sidebar-header">
           <h3>Чаты</h3>
           <div className="sidebar-actions">
-            <button 
-              className="btn-new-chat"
-              onClick={() => setShowUsersList(!showUsersList)}
-              title="Новый чат"
-            >
-              ➕
-            </button>
             {user.group_id && (
               <button 
                 className="btn-group-chat"
@@ -453,33 +509,57 @@ function Chat() {
           </div>
         </div>
 
-        {showUsersList && (
-          <div className="users-list">
-            <div className="users-list-header">
-              <h4>Выберите собеседника</h4>
-              <button onClick={() => setShowUsersList(false)}>✕</button>
+        {/* Список учеников из группы */}
+        {allUsers.length > 0 && (
+          <div className="students-section">
+            <div className="students-header">
+              <h4>Ученики группы</h4>
             </div>
-            {allUsers.map(u => (
-              <div 
-                key={u.id} 
-                className="user-item"
-                onClick={() => createPrivateChat(u.id)}
-              >
-                <div className="user-avatar">
-                  {u.avatar_url ? (
-                    <img src={`${import.meta.env.VITE_API_URL}${u.avatar_url}`} alt="" className="avatar-img" />
-                  ) : (
-                    <span className="avatar-icon">{(u.full_name || u.username)[0]}</span>
-                  )}
+            <div className="students-list">
+              {allUsers.map(u => (
+                <div 
+                  key={u.id} 
+                  className="student-item"
+                  onClick={() => {
+                    createPrivateChat(u.id);
+                    if (isMobile) {
+                      setShowSidebar(false);
+                    }
+                  }}
+                >
+                  <div className="student-avatar-wrapper">
+                    <div className="student-avatar">
+                      {u.avatar_url ? (
+                        <img src={`${BASE_URL}${u.avatar_url}`} alt="" className="avatar-img" />
+                      ) : (
+                        <span className="avatar-icon">{(u.full_name || u.username)[0]}</span>
+                      )}
+                    </div>
+                    {u.avatar_frame && u.avatar_frame !== 'none' && frameImages[u.avatar_frame] && (
+                      <img 
+                        src={`${BASE_URL}${frameImages[u.avatar_frame]}`}
+                        alt="Frame"
+                        className="student-avatar-frame"
+                      />
+                    )}
+                  </div>
+                  <div className="student-info">
+                    <div className={`student-name styled-username ${u.username_style || 'username-none'}`}>
+                      {u.full_name || u.username}
+                    </div>
+                    <span className={`student-status ${onlineUsers.has(u.id) ? 'online' : 'offline'}`}>
+                      {onlineUsers.has(u.id) ? 'Онлайн' : 'Оффлайн'}
+                    </span>
+                  </div>
                 </div>
-                <div className="user-info">
-                  <div className="user-name">{u.full_name || u.username}</div>
-                  {u.group_name && <div className="user-group">{u.group_name}</div>}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
+
+        <div className="chats-section-header">
+          <h4>Активные чаты</h4>
+        </div>
 
         <div className="chats-list">
           {chats.length === 0 ? (
@@ -492,23 +572,44 @@ function Chat() {
               <div 
                 key={chat.id} 
                 className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
-                onClick={() => setActiveChat(chat)}
+                onClick={() => {
+                  setActiveChat(chat);
+                  if (isMobile) {
+                    setShowSidebar(false);
+                  }
+                }}
               >
-                <div className="chat-avatar">
-                  {chat.type === 'group' ? (
-                    <span className="avatar-icon">👥</span>
-                  ) : chat.other_user?.avatar_url ? (
-                    <img src={`${import.meta.env.VITE_API_URL}${chat.other_user.avatar_url}`} alt="" className="avatar-img" />
-                  ) : (
-                    <span className="avatar-icon">{(chat.other_user?.full_name || chat.other_user?.username)?.[0]}</span>
+                <div className="chat-avatar-wrapper">
+                  <div className="chat-avatar">
+                    {chat.type === 'group' ? (
+                      <span className="avatar-icon">👥</span>
+                    ) : chat.other_user?.avatar_url ? (
+                      <img src={`${BASE_URL}${chat.other_user.avatar_url}`} alt="" className="avatar-img" />
+                    ) : (
+                      <span className="avatar-icon">{(chat.other_user?.full_name || chat.other_user?.username)?.[0]}</span>
+                    )}
+                  </div>
+                  {chat.type === 'private' && chat.other_user?.avatar_frame && chat.other_user.avatar_frame !== 'none' && frameImages[chat.other_user.avatar_frame] && (
+                    <img 
+                      src={`${BASE_URL}${frameImages[chat.other_user.avatar_frame]}`}
+                      alt="Frame"
+                      className="chat-avatar-frame"
+                    />
                   )}
                   {chat.type === 'private' && chat.other_user && onlineUsers.has(chat.other_user.id) && (
                     <div className="online-indicator"></div>
                   )}
                 </div>
                 <div className="chat-info">
-                  <div className="chat-name">
-                    {chat.type === 'group' ? chat.name : (chat.other_user?.full_name || chat.other_user?.username)}
+                  <div className="chat-name-row">
+                    <div className={`chat-name ${chat.type === 'private' && chat.other_user?.username_style ? `styled-username ${chat.other_user.username_style}` : ''}`}>
+                      {chat.type === 'group' ? chat.name : (chat.other_user?.full_name || chat.other_user?.username)}
+                    </div>
+                    {chat.type === 'private' && chat.other_user && (
+                      <span className={`online-status ${onlineUsers.has(chat.other_user.id) ? 'online' : 'offline'}`}>
+                        {onlineUsers.has(chat.other_user.id) ? 'Онлайн' : 'Оффлайн'}
+                      </span>
+                    )}
                   </div>
                   {chat.last_message && (
                     <div className="chat-last-message">
@@ -538,11 +639,20 @@ function Chat() {
       </div>
 
       {/* Область сообщений */}
-      <div className="messages-area">
+      <div className={`messages-area ${showSidebar && isMobile ? 'hidden' : ''}`}>
         {activeChat ? (
           <>
             <div className="messages-header">
               <div className="chat-title">
+                {isMobile && (
+                  <button 
+                    className="back-button" 
+                    onClick={() => setShowSidebar(true)}
+                    title="Назад к списку чатов"
+                  >
+                    ←
+                  </button>
+                )}
                 {activeChat.type === 'group' ? activeChat.name : (activeChat.other_user?.full_name || activeChat.other_user?.username)}
               </div>
             </div>
@@ -560,14 +670,6 @@ function Chat() {
 
             <div className="messages-list">
               {messages.map(renderMessage)}
-              {typingUser && (
-                <div className="typing-indicator">
-                  <span className="typing-user">{typingUser}</span> печатает
-                  <span className="typing-dots">
-                    <span>.</span><span>.</span><span>.</span>
-                  </span>
-                </div>
-              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -607,6 +709,16 @@ function Chat() {
                 >
                   📎
                 </button>
+                
+                {typingUser && (
+                  <div className="typing-indicator">
+                    <span className="typing-user">{typingUser}</span> печатает
+                    <span className="typing-dots">
+                      <span>.</span><span>.</span><span>.</span>
+                    </span>
+                  </div>
+                )}
+                
                 <input 
                   type="file" 
                   ref={fileInputRef}

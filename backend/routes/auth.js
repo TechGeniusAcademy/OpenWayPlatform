@@ -74,7 +74,9 @@ router.get('/me', authenticate, async (req, res) => {
         created_at: req.user.created_at,
         avatar_url: req.user.avatar_url || null,
         avatar_frame: req.user.avatar_frame || 'none',
-        profile_banner: req.user.profile_banner || 'default'
+        profile_banner: req.user.profile_banner || 'default',
+        username_style: req.user.username_style || 'none',
+        message_color: req.user.message_color || 'none'
       }
     });
   } catch (error) {

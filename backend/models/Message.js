@@ -33,6 +33,9 @@ class Message {
           u.username as sender_username,
           u.full_name as sender_full_name,
           u.avatar_url as sender_avatar_url,
+          u.avatar_frame as sender_avatar_frame,
+          u.username_style as sender_username_style,
+          u.message_color as sender_message_color,
           pinner.username as pinned_by_username,
           pinner.full_name as pinned_by_full_name
          FROM messages m
@@ -59,6 +62,9 @@ class Message {
           u.username as sender_username,
           u.full_name as sender_full_name,
           u.avatar_url as sender_avatar_url,
+          u.avatar_frame as sender_avatar_frame,
+          u.username_style as sender_username_style,
+          u.message_color as sender_message_color,
           pinner.username as pinned_by_username,
           pinner.full_name as pinned_by_full_name
          FROM messages m

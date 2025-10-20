@@ -143,6 +143,32 @@ export const initDatabase = async () => {
       END $$;
     `);
 
+    // 4.5. Добавление колонки для стиля никнейма, если её нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'username_style'
+        ) THEN
+          ALTER TABLE users ADD COLUMN username_style VARCHAR(50) DEFAULT 'none';
+        END IF;
+      END $$;
+    `);
+
+    // 4.6. Добавление колонки для цвета текста сообщений, если её нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'message_color'
+        ) THEN
+          ALTER TABLE users ADD COLUMN message_color VARCHAR(50) DEFAULT 'none';
+        END IF;
+      END $$;
+    `);
+
     // 5. Добавление внешнего ключа для связи пользователей с группами
     await pool.query(`
       DO $$ 
@@ -461,14 +487,27 @@ export const initDatabase = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS shop_items (
         id SERIAL PRIMARY KEY,
-        item_type VARCHAR(20) NOT NULL, -- 'frame' или 'banner'
+        item_type VARCHAR(20) NOT NULL, -- 'frame', 'banner', 'username', или 'message_color'
         item_key VARCHAR(50) NOT NULL UNIQUE,
         name VARCHAR(100) NOT NULL,
         description TEXT,
         price INTEGER NOT NULL,
-        preview_url VARCHAR(255),
+        image_url VARCHAR(255), -- URL загруженной картинки (для frame/banner)
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    // Добавить колонку image_url если её нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'shop_items' AND column_name = 'image_url'
+        ) THEN
+          ALTER TABLE shop_items ADD COLUMN image_url VARCHAR(255);
+        END IF;
+      END $$;
     `);
 
     // Таблица 24: Покупки пользователей
@@ -499,27 +538,49 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_users_online ON users(is_online, last_seen);
     `);
 
-    // Вставка базовых предметов в магазин
+    // Удаляем старые CSS-based предметы при инициализации
     await pool.query(`
-      INSERT INTO shop_items (item_type, item_key, name, description, price) VALUES
-      -- Рамки для аватара
-      ('frame', 'gold', 'Золотая рамка', 'Элегантная золотая рамка для аватара', 100),
-      ('frame', 'silver', 'Серебряная рамка', 'Стильная серебряная рамка', 75),
-      ('frame', 'rainbow', 'Радужная рамка', 'Яркая радужная рамка с переливами', 150),
-      ('frame', 'fire', 'Огненная рамка', 'Пылающая огненная рамка', 200),
-      ('frame', 'ice', 'Ледяная рамка', 'Морозная ледяная рамка', 200),
-      ('frame', 'neon', 'Неоновая рамка', 'Светящаяся неоновая рамка', 175),
-      ('frame', 'galaxy', 'Космическая рамка', 'Рамка с космическим узором', 250),
-      
-      -- Баннеры профиля
-      ('banner', 'gradient1', 'Градиент "Закат"', 'Красивый градиент заката', 50),
-      ('banner', 'gradient2', 'Градиент "Океан"', 'Морской градиент', 50),
-      ('banner', 'gradient3', 'Градиент "Аврора"', 'Северное сияние', 75),
-      ('banner', 'space', 'Космос', 'Космический фон с звездами', 100),
-      ('banner', 'nature', 'Природа', 'Природный пейзаж', 100),
-      ('banner', 'abstract', 'Абстракция', 'Абстрактный узор', 125),
-      ('banner', 'cyber', 'Киберпанк', 'Неоновый киберпанк стиль', 150),
-      ('banner', 'anime', 'Аниме', 'Аниме стиль фон', 175)
+      DELETE FROM shop_items WHERE image_url IS NULL;
+    `);
+
+    // Добавляем стили никнейма
+    await pool.query(`
+      INSERT INTO shop_items (item_type, item_key, name, description, price)
+      VALUES 
+        ('username', 'username-glow-blue', 'Голубое Свечение', 'Твой никнейм будет светиться голубым', 80),
+        ('username', 'username-glow-pink', 'Розовое Свечение', 'Твой никнейм будет светиться розовым', 80),
+        ('username', 'username-glow-green', 'Зелёное Свечение', 'Твой никнейм будет светиться зелёным', 80),
+        ('username', 'username-rainbow', 'Радужный Градиент', 'Анимированный радужный эффект', 150),
+        ('username', 'username-fire', 'Огненный Текст', 'Пылающий огненный эффект', 150),
+        ('username', 'username-ice', 'Ледяной Текст', 'Холодный ледяной эффект', 150),
+        ('username', 'username-neon', 'Неоновый', 'Яркий неоновый свет', 120),
+        ('username', 'username-gold', 'Золотой', 'Роскошный золотой градиент', 100),
+        ('username', 'username-shadow', 'С Тенью', 'Глубокая 3D тень', 90),
+        ('username', 'username-font-bold', 'Жирный Шрифт', 'Увеличенная толщина текста', 60),
+        ('username', 'username-font-italic', 'Курсив', 'Наклонный стиль текста', 60),
+        ('username', 'username-font-mono', 'Моноширинный', 'Программистский шрифт', 70),
+        ('username', 'username-font-fancy', 'Элегантный', 'Красивый декоративный шрифт', 90),
+        ('username', 'username-glitch', 'Глитч Эффект', 'Цифровой сбой', 180),
+        ('username', 'username-wave', 'Волна', 'Волнообразная анимация', 140)
+      ON CONFLICT (item_key) DO NOTHING;
+    `);
+
+    // Добавляем цвета текста сообщений
+    await pool.query(`
+      INSERT INTO shop_items (item_type, item_key, name, description, price)
+      VALUES 
+        ('message_color', 'message-red', 'Красный', 'Красный цвет текста', 50),
+        ('message_color', 'message-blue', 'Синий', 'Синий цвет текста', 50),
+        ('message_color', 'message-green', 'Зелёный', 'Зелёный цвет текста', 50),
+        ('message_color', 'message-purple', 'Фиолетовый', 'Фиолетовый цвет текста', 50),
+        ('message_color', 'message-orange', 'Оранжевый', 'Оранжевый цвет текста', 50),
+        ('message_color', 'message-pink', 'Розовый', 'Розовый цвет текста', 50),
+        ('message_color', 'message-gradient-sunset', 'Закат', 'Градиент от оранжевого к розовому', 100),
+        ('message_color', 'message-gradient-ocean', 'Океан', 'Градиент от синего к бирюзовому', 100),
+        ('message_color', 'message-gradient-forest', 'Лес', 'Градиент от зелёного к салатовому', 100),
+        ('message_color', 'message-gradient-fire', 'Огонь', 'Градиент от красного к жёлтому', 120),
+        ('message_color', 'message-gradient-purple', 'Фиолетовый Закат', 'Градиент от фиолетового к розовому', 120),
+        ('message_color', 'message-gradient-rainbow', 'Радуга', 'Радужный градиент', 150)
       ON CONFLICT (item_key) DO NOTHING;
     `);
 

@@ -82,7 +82,6 @@
   font-weight: normal;
 }
 
-.btn-new-chat,
 .btn-group-chat {
   width: 36px;
   height: 36px;
@@ -95,7 +94,6 @@
   transition: all 0.3s;
 }
 
-.btn-new-chat:hover,
 .btn-group-chat:hover {
   transform: scale(1.1);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -127,6 +125,13 @@
   border-left: 4px solid var(--primary-color);
 }
 
+.chat-avatar-wrapper {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
 .chat-avatar {
   width: 48px;
   height: 48px;
@@ -138,9 +143,20 @@
   justify-content: center;
   font-size: 24px;
   font-weight: bold;
-  flex-shrink: 0;
   position: relative;
   overflow: hidden;
+}
+
+.chat-avatar-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 65px;
+  height: 65px;
+  pointer-events: none;
+  z-index: 2;
+  object-fit: contain;
 }
 
 .chat-avatar .avatar-img {
@@ -167,6 +183,7 @@
   border: 2px solid white;
   border-radius: 50%;
   box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  z-index: 10; /* Поверх рамки */
 }
 
 .chat-info {
@@ -174,10 +191,34 @@
   min-width: 0;
 }
 
+.chat-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .chat-name {
   font-weight: 600;
   color: var(--text-dark);
-  margin-bottom: 4px;
+}
+
+.online-status {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.online-status.online {
+  color: #27ae60;
+  background: rgba(39, 174, 96, 0.1);
+}
+
+.online-status.offline {
+  color: #95a5a6;
+  background: rgba(149, 165, 166, 0.1);
 }
 
 .chat-last-message {
@@ -232,55 +273,154 @@
   font-size: 16px;
 }
 
-/* Список пользователей для создания чата */
-.users-list {
-  position: absolute;
-  top: 70px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: white;
-  z-index: 10;
-  overflow-y: auto;
-  border-right: 1px solid var(--border-color);
+/* Секция учеников группы */
+.students-section {
+  border-bottom: 2px solid var(--border-color);
+  background: #f8f9fa;
 }
 
-.users-list-header {
-  padding: 15px;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.students-header {
+  padding: 12px 15px;
   background: var(--bg-light);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.users-list-header h4 {
+.students-header h4 {
   margin: 0;
-  color: var(--text-dark);
-}
-
-.users-list-header button {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 20px;
+  font-size: 13px;
   color: var(--text-light);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
-.user-item {
+.students-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.student-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 15px;
+  padding: 10px 15px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.student-item:hover {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.student-avatar-wrapper {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.student-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.student-avatar-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  pointer-events: none;
+  z-index: 2;
+  object-fit: contain;
+}
+
+.student-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-avatar .avatar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.student-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.student-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.student-status {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
+.student-status.online {
+  color: #27ae60;
+  background: rgba(39, 174, 96, 0.1);
+}
+
+.student-status.offline {
+  color: #95a5a6;
+  background: rgba(149, 165, 166, 0.1);
+}
+
+/* Заголовок секции активных чатов */
+.chats-section-header {
+  padding: 12px 15px;
+  background: var(--bg-light);
   border-bottom: 1px solid var(--border-color);
 }
 
-.user-item:hover {
-  background: var(--bg-light);
+.chats-section-header h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-light);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Список пользователей для создания чата (удалено) */
+.users-list {
+  display: none;
+}
+
+.user-item {
+  display: none;
 }
 
 .user-avatar {
@@ -344,6 +484,13 @@
   font-size: 20px;
   font-weight: 600;
   color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  display: none; /* Скрыто по умолчанию, показывается только на мобильных */
 }
 
 .pinned-messages {
@@ -374,31 +521,70 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  position: relative; /* make container the positioning context for typing indicator */
 }
 
-/* Индикатор печати: располагается поверх сообщений, не влияет на высоту контейнера */
+/* Индикатор печати: теперь в области ввода, рядом с кнопкой файла */
 .typing-indicator {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: rgba(255,255,255,0.95);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(33, 150, 243, 0.1);
+  border-radius: 20px;
   font-size: 13px;
   color: var(--text-dark);
-  z-index: 30;
+  white-space: nowrap;
+  margin-left: auto;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.typing-user {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.typing-indicator .typing-dots {
+  display: inline-flex;
+  gap: 2px;
 }
 
 .typing-indicator .typing-dots span {
   display: inline-block;
-  margin-left: 2px;
-  animation: blink 1s infinite;
+  width: 4px;
+  height: 4px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  animation: blink 1.4s infinite;
+}
+
+.typing-indicator .typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator .typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .message {
@@ -419,6 +605,14 @@
   align-self: flex-start;
 }
 
+.message-avatar-wrapper {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
 .message-avatar {
   width: 36px;
   height: 36px;
@@ -430,9 +624,19 @@
   justify-content: center;
   font-size: 16px;
   font-weight: bold;
-  flex-shrink: 0;
   overflow: hidden;
-  margin-top: 5px;
+}
+
+.message-avatar-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  pointer-events: none;
+  z-index: 2;
+  object-fit: contain;
 }
 
 .message-avatar .avatar-img {
@@ -700,65 +904,300 @@
 }
 
 /* Адаптивность */
+@media (max-width: 1024px) {
+  .chat-container {
+    height: calc(100vh - 70px);
+  }
+
+  .chats-sidebar {
+    width: 320px;
+  }
+
+  .sidebar-header {
+    padding: 16px;
+  }
+
+  .search-bar input {
+    font-size: 14px;
+  }
+}
+
 @media (max-width: 768px) {
+  .chat-container {
+    height: calc(100vh - 60px);
+    border-radius: 0;
+  }
+
+  /* Сайдбар на всю ширину */
   .chats-sidebar {
     width: 100%;
     position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    z-index: 10;
+    transition: transform 0.3s ease;
+  }
+
+  .chats-sidebar.hidden {
+    transform: translateX(-100%);
+  }
+
+  /* Область сообщений */
+  .messages-area {
+    width: 100%;
+    display: flex;
     z-index: 5;
   }
 
-  .messages-area {
+  .messages-area.hidden {
     display: none;
   }
 
-  .messages-area.active {
+  /* Кнопка возврата к списку чатов */
+  .chat-header {
+    padding: 12px 16px;
+  }
+
+  .back-button {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    margin-right: 12px;
+    transition: all 0.2s;
+  }
+
+  .back-button:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+
+  /* Сообщения */
+  .messages-container {
+    padding: 16px 12px;
   }
 
   .message {
     max-width: 85%;
   }
-}
 
-/* Индикатор печати */
-.typing-indicator {
-  padding: 10px 15px;
-  margin: 5px 0;
-  color: var(--text-muted);
-  font-size: 14px;
-  font-style: italic;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.typing-user {
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.typing-dots {
-  display: inline-flex;
-  gap: 2px;
-}
-
-.typing-dots span {
-  animation: typingDot 1.4s infinite;
-}
-
-.typing-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes typingDot {
-  0%, 60%, 100% {
-    opacity: 0.3;
+  .message-content {
+    padding: 10px 14px;
+    font-size: 15px;
   }
-  30% {
-    opacity: 1;
+
+  .message-time {
+    font-size: 11px;
+  }
+
+  /* Область ввода */
+  .message-input-area {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .message-input {
+    font-size: 15px;
+    padding: 10px 14px;
+  }
+
+  .typing-indicator {
+    font-size: 12px;
+    padding: 5px 10px;
+    gap: 4px;
+  }
+
+  .typing-indicator .typing-dots span {
+    width: 3px;
+    height: 3px;
+  }
+
+  .send-button,
+  .attach-button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  /* Боковая панель */
+  .sidebar-header {
+    padding: 14px 16px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 18px;
+  }
+
+  .search-bar {
+    margin: 12px 16px;
+  }
+
+  .search-bar input {
+    padding: 10px 12px 10px 36px;
+    font-size: 14px;
+  }
+
+  /* Списки чатов и студентов */
+  .chat-item,
+  .student-item {
+    padding: 12px 16px;
+  }
+
+  .chat-avatar,
+  .student-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+  }
+
+  .chat-info h3,
+  .student-info h3 {
+    font-size: 15px;
+  }
+
+  .chat-last-message,
+  .student-status {
+    font-size: 13px;
+  }
+
+  /* Закрепленные сообщения */
+  .pinned-messages {
+    padding: 10px 12px;
+  }
+
+  .pinned-message {
+    padding: 10px;
+  }
+
+  .pinned-content {
+    font-size: 13px;
   }
 }
+
+@media (max-width: 480px) {
+  .chat-container {
+    height: calc(100vh - 56px);
+  }
+
+  /* Уменьшаем отступы */
+  .messages-container {
+    padding: 12px 8px;
+  }
+
+  .message {
+    max-width: 90%;
+  }
+
+  .message-content {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  /* Область ввода */
+  .message-input-area {
+    padding: 10px 8px;
+    gap: 6px;
+  }
+
+  .message-input {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .typing-indicator {
+    font-size: 11px;
+    padding: 4px 8px;
+    gap: 3px;
+  }
+
+  .typing-indicator .typing-dots span {
+    width: 3px;
+    height: 3px;
+  }
+
+  .send-button,
+  .attach-button {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  /* Заголовок чата */
+  .chat-header {
+    padding: 10px 12px;
+  }
+
+  .back-button {
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+  }
+
+  .chat-name {
+    font-size: 16px;
+  }
+
+  /* Боковая панель */
+  .sidebar-header {
+    padding: 12px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 16px;
+  }
+
+  .search-bar {
+    margin: 10px 12px;
+  }
+
+  /* Списки */
+  .chat-item,
+  .student-item {
+    padding: 10px 12px;
+  }
+
+  .chat-avatar,
+  .student-avatar {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+
+  .chat-info h3,
+  .student-info h3 {
+    font-size: 14px;
+  }
+
+  .chat-last-message,
+  .student-status {
+    font-size: 12px;
+  }
+
+  .chat-time {
+    font-size: 11px;
+  }
+
+  /* Закрепленные */
+  .pinned-messages {
+    padding: 8px 10px;
+  }
+
+  .pinned-message {
+    padding: 8px;
+  }
+
+  .pinned-content {
+    font-size: 12px;
+    max-height: 32px;
+  }
+}
+
+
+/* Медиа запросы для мобильных устройств */

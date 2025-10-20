@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import './Shop.css';
+import '../../styles/UsernameStyles.css';
+import '../../styles/MessageColors.css';
 
 function Shop() {
   const { user, updateUser } = useAuth();
@@ -11,7 +13,7 @@ function Shop() {
   const [loading, setLoading] = useState(false);
   
   // Фильтры и поиск
-  const [selectedType, setSelectedType] = useState('all'); // 'all', 'frame', 'banner'
+  const [selectedType, setSelectedType] = useState('all'); // 'all', 'frame', 'banner', 'username', 'message_color'
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState('all'); // 'all', '0-100', '100-200', '200+'
   const [sortBy, setSortBy] = useState('price-asc'); // 'price-asc', 'price-desc', 'name'
@@ -99,6 +101,32 @@ function Shop() {
       updateUser(updatedUser);
     } catch (error) {
       console.error('Ошибка применения баннера:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApplyUsernameStyle = async (styleKey) => {
+    setLoading(true);
+    try {
+      await api.post('/shop/apply-username-style', { styleKey });
+      const updatedUser = { ...user, username_style: styleKey };
+      updateUser(updatedUser);
+    } catch (error) {
+      console.error('Ошибка применения стиля никнейма:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApplyMessageColor = async (colorKey) => {
+    setLoading(true);
+    try {
+      await api.post('/shop/apply-message-color', { colorKey });
+      const updatedUser = { ...user, message_color: colorKey };
+      updateUser(updatedUser);
+    } catch (error) {
+      console.error('Ошибка применения цвета сообщения:', error);
     } finally {
       setLoading(false);
     }
@@ -218,6 +246,32 @@ function Shop() {
                 <span>🎨 Баннеры</span>
                 <span className="filter-count">
                   {shopItems.filter(i => i.item_type === 'banner').length}
+                </span>
+              </label>
+              <label className="filter-option">
+                <input 
+                  type="radio" 
+                  name="type"
+                  value="username"
+                  checked={selectedType === 'username'}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                />
+                <span>✨ Стили Никнейма</span>
+                <span className="filter-count">
+                  {shopItems.filter(i => i.item_type === 'username').length}
+                </span>
+              </label>
+              <label className="filter-option">
+                <input 
+                  type="radio" 
+                  name="type"
+                  value="message_color"
+                  checked={selectedType === 'message_color'}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                />
+                <span>💬 Цвета Текста</span>
+                <span className="filter-count">
+                  {shopItems.filter(i => i.item_type === 'message_color').length}
                 </span>
               </label>
             </div>
@@ -376,11 +430,79 @@ function Shop() {
               </div>
             )}
 
+            {/* Базовый стиль никнейма */}
+            {(selectedType === 'all' || selectedType === 'username') && !searchQuery && (
+              <div className="shop-card">
+                <div className="card-username-preview">
+                  <div className="username-preview">
+                    <span className="styled-username username-none">
+                      {user?.username || 'Никнейм'}
+                    </span>
+                  </div>
+                </div>
+                <div className="card-body">
+                  <div className="shop-card-header">
+                    <h3 className="card-title">Без стиля</h3>
+                    {user?.username_style === 'none' && (
+                      <span className="badge badge-active">✓ Активен</span>
+                    )}
+                  </div>
+                  <p className="card-description">Обычный стиль без эффектов</p>
+                  <div className="card-footer">
+                    <span className="card-price">
+                      <span className="price-free">Бесплатно</span>
+                    </span>
+                    <button 
+                      className={`card-btn ${user?.username_style === 'none' ? 'btn-active' : 'btn-apply'}`}
+                      onClick={() => handleApplyUsernameStyle('none')}
+                      disabled={loading || user?.username_style === 'none'}
+                    >
+                      {user?.username_style === 'none' ? '✓ Активен' : 'Применить'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Базовый цвет текста */}
+            {(selectedType === 'all' || selectedType === 'message_color') && !searchQuery && (
+              <div className="shop-card">
+                <div className="card-message-preview">
+                  <div className="message-preview">
+                    <span className="message-none">
+                      Привет! Это пример сообщения
+                    </span>
+                  </div>
+                </div>
+                <div className="card-body">
+                  <div className="shop-card-header">
+                    <h3 className="card-title">Без цвета</h3>
+                    {user?.message_color === 'none' && (
+                      <span className="badge badge-active">✓ Активен</span>
+                    )}
+                  </div>
+                  <p className="card-description">Обычный цвет текста</p>
+                  <div className="card-footer">
+                    <span className="card-price">
+                      <span className="price-free">Бесплатно</span>
+                    </span>
+                    <button 
+                      className={`card-btn ${user?.message_color === 'none' ? 'btn-active' : 'btn-apply'}`}
+                      onClick={() => handleApplyMessageColor('none')}
+                      disabled={loading || user?.message_color === 'none'}
+                    >
+                      {user?.message_color === 'none' ? '✓ Активен' : 'Применить'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Магазинные предметы */}
             {filteredItems.map(item => (
               <div key={item.id} className="shop-card">
                 {item.item_type === 'frame' ? (
-                  <div className={`card-preview frame-${item.item_key}`}>
+                  <div className="card-preview">
                     <div className="preview-avatar">
                       {user?.avatar_url ? (
                         <img src={`${BASE_URL}${user.avatar_url}`} alt="" />
@@ -388,10 +510,43 @@ function Shop() {
                         <span>{user?.username?.[0]?.toUpperCase()}</span>
                       )}
                     </div>
+                    {item.image_url && (
+                      <img 
+                        src={`${BASE_URL}${item.image_url}`} 
+                        alt={item.name}
+                        className="frame-overlay"
+                      />
+                    )}
                   </div>
-                ) : (
-                  <div className={`card-banner-preview banner-${item.item_key}`}></div>
-                )}
+                ) : item.item_type === 'banner' ? (
+                  <div className="card-banner-preview">
+                    {item.image_url ? (
+                      <img 
+                        src={`${BASE_URL}${item.image_url}`} 
+                        alt={item.name}
+                        className="banner-image"
+                      />
+                    ) : (
+                      <div className="no-image">Нет изображения</div>
+                    )}
+                  </div>
+                ) : item.item_type === 'username' ? (
+                  <div className="card-username-preview">
+                    <div className="username-preview">
+                      <span className={`styled-username ${item.item_key}`}>
+                        {user?.username || 'Никнейм'}
+                      </span>
+                    </div>
+                  </div>
+                ) : item.item_type === 'message_color' ? (
+                  <div className="card-message-preview">
+                    <div className="message-preview">
+                      <span className={item.item_key}>
+                        Привет! Это пример сообщения
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
                 
                 <div className="card-body">
                   <div className="shop-card-header">
@@ -400,7 +555,9 @@ function Shop() {
                       <span className="badge badge-owned">✓ Куплено</span>
                     )}
                     {((item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
-                      (item.item_type === 'banner' && user?.profile_banner === item.item_key)) && (
+                      (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
+                      (item.item_type === 'username' && user?.username_style === item.item_key) ||
+                      (item.item_type === 'message_color' && user?.message_color === item.item_key)) && (
                       <span className="badge badge-active">✓ Активно</span>
                     )}
                   </div>
@@ -414,21 +571,32 @@ function Shop() {
                       <button 
                         className={`card-btn ${
                           (item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
-                          (item.item_type === 'banner' && user?.profile_banner === item.item_key)
+                          (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
+                          (item.item_type === 'username' && user?.username_style === item.item_key) ||
+                          (item.item_type === 'message_color' && user?.message_color === item.item_key)
                             ? 'btn-active' 
                             : 'btn-apply'
                         }`}
-                        onClick={() => item.item_type === 'frame' 
-                          ? handleApplyFrame(item.item_key)
-                          : handleApplyBanner(item.item_key)
+                        onClick={() => 
+                          item.item_type === 'frame' 
+                            ? handleApplyFrame(item.item_key)
+                            : item.item_type === 'banner'
+                            ? handleApplyBanner(item.item_key)
+                            : item.item_type === 'username'
+                            ? handleApplyUsernameStyle(item.item_key)
+                            : handleApplyMessageColor(item.item_key)
                         }
                         disabled={loading || 
                           (item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
-                          (item.item_type === 'banner' && user?.profile_banner === item.item_key)
+                          (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
+                          (item.item_type === 'username' && user?.username_style === item.item_key) ||
+                          (item.item_type === 'message_color' && user?.message_color === item.item_key)
                         }
                       >
                         {((item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
-                          (item.item_type === 'banner' && user?.profile_banner === item.item_key))
+                          (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
+                          (item.item_type === 'username' && user?.username_style === item.item_key) ||
+                          (item.item_type === 'message_color' && user?.message_color === item.item_key))
                           ? '✓ Активно' 
                           : 'Применить'
                         }

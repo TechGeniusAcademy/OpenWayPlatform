@@ -1,0 +1,242 @@
+/* ============================================ */
+/* ЦВЕТА СООБЩЕНИЙ ДЛЯ ЧАТА */
+/* ============================================ */
+
+/* Стандартный цвет (без косметики) - использует цвет из Chat.css */
+
+/* ============================================ */
+/* ОДНОТОННЫЕ ЦВЕТА (50 поинтов) */
+/* ============================================ */
+
+/* Красный */
+.message-content.message-red {
+  color: #e74c3c !important;
+  font-weight: 500;
+}
+
+/* Синий */
+.message-content.message-blue {
+  color: #3498db !important;
+  font-weight: 500;
+}
+
+/* Зелёный */
+.message-content.message-green {
+  color: #2ecc71 !important;
+  font-weight: 500;
+}
+
+/* Фиолетовый */
+.message-content.message-purple {
+  color: #9b59b6 !important;
+  font-weight: 500;
+}
+
+/* Оранжевый */
+.message-content.message-orange {
+  color: #e67e22 !important;
+  font-weight: 500;
+}
+
+/* Розовый */
+.message-content.message-pink {
+  color: #e91e63 !important;
+  font-weight: 500;
+}
+
+/* ============================================ */
+/* ГРАДИЕНТНЫЕ ЦВЕТА (100-150 поинтов) */
+/* ============================================ */
+
+/* Градиент: Закат (оранжевый -> розовый) */
+.message-content.message-gradient-sunset {
+  background: linear-gradient(90deg, #ff6b6b, #feca57, #ee5a6f) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+/* Градиент: Океан (синий -> бирюзовый) */
+.message-content.message-gradient-ocean {
+  background: linear-gradient(90deg, #667eea, #764ba2, #48c6ef) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+/* Градиент: Лес (зелёный -> изумрудный) */
+.message-content.message-gradient-forest {
+  background: linear-gradient(90deg, #11998e, #38ef7d, #06d6a0) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+/* Градиент: Огонь (красный -> жёлтый) */
+.message-content.message-gradient-fire {
+  background: linear-gradient(90deg, #ff0844, #ffb199, #ff6600) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+/* Градиент: Фиолетовый закат */
+.message-content.message-gradient-purple {
+  background: linear-gradient(90deg, #834d9b, #d04ed6, #b06ab3) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+/* Градиент: Радуга */
+.message-content.message-gradient-rainbow {
+  background: linear-gradient(
+    90deg, 
+    #ff0000, 
+    #ff7f00, 
+    #ffff00, 
+    #00ff00, 
+    #0000ff, 
+    #4b0082, 
+    #9400d3
+  ) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+  animation: rainbow-shift 5s linear infinite;
+  background-size: 200% 100%;
+}
+
+@keyframes rainbow-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* ============================================ */
+/* СОВМЕСТИМОСТЬ С ТЕМНОЙ ТЕМОЙ */
+/* ============================================ */
+
+/* Убедимся что градиенты видны на тёмном фоне */
+.chat-messages .message-content.message-gradient-sunset,
+.chat-messages .message-content.message-gradient-ocean,
+.chat-messages .message-content.message-gradient-forest,
+.chat-messages .message-content.message-gradient-fire,
+.chat-messages .message-content.message-gradient-purple,
+.chat-messages .message-content.message-gradient-rainbow {
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Улучшение читаемости однотонных цветов */
+.chat-messages .message-content.message-red,
+.chat-messages .message-content.message-blue,
+.chat-messages .message-content.message-green,
+.chat-messages .message-content.message-purple,
+.chat-messages .message-content.message-orange,
+.chat-messages .message-content.message-pink {
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================ */
+/* ПРЕВЬЮ В МАГАЗИНЕ */
+/* ============================================ */
+
+/* Однотонные цвета для превью */
+.message-preview .message-red {
+  color: #e74c3c !important;
+  font-weight: 500;
+}
+
+.message-preview .message-blue {
+  color: #3498db !important;
+  font-weight: 500;
+}
+
+.message-preview .message-green {
+  color: #2ecc71 !important;
+  font-weight: 500;
+}
+
+.message-preview .message-purple {
+  color: #9b59b6 !important;
+  font-weight: 500;
+}
+
+.message-preview .message-orange {
+  color: #e67e22 !important;
+  font-weight: 500;
+}
+
+.message-preview .message-pink {
+  color: #e91e63 !important;
+  font-weight: 500;
+}
+
+/* Градиенты для превью */
+.message-preview .message-gradient-sunset {
+  background: linear-gradient(90deg, #ff6b6b, #feca57, #ee5a6f) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+.message-preview .message-gradient-ocean {
+  background: linear-gradient(90deg, #667eea, #764ba2, #48c6ef) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+.message-preview .message-gradient-forest {
+  background: linear-gradient(90deg, #11998e, #38ef7d, #06d6a0) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+.message-preview .message-gradient-fire {
+  background: linear-gradient(90deg, #ff0844, #ffb199, #ff6600) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+.message-preview .message-gradient-purple {
+  background: linear-gradient(90deg, #834d9b, #d04ed6, #b06ab3) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+}
+
+.message-preview .message-gradient-rainbow {
+  background: linear-gradient(
+    90deg, 
+    #ff0000, 
+    #ff7f00, 
+    #ffff00, 
+    #00ff00, 
+    #0000ff, 
+    #4b0082, 
+    #9400d3
+  ) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 600;
+  animation: rainbow-shift 5s linear infinite;
+  background-size: 200% 100%;
+}

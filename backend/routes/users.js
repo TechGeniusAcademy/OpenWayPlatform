@@ -166,7 +166,23 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 });
 
 // Загрузить свой аватар (доступно для всех пользователей)
-router.post('/me/avatar', upload.single('avatar'), async (req, res) => {
+router.post('/me/avatar', (req, res, next) => {
+  upload.single('avatar')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      // Обработка ошибок Multer
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          error: 'Размер файла слишком большой. Максимальный размер: 5 МБ' 
+        });
+      }
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      // Обработка других ошибок (например, неверный тип файла)
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Файл не загружен' });
@@ -202,7 +218,21 @@ router.post('/me/avatar', upload.single('avatar'), async (req, res) => {
 });
 
 // Загрузить аватарку для пользователя (только админы)
-router.post('/:id/avatar', requireAdmin, upload.single('avatar'), async (req, res) => {
+router.post('/:id/avatar', requireAdmin, (req, res, next) => {
+  upload.single('avatar')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          error: 'Размер файла слишком большой. Максимальный размер: 5 МБ' 
+        });
+      }
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Файл не загружен' });

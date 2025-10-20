@@ -226,7 +226,26 @@ router.post('/:chatId/messages', async (req, res) => {
       codeLanguage
     });
 
-    res.status(201).json({ message });
+    // Получаем полное сообщение с данными отправителя
+    const pool = (await import('../config/database.js')).default;
+    const fullMessageResult = await pool.query(
+      `SELECT 
+        m.*,
+        u.username as sender_username,
+        u.full_name as sender_full_name,
+        u.avatar_url as sender_avatar_url,
+        u.avatar_frame as sender_avatar_frame,
+        u.username_style as sender_username_style,
+        u.message_color as sender_message_color
+       FROM messages m
+       INNER JOIN users u ON m.sender_id = u.id
+       WHERE m.id = $1`,
+      [message.id]
+    );
+
+    const fullMessage = fullMessageResult.rows[0];
+
+    res.status(201).json({ message: fullMessage });
   } catch (error) {
     console.error('Ошибка отправки сообщения:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
@@ -253,7 +272,26 @@ router.post('/:chatId/upload', upload.single('file'), async (req, res) => {
       fileSize: file.size
     });
 
-    res.status(201).json({ message });
+    // Получаем полное сообщение с данными отправителя
+    const pool = (await import('../config/database.js')).default;
+    const fullMessageResult = await pool.query(
+      `SELECT 
+        m.*,
+        u.username as sender_username,
+        u.full_name as sender_full_name,
+        u.avatar_url as sender_avatar_url,
+        u.avatar_frame as sender_avatar_frame,
+        u.username_style as sender_username_style,
+        u.message_color as sender_message_color
+       FROM messages m
+       INNER JOIN users u ON m.sender_id = u.id
+       WHERE m.id = $1`,
+      [message.id]
+    );
+
+    const fullMessage = fullMessageResult.rows[0];
+
+    res.status(201).json({ message: fullMessage });
   } catch (error) {
     console.error('Ошибка загрузки файла:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });

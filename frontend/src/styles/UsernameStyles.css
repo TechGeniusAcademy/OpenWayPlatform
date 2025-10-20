@@ -1,0 +1,377 @@
+/* Базовый класс для стилизованных никнеймов */
+.styled-username {
+  display: inline-block;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+/* Стандартный стиль (без эффектов) */
+.username-none {
+  /* Нет дополнительных стилей */
+}
+
+/* ========== СВЕЧЕНИЕ (GLOW) ========== */
+
+.username-glow-blue {
+  color: #4dd0e1;
+  text-shadow: 
+    0 0 10px rgba(77, 208, 225, 0.8),
+    0 0 20px rgba(77, 208, 225, 0.6),
+    0 0 30px rgba(77, 208, 225, 0.4);
+  animation: glow-pulse-blue 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse-blue {
+  0%, 100% {
+    text-shadow: 
+      0 0 10px rgba(77, 208, 225, 0.8),
+      0 0 20px rgba(77, 208, 225, 0.6),
+      0 0 30px rgba(77, 208, 225, 0.4);
+  }
+  50% {
+    text-shadow: 
+      0 0 15px rgba(77, 208, 225, 1),
+      0 0 30px rgba(77, 208, 225, 0.8),
+      0 0 45px rgba(77, 208, 225, 0.6);
+  }
+}
+
+.username-glow-pink {
+  color: #ff4d94;
+  text-shadow: 
+    0 0 10px rgba(255, 77, 148, 0.8),
+    0 0 20px rgba(255, 77, 148, 0.6),
+    0 0 30px rgba(255, 77, 148, 0.4);
+  animation: glow-pulse-pink 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse-pink {
+  0%, 100% {
+    text-shadow: 
+      0 0 10px rgba(255, 77, 148, 0.8),
+      0 0 20px rgba(255, 77, 148, 0.6),
+      0 0 30px rgba(255, 77, 148, 0.4);
+  }
+  50% {
+    text-shadow: 
+      0 0 15px rgba(255, 77, 148, 1),
+      0 0 30px rgba(255, 77, 148, 0.8),
+      0 0 45px rgba(255, 77, 148, 0.6);
+  }
+}
+
+.username-glow-green {
+  color: #4dff88;
+  text-shadow: 
+    0 0 10px rgba(77, 255, 136, 0.8),
+    0 0 20px rgba(77, 255, 136, 0.6),
+    0 0 30px rgba(77, 255, 136, 0.4);
+  animation: glow-pulse-green 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse-green {
+  0%, 100% {
+    text-shadow: 
+      0 0 10px rgba(77, 255, 136, 0.8),
+      0 0 20px rgba(77, 255, 136, 0.6),
+      0 0 30px rgba(77, 255, 136, 0.4);
+  }
+  50% {
+    text-shadow: 
+      0 0 15px rgba(77, 255, 136, 1),
+      0 0 30px rgba(77, 255, 136, 0.8),
+      0 0 45px rgba(77, 255, 136, 0.6);
+  }
+}
+
+/* ========== ГРАДИЕНТЫ И АНИМАЦИИ ========== */
+
+.username-rainbow {
+  background: linear-gradient(
+    90deg,
+    #ff0000,
+    #ff7f00,
+    #ffff00,
+    #00ff00,
+    #0000ff,
+    #4b0082,
+    #9400d3
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainbow-flow 3s linear infinite;
+  font-weight: 700;
+}
+
+@keyframes rainbow-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.username-fire {
+  background: linear-gradient(180deg, #ff4500, #ffa500, #ff0000);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 
+    0 0 5px rgba(255, 69, 0, 0.5),
+    0 0 10px rgba(255, 69, 0, 0.3);
+  animation: fire-flicker 1.5s ease-in-out infinite;
+  font-weight: 700;
+}
+
+@keyframes fire-flicker {
+  0%, 100% {
+    filter: brightness(1) contrast(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.2) contrast(1.1);
+    transform: scale(1.02);
+  }
+}
+
+.username-ice {
+  background: linear-gradient(180deg, #00f5ff, #00bfff, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 
+    0 0 5px rgba(0, 245, 255, 0.5),
+    0 0 10px rgba(0, 245, 255, 0.3);
+  animation: ice-shimmer 2s ease-in-out infinite;
+  font-weight: 700;
+}
+
+@keyframes ice-shimmer {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3);
+  }
+}
+
+.username-neon {
+  color: #00ffff;
+  text-shadow: 
+    0 0 5px #00ffff,
+    0 0 10px #00ffff,
+    0 0 20px #00ffff,
+    0 0 40px #ff00ff,
+    0 0 80px #ff00ff;
+  animation: neon-flicker 1.5s ease-in-out infinite;
+  font-weight: 700;
+}
+
+@keyframes neon-flicker {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 
+      0 0 5px #00ffff,
+      0 0 10px #00ffff,
+      0 0 20px #00ffff,
+      0 0 40px #ff00ff,
+      0 0 80px #ff00ff;
+  }
+  50% {
+    opacity: 0.8;
+    text-shadow: 
+      0 0 3px #00ffff,
+      0 0 7px #00ffff,
+      0 0 15px #00ffff,
+      0 0 30px #ff00ff,
+      0 0 60px #ff00ff;
+  }
+}
+
+.username-gold {
+  background: linear-gradient(135deg, #ffd700, #ffed4e, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  font-weight: 700;
+  animation: gold-shine 2s ease-in-out infinite;
+}
+
+@keyframes gold-shine {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+/* ========== ЭФФЕКТЫ С ТЕНЬЮ ========== */
+
+.username-shadow {
+  color: #2c3e50;
+  text-shadow: 
+    2px 2px 0px rgba(0, 0, 0, 0.2),
+    4px 4px 0px rgba(0, 0, 0, 0.15),
+    6px 6px 0px rgba(0, 0, 0, 0.1),
+    8px 8px 10px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
+  transform: translateZ(0);
+}
+
+/* ========== ШРИФТЫ ========== */
+
+.username-font-bold {
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #2c3e50;
+}
+
+.username-font-italic {
+  font-style: italic;
+  font-weight: 600;
+  color: #34495e;
+  letter-spacing: 0.3px;
+}
+
+.username-font-mono {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #27ae60;
+  background: rgba(39, 174, 96, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.username-font-fancy {
+  font-family: 'Georgia', serif;
+  font-weight: 600;
+  font-style: italic;
+  color: #8e44ad;
+  letter-spacing: 1px;
+}
+
+/* ========== СПЕЦИАЛЬНЫЕ ЭФФЕКТЫ ========== */
+
+.username-glitch {
+  color: #00ff00;
+  font-weight: 700;
+  animation: glitch 2s infinite;
+  position: relative;
+}
+
+.username-glitch::before,
+.username-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.username-glitch::before {
+  animation: glitch-1 0.5s infinite;
+  color: #ff0000;
+  z-index: -1;
+}
+
+.username-glitch::after {
+  animation: glitch-2 0.5s infinite;
+  color: #0000ff;
+  z-index: -2;
+}
+
+@keyframes glitch {
+  0%, 100% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+}
+
+@keyframes glitch-1 {
+  0%, 100% {
+    transform: translate(0);
+  }
+  25% {
+    transform: translate(-2px, -2px);
+  }
+  50% {
+    transform: translate(2px, 2px);
+  }
+  75% {
+    transform: translate(-2px, 2px);
+  }
+}
+
+@keyframes glitch-2 {
+  0%, 100% {
+    transform: translate(0);
+  }
+  25% {
+    transform: translate(2px, 2px);
+  }
+  50% {
+    transform: translate(-2px, -2px);
+  }
+  75% {
+    transform: translate(2px, -2px);
+  }
+}
+
+.username-wave {
+  display: inline-flex;
+  font-weight: 700;
+  color: #3498db;
+}
+
+.username-wave span {
+  display: inline-block;
+  animation: wave 1.5s ease-in-out infinite;
+}
+
+.username-wave span:nth-child(1) { animation-delay: 0s; }
+.username-wave span:nth-child(2) { animation-delay: 0.1s; }
+.username-wave span:nth-child(3) { animation-delay: 0.2s; }
+.username-wave span:nth-child(4) { animation-delay: 0.3s; }
+.username-wave span:nth-child(5) { animation-delay: 0.4s; }
+.username-wave span:nth-child(6) { animation-delay: 0.5s; }
+.username-wave span:nth-child(7) { animation-delay: 0.6s; }
+.username-wave span:nth-child(8) { animation-delay: 0.7s; }
+.username-wave span:nth-child(9) { animation-delay: 0.8s; }
+.username-wave span:nth-child(10) { animation-delay: 0.9s; }
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Для предпросмотра в магазине */
+.username-preview {
+  font-size: 24px;
+  text-align: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  margin: 15px 0;
+}

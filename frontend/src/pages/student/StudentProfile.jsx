@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import './StudentProfile.css';
+import '../../styles/UsernameStyles.css';
 
 function StudentProfile() {
   const { user, updateUser } = useAuth();
@@ -9,11 +10,18 @@ function StudentProfile() {
   const [preview, setPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [userPoints, setUserPoints] = useState(0);
+  const [appliedFrame, setAppliedFrame] = useState(null);
+  const [appliedBanner, setAppliedBanner] = useState(null);
 
   useEffect(() => {
     fetchUserPoints();
     refreshUserData();
+    fetchAppliedCosmetics();
   }, []);
+
+  useEffect(() => {
+    fetchAppliedCosmetics();
+  }, [user?.avatar_frame, user?.profile_banner]);
 
   const fetchUserPoints = async () => {
     try {
@@ -35,9 +43,48 @@ function StudentProfile() {
     }
   };
 
+  const fetchAppliedCosmetics = async () => {
+    try {
+      const response = await api.get('/shop/items');
+      const items = response.data.items;
+      
+      if (user?.avatar_frame && user.avatar_frame !== 'none') {
+        const frame = items.find(item => item.item_key === user.avatar_frame);
+        setAppliedFrame(frame);
+      } else {
+        setAppliedFrame(null);
+      }
+      
+      if (user?.profile_banner && user.profile_banner !== 'default') {
+        const banner = items.find(item => item.item_key === user.profile_banner);
+        setAppliedBanner(banner);
+      } else {
+        setAppliedBanner(null);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки косметики:', error);
+    }
+  };
+
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Проверка типа файла
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Неверный формат файла. Разрешены только изображения (JPEG, PNG, GIF, WebP)');
+        e.target.value = '';
+        return;
+      }
+
+      // Проверка размера файла (5MB = 5 * 1024 * 1024 байт)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('Размер файла слишком большой. Максимальный размер: 5 МБ');
+        e.target.value = ''; // Сброс input
+        return;
+      }
+
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -94,19 +141,32 @@ function StudentProfile() {
       </div>
 
       <div className="profile-card">
-        <div className={`profile-avatar-section banner-${user?.profile_banner || 'default'}`}>
-          <div className={`avatar-wrapper frame-${user?.avatar_frame || 'none'}`}>
+        <div className="profile-avatar-section" style={{
+          backgroundImage: appliedBanner?.image_url 
+            ? `url(${BASE_URL}${appliedBanner.image_url})`
+            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}>
+          <div className="avatar-wrapper">
             {preview || user?.avatar_url ? (
-            <img 
-              src={preview || `${BASE_URL}${user.avatar_url}`} 
-              alt={user.username}
-              className="profile-avatar"
-            />
-          ) : (
-            <div className="profile-avatar-placeholder">
-              {(user?.full_name || user?.username || 'U').charAt(0).toUpperCase()}
-            </div>
-          )}
+              <img 
+                src={preview || `${BASE_URL}${user.avatar_url}`} 
+                alt={user.username}
+                className="profile-avatar"
+              />
+            ) : (
+              <div className="profile-avatar-placeholder">
+                {(user?.full_name || user?.username || 'U').charAt(0).toUpperCase()}
+              </div>
+            )}
+            {appliedFrame?.image_url && (
+              <img 
+                src={`${BASE_URL}${appliedFrame.image_url}`}
+                alt="Frame"
+                className="avatar-frame-overlay"
+              />
+            )}
           </div>
           
           <div className="avatar-upload">
@@ -135,7 +195,9 @@ function StudentProfile() {
         <div className="profile-info-grid">
           <div className="info-row">
             <span className="info-label">Имя пользователя:</span>
-            <span className="info-value">{user?.username}</span>
+            <span className={`info-value styled-username ${user?.username_style || 'username-none'}`}>
+              {user?.username}
+            </span>
           </div>
           <div className="info-row">
             <span className="info-label">Email:</span>
