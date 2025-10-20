@@ -1,8 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../utils/api';
 import './KnowledgeBaseManagement.css';
+
+// Wrapper для ReactQuill чтобы избежать findDOMNode warning
+const QuillEditor = ({ value, onChange, modules, placeholder, style }) => {
+  const quillRef = useRef(null);
+  
+  return (
+    <ReactQuill
+      ref={quillRef}
+      theme="snow"
+      value={value}
+      onChange={onChange}
+      modules={modules}
+      placeholder={placeholder}
+      style={style}
+    />
+  );
+};
 
 function KnowledgeBaseManagement() {
   const [categories, setCategories] = useState([]);
@@ -487,8 +504,7 @@ function KnowledgeBaseManagement() {
 
               <div className="form-group">
                 <label>Содержание статьи *</label>
-                <ReactQuill
-                  theme="snow"
+                <QuillEditor
                   value={articleForm.content}
                   onChange={(content) => setArticleForm({ ...articleForm, content })}
                   modules={quillModules}

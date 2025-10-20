@@ -8,7 +8,18 @@ import './Chat.css';
 import '../../styles/UsernameStyles.css';
 import '../../styles/MessageColors.css';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+// Правильное определение SOCKET_URL для production и development
+const getSocketUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) {
+    // Если есть VITE_API_URL, убираем /api и используем его
+    return apiUrl.replace('/api', '');
+  }
+  // Для локальной разработки
+  return 'http://localhost:5000';
+};
+
+const SOCKET_URL = getSocketUrl();
 
 function Chat() {
   const { user } = useAuth();
