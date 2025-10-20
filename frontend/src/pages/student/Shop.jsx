@@ -20,7 +20,19 @@ function Shop() {
     fetchUserPoints();
     fetchShopItems();
     fetchPurchases();
+    refreshUserData();
   }, []);
+
+  const refreshUserData = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      if (response.data.user) {
+        updateUser(response.data.user);
+      }
+    } catch (error) {
+      console.error('Ошибка обновления данных пользователя:', error);
+    }
+  };
 
   const fetchUserPoints = async () => {
     try {
@@ -51,22 +63,18 @@ function Shop() {
 
   const handlePurchase = async (itemKey, price) => {
     if (userPoints < price) {
-      alert('Недостаточно баллов!');
       return;
     }
 
-    if (window.confirm(`Купить этот предмет за ${price} баллов?`)) {
-      setLoading(true);
-      try {
-        const response = await api.post('/shop/purchase', { itemKey });
-        alert(response.data.message);
-        setPurchases([...purchases, itemKey]);
-        setUserPoints(response.data.remainingPoints);
-      } catch (error) {
-        alert(error.response?.data?.error || 'Ошибка покупки');
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      const response = await api.post('/shop/purchase', { itemKey });
+      setPurchases([...purchases, itemKey]);
+      setUserPoints(response.data.remainingPoints);
+    } catch (error) {
+      console.error('Ошибка покупки:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,9 +84,8 @@ function Shop() {
       await api.post('/shop/apply-frame', { frameKey });
       const updatedUser = { ...user, avatar_frame: frameKey };
       updateUser(updatedUser);
-      alert('Рамка успешно применена!');
     } catch (error) {
-      alert(error.response?.data?.error || 'Ошибка применения рамки');
+      console.error('Ошибка применения рамки:', error);
     } finally {
       setLoading(false);
     }
@@ -90,9 +97,8 @@ function Shop() {
       await api.post('/shop/apply-banner', { bannerKey });
       const updatedUser = { ...user, profile_banner: bannerKey };
       updateUser(updatedUser);
-      alert('Баннер успешно применен!');
     } catch (error) {
-      alert(error.response?.data?.error || 'Ошибка применения баннера');
+      console.error('Ошибка применения баннера:', error);
     } finally {
       setLoading(false);
     }
@@ -319,7 +325,7 @@ function Shop() {
                   </div>
                 </div>
                 <div className="card-body">
-                  <div className="card-header">
+                  <div className="shop-card-header">
                     <h3 className="card-title">Без рамки</h3>
                     {user?.avatar_frame === 'none' && (
                       <span className="badge badge-active">✓ Активна</span>
@@ -347,7 +353,7 @@ function Shop() {
               <div className="shop-card">
                 <div className="card-banner-preview banner-default"></div>
                 <div className="card-body">
-                  <div className="card-header">
+                  <div className="shop-card-header">
                     <h3 className="card-title">Базовый баннер</h3>
                     {user?.profile_banner === 'default' && (
                       <span className="badge badge-active">✓ Активен</span>
@@ -388,7 +394,7 @@ function Shop() {
                 )}
                 
                 <div className="card-body">
-                  <div className="card-header">
+                  <div className="shop-card-header">
                     <h3 className="card-title">{item.name}</h3>
                     {purchases.includes(item.item_key) && (
                       <span className="badge badge-owned">✓ Куплено</span>

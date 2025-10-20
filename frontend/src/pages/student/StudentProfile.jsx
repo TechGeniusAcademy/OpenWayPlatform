@@ -12,6 +12,7 @@ function StudentProfile() {
 
   useEffect(() => {
     fetchUserPoints();
+    refreshUserData();
   }, []);
 
   const fetchUserPoints = async () => {
@@ -20,6 +21,17 @@ function StudentProfile() {
       setUserPoints(response.data.totalPoints || 0);
     } catch (error) {
       console.error('Ошибка получения баллов:', error);
+    }
+  };
+
+  const refreshUserData = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      if (response.data.user) {
+        updateUser(response.data.user);
+      }
+    } catch (error) {
+      console.error('Ошибка обновления данных пользователя:', error);
     }
   };
 

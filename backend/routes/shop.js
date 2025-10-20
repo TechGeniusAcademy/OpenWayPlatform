@@ -84,23 +84,18 @@ router.post('/purchase', async (req, res) => {
       return res.status(400).json({ error: 'Предмет уже куплен' });
     }
     
-    // Получаем баллы пользователя
+    // Получаем баллы пользователя из таблицы users
     const userResult = await client.query(
-      'SELECT total_points FROM points WHERE user_id = $1',
+      'SELECT points FROM users WHERE id = $1',
       [req.user.id]
     );
     
     if (userResult.rows.length === 0) {
-      // Если у пользователя нет записи в points, создаем с 0 баллами
-      await client.query(
-        'INSERT INTO points (user_id, total_points) VALUES ($1, 0)',
-        [req.user.id]
-      );
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Недостаточно баллов' });
+      return res.status(404).json({ error: 'Пользователь не найден' });
     }
     
-    const userPoints = userResult.rows[0].total_points;
+    const userPoints = userResult.rows[0].points || 0;
     
     if (userPoints < item.price) {
       await client.query('ROLLBACK');
@@ -111,9 +106,9 @@ router.post('/purchase', async (req, res) => {
       });
     }
     
-    // Списываем баллы
+    // Списываем баллы из таблицы users
     await client.query(
-      'UPDATE points SET total_points = total_points - $1 WHERE user_id = $2',
+      'UPDATE users SET points = points - $1 WHERE id = $2',
       [item.price, req.user.id]
     );
     
@@ -125,7 +120,7 @@ router.post('/purchase', async (req, res) => {
     
     // Получаем обновленные баллы
     const updatedPoints = await client.query(
-      'SELECT total_points FROM points WHERE user_id = $1',
+      'SELECT points FROM users WHERE id = $1',
       [req.user.id]
     );
     
@@ -134,7 +129,7 @@ router.post('/purchase', async (req, res) => {
     res.json({ 
       message: 'Предмет успешно куплен',
       item,
-      remainingPoints: updatedPoints.rows[0].total_points
+      remainingPoints: updatedPoints.rows[0].points
     });
   } catch (error) {
     await client.query('ROLLBACK');

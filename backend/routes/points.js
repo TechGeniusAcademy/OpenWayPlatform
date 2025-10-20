@@ -10,32 +10,27 @@ router.use(authenticate);
 // Получить мои баллы
 router.get('/my', async (req, res) => {
   try {
-    const student = await Points.getStudentPoints(req.user.id);
+    const pool = (await import('../config/database.js')).default;
     
-    if (!student) {
-      // Если у пользователя нет записи в points, создаем её
-      const pool = (await import('../config/database.js')).default;
-      await pool.query(
-        'INSERT INTO points (user_id, total_points) VALUES ($1, 0) ON CONFLICT (user_id) DO NOTHING',
-        [req.user.id]
-      );
-      
-      return res.json({ 
-        totalPoints: 0,
-        user: {
-          id: req.user.id,
-          username: req.user.username,
-          full_name: req.user.full_name
-        }
-      });
+    // Получаем баллы напрямую из таблицы users
+    const result = await pool.query(
+      'SELECT id, username, full_name, email, points FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
     }
-
+    
+    const user = result.rows[0];
+    
     res.json({ 
-      totalPoints: student.total_points,
+      totalPoints: user.points || 0,
       user: {
-        id: student.id,
-        username: student.username,
-        full_name: student.full_name
+        id: user.id,
+        username: user.username,
+        full_name: user.full_name,
+        email: user.email
       }
     });
   } catch (error) {

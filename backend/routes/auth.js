@@ -71,7 +71,10 @@ router.get('/me', authenticate, async (req, res) => {
         full_name: req.user.full_name,
         group_id: req.user.group_id,
         points: req.user.points || 0,
-        created_at: req.user.created_at
+        created_at: req.user.created_at,
+        avatar_url: req.user.avatar_url || null,
+        avatar_frame: req.user.avatar_frame || 'none',
+        profile_banner: req.user.profile_banner || 'default'
       }
     });
   } catch (error) {
