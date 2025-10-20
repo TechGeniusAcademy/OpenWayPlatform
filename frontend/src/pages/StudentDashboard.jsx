@@ -10,6 +10,7 @@ import Leaderboard from '../components/Leaderboard';
 import StudentTests from './student/StudentTests';
 import StudentHomeworks from './student/StudentHomeworks';
 import Shop from './student/Shop';
+import KnowledgeBase from './student/KnowledgeBase';
 import './StudentDashboard.css';
 
 function StudentDashboard() {
@@ -26,6 +27,7 @@ function StudentDashboard() {
         <Route path="/tests" element={<StudentTests />} />
         <Route path="/homeworks" element={<StudentHomeworks />} />
         <Route path="/shop" element={<Shop />} />
+        <Route path="/knowledge" element={<KnowledgeBase />} />
       </Routes>
     </StudentLayout>
   );

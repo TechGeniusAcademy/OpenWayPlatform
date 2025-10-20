@@ -120,6 +120,12 @@ function StudentLayout({ children }) {
               </NavLink>
             </li>
             <li>
+              <NavLink to="/student/knowledge" onClick={closeSidebar}>
+                <span className="menu-icon">📚</span>
+                <span className="menu-text">База знаний</span>
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/student/tests" onClick={closeSidebar}>
                 <span className="menu-icon">📝</span>
                 <span className="menu-text">Тесты</span>
@@ -127,7 +133,7 @@ function StudentLayout({ children }) {
             </li>
             <li>
               <NavLink to="/student/homeworks" onClick={closeSidebar}>
-                <span className="menu-icon">📚</span>
+                <span className="menu-icon">🏠</span>
                 <span className="menu-text">Домашние задания</span>
               </NavLink>
             </li>
