@@ -238,10 +238,43 @@
   align-items: center;
   justify-content: center;
   transition: margin-right 0.3s ease;
+  position: relative;
 }
 
 .student-sidebar:hover .menu-icon {
   margin-right: 12px;
+}
+
+/* Значок уведомлений */
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.5);
+  animation: pulse 2s infinite;
+  z-index: 10;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.5);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 2px 12px rgba(231, 76, 60, 0.8);
+  }
 }
 
 .menu-text {

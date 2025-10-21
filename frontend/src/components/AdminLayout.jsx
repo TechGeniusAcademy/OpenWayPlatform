@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './AdminLayout.css';
-import { AiOutlineUser, AiOutlineMessage, AiOutlineMenu, AiOutlineClose } from "react-icons/ai";
+import { AiOutlineUser, AiOutlineMessage, AiOutlineMenu, AiOutlineClose, AiOutlineBell } from "react-icons/ai";
 import { HiUserGroup } from "react-icons/hi";
 import { FaTrophy } from "react-icons/fa";
 
@@ -104,8 +104,14 @@ function AdminLayout({ children }) {
             </li>
             <li>
               <NavLink to="/admin/knowledge" onClick={closeSidebar}>
-                <span className="menu-icon">�</span>
+                <span className="menu-icon">📖</span>
                 <span className="menu-text">База знаний</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/admin/updates" onClick={closeSidebar}>
+                <span className="menu-icon"><AiOutlineBell /></span>
+                <span className="menu-text">Обновления</span>
               </NavLink>
             </li>
           </ul>

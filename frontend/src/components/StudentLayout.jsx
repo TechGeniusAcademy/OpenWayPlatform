@@ -1,9 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import { BASE_URL } from '../utils/api';
 import './StudentLayout.css';
 import '../styles/UsernameStyles.css';
-import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart } from 'react-icons/ai';
+import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart, AiOutlineBell } from 'react-icons/ai';
 import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
 import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
@@ -13,6 +14,7 @@ import api from '../utils/api';
 
 function StudentLayout({ children }) {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [frameImage, setFrameImage] = useState(null);
@@ -153,7 +155,12 @@ function StudentLayout({ children }) {
             <li className="menu-category-title">Социальное</li>
             <li>
               <NavLink to="/student/chat" onClick={closeSidebar}>
-                <span className="menu-icon"><AiOutlineMessage /></span>
+                <span className="menu-icon">
+                  <AiOutlineMessage />
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                  )}
+                </span>
                 <span className="menu-text">Чат</span>
               </NavLink>
             </li>
@@ -173,6 +180,18 @@ function StudentLayout({ children }) {
               <NavLink to="/student/shop" onClick={closeSidebar}>
                 <span className="menu-icon"><AiOutlineShoppingCart /></span>
                 <span className="menu-text">Косметика</span>
+              </NavLink>
+            </li>
+
+            {/* Разделитель */}
+            <li className="menu-divider"></li>
+
+            {/* Информация */}
+            <li className="menu-category-title">Информация</li>
+            <li>
+              <NavLink to="/student/updates" onClick={closeSidebar}>
+                <span className="menu-icon"><AiOutlineBell /></span>
+                <span className="menu-text">Обновления</span>
               </NavLink>
             </li>
           </ul>

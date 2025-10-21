@@ -594,6 +594,26 @@ export const initDatabase = async () => {
     // Добавление подкатегорий
     await addSubcategories();
 
+    // Таблица 26: Обновления (Updates/Changelog)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS updates (
+        id SERIAL PRIMARY KEY,
+        version VARCHAR(50) NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        changes JSONB DEFAULT '[]',
+        published BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Индексы для таблицы обновлений
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_updates_published ON updates(published);
+      CREATE INDEX IF NOT EXISTS idx_updates_created_at ON updates(created_at DESC);
+    `);
+
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {
     console.error('❌ Ошибка инициализации базы данных:', error);

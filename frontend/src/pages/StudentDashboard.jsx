@@ -11,6 +11,7 @@ import StudentTests from './student/StudentTests';
 import StudentHomeworks from './student/StudentHomeworks';
 import Shop from './student/Shop';
 import KnowledgeBase from './student/KnowledgeBase';
+import StudentUpdates from './student/StudentUpdates';
 import './StudentDashboard.css';
 
 function StudentDashboard() {
@@ -28,6 +29,7 @@ function StudentDashboard() {
         <Route path="/homeworks" element={<StudentHomeworks />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/knowledge" element={<KnowledgeBase />} />
+        <Route path="/updates" element={<StudentUpdates />} />
       </Routes>
     </StudentLayout>
   );

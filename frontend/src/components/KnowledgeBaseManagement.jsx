@@ -3,6 +3,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../utils/api';
 import './KnowledgeBaseManagement.css';
+import './ArticleModal.css';
 
 // Wrapper для ReactQuill чтобы избежать findDOMNode warning
 const QuillEditor = ({ value, onChange, modules, placeholder }) => {
@@ -641,17 +642,17 @@ function KnowledgeBaseManagement() {
 
       {/* Модальное окно статьи */}
       {showArticleModal && (
-        <div className="modal-overlay" onClick={() => setShowArticleModal(false)}>
-          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="article-modal-overlay" onClick={() => setShowArticleModal(false)}>
+          <div className="article-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="article-modal-header">
               <h2>{editingArticle ? 'Редактировать статью' : 'Новая статья'}</h2>
-              <button className="modal-close" onClick={() => setShowArticleModal(false)}>✕</button>
+              <button className="article-modal-close" onClick={() => setShowArticleModal(false)}>✕</button>
             </div>
             
             <form onSubmit={handleArticleSubmit}>
-              <div className="form-fields-wrapper">
-                <div className="form-row">
-                  <div className="form-group">
+              <div className="article-form-fields-wrapper">
+                <div className="article-form-row">
+                  <div className="article-form-group">
                     <label>Название статьи *</label>
                     <input
                       type="text"
@@ -662,7 +663,7 @@ function KnowledgeBaseManagement() {
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className="article-form-group">
                     <label>Категория *</label>
                     <select
                       value={articleForm.category_id}
@@ -678,7 +679,7 @@ function KnowledgeBaseManagement() {
                     </select>
                   </div>
 
-                  <div className="form-group">
+                  <div className="article-form-group">
                     <label>Подкатегория</label>
                     <select
                       value={articleForm.subcategory_id}
@@ -697,7 +698,7 @@ function KnowledgeBaseManagement() {
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className="article-form-group">
                   <label>Краткое описание</label>
                   <input
                     type="text"
@@ -707,9 +708,9 @@ function KnowledgeBaseManagement() {
                   />
                 </div>
 
-                <div className="form-group quill-editor-group">
+                <div className="article-form-group article-quill-editor-group">
                   <label>Содержание статьи *</label>
-                  <div className="quill-editor-wrapper">
+                  <div className="article-quill-editor-wrapper">
                     <QuillEditor
                       value={articleForm.content}
                       onChange={(content) => setArticleForm({ ...articleForm, content })}
@@ -719,19 +720,19 @@ function KnowledgeBaseManagement() {
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="checkbox-label">
+                <div className="article-form-group">
+                  <label className="article-checkbox-label">
                     <input
                       type="checkbox"
                       checked={articleForm.published}
-                    onChange={(e) => setArticleForm({ ...articleForm, published: e.target.checked })}
-                  />
-                  Опубликовать статью
-                </label>
-              </div>
+                      onChange={(e) => setArticleForm({ ...articleForm, published: e.target.checked })}
+                    />
+                    Опубликовать статью
+                  </label>
+                </div>
               </div>
 
-              <div className="modal-actions">
+              <div className="article-modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowArticleModal(false)}>
                   Отмена
                 </button>

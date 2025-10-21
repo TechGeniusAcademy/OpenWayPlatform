@@ -1,28 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
+import { useWebSocket } from '../../context/WebSocketContext';
 import api, { BASE_URL } from '../../utils/api';
-import io from 'socket.io-client';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './Chat.css';
 import '../../styles/UsernameStyles.css';
 import '../../styles/MessageColors.css';
 
-// Правильное определение SOCKET_URL для production и development
-const getSocketUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  if (apiUrl) {
-    // Если есть VITE_API_URL, убираем /api и используем его
-    return apiUrl.replace('/api', '');
-  }
-  // Для локальной разработки
-  return 'http://localhost:5000';
-};
-
-const SOCKET_URL = getSocketUrl();
-
 function Chat() {
   const { user } = useAuth();
+  const { loadUnreadCount } = useNotifications();
+  const { getSocket } = useWebSocket();
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -32,6 +22,7 @@ function Chat() {
   const [codeLanguage, setCodeLanguage] = useState('javascript');
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false); // Загрузка сообщений при переключении чата
   const [allUsers, setAllUsers] = useState([]);
   const [typingUser, setTypingUser] = useState(null); // Кто печатает
   const [onlineUsers, setOnlineUsers] = useState(new Set()); // Онлайн пользователи
@@ -43,6 +34,12 @@ function Chat() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const activeChatRef = useRef(activeChat); // Ref для отслеживания активного чата
+
+  // Обновляем ref при изменении activeChat
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
 
   // Отслеживание размера окна
   useEffect(() => {
@@ -63,24 +60,30 @@ function Chat() {
     loadAllUsers();
     loadFrameImages();
     
-    // Подключение к WebSocket
-    socketRef.current = io(SOCKET_URL);
-    
-    socketRef.current.on('connect', () => {
-      console.log('WebSocket подключен');
-      socketRef.current.emit('register', user.id);
-    });
+    const socket = getSocket();
+    if (!socket) return;
 
-    socketRef.current.on('new-message', (message) => {
-      console.log('New message via WebSocket:', message);
-      console.log('Message sender_message_color:', message.sender_message_color);
-      setMessages(prev => [...prev, message]);
-      // scrollToBottom теперь вызывается автоматически через useEffect при изменении messages
+    // Сохраняем ссылку на сокет
+    socketRef.current = socket;
+
+    // Обработчик новых сообщений
+    const handleNewMessage = (message) => {
+      // Добавляем сообщение только если это активный чат
+      if (activeChatRef.current?.id === message.chat_id) {
+        setMessages(prev => [...prev, message]);
+      }
       
       // Обновляем список чатов для обновления последнего сообщения
       setChats(prevChats => {
         return prevChats.map(chat => {
           if (chat.id === message.chat_id) {
+            // Увеличиваем unread_count только если:
+            // 1. Сообщение НЕ от текущего пользователя
+            // 2. Это НЕ активный чат
+            const isFromMe = message.sender_id === user.id;
+            const isActiveChat = activeChatRef.current?.id === message.chat_id;
+            const shouldIncreaseUnread = !isFromMe && !isActiveChat;
+            
             return {
               ...chat,
               last_message: {
@@ -89,64 +92,100 @@ function Chat() {
                 sender_id: message.sender_id,
                 created_at: message.created_at
               },
-              unread_count: activeChat?.id === message.chat_id ? 0 : (chat.unread_count || 0) + 1
+              unread_count: shouldIncreaseUnread ? (chat.unread_count || 0) + 1 : (isActiveChat ? 0 : chat.unread_count || 0)
             };
           }
           return chat;
         });
       });
-    });
+    };
 
-    socketRef.current.on('chat-list-update', () => {
-      // Обновляем список чатов при изменениях
+    const handleChatListUpdate = () => {
       loadChats();
-    });
+    };
 
-    socketRef.current.on('messages-read', (data) => {
-      // Если кто-то прочитал сообщения, обновляем список чатов
+    const handleMessagesRead = (data) => {
       if (data.userId !== user.id) {
-        loadChats();
+        setChats(prevChats => 
+          prevChats.map(chat => 
+            chat.id === data.chatId ? { ...chat, unread_count: 0 } : chat
+          )
+        );
       }
-    });
+    };
 
-    // Индикатор печати
-    socketRef.current.on('user-typing', (data) => {
-      if (data.userId !== user.id && data.chatId === activeChat?.id) {
+    const handleUserTyping = (data) => {
+      if (data.userId !== user.id && data.chatId === activeChatRef.current?.id) {
         setTypingUser(data.userName);
       }
-    });
+    };
 
-    socketRef.current.on('user-stop-typing', (data) => {
+    const handleUserStopTyping = (data) => {
       if (data.userId !== user.id) {
         setTypingUser(null);
       }
-    });
+    };
 
-    // Онлайн статус
-    socketRef.current.on('user-online', (data) => {
+    const handleUserOnline = (data) => {
       setOnlineUsers(prev => new Set([...prev, data.userId]));
-    });
+    };
 
-    socketRef.current.on('user-offline', (data) => {
+    const handleUserOffline = (data) => {
       setOnlineUsers(prev => {
         const newSet = new Set(prev);
         newSet.delete(data.userId);
         return newSet;
       });
-    });
+    };
+
+    // Подписываемся на события
+    socket.on('new-message', handleNewMessage);
+    socket.on('chat-list-update', handleChatListUpdate);
+    socket.on('messages-read', handleMessagesRead);
+    socket.on('user-typing', handleUserTyping);
+    socket.on('user-stop-typing', handleUserStopTyping);
+    socket.on('user-online', handleUserOnline);
+    socket.on('user-offline', handleUserOffline);
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      // Отписываемся от событий (но НЕ отключаем сокет)
+      socket.off('new-message', handleNewMessage);
+      socket.off('chat-list-update', handleChatListUpdate);
+      socket.off('messages-read', handleMessagesRead);
+      socket.off('user-typing', handleUserTyping);
+      socket.off('user-stop-typing', handleUserStopTyping);
+      socket.off('user-online', handleUserOnline);
+      socket.off('user-offline', handleUserOffline);
     };
-  }, [user.id, activeChat]);
+  }, [user.id, getSocket]); // Убрали activeChat из зависимостей
 
   useEffect(() => {
     if (activeChat) {
-      loadMessages(activeChat.id);
-      loadPinnedMessages(activeChat.id);
-      socketRef.current.emit('join-chat', activeChat.id);
+      // Сохраняем активный чат в sessionStorage для контекста уведомлений
+      sessionStorage.setItem('activeChatId', activeChat.id);
+      
+      // Устанавливаем загрузку
+      setLoadingMessages(true);
+      
+      // Очищаем сообщения перед загрузкой новых
+      setMessages([]);
+      setPinnedMessages([]);
+      
+      // Загружаем сообщения
+      const loadData = async () => {
+        await Promise.all([
+          loadMessages(activeChat.id),
+          loadPinnedMessages(activeChat.id)
+        ]);
+        setLoadingMessages(false);
+      };
+      
+      loadData();
+      
+      const socket = socketRef.current;
+      if (socket) {
+        socket.emit('join-chat', activeChat.id);
+      }
       
       // Отмечаем сообщения как прочитанные
       markAsRead(activeChat.id);
@@ -163,8 +202,10 @@ function Chat() {
       if (activeChat && socketRef.current) {
         socketRef.current.emit('leave-chat', activeChat.id);
       }
+      // Очищаем активный чат при размонтировании
+      sessionStorage.removeItem('activeChatId');
     };
-  }, [activeChat]);
+  }, [activeChat?.id]); // Используем только ID для сравнения
 
   // Автоскролл только при изменении сообщений, НЕ при изменении typingUser
   useEffect(() => {
@@ -239,7 +280,12 @@ function Chat() {
     try {
       await api.put(`/chat/${chatId}/mark-read`);
       // Уведомляем сервер через WebSocket для обновления других клиентов
-      socketRef.current.emit('mark-read', chatId);
+      const socket = socketRef.current || getSocket();
+      if (socket) {
+        socket.emit('mark-read', chatId);
+      }
+      // Обновляем общий счетчик уведомлений
+      loadUnreadCount();
     } catch (error) {
       console.error('Ошибка при пометке сообщений как прочитанные:', error);
     }
@@ -284,11 +330,12 @@ function Chat() {
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
     
-    if (!activeChat || !socketRef.current) return;
+    const socket = socketRef.current;
+    if (!activeChat || !socket) return;
     
     // Отправляем событие "начал печатать"
     if (e.target.value.length > 0) {
-      socketRef.current.emit('typing-start', {
+      socket.emit('typing-start', {
         chatId: activeChat.id,
         userName: user.full_name || user.username
       });
@@ -300,13 +347,15 @@ function Chat() {
       
       // Через 2 секунды без ввода отправляем "перестал печатать"
       typingTimeoutRef.current = setTimeout(() => {
-        socketRef.current.emit('typing-stop', {
-          chatId: activeChat.id
-        });
+        if (socket) {
+          socket.emit('typing-stop', {
+            chatId: activeChat.id
+          });
+        }
       }, 2000);
     } else {
       // Если поле пустое, сразу отправляем "перестал печатать"
-      socketRef.current.emit('typing-stop', {
+      socket.emit('typing-stop', {
         chatId: activeChat.id
       });
     }
@@ -317,10 +366,14 @@ function Chat() {
 
     if (!newMessage.trim() && !selectedFile) return;
     
+    const socket = socketRef.current;
+    
     // Отправляем "перестал печатать" при отправке сообщения
-    socketRef.current.emit('typing-stop', {
-      chatId: activeChat.id
-    });
+    if (socket) {
+      socket.emit('typing-stop', {
+        chatId: activeChat.id
+      });
+    }
 
     try {
       if (selectedFile) {
@@ -339,10 +392,12 @@ function Chat() {
           sender_username: user.username
         };
 
-        socketRef.current.emit('send-message', {
-          chatId: activeChat.id,
-          message: messageWithSender
-        });
+        if (socket) {
+          socket.emit('send-message', {
+            chatId: activeChat.id,
+            message: messageWithSender
+          });
+        }
 
         // Сообщение добавится через WebSocket событие 'new-message'
         setSelectedFile(null);
@@ -360,10 +415,12 @@ function Chat() {
           sender_username: user.username
         };
 
-        socketRef.current.emit('send-message', {
-          chatId: activeChat.id,
-          message: messageWithSender
-        });
+        if (socket) {
+          socket.emit('send-message', {
+            chatId: activeChat.id,
+            message: messageWithSender
+          });
+        }
 
         // Сообщение добавится через WebSocket событие 'new-message'
       }
@@ -650,7 +707,7 @@ function Chat() {
       </div>
 
       {/* Область сообщений */}
-      <div className={`messages-area ${showSidebar && isMobile ? 'hidden' : ''}`}>
+      <div className={`messages-area ${showSidebar && isMobile ? 'hidden' : ''} ${loadingMessages ? 'loading' : ''}`}>
         {activeChat ? (
           <>
             <div className="messages-header">

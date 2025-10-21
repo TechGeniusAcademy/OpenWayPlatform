@@ -4,6 +4,8 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { WebSocketProvider } from './context/WebSocketContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 // Защищенный маршрут
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -27,27 +29,31 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route
-            path="/admin/*"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/*"
-            element={
-              <ProtectedRoute requiredRole="student">
-                <StudentDashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Router>
+      <WebSocketProvider>
+        <NotificationProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route
+                path="/admin/*"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/*"
+                element={
+                  <ProtectedRoute requiredRole="student">
+                    <StudentDashboard />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Router>
+        </NotificationProvider>
+      </WebSocketProvider>
     </AuthProvider>
   );
 }

@@ -19,6 +19,8 @@ import gameRoutes from './routes/game.js';
 import shopRoutes from './routes/shop.js';
 import adminShopRoutes from './routes/admin-shop.js';
 import knowledgeBaseRoutes from './routes/knowledge-base.js';
+import updatesRoutes from './routes/updates.js';
+import adminUpdatesRoutes from './routes/admin-updates.js';
 
 dotenv.config();
 
@@ -70,6 +72,8 @@ app.use('/api/game', gameRoutes);
 app.use('/api/shop', shopRoutes);
 app.use('/api/admin/shop', adminShopRoutes);
 app.use('/api/knowledge-base', knowledgeBaseRoutes);
+app.use('/api/updates', updatesRoutes);
+app.use('/api/admin/updates', adminUpdatesRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

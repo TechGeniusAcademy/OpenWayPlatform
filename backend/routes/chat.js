@@ -107,6 +107,31 @@ router.get('/admin/all', async (req, res) => {
   }
 });
 
+// Получить количество непрочитанных сообщений
+router.get('/unread-count', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT COALESCE(SUM(
+        CASE 
+          WHEN cp.last_read_at IS NULL THEN 
+            (SELECT COUNT(*) FROM messages WHERE chat_id = cp.chat_id AND sender_id != $1)
+          ELSE 
+            (SELECT COUNT(*) FROM messages WHERE chat_id = cp.chat_id AND sender_id != $1 AND created_at > cp.last_read_at)
+        END
+      ), 0) as unread_count
+      FROM chat_participants cp
+      WHERE cp.user_id = $1`,
+      [req.user.id]
+    );
+    
+    const unreadCount = parseInt(result.rows[0]?.unread_count || 0);
+    res.json({ unreadCount });
+  } catch (error) {
+    console.error('Ошибка получения количества непрочитанных:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Получить все чаты пользователя
 router.get('/', async (req, res) => {
   try {
