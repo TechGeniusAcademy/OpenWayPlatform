@@ -1,15 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
+import api, { BASE_URL } from '../../utils/api';
+import '../../styles/UsernameStyles.css';
 
 function StudentGroup() {
   const { user } = useAuth();
   const [groupInfo, setGroupInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cosmetics, setCosmetics] = useState({ frames: [], banners: [] });
 
   useEffect(() => {
     loadGroupInfo();
+    loadCosmetics();
   }, [user]);
+
+  const loadCosmetics = async () => {
+    try {
+      const [framesRes, bannersRes] = await Promise.all([
+        api.get('/shop/items?type=frame'),
+        api.get('/shop/items?type=banner')
+      ]);
+      setCosmetics({
+        frames: framesRes.data.items,
+        banners: bannersRes.data.items
+      });
+    } catch (error) {
+      console.error('Ошибка загрузки косметики:', error);
+    }
+  };
 
   const loadGroupInfo = async () => {
     if (!user?.group_id) {
@@ -25,6 +43,18 @@ function StudentGroup() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFrameImage = (frameKey) => {
+    if (!frameKey || frameKey === 'none') return null;
+    const frame = cosmetics.frames.find(f => f.item_key === frameKey);
+    return frame?.image_url ? `${BASE_URL}${frame.image_url}` : null;
+  };
+
+  const getBannerImage = (bannerKey) => {
+    if (!bannerKey || bannerKey === 'default') return null;
+    const banner = cosmetics.banners.find(b => b.item_key === bannerKey);
+    return banner?.image_url ? `${BASE_URL}${banner.image_url}` : null;
   };
 
   if (loading) {
@@ -93,17 +123,58 @@ function StudentGroup() {
           <div className="group-info-section">
             <h3>Студенты группы</h3>
             <div className="students-list">
-              {groupInfo.students.map((student) => (
-                <div key={student.id} className="student-list-item">
-                  <div className="student-avatar">
-                    {(student.full_name || student.username).charAt(0).toUpperCase()}
+              {groupInfo.students.map((student) => {
+                const frameImage = getFrameImage(student.avatar_frame);
+                const bannerImage = getBannerImage(student.profile_banner);
+                const defaultBanner = student.profile_banner === 'default' 
+                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                  : 'rgba(0, 0, 0, 0.05)';
+
+                return (
+                  <div 
+                    key={student.id} 
+                    className="student-list-item"
+                    style={{
+                      backgroundImage: bannerImage 
+                        ? `url(${bannerImage})` 
+                        : defaultBanner,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {(bannerImage || student.profile_banner === 'default') && (
+                      <div className="student-item-overlay"></div>
+                    )}
+                    
+                    <div className="student-avatar-wrapper">
+                      <div className="student-avatar">
+                        {student.avatar_url ? (
+                          <img src={`${BASE_URL}${student.avatar_url}`} alt={student.username} />
+                        ) : (
+                          (student.full_name || student.username).charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      {frameImage && (
+                        <img 
+                          src={frameImage}
+                          alt="Frame"
+                          className="student-avatar-frame"
+                        />
+                      )}
+                    </div>
+                    
+                    <div className="student-info">
+                      <strong className={`styled-username ${student.username_style || 'username-none'}`}>
+                        {student.full_name || student.username}
+                      </strong>
+                      <small>{student.email}</small>
+                      <div className="student-points">💰 {student.points || 0} баллов</div>
+                    </div>
                   </div>
-                  <div>
-                    <strong>{student.full_name || student.username}</strong>
-                    <small>{student.email}</small>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

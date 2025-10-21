@@ -61,7 +61,17 @@ class Group {
       }
 
       const studentsResult = await pool.query(
-        `SELECT id, username, email, full_name, created_at 
+        `SELECT 
+          id, 
+          username, 
+          email, 
+          full_name, 
+          avatar_url,
+          avatar_frame,
+          profile_banner,
+          username_style,
+          points,
+          created_at 
          FROM users 
          WHERE group_id = $1 AND role = 'student'
          ORDER BY full_name, username`,
@@ -140,7 +150,7 @@ class Group {
         `UPDATE users 
          SET group_id = $1, updated_at = CURRENT_TIMESTAMP 
          WHERE id = ANY($2) AND role = 'student'
-         RETURNING id, username, email, full_name`,
+         RETURNING id, username, email, full_name, avatar_url, avatar_frame, profile_banner, username_style, points`,
         [groupId, studentIds]
       );
       return result.rows;
@@ -169,7 +179,17 @@ class Group {
   static async getStudentsWithoutGroup() {
     try {
       const result = await pool.query(
-        `SELECT id, username, email, full_name, created_at 
+        `SELECT 
+          id, 
+          username, 
+          email, 
+          full_name, 
+          avatar_url,
+          avatar_frame,
+          profile_banner,
+          username_style,
+          points,
+          created_at 
          FROM users 
          WHERE role = 'student' AND (group_id IS NULL OR group_id = 0)
          ORDER BY full_name, username`

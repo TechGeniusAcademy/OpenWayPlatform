@@ -1,6 +1,8 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import createKnowledgeBaseTables from '../migrations/createKnowledgeBaseTables.js';
+import addSubcategories from '../migrations/addSubcategories.js';
 
 dotenv.config();
 
@@ -585,6 +587,12 @@ export const initDatabase = async () => {
     `);
 
     await createDefaultAdmin();
+
+    // Создание таблиц базы знаний
+    await createKnowledgeBaseTables();
+    
+    // Добавление подкатегорий
+    await addSubcategories();
 
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {

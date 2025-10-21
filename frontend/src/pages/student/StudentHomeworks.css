@@ -108,18 +108,111 @@
   overflow-y: auto;
   line-height: 1.6;
   color: #555;
+  word-wrap: break-word;
+}
+
+.homework-description * {
+  max-width: 100%;
 }
 
 .homework-description img {
   max-width: 100%;
   height: auto;
+  border-radius: 8px;
+  margin: 10px 0;
 }
 
 .homework-description h1,
 .homework-description h2,
 .homework-description h3 {
-  margin-top: 10px;
+  margin-top: 15px;
   margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.homework-description h1 {
+  font-size: 24px;
+}
+
+.homework-description h2 {
+  font-size: 20px;
+}
+
+.homework-description h3 {
+  font-size: 18px;
+}
+
+.homework-description p {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.homework-description ul,
+.homework-description ol {
+  margin: 10px 0;
+  padding-left: 30px;
+}
+
+.homework-description li {
+  margin: 5px 0;
+}
+
+.homework-description code {
+  background: #f4f4f4;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.homework-description pre {
+  background: #2d2d2d;
+  color: #f8f8f2;
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.homework-description pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.homework-description blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 15px;
+  margin: 10px 0;
+  color: #666;
+  font-style: italic;
+}
+
+.homework-description a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.homework-description a:hover {
+  text-decoration: underline;
+}
+
+.homework-description table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+}
+
+.homework-description table th,
+.homework-description table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.homework-description table th {
+  background: #f8f9fa;
+  font-weight: 600;
 }
 
 .homework-info {
@@ -279,11 +372,114 @@
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.homework-description-modal * {
+  max-width: 100%;
 }
 
 .homework-description-modal img {
   max-width: 100%;
   height: auto;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.homework-description-modal h1,
+.homework-description-modal h2,
+.homework-description-modal h3 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.homework-description-modal h1 {
+  font-size: 24px;
+}
+
+.homework-description-modal h2 {
+  font-size: 20px;
+}
+
+.homework-description-modal h3 {
+  font-size: 18px;
+}
+
+.homework-description-modal p {
+  margin: 10px 0;
+}
+
+.homework-description-modal ul,
+.homework-description-modal ol {
+  margin: 10px 0;
+  padding-left: 30px;
+}
+
+.homework-description-modal li {
+  margin: 5px 0;
+}
+
+.homework-description-modal code {
+  background: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  border: 1px solid #ddd;
+}
+
+.homework-description-modal pre {
+  background: #2d2d2d;
+  color: #f8f8f2;
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.homework-description-modal pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  border: none;
+}
+
+.homework-description-modal blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 15px;
+  margin: 10px 0;
+  color: #666;
+  font-style: italic;
+}
+
+.homework-description-modal a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.homework-description-modal a:hover {
+  text-decoration: underline;
+}
+
+.homework-description-modal table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  background: white;
+}
+
+.homework-description-modal table th,
+.homework-description-modal table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.homework-description-modal table th {
+  background: #e9ecef;
+  font-weight: 600;
 }
 
 .submission-info {
@@ -354,11 +550,102 @@
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.submitted-answer * {
+  max-width: 100%;
 }
 
 .submitted-answer img {
   max-width: 100%;
   height: auto;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.submitted-answer h1,
+.submitted-answer h2,
+.submitted-answer h3 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.submitted-answer p {
+  margin: 10px 0;
+}
+
+.submitted-answer ul,
+.submitted-answer ol {
+  margin: 10px 0;
+  padding-left: 30px;
+}
+
+.submitted-answer li {
+  margin: 5px 0;
+}
+
+.submitted-answer code {
+  background: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  border: 1px solid #ddd;
+}
+
+.submitted-answer pre {
+  background: #2d2d2d;
+  color: #f8f8f2;
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.submitted-answer pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  border: none;
+}
+
+.submitted-answer blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 15px;
+  margin: 10px 0;
+  color: #666;
+  font-style: italic;
+}
+
+.submitted-answer a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.submitted-answer a:hover {
+  text-decoration: underline;
+}
+
+.submitted-answer table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  background: white;
+}
+
+.submitted-answer table th,
+.submitted-answer table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.submitted-answer table th {
+  background: #e9ecef;
+  font-weight: 600;
 }
 
 .form-actions {

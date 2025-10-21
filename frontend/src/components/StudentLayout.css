@@ -45,7 +45,7 @@
 }
 
 .student-sidebar {
-  width: 280px;
+  width: 80px;
   background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
   color: white;
   padding: 0;
@@ -53,27 +53,23 @@
   position: fixed;
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
+  /* Скрыть скроллбар для всех браузеров */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE и Edge */
 }
 
+.student-sidebar:hover {
+  width: 280px;
+}
+
+/* Скрыть скроллбар для Webkit браузеров (Chrome, Safari, Edge) */
 .student-sidebar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.student-sidebar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.student-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.student-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  display: none;
 }
 
 .student-sidebar-header {
@@ -86,17 +82,19 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  overflow: hidden;
 }
 
 .sidebar-logo {
   flex-shrink: 0;
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  margin: 0 auto;
 }
 
 .logo-image {
@@ -119,6 +117,17 @@
   font-size: 18px;
   color: white;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.sidebar-title {
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.student-sidebar:hover .sidebar-title {
+  opacity: 1;
 }
 
 .sidebar-title h2 {
@@ -154,6 +163,14 @@
   color: rgba(255, 255, 255, 0.5);
   margin-top: 8px;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.student-sidebar:hover .menu-category-title {
+  opacity: 1;
 }
 
 /* Разделители */
@@ -166,6 +183,7 @@
 .student-sidebar-menu a {
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 14px 16px;
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
@@ -173,6 +191,10 @@
   border-radius: 10px;
   position: relative;
   overflow: hidden;
+}
+
+.student-sidebar:hover .student-sidebar-menu a {
+  justify-content: flex-start;
 }
 
 .student-sidebar-menu a::before {
@@ -208,18 +230,33 @@
 }
 
 .menu-icon {
-  margin-right: 12px;
+  margin-right: 0;
   font-size: 20px;
   flex-shrink: 0;
   width: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: margin-right 0.3s ease;
+}
+
+.student-sidebar:hover .menu-icon {
+  margin-right: 12px;
 }
 
 .menu-text {
   font-size: 15px;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 0;
+  width: 0;
+  transition: all 0.3s ease;
+}
+
+.student-sidebar:hover .menu-text {
+  opacity: 1;
+  width: auto;
 }
 
 /* Футер сайдбара с пользователем */
@@ -231,7 +268,10 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  min-height: 90px;
+  height: 90px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 /* Оверлей для улучшения читаемости */
@@ -249,12 +289,18 @@
 .sidebar-user {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   flex: 1;
   min-width: 0;
   padding: 15px;
   position: relative;
   z-index: 1;
+  transition: justify-content 0.3s ease;
+}
+
+.student-sidebar:hover .sidebar-user {
+  justify-content: flex-start;
 }
 
 .sidebar-user-avatar-wrapper {
@@ -267,7 +313,7 @@
 .sidebar-user-avatar {
   width: 45px;
   height: 45px;
-  border-radius: 12px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
@@ -285,6 +331,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .sidebar-avatar-frame {
@@ -301,6 +348,15 @@
 .sidebar-user-info {
   flex: 1;
   min-width: 0;
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.student-sidebar:hover .sidebar-user-info {
+  opacity: 1;
+  width: auto;
 }
 
 .sidebar-user-name {
@@ -333,26 +389,34 @@
   transition: all 0.3s ease;
   flex-shrink: 0;
   position: absolute;
-  bottom: 15px;
+  top: 50%;
   right: 15px;
-  z-index: 1;
+  transform: translate(0, -50%);
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.student-sidebar:hover .sidebar-logout-btn {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .sidebar-logout-btn:hover {
   background: rgba(231, 76, 60, 0.8);
-  transform: scale(1.05);
+  transform: translate(0, -50%) scale(1.05);
 }
 
 .sidebar-logout-btn:active {
-  transform: scale(0.95);
+  transform: translate(0, -50%) scale(0.95);
 }
 
 .student-main-content {
-  margin-left: 280px;
+  margin-left: 80px;
   flex: 1;
   padding: 30px;
-  width: calc(100% - 280px);
-  transition: all 0.3s ease;
+  width: calc(100% - 80px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-header {
@@ -373,15 +437,139 @@
   font-size: 16px;
 }
 
+/* Адаптивность для FullHD и больше */
+@media (min-width: 1920px) {
+  .student-sidebar {
+    width: 90px;
+  }
+
+  .student-sidebar:hover {
+    width: 300px;
+  }
+
+  .student-sidebar-header {
+    padding: 30px 20px;
+  }
+
+  .sidebar-logo {
+    width: 45px;
+    height: 45px;
+  }
+
+  .logo-image {
+    width: 100%;
+    height: 100%;
+  }
+
+  .sidebar-title h2 {
+    font-size: 24px;
+  }
+
+  .sidebar-title p {
+    font-size: 14px;
+  }
+
+  .menu-category-title {
+    font-size: 13px;
+    padding: 14px 18px 10px 18px;
+  }
+
+  .student-sidebar-menu a {
+    padding: 16px 18px;
+  }
+
+  .menu-icon {
+    font-size: 22px;
+    width: 26px;
+  }
+
+  .menu-text {
+    font-size: 16px;
+  }
+
+  .sidebar-footer {
+    height: 100px;
+  }
+
+  .sidebar-user-avatar-wrapper {
+    width: 50px;
+    height: 50px;
+  }
+
+  .sidebar-user-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+
+  .sidebar-avatar-frame {
+    width: 62px;
+    height: 62px;
+  }
+
+  .sidebar-user-name {
+    font-size: 15px;
+  }
+
+  .sidebar-user-role {
+    font-size: 13px;
+  }
+
+  .sidebar-logout-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 22px;
+  }
+
+  .student-main-content {
+    margin-left: 90px;
+    width: calc(100% - 90px);
+    padding: 40px 60px;
+  }
+
+  .page-header h1 {
+    font-size: 36px;
+  }
+
+  .page-header p {
+    font-size: 18px;
+  }
+}
+
+/* Адаптивность для широких экранов (1440px - 1920px) */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .student-sidebar {
+    width: 85px;
+  }
+
+  .student-sidebar:hover {
+    width: 290px;
+  }
+
+  .student-main-content {
+    margin-left: 85px;
+    width: calc(100% - 85px);
+    padding: 35px;
+  }
+
+  .page-header h1 {
+    font-size: 34px;
+  }
+}
+
 /* Адаптивность для планшетов */
 @media (max-width: 1024px) {
   .student-sidebar {
+    width: 70px;
+  }
+
+  .student-sidebar:hover {
     width: 240px;
   }
 
   .student-main-content {
-    margin-left: 240px;
-    width: calc(100% - 240px);
+    margin-left: 70px;
+    width: calc(100% - 70px);
     padding: 20px;
   }
 
@@ -411,12 +599,39 @@
     width: 280px;
   }
 
+  .student-sidebar:hover {
+    width: 280px;
+  }
+
   .student-sidebar.open {
     transform: translateX(0);
   }
 
   .student-sidebar.open ~ .sidebar-overlay {
     display: block;
+  }
+
+  /* На мобильных показываем все элементы сразу */
+  .student-sidebar.open .sidebar-title,
+  .student-sidebar.open .menu-category-title,
+  .student-sidebar.open .menu-text,
+  .student-sidebar.open .sidebar-user-info {
+    opacity: 1;
+    width: auto;
+  }
+
+  .student-sidebar.open .menu-icon {
+    margin-right: 12px;
+  }
+
+  .student-sidebar.open .student-sidebar-menu a,
+  .student-sidebar.open .sidebar-user {
+    justify-content: flex-start;
+  }
+
+  .student-sidebar.open .sidebar-logout-btn {
+    right: 15px;
+    transform: translateX(0);
   }
 
   .student-main-content {

@@ -1,38 +1,37 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../utils/api';
 import './KnowledgeBaseManagement.css';
 
 // Wrapper для ReactQuill чтобы избежать findDOMNode warning
-const QuillEditor = ({ value, onChange, modules, placeholder, style }) => {
-  const quillRef = useRef(null);
-  
+const QuillEditor = ({ value, onChange, modules, placeholder }) => {
   return (
     <ReactQuill
-      ref={quillRef}
       theme="snow"
       value={value}
       onChange={onChange}
       modules={modules}
       placeholder={placeholder}
-      style={style}
     />
   );
 };
 
 function KnowledgeBaseManagement() {
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('categories'); // 'categories' или 'articles'
+  const [activeTab, setActiveTab] = useState('categories'); // 'categories', 'subcategories' или 'articles'
   
   // Модальные окна
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
   
   // Данные для форм
   const [editingCategory, setEditingCategory] = useState(null);
+  const [editingSubcategory, setEditingSubcategory] = useState(null);
   const [editingArticle, setEditingArticle] = useState(null);
   
   const [categoryForm, setCategoryForm] = useState({
@@ -41,9 +40,18 @@ function KnowledgeBaseManagement() {
     description: ''
   });
 
+  const [subcategoryForm, setSubcategoryForm] = useState({
+    name: '',
+    category_id: '',
+    icon: '📄',
+    description: '',
+    order_index: 0
+  });
+
   const [articleForm, setArticleForm] = useState({
     title: '',
     category_id: '',
+    subcategory_id: '',
     description: '',
     content: '',
     published: true
@@ -54,6 +62,9 @@ function KnowledgeBaseManagement() {
 
   // Иконки для категорий
   const iconOptions = ['📚', '💻', '🌐', '🗄️', '🧮', '🔀', '🎨', '🔧', '📊', '🚀', '💡', '🎯', '🔐', '📱', '⚙️'];
+  
+  // Иконки для подкатегорий
+  const subIconOptions = ['📄', '📝', '📋', '📌', '📍', '🔤', '⚡', '📦', '⏱️', '🎯', '🔧', '⚙️', '🛠️', '💡', '🔍'];
 
   useEffect(() => {
     loadData();
@@ -62,39 +73,13 @@ function KnowledgeBaseManagement() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // TODO: Заменить на реальный API
-      // const categoriesRes = await api.get('/knowledge-base/categories');
-      // const articlesRes = await api.get('/knowledge-base/articles');
+      const categoriesRes = await api.get('/knowledge-base/categories');
+      const subcategoriesRes = await api.get('/knowledge-base/subcategories');
+      const articlesRes = await api.get('/knowledge-base/articles');
       
-      // Временные данные
-      setCategories([
-        { id: 1, name: 'Основы программирования', icon: '💻', description: 'Базовые концепции', articles_count: 5 },
-        { id: 2, name: 'Web-разработка', icon: '🌐', description: 'HTML, CSS, JavaScript', articles_count: 8 },
-        { id: 3, name: 'Базы данных', icon: '🗄️', description: 'SQL и NoSQL', articles_count: 4 }
-      ]);
-      
-      setArticles([
-        { 
-          id: 1, 
-          title: 'Введение в JavaScript', 
-          category_id: 1,
-          category_name: 'Основы программирования',
-          description: 'Основы языка JavaScript',
-          views: 245,
-          published: true,
-          created_at: '2025-10-15'
-        },
-        { 
-          id: 2, 
-          title: 'HTML5 Семантика', 
-          category_id: 2,
-          category_name: 'Web-разработка',
-          description: 'Семантические теги HTML5',
-          views: 189,
-          published: true,
-          created_at: '2025-10-16'
-        }
-      ]);
+      setCategories(categoriesRes.data);
+      setSubcategories(subcategoriesRes.data);
+      setArticles(articlesRes.data);
     } catch (error) {
       setError('Ошибка загрузки данных');
       console.error(error);
@@ -111,10 +96,10 @@ function KnowledgeBaseManagement() {
 
     try {
       if (editingCategory) {
-        // await api.put(`/knowledge-base/categories/${editingCategory.id}`, categoryForm);
+        await api.put(`/knowledge-base/categories/${editingCategory.id}`, categoryForm);
         setSuccess('Категория обновлена');
       } else {
-        // await api.post('/knowledge-base/categories', categoryForm);
+        await api.post('/knowledge-base/categories', categoryForm);
         setSuccess('Категория создана');
       }
       
@@ -143,7 +128,7 @@ function KnowledgeBaseManagement() {
     }
 
     try {
-      // await api.delete(`/knowledge-base/categories/${categoryId}`);
+      await api.delete(`/knowledge-base/categories/${categoryId}`);
       setSuccess('Категория удалена');
       loadData();
       setTimeout(() => setSuccess(''), 3000);
@@ -157,6 +142,62 @@ function KnowledgeBaseManagement() {
     setCategoryForm({ name: '', icon: '📚', description: '' });
   };
 
+  // Подкатегории
+  const handleSubcategorySubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      if (editingSubcategory) {
+        await api.put(`/knowledge-base/subcategories/${editingSubcategory.id}`, subcategoryForm);
+        setSuccess('Подкатегория обновлена');
+      } else {
+        await api.post('/knowledge-base/subcategories', subcategoryForm);
+        setSuccess('Подкатегория создана');
+      }
+      
+      setShowSubcategoryModal(false);
+      resetSubcategoryForm();
+      loadData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.error || 'Ошибка при сохранении');
+    }
+  };
+
+  const handleEditSubcategory = (subcategory) => {
+    setEditingSubcategory(subcategory);
+    setSubcategoryForm({
+      name: subcategory.name,
+      category_id: subcategory.category_id,
+      icon: subcategory.icon,
+      description: subcategory.description || '',
+      order_index: subcategory.order_index || 0
+    });
+    setShowSubcategoryModal(true);
+  };
+
+  const handleDeleteSubcategory = async (subcategoryId) => {
+    if (!window.confirm('Удалить подкатегорию? Все статьи в ней также будут удалены.')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/knowledge-base/subcategories/${subcategoryId}`);
+      setSuccess('Подкатегория удалена');
+      loadData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError('Ошибка при удалении');
+    }
+  };
+
+  const resetSubcategoryForm = () => {
+    setEditingSubcategory(null);
+    setSubcategoryForm({ name: '', category_id: '', icon: '📄', description: '', order_index: 0 });
+  };
+
   // Статьи
   const handleArticleSubmit = async (e) => {
     e.preventDefault();
@@ -165,10 +206,10 @@ function KnowledgeBaseManagement() {
 
     try {
       if (editingArticle) {
-        // await api.put(`/knowledge-base/articles/${editingArticle.id}`, articleForm);
+        await api.put(`/knowledge-base/articles/${editingArticle.id}`, articleForm);
         setSuccess('Статья обновлена');
       } else {
-        // await api.post('/knowledge-base/articles', articleForm);
+        await api.post('/knowledge-base/articles', articleForm);
         setSuccess('Статья создана');
       }
       
@@ -186,6 +227,7 @@ function KnowledgeBaseManagement() {
     setArticleForm({
       title: article.title,
       category_id: article.category_id,
+      subcategory_id: article.subcategory_id || '',
       description: article.description,
       content: article.content || '',
       published: article.published
@@ -199,7 +241,7 @@ function KnowledgeBaseManagement() {
     }
 
     try {
-      // await api.delete(`/knowledge-base/articles/${articleId}`);
+      await api.delete(`/knowledge-base/articles/${articleId}`);
       setSuccess('Статья удалена');
       loadData();
       setTimeout(() => setSuccess(''), 3000);
@@ -213,6 +255,7 @@ function KnowledgeBaseManagement() {
     setArticleForm({
       title: '',
       category_id: '',
+      subcategory_id: '',
       description: '',
       content: '',
       published: true
@@ -259,6 +302,12 @@ function KnowledgeBaseManagement() {
           onClick={() => setActiveTab('categories')}
         >
           🗂️ Категории ({categories.length})
+        </button>
+        <button
+          className={`kb-tab ${activeTab === 'subcategories' ? 'active' : ''}`}
+          onClick={() => setActiveTab('subcategories')}
+        >
+          📑 Подкатегории ({subcategories.length})
         </button>
         <button
           className={`kb-tab ${activeTab === 'articles' ? 'active' : ''}`}
@@ -319,6 +368,54 @@ function KnowledgeBaseManagement() {
         </div>
       )}
 
+      {/* Подкатегории */}
+      {activeTab === 'subcategories' && (
+        <div className="kb-section">
+          <div className="kb-section-header">
+            <h2>Подкатегории</h2>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                resetSubcategoryForm();
+                setShowSubcategoryModal(true);
+              }}
+            >
+              + Создать подкатегорию
+            </button>
+          </div>
+
+          <div className="kb-categories-grid">
+            {subcategories.map(subcategory => (
+              <div key={subcategory.id} className="kb-category-card">
+                <div className="kb-category-icon">{subcategory.icon}</div>
+                <div className="kb-category-info">
+                  <h3>{subcategory.name}</h3>
+                  <p className="category-name">📁 {subcategory.category_name}</p>
+                  <p>{subcategory.description || 'Нет описания'}</p>
+                  <span className="kb-category-count">
+                    {subcategory.articles_count} {subcategory.articles_count === 1 ? 'статья' : 'статей'}
+                  </span>
+                </div>
+                <div className="kb-category-actions">
+                  <button
+                    className="btn btn-small btn-edit"
+                    onClick={() => handleEditSubcategory(subcategory)}
+                  >
+                    ✏️ Редактировать
+                  </button>
+                  <button
+                    className="btn btn-small btn-delete"
+                    onClick={() => handleDeleteSubcategory(subcategory.id)}
+                  >
+                    🗑️ Удалить
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Статьи */}
       {activeTab === 'articles' && (
         <div className="kb-section">
@@ -346,6 +443,7 @@ function KnowledgeBaseManagement() {
                   <tr>
                     <th>Название</th>
                     <th>Категория</th>
+                    <th>Подкатегория</th>
                     <th>Просмотры</th>
                     <th>Статус</th>
                     <th>Дата</th>
@@ -361,6 +459,7 @@ function KnowledgeBaseManagement() {
                         <small>{article.description}</small>
                       </td>
                       <td>{article.category_name}</td>
+                      <td>{article.subcategory_name || '—'}</td>
                       <td>👁️ {article.views}</td>
                       <td>
                         <span className={`status-badge ${article.published ? 'published' : 'draft'}`}>
@@ -453,6 +552,93 @@ function KnowledgeBaseManagement() {
         </div>
       )}
 
+      {/* Модальное окно подкатегории */}
+      {showSubcategoryModal && (
+        <div className="modal-overlay" onClick={() => setShowSubcategoryModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingSubcategory ? 'Редактировать подкатегорию' : 'Новая подкатегория'}</h2>
+              <button className="modal-close" onClick={() => setShowSubcategoryModal(false)}>✕</button>
+            </div>
+            
+            <form onSubmit={handleSubcategorySubmit}>
+              <div className="form-group">
+                <label>Название *</label>
+                <input
+                  type="text"
+                  value={subcategoryForm.name}
+                  onChange={(e) => setSubcategoryForm({ ...subcategoryForm, name: e.target.value })}
+                  required
+                  placeholder="Например: Синтаксис и основы"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Категория *</label>
+                <select
+                  value={subcategoryForm.category_id}
+                  onChange={(e) => setSubcategoryForm({ ...subcategoryForm, category_id: e.target.value })}
+                  required
+                >
+                  <option value="">Выберите категорию</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Иконка</label>
+                <div className="icon-selector">
+                  {subIconOptions.map(icon => (
+                    <button
+                      key={icon}
+                      type="button"
+                      className={`icon-option ${subcategoryForm.icon === icon ? 'selected' : ''}`}
+                      onClick={() => setSubcategoryForm({ ...subcategoryForm, icon })}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Описание</label>
+                <textarea
+                  value={subcategoryForm.description}
+                  onChange={(e) => setSubcategoryForm({ ...subcategoryForm, description: e.target.value })}
+                  rows="3"
+                  placeholder="Краткое описание подкатегории"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Порядок отображения</label>
+                <input
+                  type="number"
+                  value={subcategoryForm.order_index}
+                  onChange={(e) => setSubcategoryForm({ ...subcategoryForm, order_index: parseInt(e.target.value) || 0 })}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowSubcategoryModal(false)}>
+                  Отмена
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  {editingSubcategory ? 'Сохранить' : 'Создать'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Модальное окно статьи */}
       {showArticleModal && (
         <div className="modal-overlay" onClick={() => setShowArticleModal(false)}>
@@ -463,65 +649,86 @@ function KnowledgeBaseManagement() {
             </div>
             
             <form onSubmit={handleArticleSubmit}>
-              <div className="form-row">
+              <div className="form-fields-wrapper">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Название статьи *</label>
+                    <input
+                      type="text"
+                      value={articleForm.title}
+                      onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
+                      required
+                      placeholder="Введение в JavaScript"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Категория *</label>
+                    <select
+                      value={articleForm.category_id}
+                      onChange={(e) => setArticleForm({ ...articleForm, category_id: e.target.value, subcategory_id: '' })}
+                      required
+                    >
+                      <option value="">Выберите категорию</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.icon} {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Подкатегория</label>
+                    <select
+                      value={articleForm.subcategory_id}
+                      onChange={(e) => setArticleForm({ ...articleForm, subcategory_id: e.target.value })}
+                      disabled={!articleForm.category_id}
+                    >
+                      <option value="">Без подкатегории</option>
+                      {subcategories
+                        .filter(sub => sub.category_id === parseInt(articleForm.category_id))
+                        .map(sub => (
+                          <option key={sub.id} value={sub.id}>
+                            {sub.icon} {sub.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div className="form-group">
-                  <label>Название статьи *</label>
+                  <label>Краткое описание</label>
                   <input
                     type="text"
-                    value={articleForm.title}
-                    onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
-                    required
-                    placeholder="Введение в JavaScript"
+                    value={articleForm.description}
+                    onChange={(e) => setArticleForm({ ...articleForm, description: e.target.value })}
+                    placeholder="Краткое описание для превью"
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Категория *</label>
-                  <select
-                    value={articleForm.category_id}
-                    onChange={(e) => setArticleForm({ ...articleForm, category_id: e.target.value })}
-                    required
-                  >
-                    <option value="">Выберите категорию</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.icon} {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="form-group quill-editor-group">
+                  <label>Содержание статьи *</label>
+                  <div className="quill-editor-wrapper">
+                    <QuillEditor
+                      value={articleForm.content}
+                      onChange={(content) => setArticleForm({ ...articleForm, content })}
+                      modules={quillModules}
+                      placeholder="Напишите содержание статьи..."
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label>Краткое описание</label>
-                <input
-                  type="text"
-                  value={articleForm.description}
-                  onChange={(e) => setArticleForm({ ...articleForm, description: e.target.value })}
-                  placeholder="Краткое описание для превью"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Содержание статьи *</label>
-                <QuillEditor
-                  value={articleForm.content}
-                  onChange={(content) => setArticleForm({ ...articleForm, content })}
-                  modules={quillModules}
-                  placeholder="Напишите содержание статьи..."
-                  style={{ height: '400px', marginBottom: '50px' }}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={articleForm.published}
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={articleForm.published}
                     onChange={(e) => setArticleForm({ ...articleForm, published: e.target.checked })}
                   />
                   Опубликовать статью
                 </label>
+              </div>
               </div>
 
               <div className="modal-actions">

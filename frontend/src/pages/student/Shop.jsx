@@ -183,7 +183,7 @@ function Shop() {
         </div>
         <div className="shop-header-right">
           <div className="user-points-badge">
-            <span className="points-icon">⭐</span>
+            <span className="points-icon">💰</span>
             <div className="points-info">
               <span className="points-value">{userPoints}</span>
               <span className="points-label">Ваши баллы</span>
@@ -300,7 +300,7 @@ function Shop() {
                   checked={priceRange === '0-100'}
                   onChange={(e) => setPriceRange(e.target.value)}
                 />
-                <span>До 100 ⭐</span>
+                <span>До 100 💰</span>
               </label>
               <label className="filter-option">
                 <input 
@@ -310,7 +310,7 @@ function Shop() {
                   checked={priceRange === '100-200'}
                   onChange={(e) => setPriceRange(e.target.value)}
                 />
-                <span>100 - 200 ⭐</span>
+                <span>100 - 200 💰</span>
               </label>
               <label className="filter-option">
                 <input 
@@ -320,7 +320,7 @@ function Shop() {
                   checked={priceRange === '200+'}
                   onChange={(e) => setPriceRange(e.target.value)}
                 />
-                <span>От 200 ⭐</span>
+                <span>От 200 💰</span>
               </label>
             </div>
           </div>
@@ -564,7 +564,7 @@ function Shop() {
                   <p className="card-description">{item.description}</p>
                   <div className="card-footer">
                     <span className="card-price">
-                      <span className="price-icon">⭐</span>
+                      <span className="price-icon">💰</span>
                       <span className="price-value">{item.price}</span>
                     </span>
                     {purchases.includes(item.item_key) ? (

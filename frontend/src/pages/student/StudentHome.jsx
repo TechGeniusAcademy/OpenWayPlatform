@@ -12,7 +12,7 @@ function StudentHome() {
 
       <div className="stats-banner">
         <div className="stat-item">
-          <div className="stat-icon">⭐</div>
+          <div className="stat-icon">💰</div>
           <div className="stat-content">
             <div className="stat-value">{user?.points || 0}</div>
             <div className="stat-label">Мои баллы</div>

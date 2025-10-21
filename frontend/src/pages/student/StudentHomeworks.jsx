@@ -150,7 +150,7 @@ function StudentHomeworks() {
                   <span className="value">{formatDate(homework.deadline)}</span>
                 </div>
                 <div className="info-item">
-                  <span className="label">⭐ Баллы:</span>
+                  <span className="label">💰 Баллы:</span>
                   <span className="value">{homework.points}</span>
                 </div>
                 {homework.submission_status === 'accepted' && homework.points_earned !== null && (

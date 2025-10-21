@@ -5,7 +5,9 @@ import './KnowledgeBase.css';
 function KnowledgeBase() {
   const [articles, setArticles] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,109 +16,23 @@ function KnowledgeBase() {
     loadKnowledgeBase();
   }, []);
 
+  useEffect(() => {
+    if (selectedCategory !== 'all') {
+      loadSubcategories(selectedCategory);
+    } else {
+      setSubcategories([]);
+      setSelectedSubcategory('all');
+    }
+  }, [selectedCategory]);
+
   const loadKnowledgeBase = async () => {
     try {
       setLoading(true);
-      // TODO: Заменить на реальный API когда будет готов
-      // const response = await api.get('/knowledge-base');
+      const categoriesRes = await api.get('/knowledge-base/categories');
+      const articlesRes = await api.get('/knowledge-base/articles/published');
       
-      // Временные данные для демонстрации
-      const mockCategories = [
-        { id: 1, name: 'Основы программирования', icon: '💻' },
-        { id: 2, name: 'Web-разработка', icon: '🌐' },
-        { id: 3, name: 'Базы данных', icon: '🗄️' },
-        { id: 4, name: 'Алгоритмы', icon: '🧮' },
-        { id: 5, name: 'Git и GitHub', icon: '🔀' }
-      ];
-
-      const mockArticles = [
-        {
-          id: 1,
-          title: 'Введение в JavaScript',
-          category_id: 1,
-          category: 'Основы программирования',
-          description: 'Основы языка JavaScript для начинающих',
-          content: `# Введение в JavaScript
-
-JavaScript — это мощный язык программирования, который используется для создания интерактивных веб-страниц.
-
-## Основные концепции
-
-### Переменные
-\`\`\`javascript
-let name = "Иван";
-const age = 25;
-var city = "Алматы";
-\`\`\`
-
-### Функции
-\`\`\`javascript
-function greet(name) {
-  return "Привет, " + name + "!";
-}
-
-console.log(greet("Мир"));
-\`\`\`
-
-### Массивы
-\`\`\`javascript
-const fruits = ["яблоко", "банан", "апельсин"];
-console.log(fruits[0]); // яблоко
-\`\`\``,
-          views: 245,
-          created_at: '2025-10-15'
-        },
-        {
-          id: 2,
-          title: 'HTML5 и семантическая верстка',
-          category_id: 2,
-          category: 'Web-разработка',
-          description: 'Современные стандарты HTML5',
-          content: `# HTML5 и семантическая верстка
-
-HTML5 предоставляет новые семантические элементы для структурирования контента.
-
-## Основные теги
-
-- \`<header>\` - Заголовок страницы
-- \`<nav>\` - Навигация
-- \`<main>\` - Основной контент
-- \`<article>\` - Статья
-- \`<section>\` - Секция
-- \`<footer>\` - Подвал`,
-          views: 189,
-          created_at: '2025-10-16'
-        },
-        {
-          id: 3,
-          title: 'Основы SQL',
-          category_id: 3,
-          category: 'Базы данных',
-          description: 'Язык структурированных запросов',
-          content: `# Основы SQL
-
-SQL (Structured Query Language) — язык для управления реляционными базами данных.
-
-## Основные команды
-
-### SELECT
-\`\`\`sql
-SELECT * FROM users;
-SELECT name, email FROM users WHERE age > 18;
-\`\`\`
-
-### INSERT
-\`\`\`sql
-INSERT INTO users (name, email, age) 
-VALUES ('Иван', 'ivan@example.com', 25);
-\`\`\``,
-          views: 312,
-          created_at: '2025-10-17'
-        }
-      ];
-
-      setCategories(mockCategories);
-      setArticles(mockArticles);
+      setCategories(categoriesRes.data);
+      setArticles(articlesRes.data);
     } catch (error) {
       console.error('Ошибка загрузки базы знаний:', error);
     } finally {
@@ -124,16 +40,35 @@ VALUES ('Иван', 'ivan@example.com', 25);
     }
   };
 
+  const loadSubcategories = async (categoryId) => {
+    try {
+      const response = await api.get(`/knowledge-base/categories/${categoryId}/subcategories`);
+      setSubcategories(response.data);
+      setSelectedSubcategory('all');
+    } catch (error) {
+      console.error('Ошибка загрузки подкатегорий:', error);
+      setSubcategories([]);
+    }
+  };
+
   const filteredArticles = articles.filter(article => {
     const matchesCategory = selectedCategory === 'all' || article.category_id === selectedCategory;
+    const matchesSubcategory = selectedSubcategory === 'all' || article.subcategory_id === selectedSubcategory;
     const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          article.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesSubcategory && matchesSearch;
   });
 
-  const handleArticleClick = (article) => {
-    setSelectedArticle(article);
-    // TODO: Отправить запрос на увеличение просмотров
+  const handleArticleClick = async (article) => {
+    try {
+      // Загружаем полную статью с увеличением просмотров
+      const response = await api.get(`/knowledge-base/articles/${article.id}`);
+      setSelectedArticle(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки статьи:', error);
+      // Если не удалось загрузить, показываем то что есть
+      setSelectedArticle(article);
+    }
   };
 
   if (loading) {
@@ -186,6 +121,27 @@ VALUES ('Иван', 'ivan@example.com', 25);
               </button>
             ))}
           </div>
+
+          {/* Подкатегории */}
+          {subcategories.length > 0 && (
+            <div className="kb-subcategories">
+              <button
+                className={`kb-subcategory ${selectedSubcategory === 'all' ? 'active' : ''}`}
+                onClick={() => setSelectedSubcategory('all')}
+              >
+                📋 Все разделы
+              </button>
+              {subcategories.map(subcategory => (
+                <button
+                  key={subcategory.id}
+                  className={`kb-subcategory ${selectedSubcategory === subcategory.id ? 'active' : ''}`}
+                  onClick={() => setSelectedSubcategory(subcategory.id)}
+                >
+                  {subcategory.icon} {subcategory.name}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Список статей */}
           <div className="kb-articles-grid">
@@ -241,24 +197,10 @@ VALUES ('Иван', 'ivan@example.com', 25);
               <span>📅 {new Date(selectedArticle.created_at).toLocaleDateString('ru-RU')}</span>
             </div>
 
-            <div className="kb-article-body">
-              {/* Простой рендеринг markdown-подобного контента */}
-              {selectedArticle.content.split('\n').map((line, index) => {
-                if (line.startsWith('# ')) {
-                  return <h1 key={index}>{line.substring(2)}</h1>;
-                } else if (line.startsWith('## ')) {
-                  return <h2 key={index}>{line.substring(3)}</h2>;
-                } else if (line.startsWith('### ')) {
-                  return <h3 key={index}>{line.substring(4)}</h3>;
-                } else if (line.startsWith('```')) {
-                  return <pre key={index}><code>{line}</code></pre>;
-                } else if (line.trim() === '') {
-                  return <br key={index} />;
-                } else {
-                  return <p key={index}>{line}</p>;
-                }
-              })}
-            </div>
+            <div 
+              className="kb-article-body"
+              dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+            />
           </div>
         </div>
       )}

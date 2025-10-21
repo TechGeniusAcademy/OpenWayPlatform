@@ -329,7 +329,7 @@ function UsersManagement() {
                             onClick={() => openPointsModal(user)}
                             title="Управление баллами"
                           >
-                            ⭐
+                            💰
                           </button>
                         </>
                       )}
@@ -445,7 +445,7 @@ function UsersManagement() {
         <div className="modal-overlay" onClick={closePointsModal}>
           <div className="modal modal-small" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>⭐ Управление баллами</h2>
+              <h2>💰 Управление баллами</h2>
               <button className="close-btn" onClick={closePointsModal}>&times;</button>
             </div>
 

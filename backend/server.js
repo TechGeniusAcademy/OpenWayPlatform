@@ -18,6 +18,7 @@ import typingRoutes from './routes/typing.js';
 import gameRoutes from './routes/game.js';
 import shopRoutes from './routes/shop.js';
 import adminShopRoutes from './routes/admin-shop.js';
+import knowledgeBaseRoutes from './routes/knowledge-base.js';
 
 dotenv.config();
 
@@ -68,6 +69,7 @@ app.use('/api/typing', typingRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/shop', shopRoutes);
 app.use('/api/admin/shop', adminShopRoutes);
+app.use('/api/knowledge-base', knowledgeBaseRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

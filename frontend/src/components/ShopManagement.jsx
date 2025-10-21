@@ -280,7 +280,7 @@ function ShopManagement() {
                 <p className="item-description">{item.description}</p>
                 <div className="item-meta">
                   <span className="item-key">🔑 {item.item_key}</span>
-                  <span className="item-price">⭐ {item.price}</span>
+                  <span className="item-price">💰 {item.price}</span>
                 </div>
               </div>
               <div className="item-actions">
@@ -319,7 +319,7 @@ function ShopManagement() {
                 <p className="item-description">{item.description}</p>
                 <div className="item-meta">
                   <span className="item-key">🔑 {item.item_key}</span>
-                  <span className="item-price">⭐ {item.price}</span>
+                  <span className="item-price">💰 {item.price}</span>
                 </div>
               </div>
               <div className="item-actions">

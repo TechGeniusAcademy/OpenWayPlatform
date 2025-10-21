@@ -4,6 +4,8 @@ import { BASE_URL } from '../utils/api';
 import './StudentLayout.css';
 import '../styles/UsernameStyles.css';
 import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart } from 'react-icons/ai';
+import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
+import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
 import { FaTrophy } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
@@ -121,25 +123,25 @@ function StudentLayout({ children }) {
             </li>
             <li>
               <NavLink to="/student/knowledge" onClick={closeSidebar}>
-                <span className="menu-icon">📚</span>
+                <span className="menu-icon"><LuBookCopy /></span>
                 <span className="menu-text">База знаний</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/tests" onClick={closeSidebar}>
-                <span className="menu-icon">📝</span>
+                <span className="menu-icon"><LuPencilLine /></span>
                 <span className="menu-text">Тесты</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/homeworks" onClick={closeSidebar}>
-                <span className="menu-icon">🏠</span>
+                <span className="menu-icon"><LuHouse /></span>
                 <span className="menu-text">Домашние задания</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/typing" onClick={closeSidebar}>
-                <span className="menu-icon">⌨️</span>
+                <span className="menu-icon"><RxKeyboard /></span>
                 <span className="menu-text">Клавиатурный тренажер</span>
               </NavLink>
             </li>
@@ -209,7 +211,7 @@ function StudentLayout({ children }) {
               <div className={`sidebar-user-name styled-username ${user?.username_style || 'username-none'}`}>
                 {user?.full_name || user?.username}
               </div>
-              <div className="sidebar-user-role">⭐ {user?.points || 0} баллов</div>
+              <div className="sidebar-user-role">💰 {user?.points || 0} баллов</div>
             </div>
           </div>
           <button className="sidebar-logout-btn" onClick={handleLogout} title="Выйти">

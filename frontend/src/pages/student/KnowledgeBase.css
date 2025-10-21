@@ -107,6 +107,44 @@
   font-size: 14px;
 }
 
+/* Подкатегории */
+.kb-subcategories {
+  display: flex;
+  gap: 12px;
+  padding: 20px 30px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.kb-subcategory {
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid #e0e7ff;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5a6c7d;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.kb-subcategory:hover {
+  border-color: #667eea;
+  color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.kb-subcategory.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
 /* Сетка статей */
 .kb-articles-grid {
   display: grid;
@@ -315,6 +353,11 @@
 
 .kb-article-body p {
   margin: 0 0 16px 0;
+  line-height: 1.8;
+}
+
+.kb-article-body p:last-child {
+  margin-bottom: 0;
 }
 
 .kb-article-body pre {
@@ -351,6 +394,120 @@
 
 .kb-article-body li {
   margin: 8px 0;
+}
+
+/* Стили для контента из Quill Editor */
+.kb-article-body .ql-syntax {
+  background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+  color: #d4d4d4;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  border-left: 4px solid #667eea;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.kb-article-body .ql-syntax::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom-left-radius: 12px;
+  opacity: 0.3;
+}
+
+.kb-article-body h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 24px 0 12px 0;
+}
+
+.kb-article-body h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #34495e;
+  margin: 20px 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-article-body code {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  color: #667eea;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.kb-article-body .ql-syntax code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  border: none;
+}
+
+.kb-article-body strong {
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.kb-article-body ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.kb-article-body ul li {
+  position: relative;
+  padding-left: 30px;
+  margin: 12px 0;
+}
+
+.kb-article-body ul li::before {
+  content: "▸";
+  position: absolute;
+  left: 8px;
+  color: #667eea;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.kb-article-body ol {
+  counter-reset: item;
+  list-style: none;
+  padding-left: 0;
+}
+
+.kb-article-body ol li {
+  position: relative;
+  padding-left: 40px;
+  margin: 12px 0;
+  counter-increment: item;
+}
+
+.kb-article-body ol li::before {
+  content: counter(item) ".";
+  position: absolute;
+  left: 8px;
+  color: #667eea;
+  font-weight: bold;
+  font-size: 16px;
+  min-width: 24px;
 }
 
 /* Загрузка */
@@ -425,4 +582,48 @@
   .kb-article-body h3 {
     font-size: 18px;
   }
+
+  .kb-article-body .ql-syntax {
+    font-size: 13px;
+    padding: 15px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kb-article-body code {
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  .kb-article-body ul li,
+  .kb-article-body ol li {
+    padding-left: 25px;
+    font-size: 15px;
+  }
+
+  .kb-article-body ul li::before {
+    font-size: 16px;
+  }
 }
+
+@media (max-width: 480px) {
+  .kb-article-body .ql-syntax {
+    font-size: 12px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .kb-article-body code {
+    font-size: 12px;
+    padding: 2px 6px;
+  }
+
+  .kb-article-body h3 {
+    font-size: 16px;
+  }
+
+  .kb-article-body h4 {
+    font-size: 15px;
+  }
+}
+
