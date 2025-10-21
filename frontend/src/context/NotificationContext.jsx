@@ -27,10 +27,12 @@ export function NotificationProvider({ children }) {
     loadUnreadCount();
 
     const socket = getSocket();
-    if (!socket) return;
+    if (!socket) {
+      return;
+    }
 
-    // Обработчик новых сообщений
-    const handleNewMessage = (message) => {
+    // Обработчик уведомлений о новых сообщениях (для всех участников чата)
+    const handleChatMessageNotification = (message) => {
       // Если сообщение от текущего пользователя - игнорируем
       if (message.sender_id === user.id) {
         return;
@@ -57,15 +59,15 @@ export function NotificationProvider({ children }) {
     };
 
     // Подписываемся на события
-    socket.on('new-message', handleNewMessage);
+    socket.on('chat-message-notification', handleChatMessageNotification);
     socket.on('messages-read', handleMessagesRead);
 
     return () => {
       // Отписываемся от событий
-      socket.off('new-message', handleNewMessage);
+      socket.off('chat-message-notification', handleChatMessageNotification);
       socket.off('messages-read', handleMessagesRead);
     };
-  }, [user?.id, getSocket]);
+  }, [user?.id]);
 
   const loadUnreadCount = async () => {
     try {
@@ -108,7 +110,7 @@ export function NotificationProvider({ children }) {
         oscillator.stop(ctx.currentTime + 0.3);
       }
     } catch (err) {
-      console.log('Не удалось воспроизвести звук:', err);
+      // Тихо игнорируем ошибки воспроизведения звука
     }
   };
 

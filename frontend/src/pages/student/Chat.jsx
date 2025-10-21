@@ -72,10 +72,13 @@ function Chat() {
       if (activeChatRef.current?.id === message.chat_id) {
         setMessages(prev => [...prev, message]);
       }
-      
+    };
+
+    // Обработчик уведомлений о новых сообщениях (для обновления списка чатов)
+    const handleChatMessageNotification = (message) => {
       // Обновляем список чатов для обновления последнего сообщения
       setChats(prevChats => {
-        return prevChats.map(chat => {
+        const updatedChats = prevChats.map(chat => {
           if (chat.id === message.chat_id) {
             // Увеличиваем unread_count только если:
             // 1. Сообщение НЕ от текущего пользователя
@@ -96,6 +99,13 @@ function Chat() {
             };
           }
           return chat;
+        });
+        
+        // Сортируем чаты: чат с новым сообщением поднимается наверх
+        return updatedChats.sort((a, b) => {
+          const dateA = a.last_message?.created_at ? new Date(a.last_message.created_at) : new Date(0);
+          const dateB = b.last_message?.created_at ? new Date(b.last_message.created_at) : new Date(0);
+          return dateB - dateA;
         });
       });
     };
@@ -140,6 +150,7 @@ function Chat() {
 
     // Подписываемся на события
     socket.on('new-message', handleNewMessage);
+    socket.on('chat-message-notification', handleChatMessageNotification);
     socket.on('chat-list-update', handleChatListUpdate);
     socket.on('messages-read', handleMessagesRead);
     socket.on('user-typing', handleUserTyping);
@@ -150,6 +161,7 @@ function Chat() {
     return () => {
       // Отписываемся от событий (но НЕ отключаем сокет)
       socket.off('new-message', handleNewMessage);
+      socket.off('chat-message-notification', handleChatMessageNotification);
       socket.off('chat-list-update', handleChatListUpdate);
       socket.off('messages-read', handleMessagesRead);
       socket.off('user-typing', handleUserTyping);
@@ -256,10 +268,6 @@ function Chat() {
   const loadMessages = async (chatId) => {
     try {
       const response = await api.get(`/chat/${chatId}/messages`);
-      console.log('Loaded messages:', response.data.messages);
-      if (response.data.messages.length > 0) {
-        console.log('First message sender_message_color:', response.data.messages[0].sender_message_color);
-      }
       setMessages(response.data.messages);
       scrollToBottom();
     } catch (error) {
@@ -405,8 +413,8 @@ function Chat() {
         // Отправка текста или кода
         const response = await api.post(`/chat/${activeChat.id}/messages`, {
           content: newMessage,
-          messageType,
-          codeLanguage: messageType === 'code' ? codeLanguage : null
+          message_type: messageType,
+          code_language: messageType === 'code' ? codeLanguage : null
         });
 
         const messageWithSender = {
@@ -472,14 +480,6 @@ function Chat() {
 
   const renderMessage = (message) => {
     const isOwnMessage = message.sender_id === user.id;
-    
-    // Отладочное логирование
-    console.log('Rendering message:', {
-      id: message.id,
-      sender_message_color: message.sender_message_color,
-      isOwnMessage: isOwnMessage,
-      content: message.content?.substring(0, 20)
-    });
 
     return (
       <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'}`}>

@@ -102,6 +102,9 @@ io.on('connection', (socket) => {
     activeUsers.set(userId, socket.id);
     socket.userId = userId;
     
+    // Присоединяем к персональной комнате для уведомлений
+    socket.join(`user-${userId}`);
+    
     // Обновляем статус пользователя на "онлайн" в БД
     try {
       await pool.query(
@@ -111,7 +114,7 @@ io.on('connection', (socket) => {
       
       // Уведомляем всех о том, что пользователь онлайн
       io.emit('user-online', { userId, socketId: socket.id });
-      console.log(`✅ Пользователь ${userId} зарегистрирован и онлайн`);
+      console.log(`✅ Пользователь ${userId} зарегистрирован и онлайн в комнате user-${userId}`);
     } catch (error) {
       console.error('Ошибка обновления онлайн статуса:', error);
     }
@@ -130,8 +133,25 @@ io.on('connection', (socket) => {
   });
 
   // Отправка сообщения
-  socket.on('send-message', (data) => {
+  socket.on('send-message', async (data) => {
+    // Отправляем в комнату чата (для отображения сообщения)
     io.to(`chat-${data.chatId}`).emit('new-message', data.message);
+    
+    // Отправляем всем участникам чата для уведомлений (используем другое событие)
+    try {
+      const chatMembers = await pool.query(
+        'SELECT user_id FROM chat_participants WHERE chat_id = $1',
+        [data.chatId]
+      );
+      
+      chatMembers.rows.forEach(member => {
+        // Отправляем событие для обновления списка чатов и уведомлений
+        io.to(`user-${member.user_id}`).emit('chat-message-notification', data.message);
+      });
+    } catch (err) {
+      console.error('Ошибка при отправке уведомлений участникам чата:', err);
+    }
+    
     console.log(`💬 Новое сообщение в чате ${data.chatId}`);
   });
 

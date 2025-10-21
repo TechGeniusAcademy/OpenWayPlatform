@@ -419,17 +419,9 @@ sudo -u postgres psql
 # На сервере выполните:
 cd /var/www/openway
 git pull origin main
-
-# Обновить frontend
 cd frontend
 npm install
 npm run build
-
-# Перезапустить backend (использует текущий процесс)
 pm2 restart openway-backend
-
-# Проверить статус
 pm2 status
-
-# Посмотреть логи (проверить что всё работает)
 pm2 logs openway-backend --lines 30
