@@ -4,17 +4,6 @@ import { useWebSocket } from './WebSocketContext';
 
 const NotificationContext = createContext();
 
-// Правильное определение SOCKET_URL для production и development
-const getSocketUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  if (apiUrl) {
-    return apiUrl.replace('/api', '');
-  }
-  return 'http://localhost:5000';
-};
-
-const SOCKET_URL = getSocketUrl();
-
 export function NotificationProvider({ children }) {
   const { user } = useAuth();
   const { getSocket } = useWebSocket();
@@ -81,7 +70,10 @@ export function NotificationProvider({ children }) {
   const loadUnreadCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${SOCKET_URL}/api/chat/unread-count`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const baseUrl = apiUrl.replace('/api', '');
+      
+      const response = await fetch(`${baseUrl}/api/chat/unread-count`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
