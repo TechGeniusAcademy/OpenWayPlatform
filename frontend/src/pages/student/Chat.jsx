@@ -525,7 +525,7 @@ function Chat() {
                 <div className="file-name">{message.file_name}</div>
                 <div className="file-size">{(message.file_size / 1024 / 1024).toFixed(2)} MB</div>
                 <a 
-                  href={`${SOCKET_URL}/api/chat/files${message.file_path}`} 
+                  href={`${BASE_URL}/api/chat/files${message.file_path}`} 
                   download={message.file_name}
                   target="_blank"
                   rel="noopener noreferrer"
