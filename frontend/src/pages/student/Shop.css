@@ -8,17 +8,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding: 25px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  margin-bottom: 28px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(21, 28, 36, 0.06);
 }
 
 .shop-header-left h1 {
-  margin: 0 0 5px 0;
-  font-size: 32px;
-  color: #2c3e50;
+  margin: 0 0 4px 0;
+  font-size: 26px;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .shop-header-left p {
@@ -30,22 +33,17 @@
 .user-points-badge {
   display: flex;
   align-items: center;
-  gap: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 15px 25px;
-  border-radius: 16px;
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  gap: 12px;
+  background: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #111827;
+  box-shadow: none;
 }
 
 .points-icon {
-  font-size: 32px;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  font-size: 20px;
+  color: #2563eb;
 }
 
 .points-info {
@@ -68,19 +66,19 @@
 /* Layout с сайдбаром */
 .shop-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 25px;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
 }
 
 /* Сайдбар с фильтрами */
 .shop-sidebar {
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(21, 28, 36, 0.04);
   height: fit-content;
   position: sticky;
-  top: 20px;
+  top: 18px;
 }
 
 .filter-section {
@@ -92,10 +90,10 @@
 }
 
 .filter-section h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c3e50;
-  margin: 0 0 15px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -103,24 +101,24 @@
 
 .filter-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, #e0e0e0, transparent);
-  margin: 20px 0;
+  background: #eef2f7;
+  margin: 16px 0;
 }
 
 /* Поиск */
 .search-input {
   width: 100%;
-  padding: 12px 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e6eef7;
+  border-radius: 8px;
   font-size: 14px;
-  transition: all 0.3s;
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #93c5fd;
+  box-shadow: 0 6px 18px rgba(37,99,235,0.06);
 }
 
 /* Опции фильтров */
@@ -134,16 +132,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  background: #f8f9fa;
+  padding: 8px 10px;
+  background: #fbfdff;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .filter-option:hover {
-  background: #e9ecef;
-  transform: translateX(4px);
+  background: #f1f7ff;
+  transform: translateX(3px);
 }
 
 .filter-option input[type="radio"] {
@@ -161,10 +159,10 @@
 .filter-count {
   font-size: 12px;
   font-weight: 600;
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  padding: 2px 8px;
-  border-radius: 12px;
+  color: #2563eb;
+  background: rgba(37,99,235,0.08);
+  padding: 4px 8px;
+  border-radius: 999px;
 }
 
 /* Селект сортировки */
@@ -207,19 +205,19 @@
 
 /* Контент магазина */
 .shop-content {
-  background: white;
-  border-radius: 16px;
-  padding: 25px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(21, 28, 36, 0.04);
 }
 
 .shop-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #f0f0f0;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .results-info {
@@ -241,41 +239,40 @@
 
 /* Карточка товара */
 .shop-card {
-  background: #f8f9fa;
-  border-radius: 16px;
+  background: #fbfdff;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s;
-  border: 2px solid transparent;
+  box-shadow: 0 4px 12px rgba(21, 28, 36, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border: 1px solid #eef2f7;
 }
 
 .shop-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-  border-color: #667eea;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(21, 28, 36, 0.06);
 }
 
 /* Превью товара */
 .card-preview {
-  height: 200px;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
-  padding: 20px;
+  background: #ffffff;
+  padding: 16px;
   position: relative;
 }
 
 .preview-avatar {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  background: #e6eef7;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 56px;
+  color: #0f172a;
+  font-size: 40px;
   font-weight: 700;
   overflow: hidden;
   position: relative;
@@ -293,28 +290,28 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 200px;
-  height: 200px;
+  width: 160px;
+  height: 160px;
   pointer-events: none;
   z-index: 2;
   object-fit: contain;
 }
 
 .card-banner-preview {
-  height: 140px;
-  border-radius: 12px 12px 0 0;
+  height: 120px;
+  border-radius: 8px 8px 0 0;
   overflow: hidden;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .card-username-preview {
-  height: 140px;
-  border-radius: 12px 12px 0 0;
+  height: 120px;
+  border-radius: 8px 8px 0 0;
   overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #eef2ff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -322,22 +319,21 @@
 
 /* Превью цвета сообщения */
 .card-message-preview {
-  height: 140px;
-  border-radius: 12px 12px 0 0;
+  height: 120px;
+  border-radius: 8px 8px 0 0;
   overflow: hidden;
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 14px;
 }
 
 .message-preview {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 15px 20px;
-  border-radius: 18px;
+  background: #ffffff;
+  padding: 12px 14px;
+  border-radius: 12px;
   max-width: 100%;
-  backdrop-filter: blur(10px);
 }
 
 .message-preview span {
@@ -360,7 +356,7 @@
 
 /* Тело карточки */
 .card-body {
-  padding: 20px;
+  padding: 16px;
 }
 
 .shop-card-header {
@@ -373,107 +369,109 @@
 
 .card-title {
   margin: 0;
-  font-size: 18px;
-  color: #2c3e50;
-  font-weight: 600;
+  font-size: 16px;
+  color: #0f172a;
+  font-weight: 700;
   flex: 1;
 }
 
 .badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .badge-owned {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: #eef6ff;
+  color: #1d4ed8;
 }
 
 .badge-active {
-  background: #e8f5e9;
-  color: #4caf50;
+  background: #eefcf1;
+  color: #059669;
 }
 
 .card-description {
-  margin: 0 0 15px 0;
-  font-size: 14px;
-  color: #7f8c8d;
-  line-height: 1.5;
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.45;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 15px;
-  border-top: 2px solid #e9ecef;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
 }
 
 .card-price {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 20px;
-  font-weight: 700;
-  color: #667eea;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .price-icon {
-  font-size: 22px;
+  font-size: 18px;
+  color: #2563eb;
 }
 
 .price-free {
-  font-size: 16px;
-  color: #4caf50;
+  font-size: 13px;
+  color: #059669;
 }
 
 /* Кнопки карточек */
 .card-btn {
-  padding: 10px 20px;
+  padding: 8px 14px;
   border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
   white-space: nowrap;
 }
 
 .btn-buy {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #2563eb;
   color: white;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 6px 18px rgba(37,99,235,0.08);
 }
 
 .btn-buy:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 22px rgba(37,99,235,0.12);
 }
 
 .btn-buy:disabled {
-  background: #ccc;
+  background: #e6e9ef;
+  color: #9ca3af;
   cursor: not-allowed;
   box-shadow: none;
 }
 
 .btn-apply {
-  background: #4caf50;
+  background: #059669;
   color: white;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 6px 18px rgba(5,150,105,0.06);
 }
 
 .btn-apply:hover:not(:disabled) {
-  background: #45a049;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  box-shadow: 0 8px 20px rgba(5,150,105,0.08);
 }
 
 .btn-active {
-  background: #e9ecef;
-  color: #7f8c8d;
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #eef2f7;
   cursor: default;
 }
 
@@ -488,10 +486,16 @@
 }
 
 .no-results-icon {
-  font-size: 80px;
-  margin-bottom: 20px;
-  opacity: 0.5;
+  font-size: 44px;
+  margin-bottom: 14px;
+  color: #94a3b8;
 }
+
+/* Icon helper classes */
+.header-icon { font-size: 22px; color: #2563eb; }
+.filter-icon { font-size: 16px; color: #475569; }
+.inline-icon { font-size: 14px; vertical-align: middle; margin-right: 6px; color: #475569 }
+.btn-reset-icon { margin-right: 8px; vertical-align: middle; }
 
 .no-results h3 {
   margin: 0 0 10px 0;

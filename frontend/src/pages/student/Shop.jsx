@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import './Shop.css';
+import { AiOutlineShoppingCart, AiOutlineWallet, AiOutlineSearch, AiOutlinePicture, AiOutlineFontSize, AiOutlineReload, AiOutlineDollarCircle, AiOutlineCheck, AiOutlineCloseCircle } from 'react-icons/ai';
+import { MdFormatColorText } from 'react-icons/md';
 import '../../styles/UsernameStyles.css';
 import '../../styles/MessageColors.css';
 
@@ -178,12 +180,12 @@ function Shop() {
     <div className="student-page shop-page">
       <div className="shop-header">
         <div className="shop-header-left">
-          <h1>🛒 Магазин косметики</h1>
+          <h1><AiOutlineShoppingCart className="header-icon" /> Магазин косметики</h1>
           <p>Персонализируйте свой профиль</p>
         </div>
         <div className="shop-header-right">
           <div className="user-points-badge">
-            <span className="points-icon">💰</span>
+            <span className="points-icon"><AiOutlineWallet /></span>
             <div className="points-info">
               <span className="points-value">{userPoints}</span>
               <span className="points-label">Ваши баллы</span>
@@ -196,7 +198,7 @@ function Shop() {
         {/* Сайдбар с фильтрами */}
         <aside className="shop-sidebar">
           <div className="filter-section">
-            <h3>🔍 Поиск</h3>
+            <h3><AiOutlineSearch className="filter-icon" /> Поиск</h3>
             <input 
               type="text"
               className="search-input"
@@ -209,7 +211,7 @@ function Shop() {
           <div className="filter-divider"></div>
 
           <div className="filter-section">
-            <h3>📦 Категория</h3>
+            <h3><AiOutlinePicture className="filter-icon" /> Категория</h3>
             <div className="filter-options">
               <label className="filter-option">
                 <input 
@@ -230,7 +232,7 @@ function Shop() {
                   checked={selectedType === 'frame'}
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
-                <span>🖼️ Рамки</span>
+                <span><AiOutlinePicture className="inline-icon" /> Рамки</span>
                 <span className="filter-count">
                   {shopItems.filter(i => i.item_type === 'frame').length}
                 </span>
@@ -243,7 +245,7 @@ function Shop() {
                   checked={selectedType === 'banner'}
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
-                <span>🎨 Баннеры</span>
+                <span><AiOutlinePicture className="inline-icon" /> Баннеры</span>
                 <span className="filter-count">
                   {shopItems.filter(i => i.item_type === 'banner').length}
                 </span>
@@ -256,7 +258,7 @@ function Shop() {
                   checked={selectedType === 'username'}
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
-                <span>✨ Стили Никнейма</span>
+                <span><AiOutlineFontSize className="inline-icon" /> Стили Никнейма</span>
                 <span className="filter-count">
                   {shopItems.filter(i => i.item_type === 'username').length}
                 </span>
@@ -269,7 +271,7 @@ function Shop() {
                   checked={selectedType === 'message_color'}
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
-                <span>💬 Цвета Текста</span>
+                <span><MdFormatColorText className="inline-icon" /> Цвета Текста</span>
                 <span className="filter-count">
                   {shopItems.filter(i => i.item_type === 'message_color').length}
                 </span>
@@ -280,7 +282,7 @@ function Shop() {
           <div className="filter-divider"></div>
 
           <div className="filter-section">
-            <h3>💰 Цена</h3>
+            <h3><AiOutlineDollarCircle className="filter-icon" /> Цена</h3>
             <div className="filter-options">
               <label className="filter-option">
                 <input 
@@ -300,7 +302,7 @@ function Shop() {
                   checked={priceRange === '0-100'}
                   onChange={(e) => setPriceRange(e.target.value)}
                 />
-                <span>До 100 💰</span>
+                <span>До 100</span>
               </label>
               <label className="filter-option">
                 <input 
@@ -310,7 +312,7 @@ function Shop() {
                   checked={priceRange === '100-200'}
                   onChange={(e) => setPriceRange(e.target.value)}
                 />
-                <span>100 - 200 💰</span>
+                <span>100 - 200</span>
               </label>
               <label className="filter-option">
                 <input 
@@ -320,7 +322,7 @@ function Shop() {
                   checked={priceRange === '200+'}
                   onChange={(e) => setPriceRange(e.target.value)}
                 />
-                <span>От 200 💰</span>
+                <span>От 200</span>
               </label>
             </div>
           </div>
@@ -328,7 +330,7 @@ function Shop() {
           <div className="filter-divider"></div>
 
           <div className="filter-section">
-            <h3>🔄 Сортировка</h3>
+            <h3><AiOutlineReload className="filter-icon" /> Сортировка</h3>
             <select 
               className="sort-select"
               value={sortBy}
@@ -343,7 +345,7 @@ function Shop() {
           <div className="filter-divider"></div>
 
           <div className="filter-section">
-            <button 
+              <button 
               className="reset-filters-btn"
               onClick={() => {
                 setSelectedType('all');
@@ -352,7 +354,7 @@ function Shop() {
                 setSortBy('price-asc');
               }}
             >
-              🔄 Сбросить фильтры
+              <AiOutlineReload className="btn-reset-icon" /> Сбросить фильтры
             </button>
           </div>
         </aside>
@@ -564,7 +566,7 @@ function Shop() {
                   <p className="card-description">{item.description}</p>
                   <div className="card-footer">
                     <span className="card-price">
-                      <span className="price-icon">💰</span>
+                      <span className="price-icon"><AiOutlineDollarCircle /></span>
                       <span className="price-value">{item.price}</span>
                     </span>
                     {purchases.includes(item.item_key) ? (
@@ -594,12 +596,12 @@ function Shop() {
                         }
                       >
                         {((item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
-                          (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
-                          (item.item_type === 'username' && user?.username_style === item.item_key) ||
-                          (item.item_type === 'message_color' && user?.message_color === item.item_key))
-                          ? '✓ Активно' 
-                          : 'Применить'
-                        }
+                            (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
+                            (item.item_type === 'username' && user?.username_style === item.item_key) ||
+                            (item.item_type === 'message_color' && user?.message_color === item.item_key))
+                            ? <><AiOutlineCheck /> Активно</>
+                            : <>Применить</>
+                          }
                       </button>
                     ) : (
                       <button 
@@ -607,7 +609,7 @@ function Shop() {
                         onClick={() => handlePurchase(item.item_key, item.price)}
                         disabled={loading || userPoints < item.price}
                       >
-                        {userPoints < item.price ? '❌ Недостаточно' : '🛒 Купить'}
+                          {userPoints < item.price ? <><AiOutlineCloseCircle /> Недостаточно</> : <><AiOutlineShoppingCart /> Купить</>}
                       </button>
                     )}
                   </div>
@@ -618,7 +620,7 @@ function Shop() {
 
           {filteredItems.length === 0 && (
             <div className="no-results">
-              <div className="no-results-icon">🔍</div>
+              <div className="no-results-icon"><AiOutlineSearch /></div>
               <h3>Ничего не найдено</h3>
               <p>Попробуйте изменить параметры поиска или фильтры</p>
             </div>

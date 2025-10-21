@@ -1,33 +1,39 @@
 .shop-management {
-  padding: 30px;
+  padding: 24px;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 22px;
 }
 
 .page-header h1 {
-  font-size: 28px;
-  color: #2c3e50;
+  font-size: 20px;
+  color: #0f172a;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* Image Guidelines */
 .image-guidelines {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 25px;
-  border-radius: 12px;
-  margin-bottom: 30px;
-  color: white;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 10px;
+  margin-bottom: 22px;
+  color: #0f172a;
 }
 
 .image-guidelines h3 {
   margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 20px;
+  margin-bottom: 12px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .guidelines-grid {
@@ -36,17 +42,18 @@
   gap: 20px;
 }
 
+
 .guideline-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 20px;
+  background: #fbfdff;
+  padding: 14px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #eef2f7;
 }
 
 .guideline-icon {
-  font-size: 40px;
-  margin-bottom: 10px;
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: #2563eb;
 }
 
 .guideline-card h4 {
@@ -55,10 +62,10 @@
 }
 
 .size-info {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 10px 0;
-  color: #ffd700;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 8px 0;
+  color: #0f172a;
 }
 
 .format-info {
@@ -95,13 +102,13 @@
 }
 
 .modal-content {
-  background: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
+  background: #ffffff;
+  border-radius: 10px;
+  width: 92%;
+  max-width: 680px;
   max-height: 90vh;
   overflow-y: auto;
-  animation: slideUp 0.3s;
+  animation: slideUp 0.18s;
 }
 
 @keyframes slideUp {
@@ -115,36 +122,37 @@
   }
 }
 
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 22px;
-  color: #2c3e50;
+  font-size: 16px;
+  color: #0f172a;
 }
 
 .close-btn {
   background: none;
   border: none;
-  font-size: 24px;
-  color: #7f8c8d;
+  font-size: 18px;
+  color: #475569;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color 0.12s;
 }
 
 .close-btn:hover {
-  color: #e74c3c;
+  color: #111827;
 }
 
 /* Form */
 .shop-form {
-  padding: 20px;
+  padding: 14px;
 }
 
 .form-group {
@@ -163,17 +171,18 @@
 .form-group textarea {
   width: 100%;
   padding: 10px;
-  border: 2px solid #e0e0e0;
+  border: 1px solid #e6eef7;
   border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.2s;
+  transition: box-shadow 0.12s, border-color 0.12s;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #93c5fd;
+  box-shadow: 0 6px 18px rgba(37,99,235,0.06);
 }
 
 .form-group small {
@@ -200,9 +209,9 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #e0e0e0;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
 }
 
 /* Buttons */
@@ -210,23 +219,24 @@
 .btn-secondary,
 .btn-edit,
 .btn-delete {
-  padding: 10px 20px;
+  padding: 8px 14px;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #2563eb;
   color: white;
+  box-shadow: 0 6px 18px rgba(37,99,235,0.06);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 30px rgba(37,99,235,0.12);
 }
 
 .btn-primary:disabled {
@@ -235,33 +245,38 @@
 }
 
 .btn-secondary {
-  background: #ecf0f1;
-  color: #2c3e50;
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #bdc3c7;
+  background: #e6eef7;
 }
 
 .btn-edit {
-  background: #3498db;
+  background: #0ea5a4;
   color: white;
   flex: 1;
 }
 
 .btn-edit:hover {
-  background: #2980b9;
+  background: #08979b;
 }
 
 .btn-delete {
-  background: #e74c3c;
+  background: #ef4444;
   color: white;
   flex: 1;
 }
 
 .btn-delete:hover {
-  background: #c0392b;
+  background: #dc2626;
 }
+
+/* Icon helper */
+.header-icon { font-size: 18px; color: #2563eb; }
+.btn-icon { margin-right: 8px; vertical-align: middle; }
+.guide-icon { font-size: 18px; color: #475569; }
 
 /* Items Section */
 .items-section {

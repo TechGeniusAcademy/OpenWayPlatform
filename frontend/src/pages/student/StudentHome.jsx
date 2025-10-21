@@ -1,4 +1,5 @@
 import { useAuth } from '../../context/AuthContext';
+import { AiOutlineWallet, AiOutlineUsergroupAdd, AiOutlineBook, AiOutlineFileText, AiOutlineBarChart, AiOutlineStar } from 'react-icons/ai';
 
 function StudentHome() {
   const { user } = useAuth();
@@ -12,14 +13,14 @@ function StudentHome() {
 
       <div className="stats-banner">
         <div className="stat-item">
-          <div className="stat-icon">💰</div>
+          <div className="stat-icon"><AiOutlineWallet /></div>
           <div className="stat-content">
             <div className="stat-value">{user?.points || 0}</div>
             <div className="stat-label">Мои баллы</div>
           </div>
         </div>
         <div className="stat-item">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon"><AiOutlineUsergroupAdd /></div>
           <div className="stat-content">
             <div className="stat-value">{user?.group_id ? 'В группе' : 'Нет группы'}</div>
             <div className="stat-label">Статус группы</div>
@@ -29,28 +30,28 @@ function StudentHome() {
 
       <div className="cards-grid">
         <div className="info-card">
-          <div className="card-icon">📚</div>
+          <div className="card-icon"><AiOutlineBook /></div>
           <h3>Курсы</h3>
           <p>Доступ к учебным материалам</p>
           <span className="coming-soon-badge">Скоро</span>
         </div>
 
         <div className="info-card">
-          <div className="card-icon">📝</div>
+          <div className="card-icon"><AiOutlineFileText /></div>
           <h3>Задания</h3>
           <p>Выполнение домашних работ</p>
           <span className="coming-soon-badge">Скоро</span>
         </div>
 
         <div className="info-card">
-          <div className="card-icon">📊</div>
+          <div className="card-icon"><AiOutlineBarChart /></div>
           <h3>Прогресс</h3>
           <p>Статистика обучения</p>
           <span className="coming-soon-badge">Скоро</span>
         </div>
 
         <div className="info-card">
-          <div className="card-icon">🎓</div>
+          <div className="card-icon"><AiOutlineStar /></div>
           <h3>Достижения</h3>
           <p>Награды и сертификаты</p>
           <span className="coming-soon-badge">Скоро</span>

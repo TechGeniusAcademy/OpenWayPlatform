@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import './StudentProfile.css';
+import { AiOutlineWallet } from 'react-icons/ai';
 import '../../styles/UsernameStyles.css';
 
 function StudentProfile() {
@@ -133,7 +134,7 @@ function StudentProfile() {
         <h1>Мой профиль</h1>
         <div className="header-actions">
           <div className="user-points">
-            <span className="points-icon">💰</span>
+            <span className="points-icon"><AiOutlineWallet /></span>
             <span className="points-value">{userPoints}</span>
             <span className="points-label">баллов</span>
           </div>

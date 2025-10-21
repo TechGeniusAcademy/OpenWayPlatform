@@ -77,26 +77,36 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  border: 2px solid #e0e0e0;
-  background: white;
+  border: 2px solid #000000;
+  background: #ffffff;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s;
   white-space: nowrap;
   font-weight: 500;
+  color: #000000;
 }
 
 .kb-category:hover {
-  border-color: #667eea;
-  background: #f8f9ff;
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
   transform: translateY(-2px);
 }
 
 .kb-category.active {
-  border-color: #667eea;
+  border: 2px solid #000000;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: #ffffff;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.kb-category .category-name {
+  color: inherit;
+}
+
+.kb-category:hover .category-name {
+  color: inherit;
 }
 
 .category-icon {

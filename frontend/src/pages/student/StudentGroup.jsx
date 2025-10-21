@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import '../../styles/UsernameStyles.css';
+import { AiOutlineWallet } from 'react-icons/ai';
 
 function StudentGroup() {
   const { user } = useAuth();
@@ -170,7 +171,7 @@ function StudentGroup() {
                         {student.full_name || student.username}
                       </strong>
                       <small>{student.email}</small>
-                      <div className="student-points">💰 {student.points || 0} баллов</div>
+                      <div className="student-points"><AiOutlineWallet className="points-inline" /> {student.points || 0} баллов</div>
                     </div>
                   </div>
                 );

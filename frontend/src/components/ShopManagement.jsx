@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api, { BASE_URL } from '../utils/api';
 import './ShopManagement.css';
+import { AiOutlineShoppingCart, AiOutlinePlus, AiOutlinePicture, AiOutlineEdit, AiOutlineDelete, AiOutlineCheck, AiOutlineClose, AiOutlineKey, AiOutlineDollar } from 'react-icons/ai';
 
 function ShopManagement() {
   const [items, setItems] = useState([]);
@@ -137,25 +138,25 @@ function ShopManagement() {
   return (
     <div className="shop-management">
       <div className="page-header">
-        <h1>🛒 Управление магазином</h1>
+        <h1><AiOutlineShoppingCart className="header-icon" /> Управление магазином</h1>
         <button className="btn-primary" onClick={() => setShowForm(true)}>
-          ➕ Добавить предмет
+          <AiOutlinePlus className="btn-icon" /> Добавить предмет
         </button>
       </div>
 
       {/* Информация о рекомендуемых размерах */}
       <div className="image-guidelines">
-        <h3>📐 Рекомендуемые размеры изображений:</h3>
+  <h3><AiOutlinePicture className="guide-icon" /> Рекомендуемые размеры изображений:</h3>
         <div className="guidelines-grid">
           <div className="guideline-card">
-            <div className="guideline-icon">🖼️</div>
+            <div className="guideline-icon"><AiOutlinePicture /></div>
             <h4>Рамки для аватара</h4>
             <p className="size-info">200×200 пикселей</p>
             <p className="format-info">Формат: PNG с прозрачностью</p>
             <p className="note">Рамка должна быть квадратной с прозрачным центром</p>
           </div>
           <div className="guideline-card">
-            <div className="guideline-icon">🎨</div>
+            <div className="guideline-icon"><AiOutlinePicture /></div>
             <h4>Баннеры профиля</h4>
             <p className="size-info">800×200 пикселей</p>
             <p className="format-info">Формат: PNG, JPG, WebP</p>
@@ -168,9 +169,9 @@ function ShopManagement() {
       {showForm && (
         <div className="modal-overlay" onClick={() => !loading && resetForm()}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+              <div className="modal-header">
               <h2>{editingItem ? 'Редактировать предмет' : 'Добавить предмет'}</h2>
-              <button className="close-btn" onClick={resetForm}>✕</button>
+              <button className="close-btn" onClick={resetForm}><AiOutlineClose /></button>
             </div>
             <form onSubmit={handleSubmit} className="shop-form">
               <div className="form-group">
@@ -181,8 +182,8 @@ function ShopManagement() {
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="frame">🖼️ Рамка для аватара</option>
-                  <option value="banner">🎨 Баннер профиля</option>
+                  <option value="frame"><AiOutlinePicture /> Рамка для аватара</option>
+                  <option value="banner"><AiOutlinePicture /> Баннер профиля</option>
                 </select>
               </div>
 
@@ -279,16 +280,16 @@ function ShopManagement() {
                 <h3>{item.name}</h3>
                 <p className="item-description">{item.description}</p>
                 <div className="item-meta">
-                  <span className="item-key">🔑 {item.item_key}</span>
-                  <span className="item-price">💰 {item.price}</span>
+                  <span className="item-key"><AiOutlineKey /> {item.item_key}</span>
+                  <span className="item-price"><AiOutlineDollar /> {item.price}</span>
                 </div>
               </div>
               <div className="item-actions">
                 <button className="btn-edit" onClick={() => handleEdit(item)}>
-                  ✏️ Изменить
+                  <AiOutlineEdit className="btn-icon" /> Изменить
                 </button>
                 <button className="btn-delete" onClick={() => handleDelete(item.id)}>
-                  🗑️ Удалить
+                  <AiOutlineDelete className="btn-icon" /> Удалить
                 </button>
               </div>
             </div>
@@ -318,16 +319,16 @@ function ShopManagement() {
                 <h3>{item.name}</h3>
                 <p className="item-description">{item.description}</p>
                 <div className="item-meta">
-                  <span className="item-key">🔑 {item.item_key}</span>
-                  <span className="item-price">💰 {item.price}</span>
+                  <span className="item-key"><AiOutlineKey /> {item.item_key}</span>
+                  <span className="item-price"><AiOutlineDollar /> {item.price}</span>
                 </div>
               </div>
               <div className="item-actions">
                 <button className="btn-edit" onClick={() => handleEdit(item)}>
-                  ✏️ Изменить
+                  <AiOutlineEdit className="btn-icon" /> Изменить
                 </button>
                 <button className="btn-delete" onClick={() => handleDelete(item.id)}>
-                  🗑️ Удалить
+                  <AiOutlineDelete className="btn-icon" /> Удалить
                 </button>
               </div>
             </div>
