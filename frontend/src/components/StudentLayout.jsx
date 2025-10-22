@@ -11,6 +11,7 @@ import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
 import { FaTrophy } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
+import FloatingChat from './FloatingChat';
 
 function StudentLayout({ children }) {
   const { user, logout } = useAuth();
@@ -242,6 +243,8 @@ function StudentLayout({ children }) {
       <main className="student-main-content">
         {children}
       </main>
+
+      <FloatingChat />
     </div>
   );
 }

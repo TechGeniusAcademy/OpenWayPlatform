@@ -339,12 +339,12 @@
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #ffffff !important;
+  color: #00ff4c;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #ffffff !important;
+  color: #00ff4c;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }

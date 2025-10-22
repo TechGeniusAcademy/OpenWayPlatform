@@ -597,7 +597,7 @@
   display: flex;
   flex-direction: row;
   gap: 10px;
-  max-width: 70%;
+  max-width: 95%;
   position: relative;
   margin-bottom: 15px;
 }
@@ -688,6 +688,10 @@
   background: var(--bg-light);
   color: var(--text-dark);
   word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  max-width: 100%;
 }
 
 .message.own .message-content {
@@ -991,7 +995,7 @@
   }
 
   .message {
-    max-width: 85%;
+    max-width: 95%;
   }
 
   .message-content {

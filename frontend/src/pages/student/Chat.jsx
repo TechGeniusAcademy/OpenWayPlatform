@@ -61,16 +61,37 @@ function Chat() {
     loadFrameImages();
     
     const socket = getSocket();
-    if (!socket) return;
+    console.log('Chat: Получен socket:', socket);
+    console.log('Chat: Socket подключен?', socket?.connected);
+    
+    if (!socket) {
+      console.log('Chat: Socket не найден');
+      return;
+    }
 
     // Сохраняем ссылку на сокет
     socketRef.current = socket;
 
     // Обработчик новых сообщений
     const handleNewMessage = (message) => {
+      console.log('Chat: Получено новое сообщение:', message);
+      console.log('Chat: activeChatRef.current?.id:', activeChatRef.current?.id, 'message.chat_id:', message.chat_id);
+      
       // Добавляем сообщение только если это активный чат
       if (activeChatRef.current?.id === message.chat_id) {
-        setMessages(prev => [...prev, message]);
+        console.log('Chat: Добавляем сообщение в активный чат');
+        setMessages(prev => {
+          // Проверяем, нет ли уже этого сообщения
+          const exists = prev.some(m => m.id === message.id);
+          if (exists) {
+            console.log('Chat: Сообщение уже существует, пропускаем');
+            return prev;
+          }
+          console.log('Chat: Добавляем новое сообщение в UI');
+          return [...prev, message];
+        });
+      } else {
+        console.log('Chat: Сообщение не для активного чата, пропускаем');
       }
     };
 
@@ -149,6 +170,7 @@ function Chat() {
     };
 
     // Подписываемся на события
+    console.log('Chat: Подписываемся на WebSocket события');
     socket.on('new-message', handleNewMessage);
     socket.on('chat-message-notification', handleChatMessageNotification);
     socket.on('chat-list-update', handleChatListUpdate);
@@ -159,6 +181,7 @@ function Chat() {
     socket.on('user-offline', handleUserOffline);
 
     return () => {
+      console.log('Chat: Отписываемся от WebSocket событий');
       // Отписываемся от событий (но НЕ отключаем сокет)
       socket.off('new-message', handleNewMessage);
       socket.off('chat-message-notification', handleChatMessageNotification);
@@ -173,6 +196,8 @@ function Chat() {
 
   useEffect(() => {
     if (activeChat) {
+      console.log('Chat: Активирован чат:', activeChat.id);
+      
       // Сохраняем активный чат в sessionStorage для контекста уведомлений
       sessionStorage.setItem('activeChatId', activeChat.id);
       
@@ -196,7 +221,10 @@ function Chat() {
       
       const socket = socketRef.current;
       if (socket) {
+        console.log('Chat: Присоединяемся к чату:', activeChat.id);
         socket.emit('join-chat', activeChat.id);
+      } else {
+        console.log('Chat: Socket не найден для присоединения к чату');
       }
       
       // Отмечаем сообщения как прочитанные
@@ -212,6 +240,7 @@ function Chat() {
 
     return () => {
       if (activeChat && socketRef.current) {
+        console.log('Chat: Покидаем чат:', activeChat.id);
         socketRef.current.emit('leave-chat', activeChat.id);
       }
       // Очищаем активный чат при размонтировании
@@ -267,8 +296,26 @@ function Chat() {
 
   const loadMessages = async (chatId) => {
     try {
+      // Сначала загружаем из localStorage для мгновенного отображения
+      const localKey = `chat_messages_${chatId}`;
+      const localMessages = localStorage.getItem(localKey);
+      if (localMessages) {
+        try {
+          const parsed = JSON.parse(localMessages);
+          setMessages(parsed);
+          scrollToBottom();
+        } catch (e) {
+          console.error('Ошибка парсинга локальных сообщений:', e);
+        }
+      }
+
+      // Затем загружаем актуальные данные с сервера
       const response = await api.get(`/chat/${chatId}/messages`);
-      setMessages(response.data.messages);
+      const serverMessages = response.data.messages;
+      setMessages(serverMessages);
+      
+      // Сохраняем в localStorage
+      localStorage.setItem(localKey, JSON.stringify(serverMessages));
       scrollToBottom();
     } catch (error) {
       console.error('Ошибка загрузки сообщений:', error);
@@ -420,8 +467,18 @@ function Chat() {
         const messageWithSender = {
           ...response.data.message,
           sender_full_name: user.full_name,
-          sender_username: user.username
+          sender_username: user.username,
+          sender_avatar_url: user.avatar_url,
+          sender_avatar_frame: user.avatar_frame
         };
+
+        // Добавляем сообщение локально сразу
+        const newMessages = [...messages, messageWithSender];
+        setMessages(newMessages);
+        
+        // Сохраняем в localStorage
+        const localKey = `chat_messages_${activeChat.id}`;
+        localStorage.setItem(localKey, JSON.stringify(newMessages));
 
         if (socket) {
           socket.emit('send-message', {
@@ -430,7 +487,7 @@ function Chat() {
           });
         }
 
-        // Сообщение добавится через WebSocket событие 'new-message'
+        scrollToBottom();
       }
 
       setNewMessage('');
