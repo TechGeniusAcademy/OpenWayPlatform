@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import './StudentProfile.css';
-import { AiOutlineWallet } from 'react-icons/ai';
+import { AiOutlineWallet, AiOutlineHistory } from 'react-icons/ai';
 import '../../styles/UsernameStyles.css';
+import PointsHistory from '../../components/PointsHistory';
 
 function StudentProfile() {
   const { user, updateUser } = useAuth();
@@ -13,6 +14,7 @@ function StudentProfile() {
   const [userPoints, setUserPoints] = useState(0);
   const [appliedFrame, setAppliedFrame] = useState(null);
   const [appliedBanner, setAppliedBanner] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     fetchUserPoints();
@@ -133,6 +135,14 @@ function StudentProfile() {
       <div className="page-header">
         <h1>Мой профиль</h1>
         <div className="header-actions">
+          <button 
+            className="history-btn"
+            onClick={() => setShowHistory(true)}
+            title="История транзакций"
+          >
+            <AiOutlineHistory />
+            <span>История баллов</span>
+          </button>
           <div className="user-points">
             <span className="points-icon"><AiOutlineWallet /></span>
             <span className="points-value">{userPoints}</span>
@@ -220,6 +230,11 @@ function StudentProfile() {
           </div>
         </div>
       </div>
+
+      <PointsHistory 
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+      />
     </div>
   );
 }

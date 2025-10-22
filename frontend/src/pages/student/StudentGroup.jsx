@@ -2,13 +2,21 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import '../../styles/UsernameStyles.css';
-import { AiOutlineWallet } from 'react-icons/ai';
+import './StudentGroup.css';
+import { AiOutlineWallet, AiOutlineClose, AiOutlineTrophy, AiOutlineStar, AiOutlineSend } from 'react-icons/ai';
 
 function StudentGroup() {
-  const { user } = useAuth();
+  const { user, updateUser, checkAuth } = useAuth();
   const [groupInfo, setGroupInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cosmetics, setCosmetics] = useState({ frames: [], banners: [] });
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showTransferForm, setShowTransferForm] = useState(false);
+  const [transferAmount, setTransferAmount] = useState('');
+  const [transferMessage, setTransferMessage] = useState('');
+  const [transfering, setTransfering] = useState(false);
+  const [transferError, setTransferError] = useState('');
 
   useEffect(() => {
     loadGroupInfo();
@@ -56,6 +64,60 @@ function StudentGroup() {
     if (!bannerKey || bannerKey === 'default') return null;
     const banner = cosmetics.banners.find(b => b.item_key === bannerKey);
     return banner?.image_url ? `${BASE_URL}${banner.image_url}` : null;
+  };
+
+  const openStudentProfile = (student) => {
+    setSelectedStudent(student);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setShowTransferForm(false);
+    setTransferAmount('');
+    setTransferMessage('');
+    setTransferError('');
+    setTimeout(() => setSelectedStudent(null), 300);
+  };
+
+  const handleTransferPoints = async (e) => {
+    e.preventDefault();
+    
+    if (!transferAmount || transferAmount <= 0) {
+      setTransferError('Введите корректное количество баллов');
+      return;
+    }
+
+    if (transferAmount > user.points) {
+      setTransferError('У вас недостаточно баллов');
+      return;
+    }
+
+    try {
+      setTransfering(true);
+      setTransferError('');
+      const response = await api.post('/points/transfer', {
+        recipient_id: selectedStudent.id,
+        amount: parseInt(transferAmount),
+        message: transferMessage
+      });
+
+      console.log('✅ Ответ сервера:', response.data);
+      
+      // Обновляем баланс текущего пользователя
+      await checkAuth();
+      
+      // Обновляем данные группы
+      await loadGroupInfo();
+      
+      // Закрываем модальное окно и форму
+      closeModal();
+    } catch (error) {
+      console.error('Ошибка передачи баллов:', error);
+      setTransferError(error.response?.data?.error || 'Ошибка при передаче баллов');
+    } finally {
+      setTransfering(false);
+    }
   };
 
   if (loading) {
@@ -135,6 +197,7 @@ function StudentGroup() {
                   <div 
                     key={student.id} 
                     className="student-list-item"
+                    onClick={() => openStudentProfile(student)}
                     style={{
                       backgroundImage: bannerImage 
                         ? `url(${bannerImage})` 
@@ -142,7 +205,8 @@ function StudentGroup() {
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       position: 'relative',
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      cursor: 'pointer'
                     }}
                   >
                     {(bannerImage || student.profile_banner === 'default') && (
@@ -180,6 +244,241 @@ function StudentGroup() {
           </div>
         )}
       </div>
+
+      {/* Модальное окно профиля студента */}
+      {showModal && selectedStudent && (
+        <div className="student-profile-modal-overlay" onClick={closeModal}>
+          <div className="student-profile-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={closeModal}>
+              <AiOutlineClose />
+            </button>
+
+            {/* Баннер профиля */}
+            <div 
+              className="modal-profile-banner"
+              style={{
+                backgroundImage: getBannerImage(selectedStudent.profile_banner)
+                  ? `url(${getBannerImage(selectedStudent.profile_banner)})`
+                  : selectedStudent.profile_banner === 'default'
+                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="modal-banner-overlay"></div>
+            </div>
+
+            {/* Аватар с рамкой */}
+            <div className="modal-avatar-section">
+              <div className="modal-avatar-wrapper">
+                <div className="modal-avatar">
+                  {selectedStudent.avatar_url ? (
+                    <img src={`${BASE_URL}${selectedStudent.avatar_url}`} alt={selectedStudent.username} />
+                  ) : (
+                    <span className="avatar-letter">
+                      {(selectedStudent.full_name || selectedStudent.username).charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                {getFrameImage(selectedStudent.avatar_frame) && (
+                  <img 
+                    src={getFrameImage(selectedStudent.avatar_frame)}
+                    alt="Frame"
+                    className="modal-avatar-frame"
+                  />
+                )}
+              </div>
+              
+              <div className="modal-user-info">
+                <h2 className={`styled-username ${selectedStudent.username_style || 'username-none'}`}>
+                  {selectedStudent.full_name || selectedStudent.username}
+                </h2>
+                <p className="modal-username">@{selectedStudent.username}</p>
+              </div>
+            </div>
+
+            {/* Информация о студенте */}
+            <div className="modal-info-section">
+              <div className="modal-stats">
+                <div className="modal-stat-card">
+                  <div className="stat-icon">
+                    <AiOutlineWallet />
+                  </div>
+                  <div className="stat-info">
+                    <span className="stat-value">{selectedStudent.points || 0}</span>
+                    <span className="stat-label">Баллов</span>
+                  </div>
+                </div>
+
+                <div className="modal-stat-card">
+                  <div className="stat-icon">
+                    <AiOutlineTrophy />
+                  </div>
+                  <div className="stat-info">
+                    <span className="stat-value">{selectedStudent.rank || 'Новичок'}</span>
+                    <span className="stat-label">Ранг</span>
+                  </div>
+                </div>
+
+                <div className="modal-stat-card">
+                  <div className="stat-icon">
+                    <AiOutlineStar />
+                  </div>
+                  <div className="stat-info">
+                    <span className="stat-value">{selectedStudent.level || 1}</span>
+                    <span className="stat-label">Уровень</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-details">
+                <h3>Информация</h3>
+                <div className="modal-details-grid">
+                  <div className="detail-row">
+                    <span className="detail-label">Email:</span>
+                    <span className="detail-value">{selectedStudent.email}</span>
+                  </div>
+                  {selectedStudent.phone && (
+                    <div className="detail-row">
+                      <span className="detail-label">Телефон:</span>
+                      <span className="detail-value">{selectedStudent.phone}</span>
+                    </div>
+                  )}
+                  <div className="detail-row">
+                    <span className="detail-label">Статус:</span>
+                    <span className="detail-value">
+                      <span className={`status-badge ${selectedStudent.is_online ? 'online' : 'offline'}`}>
+                        {selectedStudent.is_online ? 'Онлайн' : 'Офлайн'}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Дата регистрации:</span>
+                    <span className="detail-value">
+                      {new Date(selectedStudent.created_at).toLocaleDateString('ru-RU', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Кнопка передачи баллов */}
+              {selectedStudent.id !== user.id && (
+                <div className="modal-transfer-section">
+                  {!showTransferForm ? (
+                    <button 
+                      className="transfer-points-btn"
+                      onClick={() => setShowTransferForm(true)}
+                    >
+                      <AiOutlineSend />
+                      Передать баллы
+                    </button>
+                  ) : (
+                    <form className="transfer-form" onSubmit={handleTransferPoints}>
+                      <h3>Передать баллы</h3>
+                      <p className="transfer-info">
+                        Вы можете передать баллы пользователю {selectedStudent.full_name || selectedStudent.username}
+                      </p>
+                      <p className="your-balance">
+                        Ваш баланс: <strong>{user.points} баллов</strong>
+                      </p>
+                      
+                      <div className="form-group">
+                        <label>Количество баллов:</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={user.points}
+                          value={transferAmount}
+                          onChange={(e) => setTransferAmount(e.target.value)}
+                          placeholder="Введите количество"
+                          required
+                          disabled={transfering}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Сообщение (необязательно):</label>
+                        <textarea
+                          value={transferMessage}
+                          onChange={(e) => setTransferMessage(e.target.value)}
+                          placeholder="Добавьте сообщение..."
+                          rows="3"
+                          disabled={transfering}
+                        />
+                      </div>
+
+                      {transferError && (
+                        <div className="transfer-error">
+                          {transferError}
+                        </div>
+                      )}
+
+                      <div className="transfer-actions">
+                        <button 
+                          type="button" 
+                          className="cancel-btn"
+                          onClick={() => {
+                            setShowTransferForm(false);
+                            setTransferAmount('');
+                            setTransferMessage('');
+                            setTransferError('');
+                          }}
+                          disabled={transfering}
+                        >
+                          Отмена
+                        </button>
+                        <button 
+                          type="submit" 
+                          className="submit-btn"
+                          disabled={transfering || !transferAmount}
+                        >
+                          {transfering ? 'Отправка...' : 'Отправить'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
+
+              {/* Косметика */}
+              <div className="modal-cosmetics">
+                <h3>Активная косметика</h3>
+                <div className="cosmetics-grid">
+                  <div className="cosmetic-item">
+                    <span className="cosmetic-label">Рамка аватара:</span>
+                    <span className="cosmetic-value">
+                      {selectedStudent.avatar_frame && selectedStudent.avatar_frame !== 'none' 
+                        ? cosmetics.frames.find(f => f.item_key === selectedStudent.avatar_frame)?.name || 'Неизвестно'
+                        : 'Не выбрано'}
+                    </span>
+                  </div>
+                  <div className="cosmetic-item">
+                    <span className="cosmetic-label">Баннер профиля:</span>
+                    <span className="cosmetic-value">
+                      {selectedStudent.profile_banner && selectedStudent.profile_banner !== 'default'
+                        ? cosmetics.banners.find(b => b.item_key === selectedStudent.profile_banner)?.name || 'Неизвестно'
+                        : 'По умолчанию'}
+                    </span>
+                  </div>
+                  <div className="cosmetic-item">
+                    <span className="cosmetic-label">Стиль никнейма:</span>
+                    <span className="cosmetic-value">
+                      {selectedStudent.username_style && selectedStudent.username_style !== 'username-none'
+                        ? selectedStudent.username_style.replace('username-', '').toUpperCase()
+                        : 'Обычный'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

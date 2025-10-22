@@ -12,6 +12,32 @@
   align-items: center;
 }
 
+.history-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(74, 144, 226, 0.1);
+  border: 2px solid #4a90e2;
+  color: #4a90e2;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.history-btn:hover {
+  background: #4a90e2;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+.history-btn svg {
+  font-size: 20px;
+}
+
 .user-points {
   display: flex;
   align-items: center;

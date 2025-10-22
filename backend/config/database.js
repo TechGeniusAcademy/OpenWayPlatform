@@ -533,11 +533,25 @@ export const initDatabase = async () => {
       );
     `);
 
-    // Индексы для магазина
+    // Таблица 26: История баллов (points_history)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS points_history (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        points_change INTEGER NOT NULL,
+        reason TEXT,
+        admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Индексы для магазина и истории баллов
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
       CREATE INDEX IF NOT EXISTS idx_user_purchases_user ON user_purchases(user_id);
       CREATE INDEX IF NOT EXISTS idx_users_online ON users(is_online, last_seen);
+      CREATE INDEX IF NOT EXISTS idx_points_history_user_id ON points_history(user_id);
+      CREATE INDEX IF NOT EXISTS idx_points_history_created_at ON points_history(created_at DESC);
     `);
 
     // Удаляем старые CSS-based предметы при инициализации
