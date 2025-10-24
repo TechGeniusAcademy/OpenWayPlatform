@@ -6,7 +6,9 @@ import {
   FaJs, 
   FaPython, 
   FaHtml5, 
-  FaCss3Alt 
+  FaCss3Alt,
+  FaPhp,
+  FaDatabase
 } from 'react-icons/fa';
 import { BiDotsVerticalRounded } from 'react-icons/bi';
 import './FileTree.css';
@@ -48,6 +50,10 @@ const FileTree = ({
         return <FaHtml5 className="file-icon html-icon" />;
       case 'css':
         return <FaCss3Alt className="file-icon css-icon" />;
+      case 'php':
+        return <FaPhp className="file-icon php-icon" />;
+      case 'sql':
+        return <FaDatabase className="file-icon sql-icon" />;
       default:
         return <FaFile className="file-icon" />;
     }

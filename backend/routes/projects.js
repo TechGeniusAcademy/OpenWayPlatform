@@ -4,6 +4,10 @@ import { authenticate } from '../middleware/auth.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execPromise = promisify(exec);
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -173,6 +177,74 @@ router.delete('/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error deleting project:', error);
     res.status(500).json({ message: 'Ошибка при удалении проекта' });
+  }
+});
+
+// Выполнить PHP код
+router.post('/:id/execute-php', authenticate, async (req, res) => {
+  try {
+    const { code, fileName } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ message: 'Код не предоставлен' });
+    }
+
+    const project = await Project.findOne({
+      _id: req.params.id,
+      userId: req.user.id
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Проект не найден' });
+    }
+
+    // Создаем временный файл для выполнения
+    const tempDir = path.join(PROJECTS_DIR, 'temp', req.user.id.toString());
+    await fs.mkdir(tempDir, { recursive: true });
+    
+    const tempFile = path.join(tempDir, `temp_${Date.now()}.php`);
+    await fs.writeFile(tempFile, code, 'utf8');
+
+    try {
+      // Выполняем PHP код с таймаутом 5 секунд
+      const { stdout, stderr } = await execPromise(`php ${tempFile}`, {
+        timeout: 5000,
+        maxBuffer: 1024 * 1024 // 1MB
+      });
+
+      // Удаляем временный файл
+      await fs.unlink(tempFile).catch(() => {});
+
+      res.json({
+        success: true,
+        output: stdout,
+        error: stderr || null
+      });
+    } catch (execError) {
+      // Удаляем временный файл даже в случае ошибки
+      await fs.unlink(tempFile).catch(() => {});
+
+      if (execError.killed) {
+        return res.json({
+          success: false,
+          output: '',
+          error: '⏱️ Превышено время выполнения (5 секунд)'
+        });
+      }
+
+      res.json({
+        success: false,
+        output: execError.stdout || '',
+        error: execError.stderr || execError.message
+      });
+    }
+  } catch (error) {
+    console.error('Error executing PHP:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Ошибка при выполнении PHP кода',
+      error: error.message 
+    });
   }
 });
 

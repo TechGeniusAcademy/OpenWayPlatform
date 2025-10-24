@@ -64,6 +64,14 @@
   color: #264de4;
 }
 
+.php-icon {
+  color: #8892bf;
+}
+
+.sql-icon {
+  color: #00758f;
+}
+
 .item-name {
   flex: 1;
   white-space: nowrap;
