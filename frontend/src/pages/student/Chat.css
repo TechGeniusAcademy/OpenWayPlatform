@@ -706,29 +706,36 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   max-width: 600px;
   background: #1e1e1e !important;
-  color: inherit !important;
   padding: 0 !important;
 }
 
-/* Отключаем косметику сообщений для кода */
-.message-code * {
-  background: inherit !important;
-  -webkit-text-fill-color: unset !important;
-  background-clip: unset !important;
-  -webkit-background-clip: unset !important;
-}
-
 .code-header {
-  background: #1e1e1e;
+  background: #1e1e1e !important;
   color: #d4d4d4 !important;
   padding: 8px 12px;
   font-size: 12px;
   font-family: monospace;
+  font-weight: normal !important;
 }
 
 .message-code pre {
   margin: 0 !important;
   border-radius: 0 !important;
+  background: #1e1e1e !important;
+}
+
+/* ПОЛНОЕ отключение косметики сообщений для кода - максимальный приоритет */
+.message-code pre *,
+.message-code code,
+.message-code code *,
+.message-code span,
+.message-code .token {
+  background: transparent !important;
+  -webkit-text-fill-color: inherit !important;
+  background-clip: border-box !important;
+  -webkit-background-clip: border-box !important;
+  color: inherit !important;
+  font-weight: inherit !important;
 }
 
 /* Файлы в сообщениях */

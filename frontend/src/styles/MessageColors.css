@@ -240,3 +240,24 @@
   animation: rainbow-shift 5s linear infinite;
   background-size: 200% 100%;
 }
+
+/* ============================================ */
+/* ОТКЛЮЧЕНИЕ КОСМЕТИКИ ДЛЯ КОДА */
+/* ============================================ */
+
+/* Полностью отключаем все стили косметики для блоков кода */
+.message-code,
+.message-code *,
+.message-code pre,
+.message-code code,
+.message-code span,
+.message-code .token {
+  background: transparent !important;
+  -webkit-text-fill-color: inherit !important;
+  background-clip: border-box !important;
+  -webkit-background-clip: border-box !important;
+  color: inherit !important;
+  font-weight: inherit !important;
+  animation: none !important;
+  text-shadow: none !important;
+}
