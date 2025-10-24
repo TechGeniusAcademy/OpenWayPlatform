@@ -12,6 +12,7 @@
     "@monaco-editor/react": "^4.7.0",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
+    "emmet-monaco-es": "^5.4.0",
     "multer": "^2.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
