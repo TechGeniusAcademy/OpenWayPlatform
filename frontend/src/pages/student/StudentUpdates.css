@@ -200,6 +200,17 @@
   color: #2a2a2a;
 }
 
+/* Стили для изображений */
+.update-content-html img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 20px auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
 .update-content-html h1,
 .update-content-html h2,
 .update-content-html h3 {

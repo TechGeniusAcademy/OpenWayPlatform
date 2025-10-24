@@ -340,6 +340,17 @@
   color: #34495e;
 }
 
+/* Стили для изображений */
+.kb-article-body img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 20px auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
 .kb-article-body h1 {
   font-size: 28px;
   font-weight: 700;
