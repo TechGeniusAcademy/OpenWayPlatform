@@ -8,6 +8,8 @@ import { AiOutlineClose } from 'react-icons/ai';
 import { emmetHTML, emmetCSS, emmetJSX } from 'emmet-monaco-es';
 import { getProject, updateProject } from '../../services/projectService';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 function StudentIDE() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -540,7 +542,7 @@ function StudentIDE() {
           const hasHtml = code.includes('<!DOCTYPE') || code.includes('<html') || code.includes('<body');
           
           try {
-            const response = await fetch(`http://localhost:5000/api/projects/${realProjectId}/execute-php`, {
+            const response = await fetch(`${API_URL}/projects/${realProjectId}/execute-php`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
