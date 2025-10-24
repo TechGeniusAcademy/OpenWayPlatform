@@ -214,23 +214,35 @@ router.post('/:id/execute-php', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Проект не найден' });
     }
 
-    // Создаем временный файл для выполнения
-    const tempDir = path.join(PROJECTS_DIR, 'temp', req.user.id.toString());
-    await fs.mkdir(tempDir, { recursive: true });
+    const project = checkResult.rows[0];
+
+    // Сохраняем весь проект на диск
+    const projectDir = path.join(PROJECTS_DIR, req.user.id.toString(), req.params.id);
     
-    const tempFile = path.join(tempDir, `temp_${Date.now()}.php`);
-    await fs.writeFile(tempFile, code, 'utf8');
+    // Очищаем и пересоздаем директорию проекта
+    await fs.rm(projectDir, { recursive: true, force: true });
+    await fs.mkdir(projectDir, { recursive: true });
+    
+    // Сохраняем все файлы из file_system
+    if (project.file_system) {
+      await saveFilesToDisk(projectDir, project.file_system);
+    }
+
+    // Определяем путь к файлу для выполнения
+    const fileToExecute = fileName || 'index.php';
+    const filePath = path.join(projectDir, fileToExecute.split('/').pop());
+
+    // Если файл не существует, сохраняем текущий код
+    await fs.writeFile(filePath, code, 'utf8');
 
     try {
-      // Выполняем PHP код с таймаутом 5 секунд и выводим все ошибки
-      const { stdout, stderr } = await execPromise(`php -d display_errors=1 -d error_reporting=E_ALL "${tempFile}"`, {
+      // Выполняем PHP из директории проекта
+      const { stdout, stderr } = await execPromise(`php -d display_errors=1 -d error_reporting=E_ALL "${fileToExecute.split('/').pop()}"`, {
+        cwd: projectDir, // Важно! Выполняем из директории проекта
         timeout: 5000,
         maxBuffer: 1024 * 1024, // 1MB
         shell: true
       });
-
-      // Удаляем временный файл
-      await fs.unlink(tempFile).catch(() => {});
 
       res.json({
         success: true,
@@ -238,9 +250,6 @@ router.post('/:id/execute-php', authenticate, async (req, res) => {
         error: stderr || null
       });
     } catch (execError) {
-      // Удаляем временный файл даже в случае ошибки
-      await fs.unlink(tempFile).catch(() => {});
-
       if (execError.killed) {
         return res.json({
           success: false,
