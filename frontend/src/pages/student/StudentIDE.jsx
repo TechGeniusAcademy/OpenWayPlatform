@@ -532,58 +532,15 @@ function StudentIDE() {
         setOutput('');
       } else if (ext === 'php') {
         console.log('🐘 Выполнение PHP кода');
-        setOutput('⏳ Выполнение PHP...');
         
-        if (editorRef.current) {
-          const code = editorRef.current.getValue();
-          const realProjectId = project?._id || projectId;
-          
-          // Проверяем, есть ли HTML в коде
-          const hasHtml = code.includes('<!DOCTYPE') || code.includes('<html') || code.includes('<body');
-          
-          try {
-            const response = await fetch(`${API_URL}/projects/${realProjectId}/execute-php`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-              body: JSON.stringify({
-                code,
-                fileName: file.path, // Используем полный путь, а не только имя
-                renderHtml: hasHtml
-              })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-              // Если это HTML-контент, показываем в preview
-              if (hasHtml && data.output) {
-                setPreviewHtml(data.output);
-                setShowPreview(true);
-                setOutput('✓ PHP выполнен, результат в предпросмотре');
-                if (data.error) {
-                  setOutput(prev => prev + '\n\n⚠️ Предупреждения:\n' + data.error);
-                }
-              } else {
-                // Обычный текстовый вывод
-                setShowPreview(false);
-                setOutput(data.output || '✓ Код выполнен успешно (без вывода)');
-                if (data.error) {
-                  setOutput(prev => prev + '\n\n⚠️ Предупреждения:\n' + data.error);
-                }
-              }
-            } else {
-              setShowPreview(false);
-              setOutput('❌ Ошибка выполнения:\n' + (data.error || data.message || 'Неизвестная ошибка'));
-            }
-          } catch (fetchError) {
-            console.error('❌ Ошибка запроса:', fetchError);
-            setShowPreview(false);
-            setOutput('❌ Ошибка соединения с сервером: ' + fetchError.message);
-          }
-        }
+        // Для PHP открываем в новом окне
+        const realProjectId = project?.id || projectId;
+        const fileName = file.name;
+        const url = `${API_URL}/projects/${realProjectId}/php-preview/${fileName}`;
+        
+        window.open(url, '_blank', 'width=1200,height=800');
+        setOutput('✓ PHP файл открыт в новом окне');
+        setShowPreview(false);
       } else {
         setOutput('⚠️ Выполнение поддерживается только для JavaScript, HTML и PHP файлов');
         setShowPreview(false);
@@ -1003,7 +960,7 @@ function StudentIDE() {
                 ref={previewRef}
                 className="student-ide-preview-iframe"
                 title="HTML Preview"
-                sandbox="allow-scripts"
+                sandbox="allow-scripts allow-forms allow-same-origin"
                 srcDoc={previewHtml}
               />
             </div>
