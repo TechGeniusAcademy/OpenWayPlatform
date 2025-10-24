@@ -818,6 +818,7 @@ function Chat() {
                   >
                     <option value="javascript">JavaScript</option>
                     <option value="python">Python</option>
+                    <option value="php">PHP</option>
                     <option value="java">Java</option>
                     <option value="cpp">C++</option>
                     <option value="csharp">C#</option>
