@@ -550,7 +550,7 @@ function StudentIDE() {
               },
               body: JSON.stringify({
                 code,
-                fileName: file.name,
+                fileName: file.path, // Используем полный путь, а не только имя
                 renderHtml: hasHtml
               })
             });
