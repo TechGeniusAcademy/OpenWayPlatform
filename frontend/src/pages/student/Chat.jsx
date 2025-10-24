@@ -9,6 +9,16 @@ import './Chat.css';
 import '../../styles/UsernameStyles.css';
 import '../../styles/MessageColors.css';
 
+// Функция для определения языка по содержимому кода
+const detectLanguage = (code) => {
+  if (code.includes('<?php') || code.includes('<?=')) return 'php';
+  if (code.includes('<!DOCTYPE html>') || code.includes('<html')) return 'markup';
+  if (code.includes('function') && code.includes('=>')) return 'javascript';
+  if (code.includes('def ') || code.includes('import ')) return 'python';
+  if (code.includes('SELECT') && code.includes('FROM')) return 'sql';
+  return 'javascript'; // По умолчанию
+};
+
 // Функция для нормализации названия языка для подсветки синтаксиса
 const normalizeLanguage = (lang) => {
   const languageMap = {
@@ -22,7 +32,7 @@ const normalizeLanguage = (lang) => {
     'css': 'css',
     'sql': 'sql'
   };
-  return languageMap[lang] || 'text';
+  return languageMap[lang] || 'javascript';
 };
 
 function Chat() {
@@ -478,7 +488,7 @@ function Chat() {
         const response = await api.post(`/chat/${activeChat.id}/messages`, {
           content: newMessage,
           message_type: messageType,
-          code_language: messageType === 'code' ? codeLanguage : null
+          code_language: messageType === 'code' ? 'auto' : null
         });
 
         const messageWithSender = {
@@ -586,9 +596,13 @@ function Chat() {
           {message.message_type === 'code' ? (
             <div className="message-code">
               <div className="code-header">
-                <span>{message.code_language.toUpperCase()}</span>
+                <span>КОД</span>
               </div>
-              <SyntaxHighlighter language={normalizeLanguage(message.code_language)} style={vscDarkPlus}>
+              <SyntaxHighlighter 
+                language={message.code_language ? normalizeLanguage(message.code_language) : detectLanguage(message.content)} 
+                style={vscDarkPlus}
+                showLineNumbers={true}
+              >
                 {message.content}
               </SyntaxHighlighter>
             </div>
@@ -822,27 +836,9 @@ function Chat() {
                   onChange={(e) => setMessageType(e.target.value)}
                   className="message-type-select"
                 >
-                  <option value="text">Текст</option>
-                  <option value="code">Код</option>
+                  <option value="text">💬 Текст</option>
+                  <option value="code">💻 Код</option>
                 </select>
-
-                {messageType === 'code' && (
-                  <select 
-                    value={codeLanguage} 
-                    onChange={(e) => setCodeLanguage(e.target.value)}
-                    className="code-language-select"
-                  >
-                    <option value="javascript">JavaScript</option>
-                    <option value="python">Python</option>
-                    <option value="php">PHP</option>
-                    <option value="java">Java</option>
-                    <option value="cpp">C++</option>
-                    <option value="csharp">C#</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="sql">SQL</option>
-                  </select>
-                )}
 
                 <button 
                   type="button" 
