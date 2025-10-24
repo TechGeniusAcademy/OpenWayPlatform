@@ -229,16 +229,43 @@ router.post('/:id/execute-php', authenticate, async (req, res) => {
     }
 
     // Определяем путь к файлу для выполнения
+    // fileName приходит как /asmir/register.php, нужно найти реальный путь
     const fileToExecute = fileName || 'index.php';
-    const filePath = path.join(projectDir, fileToExecute.split('/').pop());
+    
+    // Функция для поиска файла в структуре
+    const findFileInStructure = (fs, targetPath) => {
+      for (const item of fs) {
+        if (item.path === targetPath) {
+          return item;
+        }
+        if (item.type === 'folder' && item.children) {
+          const found = findFileInStructure(item.children, targetPath);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
 
-    // Если файл не существует, сохраняем текущий код
-    await fs.writeFile(filePath, code, 'utf8');
+    const fileInfo = findFileInStructure(project.file_system, fileToExecute);
+    
+    if (!fileInfo) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Файл не найден в структуре проекта' 
+      });
+    }
+
+    // Находим папку проекта (первый уровень в file_system)
+    const projectFolder = project.file_system[0];
+    const workingDir = path.join(projectDir, projectFolder.name);
+    
+    // Получаем относительный путь файла внутри папки проекта
+    const relativePath = fileToExecute.replace(`/${projectFolder.name}/`, '');
 
     try {
-      // Выполняем PHP из директории проекта
-      const { stdout, stderr } = await execPromise(`php -d display_errors=1 -d error_reporting=E_ALL "${fileToExecute.split('/').pop()}"`, {
-        cwd: projectDir, // Важно! Выполняем из директории проекта
+      // Выполняем PHP из рабочей директории (папка проекта)
+      const { stdout, stderr } = await execPromise(`php -d display_errors=1 -d error_reporting=E_ALL "${relativePath}"`, {
+        cwd: workingDir, // Выполняем из папки проекта (например asmir/)
         timeout: 5000,
         maxBuffer: 1024 * 1024, // 1MB
         shell: true
