@@ -9,6 +9,22 @@ import './Chat.css';
 import '../../styles/UsernameStyles.css';
 import '../../styles/MessageColors.css';
 
+// Функция для нормализации названия языка для подсветки синтаксиса
+const normalizeLanguage = (lang) => {
+  const languageMap = {
+    'javascript': 'javascript',
+    'python': 'python',
+    'php': 'php',
+    'java': 'java',
+    'cpp': 'cpp',
+    'csharp': 'csharp',
+    'html': 'markup',
+    'css': 'css',
+    'sql': 'sql'
+  };
+  return languageMap[lang] || 'text';
+};
+
 function Chat() {
   const { user } = useAuth();
   const { loadUnreadCount } = useNotifications();
@@ -570,9 +586,9 @@ function Chat() {
           {message.message_type === 'code' ? (
             <div className="message-code">
               <div className="code-header">
-                <span>{message.code_language}</span>
+                <span>{message.code_language.toUpperCase()}</span>
               </div>
-              <SyntaxHighlighter language={message.code_language} style={vscDarkPlus}>
+              <SyntaxHighlighter language={normalizeLanguage(message.code_language)} style={vscDarkPlus}>
                 {message.content}
               </SyntaxHighlighter>
             </div>
