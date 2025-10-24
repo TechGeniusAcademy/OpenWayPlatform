@@ -7,6 +7,7 @@ import pool from '../config/database.js';
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import { authenticate } from '../middleware/auth.js';
+import { io } from '../server.js';
 
 const router = express.Router();
 
@@ -270,6 +271,10 @@ router.post('/:chatId/messages', async (req, res) => {
 
     const fullMessage = fullMessageResult.rows[0];
 
+    // Отправляем сообщение через WebSocket всем участникам чата
+    io.to(`chat-${chatId}`).emit('new-message', fullMessage);
+    console.log(`💬 Сообщение отправлено в чат ${chatId} через WebSocket`);
+
     res.status(201).json({ message: fullMessage });
   } catch (error) {
     console.error('Ошибка отправки сообщения:', error);
@@ -315,6 +320,10 @@ router.post('/:chatId/upload', upload.single('file'), async (req, res) => {
     );
 
     const fullMessage = fullMessageResult.rows[0];
+
+    // Отправляем сообщение с файлом через WebSocket всем участникам чата
+    io.to(`chat-${chatId}`).emit('new-message', fullMessage);
+    console.log(`📎 Файл отправлен в чат ${chatId} через WebSocket`);
 
     res.status(201).json({ message: fullMessage });
   } catch (error) {

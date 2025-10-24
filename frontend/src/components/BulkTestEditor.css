@@ -1,0 +1,380 @@
+.bulk-test-editor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.bulk-editor-content {
+  background: #1a1a1a;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #333;
+}
+
+.bulk-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #333;
+  background: linear-gradient(135deg, #2c1810, #1a1a1a);
+}
+
+.bulk-editor-header h3 {
+  margin: 0;
+  color: #f0f0f0;
+  font-size: 1.4em;
+}
+
+.bulk-btn-close {
+  background: #ff4444;
+  border: none;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bulk-btn-close:hover {
+  background: #ff6666;
+}
+
+/* Настройки теста */
+.bulk-test-settings {
+  padding: 20px;
+  border-bottom: 1px solid #333;
+}
+
+.bulk-test-settings h4 {
+  color: #f0f0f0;
+  margin: 0 0 15px 0;
+}
+
+.bulk-settings-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.bulk-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.bulk-form-group label {
+  color: #ccc;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.bulk-form-group input,
+.bulk-form-group textarea {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #f0f0f0;
+  font-size: 14px;
+}
+
+.bulk-form-group input:focus,
+.bulk-form-group textarea:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+}
+
+.bulk-form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+/* Инструкция */
+.bulk-format-instruction {
+  padding: 20px;
+  border-bottom: 1px solid #333;
+}
+
+.bulk-format-instruction h4 {
+  color: #f0f0f0;
+  margin: 0 0 15px 0;
+}
+
+.bulk-instruction-content {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 15px;
+  border-left: 4px solid #ff6b35;
+}
+
+.bulk-instruction-content p {
+  color: #ccc;
+  margin: 0 0 10px 0;
+}
+
+.bulk-instruction-content pre {
+  background: #1a1a1a;
+  padding: 15px;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  overflow-x: auto;
+  margin: 10px 0;
+  border: 1px solid #444;
+}
+
+.bulk-instruction-content ul {
+  color: #ccc;
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.bulk-instruction-content li {
+  margin-bottom: 5px;
+}
+
+/* Поле ввода */
+.bulk-input {
+  padding: 20px;
+}
+
+.bulk-input h4 {
+  color: #f0f0f0;
+  margin: 0 0 15px 0;
+}
+
+.bulk-textarea {
+  width: 100%;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 15px;
+  color: #f0f0f0;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 300px;
+}
+
+.bulk-textarea:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+}
+
+.bulk-textarea::placeholder {
+  color: #666;
+}
+
+/* Действия */
+.bulk-actions {
+  padding: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  border-top: 1px solid #333;
+}
+
+.bulk-btn-primary,
+.bulk-btn-secondary,
+.bulk-btn-success {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.bulk-btn-primary {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+}
+
+.bulk-btn-primary:hover {
+  background: linear-gradient(135deg, #ff7f4d, #ffb347);
+  transform: translateY(-1px);
+}
+
+.bulk-btn-secondary {
+  background: #444;
+  color: #ccc;
+  border: 1px solid #666;
+}
+
+.bulk-btn-secondary:hover {
+  background: #555;
+  color: #f0f0f0;
+}
+
+.bulk-btn-success {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.bulk-btn-success:hover {
+  background: linear-gradient(135deg, #34ce57, #38d9a9);
+  transform: translateY(-1px);
+}
+
+/* Предварительный просмотр */
+.bulk-preview-section {
+  padding: 20px;
+}
+
+.bulk-preview-section h4 {
+  color: #f0f0f0;
+  margin: 0 0 20px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #ff6b35;
+}
+
+.bulk-preview-questions {
+  max-height: 60vh;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.bulk-preview-question {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-left: 4px solid #ff6b35;
+}
+
+.bulk-preview-question h5 {
+  color: #ff6b35;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.bulk-question-text {
+  color: #f0f0f0;
+  font-size: 15px;
+  margin: 0 0 15px 0;
+  font-weight: 500;
+}
+
+.bulk-preview-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bulk-preview-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #1a1a1a;
+  border-radius: 6px;
+  border: 1px solid #444;
+  transition: all 0.2s;
+}
+
+.bulk-preview-option.bulk-correct {
+  background: rgba(40, 167, 69, 0.1);
+  border-color: #28a745;
+  color: #28a745;
+}
+
+.bulk-option-letter {
+  font-weight: bold;
+  margin-right: 10px;
+  color: #ff6b35;
+  min-width: 20px;
+}
+
+.bulk-option-text {
+  flex: 1;
+  color: #ccc;
+}
+
+.bulk-preview-option.bulk-correct .bulk-option-text {
+  color: #f0f0f0;
+}
+
+.bulk-correct-mark {
+  color: #28a745;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.bulk-preview-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid #333;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .bulk-test-editor {
+    padding: 10px;
+  }
+  
+  .bulk-editor-content {
+    width: 100%;
+    max-height: 95vh;
+  }
+  
+  .bulk-settings-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .bulk-actions,
+  .bulk-preview-actions {
+    flex-direction: column;
+  }
+  
+  .bulk-instruction-content pre {
+    font-size: 12px;
+  }
+}
+
+/* Scrollbar styling */
+.bulk-editor-content::-webkit-scrollbar,
+.bulk-preview-questions::-webkit-scrollbar,
+.bulk-textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bulk-editor-content::-webkit-scrollbar-track,
+.bulk-preview-questions::-webkit-scrollbar-track,
+.bulk-textarea::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.bulk-editor-content::-webkit-scrollbar-thumb,
+.bulk-preview-questions::-webkit-scrollbar-thumb,
+.bulk-textarea::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.bulk-editor-content::-webkit-scrollbar-thumb:hover,
+.bulk-preview-questions::-webkit-scrollbar-thumb:hover,
+.bulk-textarea::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

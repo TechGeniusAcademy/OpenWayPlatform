@@ -12,26 +12,37 @@ import StudentHomeworks from './student/StudentHomeworks';
 import Shop from './student/Shop';
 import KnowledgeBase from './student/KnowledgeBase';
 import StudentUpdates from './student/StudentUpdates';
+import StudentIDE from './student/StudentIDE';
+import StudentProjects from './student/StudentProjects';
+import StudentDatabases from './student/StudentDatabases';
+import StudentPlugins from './student/StudentPlugins';
+import StudentThemes from './student/StudentThemes';
 import './StudentDashboard.css';
 
 function StudentDashboard() {
   return (
-    <StudentLayout>
-      <Routes>
-        <Route path="/" element={<StudentHome />} />
-        <Route path="/profile" element={<StudentProfile />} />
-        <Route path="/group" element={<StudentGroup />} />
-        <Route path="/courses" element={<StudentCourses />} />
-        <Route path="/typing" element={<StudentTyping />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/tests" element={<StudentTests />} />
-        <Route path="/homeworks" element={<StudentHomeworks />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/knowledge" element={<KnowledgeBase />} />
-        <Route path="/updates" element={<StudentUpdates />} />
-      </Routes>
-    </StudentLayout>
+    <Routes>
+      {/* IDE Routes - БЕЗ Layout, полный экран */}
+      <Route path="ide/:projectId" element={<StudentIDE />} />
+      
+      {/* Все остальные routes - С Layout */}
+      <Route path="/" element={<StudentLayout><StudentHome /></StudentLayout>} />
+      <Route path="profile" element={<StudentLayout><StudentProfile /></StudentLayout>} />
+      <Route path="group" element={<StudentLayout><StudentGroup /></StudentLayout>} />
+      <Route path="courses" element={<StudentLayout><StudentCourses /></StudentLayout>} />
+      <Route path="typing" element={<StudentLayout><StudentTyping /></StudentLayout>} />
+      <Route path="leaderboard" element={<StudentLayout><Leaderboard /></StudentLayout>} />
+      <Route path="chat" element={<StudentLayout><Chat /></StudentLayout>} />
+      <Route path="tests" element={<StudentLayout><StudentTests /></StudentLayout>} />
+      <Route path="homeworks" element={<StudentLayout><StudentHomeworks /></StudentLayout>} />
+      <Route path="shop" element={<StudentLayout><Shop /></StudentLayout>} />
+      <Route path="knowledge" element={<StudentLayout><KnowledgeBase /></StudentLayout>} />
+      <Route path="updates" element={<StudentLayout><StudentUpdates /></StudentLayout>} />
+      <Route path="projects" element={<StudentLayout><StudentProjects /></StudentLayout>} />
+      <Route path="databases" element={<StudentLayout><StudentDatabases /></StudentLayout>} />
+      <Route path="plugins" element={<StudentLayout><StudentPlugins /></StudentLayout>} />
+      <Route path="themes" element={<StudentLayout><StudentThemes /></StudentLayout>} />
+    </Routes>
   );
 }
 

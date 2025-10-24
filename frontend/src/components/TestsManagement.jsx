@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
+import BulkTestEditor from './BulkTestEditor';
 import './TestsManagement.css';
 
 function TestsManagement() {
@@ -9,6 +10,7 @@ function TestsManagement() {
   const [showForm, setShowForm] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showBulkEditor, setShowBulkEditor] = useState(false);
   const [selectedTest, setSelectedTest] = useState(null);
   const [testHistory, setTestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -218,20 +220,52 @@ function TestsManagement() {
     }
   };
 
+  const handleBulkImport = async (testData) => {
+    try {
+      const requestData = {
+        test: {
+          title: testData.title,
+          description: testData.description,
+          type: testData.type,
+          time_limit: testData.timeLimit,
+          points_correct: testData.pointsCorrect,
+          points_wrong: testData.pointsWrong,
+          can_retry: testData.canRetry
+        },
+        questions: testData.questions
+      };
+
+      await api.post('/tests', requestData);
+      setShowBulkEditor(false);
+      loadTests();
+      alert(`Тест "${testData.title}" успешно создан с ${testData.questions.length} вопросами!`);
+    } catch (error) {
+      console.error('Ошибка создания теста:', error);
+      alert('Ошибка при создании теста');
+    }
+  };
+
   if (loading) return <div>Загрузка...</div>;
 
   return (
-    <div className="tests-management">
-      <div className="header">
+    <div className="tests-mgmt-container">
+      <div className="tests-mgmt-header">
         <h2>Управление тестами</h2>
-        <button className="btn-primary" onClick={() => openForm()}>+ Создать тест</button>
+        <div className="tests-mgmt-header-actions">
+          <button className="tests-mgmt-btn-secondary" onClick={() => setShowBulkEditor(true)}>
+            📝 Массовое создание
+          </button>
+          <button className="tests-mgmt-btn-primary" onClick={() => openForm()}>
+            + Создать тест
+          </button>
+        </div>
       </div>
 
-      <div className="tests-list">
+      <div className="tests-mgmt-list">
         {tests.length === 0 ? (
           <p>Нет созданных тестов</p>
         ) : (
-          <table>
+          <table className="tests-mgmt-table">
             <thead>
               <tr>
                 <th>Название</th>
@@ -267,11 +301,11 @@ function TestsManagement() {
 
       {/* Форма создания/редактирования */}
       {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="tests-mgmt-modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="tests-mgmt-modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>{editingTest ? 'Редактировать тест' : 'Создать тест'}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
+              <div className="tests-mgmt-form-group">
                 <label>Название теста *</label>
                 <input
                   type="text"
@@ -281,7 +315,7 @@ function TestsManagement() {
                 />
               </div>
 
-              <div className="form-group">
+              <div className="tests-mgmt-form-group">
                 <label>Описание</label>
                 <textarea
                   value={description}
@@ -290,8 +324,8 @@ function TestsManagement() {
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
+              <div className="tests-mgmt-form-row">
+                <div className="tests-mgmt-form-group">
                   <label>Тип теста</label>
                   <select value={type} onChange={(e) => setType(e.target.value)} disabled={editingTest}>
                     <option value="choice">С вариантами ответа</option>
@@ -299,7 +333,7 @@ function TestsManagement() {
                   </select>
                 </div>
 
-                <div className="form-group">
+                <div className="tests-mgmt-form-group">
                   <label>Время (минут)</label>
                   <input
                     type="number"
@@ -310,8 +344,8 @@ function TestsManagement() {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
+              <div className="tests-mgmt-form-row">
+                <div className="tests-mgmt-form-group">
                   <label>Баллы за правильный</label>
                   <input
                     type="number"
@@ -320,7 +354,7 @@ function TestsManagement() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="tests-mgmt-form-group">
                   <label>Баллы за неправильный</label>
                   <input
                     type="number"
@@ -329,7 +363,7 @@ function TestsManagement() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="tests-mgmt-form-group">
                   <label>
                     <input
                       type="checkbox"
@@ -345,13 +379,13 @@ function TestsManagement() {
               <h4>Вопросы</h4>
               
               {questions.map((question, qIndex) => (
-                <div key={qIndex} className="question-block">
-                  <div className="question-header">
+                <div key={qIndex} className="tests-mgmt-question-block">
+                  <div className="tests-mgmt-question-header">
                     <h5>Вопрос {qIndex + 1}</h5>
                     <button type="button" onClick={() => removeQuestion(qIndex)}>🗑️</button>
                   </div>
 
-                  <div className="form-group">
+                  <div className="tests-mgmt-form-group">
                     <label>Текст вопроса *</label>
                     <textarea
                       value={question.question_text}
@@ -362,10 +396,10 @@ function TestsManagement() {
                   </div>
 
                   {type === 'choice' ? (
-                    <div className="options-block">
+                    <div className="tests-mgmt-options-block">
                       <label>Варианты ответа:</label>
                       {question.options.map((option, oIndex) => (
-                        <div key={oIndex} className="option-row">
+                        <div key={oIndex} className="tests-mgmt-option-row">
                           <input
                             type="checkbox"
                             checked={option.is_correct}
@@ -385,7 +419,7 @@ function TestsManagement() {
                     </div>
                   ) : (
                     <>
-                      <div className="form-group">
+                      <div className="tests-mgmt-form-group">
                         <label>Язык программирования</label>
                         <select
                           value={question.code_language}
@@ -398,7 +432,7 @@ function TestsManagement() {
                         </select>
                       </div>
 
-                      <div className="form-group">
+                      <div className="tests-mgmt-form-group">
                         <label>Шаблон кода (то, что видит студент)</label>
                         <textarea
                           value={question.code_template}
@@ -408,7 +442,7 @@ function TestsManagement() {
                         />
                       </div>
 
-                      <div className="form-group">
+                      <div className="tests-mgmt-form-group">
                         <label>Правильное решение (для проверки)</label>
                         <textarea
                           value={question.code_solution}
@@ -424,8 +458,8 @@ function TestsManagement() {
 
               <button type="button" onClick={addQuestion}>+ Добавить вопрос</button>
 
-              <div className="form-actions">
-                <button type="submit" className="btn-primary">Сохранить тест</button>
+              <div className="tests-mgmt-form-actions">
+                <button type="submit" className="tests-mgmt-btn-primary">Сохранить тест</button>
                 <button type="button" onClick={() => setShowForm(false)}>Отмена</button>
               </div>
             </form>
@@ -435,16 +469,16 @@ function TestsManagement() {
 
       {/* Модальное окно назначения */}
       {showAssignModal && selectedTest && (
-        <div className="modal-overlay" onClick={() => setShowAssignModal(false)}>
-          <div className="modal-content small" onClick={(e) => e.stopPropagation()}>
+        <div className="tests-mgmt-modal-overlay" onClick={() => setShowAssignModal(false)}>
+          <div className="tests-mgmt-modal-content tests-mgmt-modal-small" onClick={(e) => e.stopPropagation()}>
             <h3>Назначение теста: {selectedTest.title}</h3>
             
             <h4>Назначить группе:</h4>
-            <div className="assign-groups">
+            <div className="tests-mgmt-assign-groups">
               {groups.map(group => {
                 const isAssigned = selectedTest.assignments?.some(a => a.group_id === group.id);
                 return (
-                  <div key={group.id} className="group-item">
+                  <div key={group.id} className="tests-mgmt-group-item">
                     <span>{group.name}</span>
                     {isAssigned ? (
                       <button onClick={() => handleUnassign(group.id)}>Отменить</button>
@@ -463,14 +497,14 @@ function TestsManagement() {
 
       {/* Модальное окно истории */}
       {showHistoryModal && selectedTest && (
-        <div className="modal-overlay" onClick={() => setShowHistoryModal(false)}>
-          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
+        <div className="tests-mgmt-modal-overlay" onClick={() => setShowHistoryModal(false)}>
+          <div className="tests-mgmt-modal-content tests-mgmt-modal-large" onClick={(e) => e.stopPropagation()}>
             <h3>История прохождения: {selectedTest.title}</h3>
             
             {testHistory.length === 0 ? (
               <p>Пока никто не проходил этот тест</p>
             ) : (
-              <table>
+              <table className="tests-mgmt-table">
                 <thead>
                   <tr>
                     <th>Студент</th>
@@ -505,6 +539,14 @@ function TestsManagement() {
             <button onClick={() => setShowHistoryModal(false)}>Закрыть</button>
           </div>
         </div>
+      )}
+
+      {/* Массовый редактор тестов */}
+      {showBulkEditor && (
+        <BulkTestEditor
+          onImport={handleBulkImport}
+          onClose={() => setShowBulkEditor(false)}
+        />
       )}
     </div>
   );

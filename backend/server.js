@@ -21,6 +21,8 @@ import adminShopRoutes from './routes/admin-shop.js';
 import knowledgeBaseRoutes from './routes/knowledge-base.js';
 import updatesRoutes from './routes/updates.js';
 import adminUpdatesRoutes from './routes/admin-updates.js';
+import projectsRoutes from './routes/projects-pg.js';
+import submissionsRoutes from './routes/submissions.js';
 
 dotenv.config();
 
@@ -38,7 +40,7 @@ const io = new Server(httpServer, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'],
   allowEIO3: true,
   pingTimeout: 60000,
   pingInterval: 25000
@@ -74,6 +76,8 @@ app.use('/api/admin/shop', adminShopRoutes);
 app.use('/api/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/updates', updatesRoutes);
 app.use('/api/admin/updates', adminUpdatesRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/submissions', submissionsRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
@@ -130,29 +134,6 @@ io.on('connection', (socket) => {
   socket.on('leave-chat', (chatId) => {
     socket.leave(`chat-${chatId}`);
     console.log(`📤 Пользователь ${socket.userId} покинул чат ${chatId}`);
-  });
-
-  // Отправка сообщения
-  socket.on('send-message', async (data) => {
-    // Отправляем в комнату чата (для отображения сообщения)
-    io.to(`chat-${data.chatId}`).emit('new-message', data.message);
-    
-    // Отправляем всем участникам чата для уведомлений (используем другое событие)
-    try {
-      const chatMembers = await pool.query(
-        'SELECT user_id FROM chat_participants WHERE chat_id = $1',
-        [data.chatId]
-      );
-      
-      chatMembers.rows.forEach(member => {
-        // Отправляем событие для обновления списка чатов и уведомлений
-        io.to(`user-${member.user_id}`).emit('chat-message-notification', data.message);
-      });
-    } catch (err) {
-      console.error('Ошибка при отправке уведомлений участникам чата:', err);
-    }
-    
-    console.log(`💬 Новое сообщение в чате ${data.chatId}`);
   });
 
   // Пользователь печатает
@@ -213,12 +194,12 @@ io.on('connection', (socket) => {
 // Запуск сервера
 const startServer = async () => {
   try {
-    // Инициализация базы данных
+    // Инициализация PostgreSQL базы данных
     await initDatabase();
     
     httpServer.listen(PORT, () => {
       console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
-      console.log(`📊 База данных подключена`);
+      console.log(`📊 PostgreSQL база данных подключена`);
       console.log(`💬 WebSocket сервер готов`);
     });
   } catch (error) {
@@ -228,3 +209,5 @@ const startServer = async () => {
 };
 
 startServer();
+
+export { io };

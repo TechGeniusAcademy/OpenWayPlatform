@@ -1,0 +1,395 @@
+.admin-submissions-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.admin-submissions-loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #888;
+}
+
+.submissions-header {
+  margin-bottom: 30px;
+}
+
+.submissions-header h1 {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.filter-tabs button {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 15px;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.filter-tabs button:hover {
+  color: #3498db;
+}
+
+.filter-tabs button.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+  font-weight: 600;
+}
+
+.submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.no-submissions {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 16px;
+}
+
+.submission-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+}
+
+.submission-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.submission-info h3 {
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.student-name {
+  margin: 0 0 5px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.submission-meta {
+  margin: 0 0 10px 0;
+  color: #999;
+  font-size: 13px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.badge-reviewed {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.badge-approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.btn-view {
+  padding: 10px 24px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.btn-view:hover {
+  background: #2980b9;
+}
+
+/* Viewer Modal */
+.submission-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.submission-viewer {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1400px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.viewer-header h2 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+}
+
+.viewer-header p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #999;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.btn-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.viewer-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.preview-section {
+  flex: 1;
+  padding: 24px;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-section h3 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+}
+
+.project-preview {
+  flex: 1;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+}
+
+.review-section {
+  width: 400px;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.review-section h3 {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #555;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.status-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-buttons button {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-approve {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-approve:hover {
+  background: #229954;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+}
+
+.btn-reject {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn-reject:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+.btn-review {
+  background: #3498db;
+  color: white;
+}
+
+.btn-review:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.form-group input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input[type="number"]:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.previous-feedback {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-left: 4px solid #3498db;
+  border-radius: 4px;
+}
+
+.previous-feedback h4 {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.previous-feedback p {
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.previous-feedback p strong {
+  color: #2c3e50;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .viewer-content {
+    flex-direction: column;
+  }
+
+  .preview-section {
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .review-section {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .submission-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .btn-view {
+    width: 100%;
+  }
+
+  .filter-tabs {
+    flex-wrap: wrap;
+  }
+
+  .filter-tabs button {
+    flex: 1;
+    min-width: 120px;
+  }
+}

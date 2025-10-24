@@ -20,7 +20,10 @@ export function WebSocketProvider({ children }) {
   const socketRef = useRef(null);
 
   useEffect(() => {
+    console.log('WebSocketContext: useEffect вызван, user:', user?.id);
+    
     if (!user) {
+      console.log('WebSocketContext: Пользователь не авторизован, отключаем socket');
       // Если пользователь не авторизован, отключаем сокет
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -30,24 +33,39 @@ export function WebSocketProvider({ children }) {
     }
 
     // Подключаемся к WebSocket только если ещё не подключены
-    if (!socketRef.current) {
+    if (!socketRef.current || !socketRef.current.connected) {
+      console.log('WebSocketContext: Создаём новое подключение к', SOCKET_URL);
+      
+      // Отключаем старый сокет если есть
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      
       socketRef.current = io(SOCKET_URL, {
+        transports: ['polling', 'websocket'],
         reconnection: true,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 5
+        reconnectionAttempts: 10,
+        timeout: 10000
       });
       
       socketRef.current.on('connect', () => {
-        console.log('🔌 WebSocket подключен');
+        console.log('🔌 WebSocket подключен, ID:', socketRef.current.id);
+        console.log('WebSocketContext: Регистрируем пользователя', user.id);
         socketRef.current.emit('register', user.id);
       });
 
-      socketRef.current.on('disconnect', () => {
-        console.log('🔌 WebSocket отключен');
+      socketRef.current.on('disconnect', (reason) => {
+        console.log('🔌 WebSocket отключен, причина:', reason);
       });
 
       socketRef.current.on('connect_error', (error) => {
-        console.error('❌ Ошибка подключения WebSocket:', error);
+        console.error('❌ Ошибка подключения WebSocket:', error.message);
+      });
+
+      socketRef.current.on('reconnect', (attemptNumber) => {
+        console.log('🔄 WebSocket переподключен после', attemptNumber, 'попыток');
+        socketRef.current.emit('register', user.id);
       });
     }
 

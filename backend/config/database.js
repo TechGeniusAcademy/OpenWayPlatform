@@ -545,6 +545,40 @@ export const initDatabase = async () => {
       );
     `);
 
+    // Таблица 27: Проекты IDE (projects)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        description TEXT DEFAULT '',
+        language VARCHAR(50) DEFAULT 'html',
+        file_system JSONB DEFAULT '[]'::jsonb,
+        files_count INTEGER DEFAULT 3,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Таблица 28: Отправки проектов на проверку (project_submissions)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS project_submissions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        project_name VARCHAR(255) NOT NULL,
+        project_data JSONB NOT NULL,
+        type VARCHAR(50) NOT NULL, -- 'homework' или 'project'
+        homework_id INTEGER REFERENCES homeworks(id) ON DELETE SET NULL,
+        status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'reviewed', 'approved', 'rejected'
+        feedback TEXT,
+        grade INTEGER,
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMP,
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Индексы для магазина и истории баллов
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
@@ -552,6 +586,11 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_users_online ON users(is_online, last_seen);
       CREATE INDEX IF NOT EXISTS idx_points_history_user_id ON points_history(user_id);
       CREATE INDEX IF NOT EXISTS idx_points_history_created_at ON points_history(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
+      CREATE INDEX IF NOT EXISTS idx_projects_updated_at ON projects(updated_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_submissions_user_id ON project_submissions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_submissions_status ON project_submissions(status);
+      CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON project_submissions(submitted_at DESC);
     `);
 
     // Удаляем старые CSS-based предметы при инициализации

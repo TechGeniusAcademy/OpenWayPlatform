@@ -31,6 +31,14 @@ class HomeworkSubmission {
     try {
       await client.query('BEGIN');
 
+      // Получаем предыдущий статус для проверки
+      const prevResult = await client.query(
+        'SELECT status, points_earned FROM homework_submissions WHERE id = $1',
+        [submissionId]
+      );
+      const previousStatus = prevResult.rows[0]?.status;
+      const previousPoints = prevResult.rows[0]?.points_earned || 0;
+
       // Обновляем статус сдачи
       const result = await client.query(
         `UPDATE homework_submissions 
@@ -42,11 +50,28 @@ class HomeworkSubmission {
 
       const submission = result.rows[0];
 
-      // Если принято, начисляем баллы студенту
-      if (status === 'accepted' && pointsEarned > 0) {
+      // Начисляем баллы только если:
+      // 1. Новый статус - accepted
+      // 2. Предыдущий статус НЕ был accepted (чтобы не начислять повторно)
+      // 3. Есть баллы для начисления
+      if (status === 'accepted' && previousStatus !== 'accepted' && pointsEarned > 0) {
         await client.query(
           'UPDATE users SET points = COALESCE(points, 0) + $1 WHERE id = $2',
           [pointsEarned, submission.user_id]
+        );
+
+        // Получаем информацию о домашке для записи в историю
+        const homeworkInfo = await client.query(
+          'SELECT title FROM homeworks WHERE id = (SELECT homework_id FROM homework_submissions WHERE id = $1)',
+          [submissionId]
+        );
+        const homeworkTitle = homeworkInfo.rows[0]?.title || 'Домашнее задание';
+
+        // Записываем в историю баллов
+        await client.query(
+          `INSERT INTO points_history (user_id, points_change, reason, admin_id)
+           VALUES ($1, $2, $3, $4)`,
+          [submission.user_id, pointsEarned, `Проверка ДЗ: ${homeworkTitle}`, checkedBy]
         );
       }
 

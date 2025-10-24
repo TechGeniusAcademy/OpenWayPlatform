@@ -4,11 +4,14 @@ import { useNotifications } from '../context/NotificationContext';
 import { BASE_URL } from '../utils/api';
 import './StudentLayout.css';
 import '../styles/UsernameStyles.css';
-import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart, AiOutlineBell } from 'react-icons/ai';
+import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart, AiOutlineBell, AiOutlineCode } from 'react-icons/ai';
 import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
 import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
 import { FaTrophy } from 'react-icons/fa';
+import { BiData } from 'react-icons/bi';
+import { VscFiles } from 'react-icons/vsc';
+import { FaPlug, FaPalette } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import FloatingChat from './FloatingChat';
@@ -146,6 +149,36 @@ function StudentLayout({ children }) {
               <NavLink to="/student/typing" onClick={closeSidebar}>
                 <span className="menu-icon"><RxKeyboard /></span>
                 <span className="menu-text">Клавиатурный тренажер</span>
+              </NavLink>
+            </li>
+
+            {/* Разделитель */}
+            <li className="menu-divider"></li>
+
+            {/* Программирование */}
+            <li className="menu-category-title">Программирование</li>
+            <li>
+              <NavLink to="/student/projects" onClick={closeSidebar}>
+                <span className="menu-icon"><VscFiles /></span>
+                <span className="menu-text">Мои проекты</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/databases" onClick={closeSidebar}>
+                <span className="menu-icon"><BiData /></span>
+                <span className="menu-text">Базы данных</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/plugins" onClick={closeSidebar}>
+                <span className="menu-icon"><FaPlug /></span>
+                <span className="menu-text">Плагины</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/themes" onClick={closeSidebar}>
+                <span className="menu-icon"><FaPalette /></span>
+                <span className="menu-text">Темы</span>
               </NavLink>
             </li>
 

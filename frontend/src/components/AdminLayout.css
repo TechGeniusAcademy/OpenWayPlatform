@@ -42,7 +42,7 @@
 }
 
 /* Оверлей для закрытия сайдбара на мобильных */
-.sidebar-overlay {
+.admin-sidebar-overlay {
   display: none;
   position: fixed;
   top: 0;
@@ -82,7 +82,7 @@
   display: none;
 }
 
-.sidebar-header {
+.admin-sidebar-header {
   padding: 25px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: rgb(0, 0, 0);
@@ -95,11 +95,11 @@
   transition: all 0.3s ease;
 }
 
-.sidebar:hover .sidebar-header {
+.sidebar:hover .admin-sidebar-header {
   justify-content: flex-start;
 }
 
-.sidebar-header h2 {
+.admin-sidebar-header h2 {
   font-size: 24px;
   margin-bottom: 8px;
   font-weight: 600;
@@ -110,13 +110,13 @@
   transition: all 0.3s ease;
 }
 
-.sidebar:hover .sidebar-header h2 {
+.sidebar:hover .admin-sidebar-header h2 {
   opacity: 1;
   width: auto;
   margin-bottom: 8px;
 }
 
-.sidebar-header p {
+.admin-sidebar-header p {
   font-size: 14px;
   color: rgba(0, 0, 0, 0.9);
   font-weight: 300;
@@ -127,22 +127,22 @@
   transition: all 0.3s ease;
 }
 
-.sidebar:hover .sidebar-header p {
+.sidebar:hover .admin-sidebar-header p {
   opacity: 1;
   width: auto;
 }
 
-.sidebar-menu {
+.admin-sidebar-menu {
   list-style: none;
   padding: 15px 10px;
   flex: 1;
 }
 
-.sidebar-menu li {
+.admin-sidebar-menu li {
   margin-bottom: 8px;
 }
 
-.sidebar-menu a {
+.admin-sidebar-menu a {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -156,11 +156,11 @@
   font-weight: 500;
 }
 
-.sidebar:hover .sidebar-menu a {
+.sidebar:hover .admin-sidebar-menu a {
   justify-content: flex-start;
 }
 
-.sidebar-menu a::before {
+.admin-sidebar-menu a::before {
   content: '';
   position: absolute;
   left: 0;
@@ -172,28 +172,28 @@
   transition: transform 0.3s ease;
 }
 
-.sidebar-menu a:hover {
+.admin-sidebar-menu a:hover {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
   color: #667eea;
   transform: translateX(5px);
 }
 
-.sidebar-menu a:hover::before {
+.admin-sidebar-menu a:hover::before {
   transform: scaleY(1);
 }
 
-.sidebar-menu a.active {
+.admin-sidebar-menu a.active {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
   color: #667eea;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
-.sidebar-menu a.active::before {
+.admin-sidebar-menu a.active::before {
   transform: scaleY(1);
 }
 
-.menu-icon {
+.admin-menu-icon {
   margin-right: 0;
   font-size: 22px;
   display: flex;
@@ -203,11 +203,11 @@
   transition: margin-right 0.3s ease;
 }
 
-.sidebar:hover .menu-icon {
+.sidebar:hover .admin-menu-icon {
   margin-right: 14px;
 }
 
-.menu-text {
+.admin-menu-text {
   white-space: nowrap;
   overflow: hidden;
   opacity: 0;
@@ -215,12 +215,12 @@
   transition: all 0.3s ease;
 }
 
-.sidebar:hover .menu-text {
+.sidebar:hover .admin-menu-text {
   opacity: 1;
   width: auto;
 }
 
-.logout-btn {
+.admin-logout-btn {
   position: relative;
   margin: 10px 15px 20px 15px;
   padding: 14px;
@@ -242,26 +242,26 @@
   gap: 10px;
 }
 
-.sidebar:hover .logout-btn {
+.sidebar:hover .admin-logout-btn {
   opacity: 1;
   pointer-events: auto;
 }
 
-.logout-btn:hover {
+.admin-logout-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
 }
 
-.logout-btn:active {
+.admin-logout-btn:active {
   transform: translateY(0);
 }
 
-.logout-btn .menu-icon {
+.admin-logout-btn .admin-menu-icon {
   margin-right: 0;
   font-size: 20px;
 }
 
-.main-content {
+.admin-main-content {
   margin-left: 80px;
   flex: 1;
   padding: 30px;
@@ -302,7 +302,7 @@
     width: 300px;
   }
 
-  .main-content {
+  .admin-main-content {
     margin-left: 90px;
     width: calc(100% - 90px);
     padding: 40px 60px;
@@ -326,7 +326,7 @@
     width: 290px;
   }
 
-  .main-content {
+  .admin-main-content {
     margin-left: 85px;
     width: calc(100% - 85px);
     padding: 35px;
@@ -346,7 +346,7 @@
     width: 240px;
   }
 
-  .main-content {
+  .admin-main-content {
     margin-left: 70px;
     width: calc(100% - 70px);
   }
@@ -370,31 +370,31 @@
     transform: translateX(0);
   }
 
-  .sidebar-open .sidebar-header h2,
-  .sidebar-open .sidebar-header p,
-  .sidebar-open .menu-text,
-  .sidebar-open .logout-btn {
+  .sidebar-open .admin-sidebar-header h2,
+  .sidebar-open .admin-sidebar-header p,
+  .sidebar-open .admin-menu-text,
+  .sidebar-open .admin-logout-btn {
     opacity: 1;
     width: auto;
   }
 
-  .sidebar-open .menu-icon {
+  .sidebar-open .admin-menu-icon {
     margin-right: 14px;
   }
 
-  .sidebar-open .sidebar-menu a {
+  .sidebar-open .admin-sidebar-menu a {
     justify-content: flex-start;
   }
 
-  .sidebar-open .sidebar-header {
+  .sidebar-open .admin-sidebar-header {
     justify-content: flex-start;
   }
 
-  .sidebar-overlay {
+  .admin-sidebar-overlay {
     display: block;
   }
 
-  .main-content {
+  .admin-main-content {
     margin-left: 0;
     width: 100%;
     padding: 20px;
@@ -423,7 +423,7 @@
     font-size: 12px;
   }
 
-  .main-content {
+  .admin-main-content {
     padding: 15px;
   }
 
@@ -444,12 +444,12 @@
     width: 260px;
   }
 
-  .sidebar-menu a {
+  .admin-sidebar-menu a {
     padding: 12px 14px;
     font-size: 14px;
   }
 
-  .menu-icon {
+  .admin-menu-icon {
     font-size: 20px;
     margin-right: 12px;
   }

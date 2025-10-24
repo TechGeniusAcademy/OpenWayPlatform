@@ -219,12 +219,12 @@ function Chat() {
       
       loadData();
       
-      const socket = socketRef.current;
-      if (socket) {
+      const socket = getSocket();
+      if (socket && socket.connected) {
         console.log('Chat: Присоединяемся к чату:', activeChat.id);
         socket.emit('join-chat', activeChat.id);
       } else {
-        console.log('Chat: Socket не найден для присоединения к чату');
+        console.log('Chat: Socket не подключен для присоединения к чату');
       }
       
       // Отмечаем сообщения как прочитанные
@@ -239,9 +239,10 @@ function Chat() {
     }
 
     return () => {
-      if (activeChat && socketRef.current) {
+      const socket = getSocket();
+      if (activeChat && socket && socket.connected) {
         console.log('Chat: Покидаем чат:', activeChat.id);
-        socketRef.current.emit('leave-chat', activeChat.id);
+        socket.emit('leave-chat', activeChat.id);
       }
       // Очищаем активный чат при размонтировании
       sessionStorage.removeItem('activeChatId');

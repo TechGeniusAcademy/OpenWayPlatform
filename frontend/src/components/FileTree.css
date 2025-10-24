@@ -1,0 +1,144 @@
+.file-tree {
+  height: 100%;
+  overflow-y: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 14px;
+  user-select: none;
+}
+
+.tree-item-wrapper {
+  width: 100%;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.tree-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tree-item.selected {
+  background: rgba(37, 99, 235, 0.3);
+}
+
+.tree-item.folder {
+  font-weight: 500;
+}
+
+.folder-icon,
+.file-icon {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.folder-icon {
+  color: #dcb67a;
+  font-size: 16px;
+}
+
+.file-icon {
+  color: #9cdcfe;
+  font-size: 14px;
+}
+
+.js-icon {
+  color: #f7df1e;
+}
+
+.py-icon {
+  color: #3776ab;
+}
+
+.html-icon {
+  color: #e34c26;
+}
+
+.css-icon {
+  color: #264de4;
+}
+
+.item-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.more-icon {
+  opacity: 0;
+  transition: opacity 0.15s;
+  margin-left: 4px;
+  padding: 2px;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.tree-item:hover .more-icon {
+  opacity: 1;
+}
+
+.more-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.folder-contents {
+  width: 100%;
+}
+
+.context-menu {
+  position: fixed;
+  background: #2d2d2d;
+  border: 1px solid #454545;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 4px 0;
+  z-index: 1000;
+  min-width: 180px;
+}
+
+.context-menu > div {
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.context-menu > div:hover {
+  background: rgba(37, 99, 235, 0.4);
+}
+
+.context-menu .separator {
+  height: 1px;
+  background: #454545;
+  margin: 4px 0;
+  padding: 0;
+}
+
+.context-menu .separator:hover {
+  background: #454545;
+}
+
+/* Drag and Drop styles */
+.tree-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.tree-item.drop-target {
+  background: rgba(37, 99, 235, 0.4) !important;
+  border-left: 3px solid #2563eb;
+}
+
+.tree-item[draggable="true"] {
+  cursor: grab;
+}
+
+.tree-item[draggable="true"]:active {
+  cursor: grabbing;
+}

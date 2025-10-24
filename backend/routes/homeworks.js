@@ -9,6 +9,17 @@ router.use(authenticate);
 
 // ========== STUDENT ENDPOINTS (должны быть ПЕРЕД общими маршрутами) ==========
 
+// Получить домашние задания студента (для выбора в модалке)
+router.get('/my', async (req, res) => {
+  try {
+    const homeworks = await Homework.getAssignedToStudent(req.user.id);
+    res.json(homeworks);
+  } catch (error) {
+    console.error('Ошибка получения домашних заданий:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Получить домашние задания, назначенные студенту
 router.get('/student/assigned', async (req, res) => {
   try {

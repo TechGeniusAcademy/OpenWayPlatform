@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "multer": "^2.0.2",
