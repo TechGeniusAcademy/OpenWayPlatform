@@ -264,7 +264,8 @@ router.post('/:id/execute-php', authenticate, async (req, res) => {
 
     try {
       // Выполняем PHP из рабочей директории (папка проекта)
-      const { stdout, stderr } = await execPromise(`php -d display_errors=1 -d error_reporting=E_ALL "${relativePath}"`, {
+      // Подавляем Notice и Warning для CLI режима, показываем только серьезные ошибки
+      const { stdout, stderr } = await execPromise(`php -d display_errors=0 -d error_reporting=E_ERROR "${relativePath}"`, {
         cwd: workingDir, // Выполняем из папки проекта (например asmir/)
         timeout: 5000,
         maxBuffer: 1024 * 1024, // 1MB
