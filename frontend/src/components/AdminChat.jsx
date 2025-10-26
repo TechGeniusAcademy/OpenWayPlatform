@@ -403,7 +403,13 @@ function AdminChat() {
     }
 
     return (
-      <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'}`}>
+      <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'} ${message.is_pinned ? 'pinned' : ''}`}>
+        {message.is_pinned && (
+          <div className="pinned-indicator">
+            📌 Закреплено
+          </div>
+        )}
+        
         {message.reply_to_id && (
           <div className="message-reply">
             <div className="reply-indicator">↩️</div>

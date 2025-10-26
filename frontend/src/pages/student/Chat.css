@@ -565,6 +565,20 @@
   color: #856404;
 }
 
+.pinned-indicator {
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  background: #ffc107;
+  color: #856404;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .messages-list {
   flex: 1;
   overflow-y: auto;
@@ -645,6 +659,13 @@
   max-width: 95%;
   position: relative;
   margin-bottom: 15px;
+}
+
+.message.pinned {
+  background: rgba(255, 193, 7, 0.05);
+  border-left: 3px solid #ffc107;
+  padding: 8px;
+  border-radius: 8px;
 }
 
 .message.own {
@@ -1355,7 +1376,7 @@
   display: flex;
   gap: 8px;
   margin-top: 8px;
-  opacity: 0.6;
+  opacity: 0;
   transition: opacity 0.2s;
 }
 
