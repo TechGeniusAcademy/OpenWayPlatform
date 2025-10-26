@@ -238,7 +238,7 @@ router.get('/:chatId/pinned', async (req, res) => {
 router.post('/:chatId/messages', async (req, res) => {
   try {
     const { chatId } = req.params;
-    const { content, messageType, codeLanguage } = req.body;
+    const { content, messageType, codeLanguage, replyTo } = req.body;
 
     if (!content && messageType !== 'file') {
       return res.status(400).json({ error: 'Содержимое сообщения обязательно' });
@@ -249,7 +249,8 @@ router.post('/:chatId/messages', async (req, res) => {
       senderId: req.user.id,
       content,
       messageType: messageType || 'text',
-      codeLanguage
+      codeLanguage,
+      replyTo
     });
 
     // Получаем полное сообщение с данными отправителя
@@ -262,9 +263,13 @@ router.post('/:chatId/messages', async (req, res) => {
         u.avatar_url as sender_avatar_url,
         u.avatar_frame as sender_avatar_frame,
         u.username_style as sender_username_style,
-        u.message_color as sender_message_color
+        u.message_color as sender_message_color,
+        reply_msg.content as reply_to_content,
+        reply_sender.full_name as reply_to_sender_name
        FROM messages m
        INNER JOIN users u ON m.sender_id = u.id
+       LEFT JOIN messages reply_msg ON m.reply_to_id = reply_msg.id
+       LEFT JOIN users reply_sender ON reply_msg.sender_id = reply_sender.id
        WHERE m.id = $1`,
       [message.id]
     );
@@ -351,6 +356,96 @@ router.put('/messages/:messageId/pin', async (req, res) => {
     res.json({ message });
   } catch (error) {
     console.error('Ошибка закрепления сообщения:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Добавить/убрать реакцию на сообщение
+router.post('/messages/:messageId/reaction', authenticate, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { emoji } = req.body;
+
+    if (!emoji) {
+      return res.status(400).json({ error: 'Не указана реакция' });
+    }
+
+    // Проверяем, есть ли уже такая реакция от этого пользователя
+    const existingReaction = await pool.query(
+      'SELECT * FROM message_reactions WHERE message_id = $1 AND user_id = $2 AND emoji = $3',
+      [messageId, req.user.id, emoji]
+    );
+
+    if (existingReaction.rows.length > 0) {
+      // Убираем реакцию
+      await pool.query(
+        'DELETE FROM message_reactions WHERE message_id = $1 AND user_id = $2 AND emoji = $3',
+        [messageId, req.user.id, emoji]
+      );
+    } else {
+      // Добавляем реакцию
+      await pool.query(
+        'INSERT INTO message_reactions (message_id, user_id, emoji) VALUES ($1, $2, $3)',
+        [messageId, req.user.id, emoji]
+      );
+    }
+
+    // Получаем все реакции для этого сообщения
+    const reactions = await pool.query(
+      `SELECT emoji, COUNT(*) as count, 
+              array_agg(u.full_name) as user_names
+       FROM message_reactions mr
+       JOIN users u ON mr.user_id = u.id
+       WHERE mr.message_id = $1
+       GROUP BY emoji`,
+      [messageId]
+    );
+
+    res.json({ 
+      reactions: reactions.rows.map(r => ({
+        emoji: r.emoji,
+        count: parseInt(r.count),
+        user_names: r.user_names
+      }))
+    });
+  } catch (error) {
+    console.error('Ошибка добавления реакции:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Редактировать сообщение
+router.put('/messages/:messageId', authenticate, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: 'Содержимое сообщения не может быть пустым' });
+    }
+
+    // Проверяем, что пользователь является автором сообщения
+    const messageCheck = await pool.query(
+      'SELECT * FROM messages WHERE id = $1 AND sender_id = $2',
+      [messageId, req.user.id]
+    );
+
+    if (messageCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Вы можете редактировать только свои сообщения' });
+    }
+
+    // Обновляем сообщение
+    const result = await pool.query(
+      `UPDATE messages 
+       SET content = $1, is_edited = true, edited_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [content.trim(), messageId]
+    );
+
+    res.json({ message: result.rows[0] });
+  } catch (error) {
+    console.error('Ошибка редактирования сообщения:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });

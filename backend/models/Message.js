@@ -2,14 +2,14 @@ import pool from '../config/database.js';
 
 class Message {
   // Создать новое сообщение
-  static async create({ chatId, senderId, content, messageType = 'text', codeLanguage, fileName, filePath, fileSize }) {
+  static async create({ chatId, senderId, content, messageType = 'text', codeLanguage, fileName, filePath, fileSize, replyTo }) {
     try {
       const result = await pool.query(
         `INSERT INTO messages 
-         (chat_id, sender_id, content, message_type, code_language, file_name, file_path, file_size) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+         (chat_id, sender_id, content, message_type, code_language, file_name, file_path, file_size, reply_to_id) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
          RETURNING *`,
-        [chatId, senderId, content, messageType, codeLanguage, fileName, filePath, fileSize]
+        [chatId, senderId, content, messageType, codeLanguage, fileName, filePath, fileSize, replyTo || null]
       );
 
       // Обновляем время последнего обновления чата
@@ -37,15 +37,55 @@ class Message {
           u.username_style as sender_username_style,
           u.message_color as sender_message_color,
           pinner.username as pinned_by_username,
-          pinner.full_name as pinned_by_full_name
+          pinner.full_name as pinned_by_full_name,
+          reply_msg.content as reply_to_content,
+          reply_sender.full_name as reply_to_sender_name
          FROM messages m
          INNER JOIN users u ON m.sender_id = u.id
          LEFT JOIN users pinner ON m.pinned_by = pinner.id
+         LEFT JOIN messages reply_msg ON m.reply_to_id = reply_msg.id
+         LEFT JOIN users reply_sender ON reply_msg.sender_id = reply_sender.id
          WHERE m.chat_id = $1
          ORDER BY m.created_at DESC
          LIMIT $2 OFFSET $3`,
         [chatId, limit, offset]
       );
+
+      // Получаем реакции для всех сообщений
+      const messageIds = result.rows.map(row => row.id);
+      
+      if (messageIds.length > 0) {
+        const reactionsResult = await pool.query(
+          `SELECT 
+            mr.message_id,
+            mr.emoji,
+            COUNT(*) as count,
+            array_agg(u.full_name) as user_names
+           FROM message_reactions mr
+           JOIN users u ON mr.user_id = u.id
+           WHERE mr.message_id = ANY($1)
+           GROUP BY mr.message_id, mr.emoji`,
+          [messageIds]
+        );
+
+        // Группируем реакции по message_id
+        const reactionsByMessage = {};
+        reactionsResult.rows.forEach(reaction => {
+          if (!reactionsByMessage[reaction.message_id]) {
+            reactionsByMessage[reaction.message_id] = [];
+          }
+          reactionsByMessage[reaction.message_id].push({
+            emoji: reaction.emoji,
+            count: parseInt(reaction.count),
+            user_names: reaction.user_names
+          });
+        });
+
+        // Добавляем реакции к сообщениям
+        result.rows.forEach(message => {
+          message.reactions = reactionsByMessage[message.id] || [];
+        });
+      }
 
       return result.rows.reverse(); // Возвращаем в прямом порядке (старые -> новые)
     } catch (error) {
