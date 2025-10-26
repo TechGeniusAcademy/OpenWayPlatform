@@ -324,11 +324,17 @@ router.post('/:chatId/messages', authenticate, async (req, res) => {
       [chatId]
     );
 
+    console.log(`📨 Отправка уведомлений для чата ${chatId}:`);
+    console.log(`   Участников: ${participantsResult.rows.length}`);
+    console.log(`   Отправитель: ${req.user.id}`);
+    
     // Отправляем уведомление всем участникам чата (включая отправителя для синхронизации)
     participantsResult.rows.forEach(participant => {
-      io.to(`user-${participant.user_id}`).emit('chat-message-notification', fullMessage);
+      const roomName = `user-${participant.user_id}`;
+      console.log(`   🔔 Отправка в комнату: ${roomName}`);
+      io.to(roomName).emit('chat-message-notification', fullMessage);
     });
-    console.log(`🔔 Уведомления о сообщении отправлены ${participantsResult.rows.length} участникам`);
+    console.log(`✅ Уведомления о сообщении отправлены ${participantsResult.rows.length} участникам`);
 
     res.status(201).json({ message: fullMessage });
   } catch (error) {

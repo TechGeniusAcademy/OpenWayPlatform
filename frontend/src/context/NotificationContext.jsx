@@ -23,13 +23,18 @@ export function NotificationProvider({ children }) {
       return;
     }
 
+    console.log('NotificationContext: Инициализация для пользователя', user.id);
+
     // Загружаем начальное количество непрочитанных
     loadUnreadCount();
 
     const socket = getSocket();
     if (!socket) {
+      console.error('NotificationContext: Socket не найден!');
       return;
     }
+
+    console.log('NotificationContext: Socket получен, ID:', socket.id, 'Connected:', socket.connected);
 
     // Обработчик уведомлений о новых сообщениях (для всех участников чата)
     const handleChatMessageNotification = (message) => {
@@ -73,11 +78,14 @@ export function NotificationProvider({ children }) {
     // Подписываемся на события
     socket.on('chat-message-notification', handleChatMessageNotification);
     socket.on('messages-read', handleMessagesRead);
+    
+    console.log('NotificationContext: Подписались на события chat-message-notification и messages-read');
 
     return () => {
       // Отписываемся от событий
       socket.off('chat-message-notification', handleChatMessageNotification);
       socket.off('messages-read', handleMessagesRead);
+      console.log('NotificationContext: Отписались от событий');
     };
   }, [user?.id]);
 
