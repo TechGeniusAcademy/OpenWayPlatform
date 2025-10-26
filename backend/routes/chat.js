@@ -345,19 +345,12 @@ router.put('/messages/:messageId/pin', authenticate, async (req, res) => {
   try {
     const { messageId } = req.params;
 
-    console.log('Toggle pin - req.user:', req.user);
-    console.log('Toggle pin - req.user.id:', req.user?.id);
-    console.log('Toggle pin - typeof req.user.id:', typeof req.user?.id);
-
     // Только админы могут закреплять сообщения в групповых чатах
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Только администраторы могут закреплять сообщения' });
     }
 
-    const userId = parseInt(req.user.id);
-    console.log('Toggle pin - parsed userId:', userId, 'typeof:', typeof userId);
-
-    const message = await Message.togglePin(messageId, userId);
+    const message = await Message.togglePin(messageId, req.user.id);
 
     if (!message) {
       return res.status(404).json({ error: 'Сообщение не найдено' });

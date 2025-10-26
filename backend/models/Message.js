@@ -128,7 +128,7 @@ class Message {
         `UPDATE messages 
          SET 
            is_pinned = NOT is_pinned,
-           pinned_by = CASE WHEN is_pinned = false THEN $2 ELSE NULL END,
+           pinned_by = CASE WHEN is_pinned = false THEN $2::INTEGER ELSE NULL::INTEGER END,
            pinned_at = CASE WHEN is_pinned = false THEN CURRENT_TIMESTAMP ELSE NULL END
          WHERE id = $1
          RETURNING *`,
