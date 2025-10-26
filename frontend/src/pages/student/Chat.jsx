@@ -92,6 +92,7 @@ function Chat() {
   const typingTimeoutRef = useRef(null);
   const activeChatRef = useRef(activeChat); // Ref для отслеживания активного чата
   const processedChatUpdatesRef = useRef(new Set()); // Для дедупликации обновлений списка чатов
+  const loadChatsTimeoutRef = useRef(null); // Для debounce загрузки чатов
 
   // Обновляем ref при изменении activeChat
   useEffect(() => {
@@ -165,54 +166,15 @@ function Chat() {
       }
       processedChatUpdatesRef.current.add(messageKey);
       
-      // Очищаем старые записи (старше 1 минуты) для предотвращения утечки памяти
+      // Очищаем старые записи (старше 5 минут) для предотвращения утечки памяти
       setTimeout(() => {
         processedChatUpdatesRef.current.delete(messageKey);
-      }, 60000);
+      }, 5 * 60000);
       
-      // Обновляем список чатов для обновления последнего сообщения
-      setChats(prevChats => {
-        let chatFound = false;
-        const updatedChats = prevChats.map(chat => {
-          if (chat.id === message.chat_id) {
-            chatFound = true;
-            // Увеличиваем unread_count только если:
-            // 1. Сообщение НЕ от текущего пользователя
-            // 2. Это НЕ активный чат
-            const isFromMe = message.sender_id === user.id;
-            const isActiveChat = activeChatRef.current?.id === message.chat_id;
-            const shouldIncreaseUnread = !isFromMe && !isActiveChat;
-            
-            console.log(`Chat: Обновление чата ${chat.id}: isFromMe=${isFromMe}, isActiveChat=${isActiveChat}, shouldIncreaseUnread=${shouldIncreaseUnread}, current unread=${chat.unread_count}`);
-            
-            return {
-              ...chat,
-              last_message: {
-                content: message.content,
-                message_type: message.message_type,
-                sender_id: message.sender_id,
-                created_at: message.created_at
-              },
-              unread_count: shouldIncreaseUnread ? (chat.unread_count || 0) + 1 : (isActiveChat ? 0 : chat.unread_count || 0)
-            };
-          }
-          return chat;
-        });
-        
-        // Если чат не найден в списке (новый чат), перезагружаем весь список
-        if (!chatFound) {
-          console.log('Chat: Чат не найден в списке, перезагружаем список чатов');
-          loadChats();
-          return prevChats;
-        }
-        
-        // Сортируем чаты: чат с новым сообщением поднимается наверх
-        return updatedChats.sort((a, b) => {
-          const dateA = a.last_message?.created_at ? new Date(a.last_message.created_at) : new Date(0);
-          const dateB = b.last_message?.created_at ? new Date(b.last_message.created_at) : new Date(0);
-          return dateB - dateA;
-        });
-      });
+      // ВАЖНО: НЕ инкрементируем счетчик локально, чтобы избежать дублирования!
+      // Вместо этого перезагружаем список чатов с сервера для получения актуальных данных
+      console.log('Chat: Перезагружаем список чатов с сервера для получения актуального unread_count');
+      loadChatsDebounced();
     };
 
     const handleChatListUpdate = () => {
@@ -396,6 +358,16 @@ function Chat() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Debounced версия loadChats для предотвращения слишком частых запросов
+  const loadChatsDebounced = () => {
+    if (loadChatsTimeoutRef.current) {
+      clearTimeout(loadChatsTimeoutRef.current);
+    }
+    loadChatsTimeoutRef.current = setTimeout(() => {
+      loadChats();
+    }, 500); // Ждем 500ms после последнего вызова перед загрузкой
   };
 
   const loadAllUsers = async () => {
