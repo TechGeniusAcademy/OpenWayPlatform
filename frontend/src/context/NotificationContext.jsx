@@ -8,22 +8,23 @@ export function NotificationProvider({ children }) {
   const { user } = useAuth();
   const { getSocket } = useWebSocket();
   const [unreadCount, setUnreadCount] = useState(0);
-  const audioRef = useRef();
+  const audioContextRef = useRef(null); // AudioContext создается лениво
   const processedMessagesRef = useRef(new Set()); // Для предотвращения дублирования
 
   useEffect(() => {
-    // Создаём аудио элемент для звука уведомления
-    // Используем простой beep звук через Data URI
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    audioRef.current = { audioContext };
-    
     // Очищаем Set обработанных сообщений каждые 5 минут
     const cleanupInterval = setInterval(() => {
       processedMessagesRef.current.clear();
       console.log('NotificationContext: Очищен кеш обработанных сообщений');
     }, 5 * 60 * 1000);
     
-    return () => clearInterval(cleanupInterval);
+    return () => {
+      clearInterval(cleanupInterval);
+      // Закрываем AudioContext при размонтировании
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -39,8 +40,15 @@ export function NotificationProvider({ children }) {
 
     const socket = getSocket();
     if (!socket) {
-      console.error('NotificationContext: Socket не найден!');
-      return;
+      console.warn('NotificationContext: Socket еще не готов, ждем...');
+      // Пробуем получить socket через небольшую задержку
+      const timer = setTimeout(() => {
+        const retrySocket = getSocket();
+        if (retrySocket) {
+          console.log('NotificationContext: Socket получен после повтора');
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
     }
 
     console.log('NotificationContext: Socket получен, ID:', socket.id, 'Connected:', socket.connected);
@@ -123,43 +131,52 @@ export function NotificationProvider({ children }) {
 
   const playNotificationSound = () => {
     try {
-      if (audioRef.current?.audioContext) {
-        const ctx = audioRef.current.audioContext;
-        
-        // Первый звук (выше)
-        const oscillator1 = ctx.createOscillator();
-        const gainNode1 = ctx.createGain();
-        
-        oscillator1.connect(gainNode1);
-        gainNode1.connect(ctx.destination);
-        
-        oscillator1.frequency.value = 800; // Частота
-        oscillator1.type = 'sine'; // Тип волны
-        
-        gainNode1.gain.setValueAtTime(0.15, ctx.currentTime);
-        gainNode1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-        
-        oscillator1.start(ctx.currentTime);
-        oscillator1.stop(ctx.currentTime + 0.15);
-        
-        // Второй звук (ниже, немного позже)
-        const oscillator2 = ctx.createOscillator();
-        const gainNode2 = ctx.createGain();
-        
-        oscillator2.connect(gainNode2);
-        gainNode2.connect(ctx.destination);
-        
-        oscillator2.frequency.value = 600; // Ниже частота
-        oscillator2.type = 'sine';
-        
-        gainNode2.gain.setValueAtTime(0.12, ctx.currentTime + 0.08);
-        gainNode2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-        
-        oscillator2.start(ctx.currentTime + 0.08);
-        oscillator2.stop(ctx.currentTime + 0.25);
-        
-        console.log('NotificationContext: Звук уведомления воспроизведен');
+      // Создаём AudioContext лениво при первом воспроизведении (после взаимодействия пользователя)
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('NotificationContext: AudioContext создан после взаимодействия пользователя');
       }
+      
+      const ctx = audioContextRef.current;
+      
+      // Возобновляем контекст если он приостановлен
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      
+      // Первый звук (выше)
+      const oscillator1 = ctx.createOscillator();
+      const gainNode1 = ctx.createGain();
+      
+      oscillator1.connect(gainNode1);
+      gainNode1.connect(ctx.destination);
+      
+      oscillator1.frequency.value = 800; // Частота
+      oscillator1.type = 'sine'; // Тип волны
+      
+      gainNode1.gain.setValueAtTime(0.15, ctx.currentTime);
+      gainNode1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      
+      oscillator1.start(ctx.currentTime);
+      oscillator1.stop(ctx.currentTime + 0.15);
+      
+      // Второй звук (ниже, немного позже)
+      const oscillator2 = ctx.createOscillator();
+      const gainNode2 = ctx.createGain();
+      
+      oscillator2.connect(gainNode2);
+      gainNode2.connect(ctx.destination);
+      
+      oscillator2.frequency.value = 600; // Ниже частота
+      oscillator2.type = 'sine';
+      
+      gainNode2.gain.setValueAtTime(0.12, ctx.currentTime + 0.08);
+      gainNode2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+      
+      oscillator2.start(ctx.currentTime + 0.08);
+      oscillator2.stop(ctx.currentTime + 0.25);
+      
+      console.log('NotificationContext: Звук уведомления воспроизведен');
     } catch (err) {
       console.error('NotificationContext: Ошибка воспроизведения звука:', err);
     }

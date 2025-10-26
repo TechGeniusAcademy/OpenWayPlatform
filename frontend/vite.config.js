@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    sourcemap: false, // Отключаем source maps в production
+  },
   server: {
     port: 3000,
     proxy: {

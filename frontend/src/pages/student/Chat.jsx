@@ -441,7 +441,16 @@ function Chat() {
         console.log(`📨 Получено ${response.data.messages.length} новых сообщений через polling`);
         
         setMessages(prev => {
-          const newMessages = [...prev, ...response.data.messages];
+          // Дедупликация: фильтруем только новые сообщения
+          const existingIds = new Set(prev.map(m => m.id));
+          const uniqueNewMessages = response.data.messages.filter(m => !existingIds.has(m.id));
+          
+          if (uniqueNewMessages.length === 0) {
+            console.log('Все сообщения уже существуют, пропускаем обновление');
+            return prev;
+          }
+          
+          const newMessages = [...prev, ...uniqueNewMessages];
           
           // Обновляем localStorage
           const localKey = `chat_messages_${chatId}`;
@@ -661,8 +670,15 @@ function Chat() {
           sender_message_color: user.message_color
         };
 
-        // Добавляем сообщение локально сразу
+        // Добавляем сообщение локально сразу (оптимистическое обновление)
         setMessages(prev => {
+          // Проверяем, нет ли уже этого сообщения
+          const exists = prev.some(m => m.id === response.data.message.id);
+          if (exists) {
+            console.log('Сообщение уже существует, пропускаем добавление');
+            return prev;
+          }
+          
           const newMessages = [...prev, messageWithSender];
           
           // Сохраняем в localStorage
@@ -1123,8 +1139,8 @@ function Chat() {
                   onChange={(e) => setMessageType(e.target.value)}
                   className="message-type-select"
                 >
-                  <option value="text"><BsChatDots /> Текст</option>
-                  <option value="code"><BsCode /> Код</option>
+                  <option value="text">💬 Текст</option>
+                  <option value="code">💻 Код</option>
                 </select>
 
                 <button 
