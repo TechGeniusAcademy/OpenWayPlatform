@@ -245,6 +245,44 @@ export const initDatabase = async () => {
       END $$;
     `);
 
+    // 8.6. Добавление колонки reply_to_id в messages, если её нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'messages' AND column_name = 'reply_to_id'
+        ) THEN
+          ALTER TABLE messages ADD COLUMN reply_to_id INTEGER REFERENCES messages(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
+    `);
+
+    // 8.7. Добавление колонки is_edited в messages, если её нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'messages' AND column_name = 'is_edited'
+        ) THEN
+          ALTER TABLE messages ADD COLUMN is_edited BOOLEAN DEFAULT FALSE;
+        END IF;
+      END $$;
+    `);
+
+    // 8.8. Создание таблицы реакций на сообщения
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS message_reactions (
+        id SERIAL PRIMARY KEY,
+        message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        emoji VARCHAR(10) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(message_id, user_id, emoji)
+      );
+    `);
+
     // 9. Создание индексов
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -259,6 +297,9 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id);
       CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
       CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+      CREATE INDEX IF NOT EXISTS idx_messages_reply_to_id ON messages(reply_to_id);
+      CREATE INDEX IF NOT EXISTS idx_message_reactions_message_id ON message_reactions(message_id);
+      CREATE INDEX IF NOT EXISTS idx_message_reactions_user_id ON message_reactions(user_id);
     `);
 
     console.log('✅ Таблицы созданы успешно');
