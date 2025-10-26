@@ -33,8 +33,11 @@ export function NotificationProvider({ children }) {
 
     // Обработчик уведомлений о новых сообщениях (для всех участников чата)
     const handleChatMessageNotification = (message) => {
+      console.log('NotificationContext: Получено уведомление о сообщении:', message);
+      
       // Если сообщение от текущего пользователя - игнорируем
       if (message.sender_id === user.id) {
+        console.log('NotificationContext: Сообщение от текущего пользователя, пропускаем');
         return;
       }
       
@@ -43,10 +46,19 @@ export function NotificationProvider({ children }) {
       const activeChatId = parseInt(sessionStorage.getItem('activeChatId'));
       const isViewingThisChat = isOnChatPage && activeChatId === message.chat_id;
       
+      console.log('NotificationContext: isOnChatPage=', isOnChatPage, 'activeChatId=', activeChatId, 'message.chat_id=', message.chat_id, 'isViewingThisChat=', isViewingThisChat);
+      
       // Если пользователь НЕ смотрит этот чат, увеличиваем счётчик и играем звук
       if (!isViewingThisChat) {
-        setUnreadCount(prev => prev + 1);
+        console.log('NotificationContext: Увеличиваем счетчик и играем звук');
+        setUnreadCount(prev => {
+          const newCount = prev + 1;
+          console.log('NotificationContext: Новый счетчик непрочитанных:', newCount);
+          return newCount;
+        });
         playNotificationSound();
+      } else {
+        console.log('NotificationContext: Пользователь смотрит этот чат, пропускаем уведомление');
       }
     };
 
@@ -91,26 +103,43 @@ export function NotificationProvider({ children }) {
     try {
       if (audioRef.current?.audioContext) {
         const ctx = audioRef.current.audioContext;
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
         
-        oscillator.connect(gainNode);
-        gainNode.connect(ctx.destination);
+        // Первый звук (выше)
+        const oscillator1 = ctx.createOscillator();
+        const gainNode1 = ctx.createGain();
         
-        // Настройки звука
-        oscillator.frequency.value = 800; // Частота
-        oscillator.type = 'sine'; // Тип волны
+        oscillator1.connect(gainNode1);
+        gainNode1.connect(ctx.destination);
         
-        // Настройки громкости (плавное затухание)
-        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        oscillator1.frequency.value = 800; // Частота
+        oscillator1.type = 'sine'; // Тип волны
         
-        // Воспроизводим звук
-        oscillator.start(ctx.currentTime);
-        oscillator.stop(ctx.currentTime + 0.3);
+        gainNode1.gain.setValueAtTime(0.15, ctx.currentTime);
+        gainNode1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        
+        oscillator1.start(ctx.currentTime);
+        oscillator1.stop(ctx.currentTime + 0.15);
+        
+        // Второй звук (ниже, немного позже)
+        const oscillator2 = ctx.createOscillator();
+        const gainNode2 = ctx.createGain();
+        
+        oscillator2.connect(gainNode2);
+        gainNode2.connect(ctx.destination);
+        
+        oscillator2.frequency.value = 600; // Ниже частота
+        oscillator2.type = 'sine';
+        
+        gainNode2.gain.setValueAtTime(0.12, ctx.currentTime + 0.08);
+        gainNode2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        
+        oscillator2.start(ctx.currentTime + 0.08);
+        oscillator2.stop(ctx.currentTime + 0.25);
+        
+        console.log('NotificationContext: Звук уведомления воспроизведен');
       }
     } catch (err) {
-      // Тихо игнорируем ошибки воспроизведения звука
+      console.error('NotificationContext: Ошибка воспроизведения звука:', err);
     }
   };
 

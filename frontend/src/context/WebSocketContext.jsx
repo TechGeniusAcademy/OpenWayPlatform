@@ -67,7 +67,10 @@ const createSocket = (userId) => {
   globalSocket.on('connect', () => {
     console.log('🔌 WebSocket ПОДКЛЮЧЕН, ID:', globalSocket.id);
     if (globalSocketUserId) {
+      console.log('📤 Отправляем событие register для пользователя:', globalSocketUserId);
       globalSocket.emit('register', globalSocketUserId);
+      // Дополнительно отправляем событие user-online для немедленного обновления статуса
+      globalSocket.emit('set-online', globalSocketUserId);
     }
   });
 
@@ -82,7 +85,9 @@ const createSocket = (userId) => {
   globalSocket.on('reconnect', (attemptNumber) => {
     console.log('🔄 WebSocket ПЕРЕПОДКЛЮЧЕН после', attemptNumber, 'попыток');
     if (globalSocketUserId) {
+      console.log('📤 Переотправляем register после переподключения для:', globalSocketUserId);
       globalSocket.emit('register', globalSocketUserId);
+      globalSocket.emit('set-online', globalSocketUserId);
     }
   });
 

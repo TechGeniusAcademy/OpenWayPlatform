@@ -75,6 +75,21 @@ class User {
     }
   }
 
+  // Получить онлайн пользователей
+  static async getOnlineUsers() {
+    try {
+      const result = await pool.query(
+        `SELECT id, username, role, full_name, avatar_url, is_online, last_seen
+         FROM users 
+         WHERE is_online = TRUE
+         ORDER BY username ASC`
+      );
+      return result.rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Проверка пароля
   static async comparePassword(plainPassword, hashedPassword) {
     return await bcrypt.compare(plainPassword, hashedPassword);

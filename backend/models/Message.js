@@ -124,12 +124,42 @@ class Message {
   // Закрепить/открепить сообщение (только для админов в групповых чатах)
   static async togglePin(messageId, userId) {
     try {
+      // Получаем информацию о сообщении
+      const messageResult = await pool.query(
+        `SELECT chat_id, is_pinned FROM messages WHERE id = $1`,
+        [messageId]
+      );
+
+      if (messageResult.rows.length === 0) {
+        throw new Error('Message not found');
+      }
+
+      const { chat_id, is_pinned } = messageResult.rows[0];
+
+      // Если сообщение открепляется - просто откалываем его
+      if (is_pinned) {
+        const result = await pool.query(
+          `UPDATE messages 
+           SET is_pinned = false, pinned_by = NULL, pinned_at = NULL
+           WHERE id = $1
+           RETURNING *`,
+          [messageId]
+        );
+        return result.rows[0];
+      }
+
+      // Если сообщение закрепляется - сначала открепляем все другие в этом чате
+      await pool.query(
+        `UPDATE messages 
+         SET is_pinned = false, pinned_by = NULL, pinned_at = NULL
+         WHERE chat_id = $1 AND is_pinned = true`,
+        [chat_id]
+      );
+
+      // Затем закрепляем новое сообщение
       const result = await pool.query(
         `UPDATE messages 
-         SET 
-           is_pinned = NOT is_pinned,
-           pinned_by = CASE WHEN is_pinned = false THEN $2::INTEGER ELSE NULL::INTEGER END,
-           pinned_at = CASE WHEN is_pinned = false THEN CURRENT_TIMESTAMP ELSE NULL END
+         SET is_pinned = true, pinned_by = $2::INTEGER, pinned_at = CURRENT_TIMESTAMP
          WHERE id = $1
          RETURNING *`,
         [messageId, userId]

@@ -44,6 +44,17 @@ const upload = multer({
 // Все маршруты требуют аутентификации
 router.use(authenticate);
 
+// Получить список онлайн пользователей
+router.get('/online', async (req, res) => {
+  try {
+    const result = await User.getOnlineUsers();
+    res.json({ users: result });
+  } catch (error) {
+    console.error('Ошибка получения онлайн пользователей:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Получить всех пользователей (студенты видят только других студентов)
 router.get('/', async (req, res) => {
   try {

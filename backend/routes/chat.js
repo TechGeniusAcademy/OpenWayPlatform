@@ -204,6 +204,41 @@ router.get('/:chatId/messages', authenticate, async (req, res) => {
   }
 });
 
+// Получить новые сообщения после определённого ID (для polling)
+router.get('/:chatId/messages/new/:afterId', authenticate, async (req, res) => {
+  try {
+    const { chatId, afterId } = req.params;
+    
+    const result = await pool.query(
+      `SELECT 
+        m.*,
+        u.username as sender_username,
+        u.full_name as sender_full_name,
+        u.avatar_url as sender_avatar_url,
+        u.avatar_frame as sender_avatar_frame,
+        u.username_style as sender_username_style,
+        u.message_color as sender_message_color,
+        pinner.username as pinned_by_username,
+        pinner.full_name as pinned_by_full_name,
+        reply_msg.content as reply_to_content,
+        reply_sender.full_name as reply_to_sender_name
+       FROM messages m
+       INNER JOIN users u ON m.sender_id = u.id
+       LEFT JOIN users pinner ON m.pinned_by = pinner.id
+       LEFT JOIN messages reply_msg ON m.reply_to_id = reply_msg.id
+       LEFT JOIN users reply_sender ON reply_msg.sender_id = reply_sender.id
+       WHERE m.chat_id = $1 AND m.id > $2
+       ORDER BY m.created_at ASC`,
+      [chatId, afterId]
+    );
+
+    res.json({ messages: result.rows });
+  } catch (error) {
+    console.error('Ошибка получения новых сообщений:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Отметить сообщения как прочитанные
 // Отметить сообщения как прочитанные
 router.put('/:chatId/mark-read', authenticate, async (req, res) => {
@@ -283,6 +318,18 @@ router.post('/:chatId/messages', authenticate, async (req, res) => {
     io.to(`chat-${chatId}`).emit('new-message', fullMessage);
     console.log(`💬 Сообщение отправлено в чат ${chatId} через WebSocket`);
 
+    // Получаем всех участников чата для отправки уведомлений
+    const participantsResult = await pool.query(
+      'SELECT user_id FROM chat_participants WHERE chat_id = $1',
+      [chatId]
+    );
+
+    // Отправляем уведомление всем участникам чата (включая отправителя для синхронизации)
+    participantsResult.rows.forEach(participant => {
+      io.to(`user-${participant.user_id}`).emit('chat-message-notification', fullMessage);
+    });
+    console.log(`🔔 Уведомления о сообщении отправлены ${participantsResult.rows.length} участникам`);
+
     res.status(201).json({ message: fullMessage });
   } catch (error) {
     console.error('Ошибка отправки сообщения:', error);
@@ -333,6 +380,18 @@ router.post('/:chatId/upload', authenticate, upload.single('file'), async (req, 
     io.to(`chat-${chatId}`).emit('new-message', fullMessage);
     console.log(`📎 Файл отправлен в чат ${chatId} через WebSocket`);
 
+    // Получаем всех участников чата для отправки уведомлений
+    const participantsResult = await pool.query(
+      'SELECT user_id FROM chat_participants WHERE chat_id = $1',
+      [chatId]
+    );
+
+    // Отправляем уведомление всем участникам чата
+    participantsResult.rows.forEach(participant => {
+      io.to(`user-${participant.user_id}`).emit('chat-message-notification', fullMessage);
+    });
+    console.log(`🔔 Уведомления о файле отправлены ${participantsResult.rows.length} участникам`);
+
     res.status(201).json({ message: fullMessage });
   } catch (error) {
     console.error('Ошибка загрузки файла:', error);
@@ -355,6 +414,13 @@ router.put('/messages/:messageId/pin', authenticate, async (req, res) => {
     if (!message) {
       return res.status(404).json({ error: 'Сообщение не найдено' });
     }
+
+    // Отправляем событие через WebSocket всем участникам чата
+    io.to(`chat-${message.chat_id}`).emit('message-pinned', {
+      messageId: message.id,
+      chatId: message.chat_id,
+      isPinned: message.is_pinned
+    });
 
     res.json({ message });
   } catch (error) {
@@ -404,13 +470,27 @@ router.post('/messages/:messageId/reaction', authenticate, async (req, res) => {
       [messageId]
     );
 
-    res.json({ 
-      reactions: reactions.rows.map(r => ({
-        emoji: r.emoji,
-        count: parseInt(r.count),
-        user_names: r.user_names
-      }))
-    });
+    const reactionData = reactions.rows.map(r => ({
+      emoji: r.emoji,
+      count: parseInt(r.count),
+      user_names: r.user_names
+    }));
+
+    // Получаем chat_id сообщения для отправки события
+    const messageData = await pool.query(
+      'SELECT chat_id FROM messages WHERE id = $1',
+      [messageId]
+    );
+
+    if (messageData.rows.length > 0) {
+      // Отправляем событие через WebSocket всем участникам чата
+      io.to(`chat-${messageData.rows[0].chat_id}`).emit('reaction-updated', {
+        messageId: parseInt(messageId),
+        reactions: reactionData
+      });
+    }
+
+    res.json({ reactions: reactionData });
   } catch (error) {
     console.error('Ошибка добавления реакции:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });

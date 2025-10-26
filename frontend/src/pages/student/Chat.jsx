@@ -5,6 +5,20 @@ import { useWebSocket } from '../../context/WebSocketContext';
 import api, { BASE_URL } from '../../utils/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { 
+  BsReply, 
+  BsPinFill, 
+  BsHeart, 
+  BsHandThumbsUp, 
+  BsPencil, 
+  BsTrash, 
+  BsCheck, 
+  BsX, 
+  BsPaperclip,
+  BsCode,
+  BsChatDots,
+  BsPeopleFill
+} from 'react-icons/bs';
 import './Chat.css';
 import '../../styles/UsernameStyles.css';
 import '../../styles/MessageColors.css';
@@ -33,6 +47,18 @@ const normalizeLanguage = (lang) => {
     'sql': 'sql'
   };
   return languageMap[lang] || 'javascript';
+};
+
+// Функция для преобразования emoji в иконки
+const EmojiIcon = ({ emoji }) => {
+  switch(emoji) {
+    case '👍':
+      return <BsHandThumbsUp />;
+    case '❤️':
+      return <BsHeart />;
+    default:
+      return <span>{emoji}</span>;
+  }
 };
 
 function Chat() {
@@ -87,6 +113,7 @@ function Chat() {
   useEffect(() => {
     loadChats();
     loadAllUsers();
+    loadOnlineUsers(); // Загружаем онлайн пользователей при монтировании
     loadFrameImages();
     
     const socket = getSocket();
@@ -198,6 +225,29 @@ function Chat() {
       });
     };
 
+    const handleMessagePinned = (data) => {
+      console.log('Chat: Сообщение закреплено/откреплено:', data);
+      
+      // Если это активный чат, обновляем закрепленные сообщения
+      if (activeChatRef.current?.id === data.chatId) {
+        loadPinnedMessages(data.chatId);
+        
+        // Обновляем is_pinned в списке сообщений
+        setMessages(prev => prev.map(msg => 
+          msg.id === data.messageId ? { ...msg, is_pinned: data.isPinned } : msg
+        ));
+      }
+    };
+
+    const handleReactionUpdated = (data) => {
+      console.log('Chat: Реакция обновлена:', data);
+      
+      // Обновляем реакции для сообщения
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.messageId ? { ...msg, reactions: data.reactions } : msg
+      ));
+    };
+
     // Подписываемся на события
     console.log('Chat: Подписываемся на WebSocket события');
     socket.on('new-message', handleNewMessage);
@@ -208,6 +258,8 @@ function Chat() {
     socket.on('user-stop-typing', handleUserStopTyping);
     socket.on('user-online', handleUserOnline);
     socket.on('user-offline', handleUserOffline);
+    socket.on('message-pinned', handleMessagePinned);
+    socket.on('reaction-updated', handleReactionUpdated);
 
     return () => {
       console.log('Chat: Отписываемся от WebSocket событий');
@@ -220,6 +272,8 @@ function Chat() {
       socket.off('user-stop-typing', handleUserStopTyping);
       socket.off('user-online', handleUserOnline);
       socket.off('user-offline', handleUserOffline);
+      socket.off('message-pinned', handleMessagePinned);
+      socket.off('reaction-updated', handleReactionUpdated);
     };
   }, [user.id, getSocket]); // Убрали activeChat из зависимостей
 
@@ -283,6 +337,17 @@ function Chat() {
     scrollToBottom();
   }, [messages]);
 
+  // Polling для получения новых сообщений каждые 3 секунды
+  useEffect(() => {
+    if (!activeChat) return;
+
+    const intervalId = setInterval(() => {
+      loadNewMessages(activeChat.id);
+    }, 3000); // Проверяем каждые 3 секунды
+
+    return () => clearInterval(intervalId);
+  }, [activeChat?.id, messages]);
+
   const loadChats = async () => {
     try {
       setLoading(true);
@@ -306,6 +371,17 @@ function Chat() {
       ));
     } catch (error) {
       console.error('Ошибка загрузки пользователей:', error);
+    }
+  };
+
+  const loadOnlineUsers = async () => {
+    try {
+      const response = await api.get('/users/online');
+      const onlineUserIds = response.data.users.map(u => u.id);
+      setOnlineUsers(new Set(onlineUserIds));
+      console.log('Загружено онлайн пользователей:', onlineUserIds.length);
+    } catch (error) {
+      console.error('Ошибка загрузки онлайн пользователей:', error);
     }
   };
 
@@ -344,11 +420,40 @@ function Chat() {
       const serverMessages = response.data.messages;
       setMessages(serverMessages);
       
-      // Сохраняем в localStorage
+      // Обновляем localStorage
       localStorage.setItem(localKey, JSON.stringify(serverMessages));
+      
       scrollToBottom();
     } catch (error) {
       console.error('Ошибка загрузки сообщений:', error);
+    }
+  };
+
+  // Функция для получения новых сообщений (polling)
+  const loadNewMessages = async (chatId) => {
+    try {
+      if (messages.length === 0) return;
+      
+      const lastMessageId = Math.max(...messages.map(m => m.id));
+      const response = await api.get(`/chat/${chatId}/messages/new/${lastMessageId}`);
+      
+      if (response.data.messages && response.data.messages.length > 0) {
+        console.log(`📨 Получено ${response.data.messages.length} новых сообщений через polling`);
+        
+        setMessages(prev => {
+          const newMessages = [...prev, ...response.data.messages];
+          
+          // Обновляем localStorage
+          const localKey = `chat_messages_${chatId}`;
+          localStorage.setItem(localKey, JSON.stringify(newMessages));
+          
+          return newMessages;
+        });
+        
+        scrollToBottom();
+      }
+    } catch (error) {
+      console.error('Ошибка получения новых сообщений:', error);
     }
   };
 
@@ -448,8 +553,12 @@ function Chat() {
 
   const handleReaction = async (messageId, emoji) => {
     try {
-      await api.post(`/chat/messages/${messageId}/reaction`, { emoji });
-      loadMessages(activeChat.id);
+      const response = await api.post(`/chat/messages/${messageId}/reaction`, { emoji });
+      
+      // Обновляем реакции локально
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, reactions: response.data.reactions } : msg
+      ));
     } catch (error) {
       console.error('Ошибка добавления реакции:', error);
     }
@@ -537,8 +646,8 @@ function Chat() {
         // Отправка текста или кода
         const response = await api.post(`/chat/${activeChat.id}/messages`, {
           content: newMessage,
-          message_type: messageType,
-          code_language: messageType === 'code' ? 'auto' : null,
+          messageType: messageType,
+          codeLanguage: messageType === 'code' ? 'auto' : null,
           replyTo: replyTo?.id
         });
 
@@ -547,23 +656,21 @@ function Chat() {
           sender_full_name: user.full_name,
           sender_username: user.username,
           sender_avatar_url: user.avatar_url,
-          sender_avatar_frame: user.avatar_frame
+          sender_avatar_frame: user.avatar_frame,
+          sender_username_style: user.username_style,
+          sender_message_color: user.message_color
         };
 
         // Добавляем сообщение локально сразу
-        const newMessages = [...messages, messageWithSender];
-        setMessages(newMessages);
-        
-        // Сохраняем в localStorage
-        const localKey = `chat_messages_${activeChat.id}`;
-        localStorage.setItem(localKey, JSON.stringify(newMessages));
-
-        if (socket) {
-          socket.emit('send-message', {
-            chatId: activeChat.id,
-            message: messageWithSender
-          });
-        }
+        setMessages(prev => {
+          const newMessages = [...prev, messageWithSender];
+          
+          // Сохраняем в localStorage
+          const localKey = `chat_messages_${activeChat.id}`;
+          localStorage.setItem(localKey, JSON.stringify(newMessages));
+          
+          return newMessages;
+        });
 
         scrollToBottom();
       }
@@ -634,8 +741,8 @@ function Chat() {
             autoFocus
           />
           <div className="edit-actions">
-            <button onClick={() => handleEditMessage(message.id, newMessage)}>✓</button>
-            <button onClick={() => { setEditingMessage(null); setNewMessage(''); }}>✕</button>
+            <button onClick={() => handleEditMessage(message.id, newMessage)}><BsCheck /></button>
+            <button onClick={() => { setEditingMessage(null); setNewMessage(''); }}><BsX /></button>
           </div>
         </div>
       );
@@ -645,7 +752,7 @@ function Chat() {
       <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'} ${message.is_pinned ? 'pinned' : ''}`}>
         {message.is_pinned && (
           <div className="pinned-indicator">
-            📌 Закреплено
+            <BsPinFill /> Закреплено
           </div>
         )}
 
@@ -670,7 +777,7 @@ function Chat() {
         <div className="message-bubble">
           {message.reply_to_id && (
             <div className="message-reply">
-              <div className="reply-indicator">↩️</div>
+              <div className="reply-indicator"><BsReply /></div>
               <div className="reply-content">
                 {message.reply_to_content?.substring(0, 50)}...
               </div>
@@ -702,7 +809,7 @@ function Chat() {
             </div>
           ) : message.message_type === 'file' ? (
             <div className="message-file">
-              <span className="file-icon">📎</span>
+              <span className="file-icon"><BsPaperclip /></span>
               <div className="file-info">
                 <div className="file-name">{message.file_name}</div>
                 <div className="file-size">{(message.file_size / 1024 / 1024).toFixed(2)} MB</div>
@@ -732,7 +839,7 @@ function Chat() {
                   title={reaction.user_names?.join(', ')}
                   onClick={() => handleReaction(message.id, reaction.emoji)}
                 >
-                  {reaction.emoji} {reaction.count > 1 && reaction.count}
+                  <EmojiIcon emoji={reaction.emoji} /> {reaction.count > 1 && reaction.count}
                 </span>
               ))}
             </div>
@@ -745,7 +852,7 @@ function Chat() {
               onClick={() => handleReply(message)}
               title="Ответить"
             >
-              ↩️
+              <BsReply />
             </button>
             {user.role === 'admin' && activeChat?.type === 'group' && (
               <button 
@@ -753,7 +860,7 @@ function Chat() {
                 onClick={() => togglePinMessage(message.id)}
                 title={message.is_pinned ? 'Открепить' : 'Закрепить'}
               >
-                📌
+                <BsPinFill />
               </button>
             )}
             <button 
@@ -761,14 +868,14 @@ function Chat() {
               onClick={() => handleReaction(message.id, '👍')}
               title="Лайк"
             >
-              👍
+              <BsHandThumbsUp />
             </button>
             <button 
               className="message-action-btn"
               onClick={() => handleReaction(message.id, '❤️')}
               title="Сердце"
             >
-              ❤️
+              <BsHeart />
             </button>
             {isOwnMessage && (
               <>
@@ -780,14 +887,14 @@ function Chat() {
                   }}
                   title="Редактировать"
                 >
-                  ✏️
+                  <BsPencil />
                 </button>
                 <button 
                   className="message-action-btn"
                   onClick={() => handleDeleteMessage(message.id)}
                   title="Удалить"
                 >
-                  🗑️
+                  <BsTrash />
                 </button>
               </>
             )}
@@ -809,12 +916,12 @@ function Chat() {
           <h3>Чаты</h3>
           <div className="sidebar-actions">
             {user.group_id && (
-              <button 
+              <button
                 className="btn-group-chat"
                 onClick={openGroupChat}
                 title="Групповой чат"
               >
-                👥
+                <BsPeopleFill />
               </button>
             )}
           </div>
@@ -893,7 +1000,7 @@ function Chat() {
                 <div className="chat-avatar-wrapper">
                   <div className="chat-avatar">
                     {chat.type === 'group' ? (
-                      <span className="avatar-icon">👥</span>
+                      <span className="avatar-icon"><BsPeopleFill /></span>
                     ) : chat.other_user?.avatar_url ? (
                       <img src={`${BASE_URL}${chat.other_user.avatar_url}`} alt="" className="avatar-img" />
                     ) : (
@@ -924,8 +1031,8 @@ function Chat() {
                   </div>
                   {chat.last_message && (
                     <div className="chat-last-message">
-                      {chat.last_message.message_type === 'file' ? '📎 Файл' : 
-                       chat.last_message.message_type === 'code' ? '💻 Код' : 
+                      {chat.last_message.message_type === 'file' ? <><BsPaperclip /> Файл</> : 
+                       chat.last_message.message_type === 'code' ? <><BsCode /> Код</> : 
                        chat.last_message.content?.substring(0, 30)}
                     </div>
                   )}
@@ -938,7 +1045,7 @@ function Chat() {
                   }}
                   title={chat.is_pinned ? 'Открепить' : 'Закрепить'}
                 >
-                  📌
+                  <BsPinFill />
                 </button>
                 {chat.unread_count > 0 && (
                   <div className="unread-badge">{chat.unread_count}</div>
@@ -969,7 +1076,7 @@ function Chat() {
               <div className="chat-search">
                 <input
                   type="text"
-                  placeholder="🔍 Поиск по сообщениям..."
+                  placeholder="Поиск по сообщениям..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="search-input"
@@ -977,18 +1084,18 @@ function Chat() {
               </div>
             </div>
 
-            {pinnedMessages.length > 0 && (
-              <div className="pinned-messages">
-                <h4>📌 Закрепленные сообщения</h4>
-                {pinnedMessages.map(msg => (
-                  <div key={msg.id} className="pinned-message-item">
-                    <strong>{msg.sender_full_name}:</strong> {msg.content?.substring(0, 50)}...
-                  </div>
-                ))}
-              </div>
-            )}
-
             <div className="messages-list">
+              {pinnedMessages.length > 0 && (
+                <div className="pinned-messages">
+                  <h4><BsPinFill /> Закрепленное сообщение</h4>
+                  {pinnedMessages.map(msg => (
+                    <div key={msg.id} className="pinned-message-item">
+                      <strong>{msg.sender_full_name}:</strong> {msg.content?.substring(0, 50)}...
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {messages
                 .filter(msg => {
                   if (!searchQuery) return true;
@@ -1006,7 +1113,7 @@ function Chat() {
                   <div className="reply-preview-content">
                     <strong>Ответ на:</strong> {replyTo.content?.substring(0, 50)}...
                   </div>
-                  <button type="button" onClick={() => setReplyTo(null)}>✕</button>
+                  <button type="button" onClick={() => setReplyTo(null)}><BsX /></button>
                 </div>
               )}
 
@@ -1016,8 +1123,8 @@ function Chat() {
                   onChange={(e) => setMessageType(e.target.value)}
                   className="message-type-select"
                 >
-                  <option value="text">💬 Текст</option>
-                  <option value="code">💻 Код</option>
+                  <option value="text"><BsChatDots /> Текст</option>
+                  <option value="code"><BsCode /> Код</option>
                 </select>
 
                 <button 
@@ -1026,7 +1133,7 @@ function Chat() {
                   onClick={() => fileInputRef.current?.click()}
                   title="Прикрепить файл"
                 >
-                  📎
+                  <BsPaperclip />
                 </button>
                 
                 {typingUser && (
@@ -1048,8 +1155,8 @@ function Chat() {
 
               {selectedFile && (
                 <div className="selected-file">
-                  <span>📎 {selectedFile.name}</span>
-                  <button type="button" onClick={() => setSelectedFile(null)}>✕</button>
+                  <span><BsPaperclip /> {selectedFile.name}</span>
+                  <button type="button" onClick={() => setSelectedFile(null)}><BsX /></button>
                 </div>
               )}
 

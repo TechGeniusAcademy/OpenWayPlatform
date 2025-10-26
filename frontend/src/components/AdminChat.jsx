@@ -4,6 +4,25 @@ import { useWebSocket } from '../context/WebSocketContext';
 import api, { BASE_URL } from '../utils/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { 
+  BsReply, 
+  BsPinFill, 
+  BsPinAngleFill,
+  BsHeart, 
+  BsHeartFill,
+  BsHandThumbsUp,
+  BsHandThumbsUpFill,
+  BsPencil,
+  BsTrash,
+  BsCheck,
+  BsX,
+  BsPlusCircle,
+  BsPaperclip,
+  BsSearch,
+  BsCode,
+  BsPeopleFill,
+  BsChatDots
+} from 'react-icons/bs';
 import '../pages/student/Chat.css';
 
 function AdminChat() {
@@ -31,9 +50,22 @@ function AdminChat() {
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  // Компонент для отображения эмодзи как иконок
+  const EmojiIcon = ({ emoji }) => {
+    switch (emoji) {
+      case '👍':
+        return <BsHandThumbsUp />;
+      case '❤️':
+        return <BsHeart />;
+      default:
+        return <span>{emoji}</span>;
+    }
+  };
+
   useEffect(() => {
     loadAllChats();
     loadAllUsers();
+    loadOnlineUsers(); // Загружаем онлайн пользователей при монтировании
     
     // Используем глобальный WebSocket
     const socket = getSocket();
@@ -96,6 +128,29 @@ function AdminChat() {
       });
     });
 
+    socket.on('message-pinned', (data) => {
+      console.log('AdminChat: Сообщение закреплено/откреплено:', data);
+      
+      // Если это активный чат, обновляем закрепленные сообщения
+      if (activeChat?.id === data.chatId) {
+        loadPinnedMessages(data.chatId);
+        
+        // Обновляем is_pinned в списке сообщений
+        setMessages(prev => prev.map(msg => 
+          msg.id === data.messageId ? { ...msg, is_pinned: data.isPinned } : msg
+        ));
+      }
+    });
+
+    socket.on('reaction-updated', (data) => {
+      console.log('AdminChat: Реакция обновлена:', data);
+      
+      // Обновляем реакции для сообщения
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.messageId ? { ...msg, reactions: data.reactions } : msg
+      ));
+    });
+
     return () => {
       // Отписываемся от событий
       socket.off('new-message');
@@ -104,6 +159,8 @@ function AdminChat() {
       socket.off('user-stop-typing');
       socket.off('user-online');
       socket.off('user-offline');
+      socket.off('message-pinned');
+      socket.off('reaction-updated');
     };
   }, [user.id, activeChat]);
 
@@ -137,6 +194,17 @@ function AdminChat() {
     scrollToBottom();
   }, [messages]);
 
+  // Polling для получения новых сообщений каждые 3 секунды
+  useEffect(() => {
+    if (!activeChat) return;
+
+    const intervalId = setInterval(() => {
+      loadNewMessages(activeChat.id);
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, [activeChat?.id, messages]);
+
   const loadAllChats = async () => {
     try {
       setLoading(true);
@@ -159,6 +227,17 @@ function AdminChat() {
     }
   };
 
+  const loadOnlineUsers = async () => {
+    try {
+      const response = await api.get('/users/online');
+      const onlineUserIds = response.data.users.map(u => u.id);
+      setOnlineUsers(new Set(onlineUserIds));
+      console.log('Загружено онлайн пользователей:', onlineUserIds.length);
+    } catch (error) {
+      console.error('Ошибка загрузки онлайн пользователей:', error);
+    }
+  };
+
   const createPrivateChat = async (userId) => {
     try {
       const response = await api.post('/chat/private', { userId });
@@ -178,6 +257,25 @@ function AdminChat() {
       scrollToBottom();
     } catch (error) {
       console.error('Ошибка загрузки сообщений:', error);
+    }
+  };
+
+  // Функция для получения новых сообщений (polling)
+  const loadNewMessages = async (chatId) => {
+    try {
+      if (messages.length === 0) return;
+      
+      const lastMessageId = Math.max(...messages.map(m => m.id));
+      const response = await api.get(`/chat/${chatId}/messages/new/${lastMessageId}`);
+      
+      if (response.data.messages && response.data.messages.length > 0) {
+        console.log(`📨 AdminChat: Получено ${response.data.messages.length} новых сообщений`);
+        
+        setMessages(prev => [...prev, ...response.data.messages]);
+        scrollToBottom();
+      }
+    } catch (error) {
+      console.error('Ошибка получения новых сообщений:', error);
     }
   };
 
@@ -302,10 +400,9 @@ function AdminChat() {
           sender_username: user.username
         };
 
-        socket.emit('send-message', {
-          chatId: activeChat.id,
-          message: messageWithSender
-        });
+        // Добавляем сообщение локально сразу
+        setMessages(prev => [...prev, messageWithSender]);
+        scrollToBottom();
       }
 
       setNewMessage('');
@@ -341,8 +438,12 @@ function AdminChat() {
 
   const handleReaction = async (messageId, emoji) => {
     try {
-      await api.post(`/chat/messages/${messageId}/reaction`, { emoji });
-      loadMessages(activeChat.id);
+      const response = await api.post(`/chat/messages/${messageId}/reaction`, { emoji });
+      
+      // Обновляем реакции локально
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, reactions: response.data.reactions } : msg
+      ));
     } catch (error) {
       console.error('Ошибка добавления реакции:', error);
     }
@@ -395,8 +496,8 @@ function AdminChat() {
             autoFocus
           />
           <div className="edit-actions">
-            <button onClick={() => handleEditMessage(message.id, newMessage)}>✓</button>
-            <button onClick={() => { setEditingMessage(null); setNewMessage(''); }}>✕</button>
+            <button onClick={() => handleEditMessage(message.id, newMessage)}><BsCheck /></button>
+            <button onClick={() => { setEditingMessage(null); setNewMessage(''); }}><BsX /></button>
           </div>
         </div>
       );
@@ -406,13 +507,13 @@ function AdminChat() {
       <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'} ${message.is_pinned ? 'pinned' : ''}`}>
         {message.is_pinned && (
           <div className="pinned-indicator">
-            📌 Закреплено
+            <BsPinFill /> Закреплено
           </div>
         )}
         
         {message.reply_to_id && (
           <div className="message-reply">
-            <div className="reply-indicator">↩️</div>
+            <div className="reply-indicator"><BsReply /></div>
             <div className="reply-content">
               {message.reply_to_content?.substring(0, 50)}...
             </div>
@@ -438,7 +539,7 @@ function AdminChat() {
           </div>
         ) : message.message_type === 'file' ? (
           <div className="message-file">
-            <span className="file-icon">📎</span>
+            <span className="file-icon"><BsPaperclip /></span>
             <div className="file-info">
               <div className="file-name">{message.file_name}</div>
               <div className="file-size">{(message.file_size / 1024 / 1024).toFixed(2)} MB</div>
@@ -463,7 +564,7 @@ function AdminChat() {
           <div className="message-reactions">
             {message.reactions.map((reaction, idx) => (
               <span key={idx} className="reaction" title={reaction.user_name}>
-                {reaction.emoji} {reaction.count > 1 && reaction.count}
+                <EmojiIcon emoji={reaction.emoji} /> {reaction.count > 1 && reaction.count}
               </span>
             ))}
           </div>
@@ -476,28 +577,28 @@ function AdminChat() {
             onClick={() => handleReply(message)}
             title="Ответить"
           >
-            ↩️
+            <BsReply />
           </button>
           <button 
             className="message-action-btn"
             onClick={() => togglePinMessage(message.id)}
             title={message.is_pinned ? 'Открепить' : 'Закрепить'}
           >
-            📌
+            <BsPinFill />
           </button>
           <button 
             className="message-action-btn"
             onClick={() => handleReaction(message.id, '👍')}
             title="Лайк"
           >
-            👍
+            <BsHandThumbsUp />
           </button>
           <button 
             className="message-action-btn"
             onClick={() => handleReaction(message.id, '❤️')}
             title="Сердце"
           >
-            ❤️
+            <BsHeart />
           </button>
           {isOwnMessage && (
             <>
@@ -509,14 +610,14 @@ function AdminChat() {
                 }}
                 title="Редактировать"
               >
-                ✏️
+                <BsPencil />
               </button>
               <button 
                 className="message-action-btn"
                 onClick={() => handleDeleteMessage(message.id)}
                 title="Удалить"
               >
-                🗑️
+                <BsTrash />
               </button>
             </>
           )}
@@ -552,7 +653,7 @@ function AdminChat() {
             onClick={() => setShowCreateChat(true)}
             title="Создать приватный чат"
           >
-            ➕
+            <BsPlusCircle />
           </button>
         </div>
 
@@ -590,7 +691,7 @@ function AdminChat() {
                 onClick={() => setActiveChat(chat)}
               >
                 <div className="chat-avatar">
-                  {chat.type === 'group' ? '👥' : '💬'}
+                  {chat.type === 'group' ? <BsPeopleFill /> : <BsChatDots />}
                 </div>
                 <div className="chat-info">
                   <div className="chat-name">
@@ -601,8 +702,8 @@ function AdminChat() {
                   </div>
                   {chat.last_message && (
                     <div className="chat-last-message">
-                      {chat.last_message.message_type === 'file' ? '📎 Файл' : 
-                       chat.last_message.message_type === 'code' ? '💻 Код' : 
+                      {chat.last_message.message_type === 'file' ? <><BsPaperclip /> Файл</> : 
+                       chat.last_message.message_type === 'code' ? <><BsCode /> Код</> : 
                        chat.last_message.content?.substring(0, 30)}
                     </div>
                   )}
@@ -621,13 +722,13 @@ function AdminChat() {
               <div className="chat-title">
                 {activeChat.name || `Чат #${activeChat.id}`}
                 <span className="chat-type-tag">
-                  {activeChat.type === 'group' ? '👥 Групповой' : '💬 Приватный'}
+                  {activeChat.type === 'group' ? <><BsPeopleFill /> Групповой</> : <><BsChatDots /> Приватный</>}
                 </span>
               </div>
               <div className="chat-search">
                 <input
                   type="text"
-                  placeholder="🔍 Поиск по сообщениям..."
+                  placeholder="Поиск по сообщениям..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="search-input"
@@ -635,18 +736,18 @@ function AdminChat() {
               </div>
             </div>
 
-            {pinnedMessages.length > 0 && (
-              <div className="pinned-messages">
-                <h4>📌 Закрепленные сообщения</h4>
-                {pinnedMessages.map(msg => (
-                  <div key={msg.id} className="pinned-message-item">
-                    <strong>{msg.sender_full_name}:</strong> {msg.content?.substring(0, 50)}...
-                  </div>
-                ))}
-              </div>
-            )}
-
             <div className="messages-list">
+              {pinnedMessages.length > 0 && (
+                <div className="pinned-messages">
+                  <h4><BsPinFill /> Закрепленное сообщение</h4>
+                  {pinnedMessages.map(msg => (
+                    <div key={msg.id} className="pinned-message-item">
+                      <strong>{msg.sender_full_name}:</strong> {msg.content?.substring(0, 50)}...
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {filteredMessages.map(renderMessage)}
               {typingUser && (
                 <div className="typing-indicator">
@@ -665,7 +766,7 @@ function AdminChat() {
                   <div className="reply-preview-content">
                     <strong>Ответ на:</strong> {replyTo.content?.substring(0, 50)}...
                   </div>
-                  <button type="button" onClick={() => setReplyTo(null)}>✕</button>
+                  <button type="button" onClick={() => setReplyTo(null)}><BsX /></button>
                 </div>
               )}
 
@@ -696,13 +797,12 @@ function AdminChat() {
                   </select>
                 )}
 
-                <button 
-                  type="button" 
+                <button
                   className="btn-file"
                   onClick={() => fileInputRef.current?.click()}
                   title="Прикрепить файл"
                 >
-                  📎
+                  <BsPaperclip />
                 </button>
                 <input 
                   type="file" 
@@ -714,8 +814,8 @@ function AdminChat() {
 
               {selectedFile && (
                 <div className="selected-file">
-                  <span>📎 {selectedFile.name}</span>
-                  <button type="button" onClick={() => setSelectedFile(null)}>✕</button>
+                  <span><BsPaperclip /> {selectedFile.name}</span>
+                  <button type="button" onClick={() => setSelectedFile(null)}><BsX /></button>
                 </div>
               )}
 
@@ -753,7 +853,7 @@ function AdminChat() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Создать приватный чат</h3>
-              <button onClick={() => setShowCreateChat(false)}>✕</button>
+              <button onClick={() => setShowCreateChat(false)}><BsX /></button>
             </div>
             <div className="modal-body">
               <div className="users-list">

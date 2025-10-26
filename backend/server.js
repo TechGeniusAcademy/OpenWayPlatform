@@ -147,6 +147,22 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Установка статуса онлайн (используется при загрузке любой страницы)
+  socket.on('set-online', async (userId) => {
+    try {
+      await pool.query(
+        'UPDATE users SET is_online = TRUE, last_seen = NOW() WHERE id = $1',
+        [userId]
+      );
+      
+      // Уведомляем всех о том, что пользователь онлайн
+      io.emit('user-online', { userId, socketId: socket.id });
+      console.log(`✅ Пользователь ${userId} установлен как онлайн`);
+    } catch (error) {
+      console.error('Ошибка установки онлайн статуса:', error);
+    }
+  });
+
   // Присоединение к чату
   socket.on('join-chat', (chatId) => {
     socket.join(`chat-${chatId}`);
