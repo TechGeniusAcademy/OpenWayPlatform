@@ -9,12 +9,21 @@ export function NotificationProvider({ children }) {
   const { getSocket } = useWebSocket();
   const [unreadCount, setUnreadCount] = useState(0);
   const audioRef = useRef();
+  const processedMessagesRef = useRef(new Set()); // Для предотвращения дублирования
 
   useEffect(() => {
     // Создаём аудио элемент для звука уведомления
     // Используем простой beep звук через Data URI
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     audioRef.current = { audioContext };
+    
+    // Очищаем Set обработанных сообщений каждые 5 минут
+    const cleanupInterval = setInterval(() => {
+      processedMessagesRef.current.clear();
+      console.log('NotificationContext: Очищен кеш обработанных сообщений');
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(cleanupInterval);
   }, []);
 
   useEffect(() => {
@@ -40,6 +49,14 @@ export function NotificationProvider({ children }) {
     const handleChatMessageNotification = (message) => {
       console.log('NotificationContext: Получено уведомление о сообщении:', message);
       
+      // Проверяем, не обработали ли мы уже это сообщение
+      const messageKey = `${message.id}-${message.created_at}`;
+      if (processedMessagesRef.current.has(messageKey)) {
+        console.log('NotificationContext: Сообщение уже обработано, пропускаем дубликат');
+        return;
+      }
+      processedMessagesRef.current.add(messageKey);
+      
       // Если сообщение от текущего пользователя - игнорируем
       if (message.sender_id === user.id) {
         console.log('NotificationContext: Сообщение от текущего пользователя, пропускаем');
@@ -53,14 +70,11 @@ export function NotificationProvider({ children }) {
       
       console.log('NotificationContext: isOnChatPage=', isOnChatPage, 'activeChatId=', activeChatId, 'message.chat_id=', message.chat_id, 'isViewingThisChat=', isViewingThisChat);
       
-      // Если пользователь НЕ смотрит этот чат, увеличиваем счётчик и играем звук
+      // Если пользователь НЕ смотрит этот чат, перезагружаем счётчик и играем звук
       if (!isViewingThisChat) {
-        console.log('NotificationContext: Увеличиваем счетчик и играем звук');
-        setUnreadCount(prev => {
-          const newCount = prev + 1;
-          console.log('NotificationContext: Новый счетчик непрочитанных:', newCount);
-          return newCount;
-        });
+        console.log('NotificationContext: Перезагружаем счетчик с сервера и играем звук');
+        // Перезагружаем точное значение с сервера вместо инкремента
+        loadUnreadCount();
         playNotificationSound();
       } else {
         console.log('NotificationContext: Пользователь смотрит этот чат, пропускаем уведомление');
