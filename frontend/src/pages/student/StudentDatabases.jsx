@@ -8,11 +8,36 @@ function StudentDatabases() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Загружаем базы данных из localStorage
+    const loadDatabases = () => {
+      try {
+        const savedDatabases = localStorage.getItem('studentDatabases');
+        if (savedDatabases) {
+          setDatabases(JSON.parse(savedDatabases));
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки баз данных:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     // Симуляция загрузки
     setTimeout(() => {
-      setLoading(false);
+      loadDatabases();
     }, 500);
   }, []);
+
+  // Сохраняем базы данных в localStorage при каждом изменении
+  useEffect(() => {
+    if (!loading) {
+      try {
+        localStorage.setItem('studentDatabases', JSON.stringify(databases));
+      } catch (error) {
+        console.error('Ошибка сохранения баз данных:', error);
+      }
+    }
+  }, [databases, loading]);
 
   const createNewDatabase = () => {
     const name = prompt('Введите название базы данных:');

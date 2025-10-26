@@ -15,6 +15,80 @@ const getSocketUrl = () => {
 
 const SOCKET_URL = getSocketUrl();
 
+// Глобальный singleton socket - создается только один раз для всего приложения
+let globalSocket = null;
+let globalSocketUserId = null;
+let connectionTimeout = null;
+
+const createSocket = (userId) => {
+  // Отменяем предыдущий таймаут если он есть
+  if (connectionTimeout) {
+    clearTimeout(connectionTimeout);
+  }
+
+  // Если сокет уже существует и подключен с тем же userId, просто возвращаем его
+  if (globalSocket && globalSocket.connected && globalSocketUserId === userId) {
+    console.log('WebSocket: Используем существующее подключение для пользователя', userId);
+    return globalSocket;
+  }
+
+  // Если сокет существует, подключен, но userId изменился
+  if (globalSocket && globalSocket.connected && globalSocketUserId !== userId) {
+    console.log('WebSocket: Обновляем userId с', globalSocketUserId, 'на', userId);
+    globalSocketUserId = userId;
+    globalSocket.emit('register', userId);
+    return globalSocket;
+  }
+
+  // Если сокет существует но не подключен, пытаемся переподключить
+  if (globalSocket && !globalSocket.connected) {
+    console.log('WebSocket: Переподключаем существующий сокет');
+    globalSocketUserId = userId;
+    globalSocket.connect();
+    return globalSocket;
+  }
+
+  console.log('WebSocket: Создаём НОВОЕ подключение к', SOCKET_URL);
+  
+  globalSocket = io(SOCKET_URL, {
+    transports: ['websocket'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 3,
+    timeout: 10000,
+    autoConnect: true,
+    forceNew: false,
+    multiplex: true
+  });
+  
+  globalSocketUserId = userId;
+  
+  globalSocket.on('connect', () => {
+    console.log('🔌 WebSocket ПОДКЛЮЧЕН, ID:', globalSocket.id);
+    if (globalSocketUserId) {
+      globalSocket.emit('register', globalSocketUserId);
+    }
+  });
+
+  globalSocket.on('disconnect', (reason) => {
+    console.log('🔌 WebSocket ОТКЛЮЧЕН, причина:', reason);
+  });
+
+  globalSocket.on('connect_error', (error) => {
+    console.error('❌ Ошибка WebSocket:', error.message);
+  });
+
+  globalSocket.on('reconnect', (attemptNumber) => {
+    console.log('🔄 WebSocket ПЕРЕПОДКЛЮЧЕН после', attemptNumber, 'попыток');
+    if (globalSocketUserId) {
+      globalSocket.emit('register', globalSocketUserId);
+    }
+  });
+
+  return globalSocket;
+};
+
 export function WebSocketProvider({ children }) {
   const { user } = useAuth();
   const socketRef = useRef(null);
@@ -23,54 +97,27 @@ export function WebSocketProvider({ children }) {
     console.log('WebSocketContext: useEffect вызван, user:', user?.id);
     
     if (!user) {
-      console.log('WebSocketContext: Пользователь не авторизован, отключаем socket');
+      console.log('WebSocketContext: Пользователь НЕ авторизован');
       // Если пользователь не авторизован, отключаем сокет
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
+      if (globalSocket) {
+        console.log('WebSocket: Отключаем из-за выхода пользователя');
+        globalSocket.disconnect();
+        globalSocket.removeAllListeners();
+        globalSocket = null;
+        globalSocketUserId = null;
       }
+      socketRef.current = null;
       return;
     }
 
-    // Подключаемся к WebSocket только если ещё не подключены
-    if (!socketRef.current || !socketRef.current.connected) {
-      console.log('WebSocketContext: Создаём новое подключение к', SOCKET_URL);
-      
-      // Отключаем старый сокет если есть
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-      
-      socketRef.current = io(SOCKET_URL, {
-        transports: ['polling', 'websocket'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 10,
-        timeout: 10000
-      });
-      
-      socketRef.current.on('connect', () => {
-        console.log('🔌 WebSocket подключен, ID:', socketRef.current.id);
-        console.log('WebSocketContext: Регистрируем пользователя', user.id);
-        socketRef.current.emit('register', user.id);
-      });
-
-      socketRef.current.on('disconnect', (reason) => {
-        console.log('🔌 WebSocket отключен, причина:', reason);
-      });
-
-      socketRef.current.on('connect_error', (error) => {
-        console.error('❌ Ошибка подключения WebSocket:', error.message);
-      });
-
-      socketRef.current.on('reconnect', (attemptNumber) => {
-        console.log('🔄 WebSocket переподключен после', attemptNumber, 'попыток');
-        socketRef.current.emit('register', user.id);
-      });
-    }
+    // Создаём или переиспользуем сокет
+    socketRef.current = createSocket(user.id);
 
     return () => {
-      // НЕ отключаем сокет при размонтировании, так как он используется глобально
+      // Очищаем таймаут при размонтировании
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+      }
     };
   }, [user?.id]);
 

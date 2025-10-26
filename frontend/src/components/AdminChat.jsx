@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useWebSocket } from '../context/WebSocketContext';
 import api, { BASE_URL } from '../utils/api';
-import io from 'socket.io-client';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import '../pages/student/Chat.css';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-
 function AdminChat() {
   const { user } = useAuth();
+  const { getSocket } = useWebSocket();
   const [allChats, setAllChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -23,7 +22,6 @@ function AdminChat() {
   const [typingUser, setTypingUser] = useState(null); // Кто печатает
   const [onlineUsers, setOnlineUsers] = useState(new Set()); // Онлайн пользователи
   
-  const socketRef = useRef();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -31,15 +29,11 @@ function AdminChat() {
   useEffect(() => {
     loadAllChats();
     
-    // Подключение к WebSocket
-    socketRef.current = io(SOCKET_URL);
+    // Используем глобальный WebSocket
+    const socket = getSocket();
+    if (!socket) return;
     
-    socketRef.current.on('connect', () => {
-      console.log('WebSocket подключен (Админ)');
-      socketRef.current.emit('register', user.id);
-    });
-
-    socketRef.current.on('new-message', (message) => {
+    socket.on('new-message', (message) => {
       setMessages(prev => [...prev, message]);
       // scrollToBottom теперь вызывается автоматически через useEffect при изменении messages
       
@@ -63,7 +57,7 @@ function AdminChat() {
       });
     });
 
-    socketRef.current.on('messages-read', (data) => {
+    socket.on('messages-read', (data) => {
       // Если кто-то прочитал сообщения, обновляем список чатов
       if (data.userId !== user.id) {
         loadAllChats();
@@ -71,24 +65,24 @@ function AdminChat() {
     });
 
     // Индикатор печати
-    socketRef.current.on('user-typing', (data) => {
+    socket.on('user-typing', (data) => {
       if (data.userId !== user.id && data.chatId === activeChat?.id) {
         setTypingUser(data.userName);
       }
     });
 
-    socketRef.current.on('user-stop-typing', (data) => {
+    socket.on('user-stop-typing', (data) => {
       if (data.userId !== user.id) {
         setTypingUser(null);
       }
     });
 
     // Онлайн статус
-    socketRef.current.on('user-online', (data) => {
+    socket.on('user-online', (data) => {
       setOnlineUsers(prev => new Set([...prev, data.userId]));
     });
 
-    socketRef.current.on('user-offline', (data) => {
+    socket.on('user-offline', (data) => {
       setOnlineUsers(prev => {
         const newSet = new Set(prev);
         newSet.delete(data.userId);
@@ -97,32 +91,37 @@ function AdminChat() {
     });
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      // Отписываемся от событий
+      socket.off('new-message');
+      socket.off('messages-read');
+      socket.off('user-typing');
+      socket.off('user-stop-typing');
+      socket.off('user-online');
+      socket.off('user-offline');
     };
   }, [user.id, activeChat]);
 
   useEffect(() => {
-    if (activeChat) {
-      loadMessages(activeChat.id);
-      loadPinnedMessages(activeChat.id);
-      socketRef.current.emit('join-chat', activeChat.id);
+    const socket = getSocket();
+    if (!socket || !activeChat) return;
+    
+    loadMessages(activeChat.id);
+    loadPinnedMessages(activeChat.id);
+    socket.emit('join-chat', activeChat.id);
       
-      // Отмечаем сообщения как прочитанные
-      markAsRead(activeChat.id);
+    // Отмечаем сообщения как прочитанные
+    markAsRead(activeChat.id);
       
-      // Обнуляем счетчик непрочитанных сообщений локально
-      setAllChats(prevChats => 
-        prevChats.map(chat => 
-          chat.id === activeChat.id ? { ...chat, unread_count: 0 } : chat
-        )
-      );
-    }
+    // Обнуляем счетчик непрочитанных сообщений локально
+    setAllChats(prevChats => 
+      prevChats.map(chat => 
+        chat.id === activeChat.id ? { ...chat, unread_count: 0 } : chat
+      )
+    );
 
     return () => {
-      if (activeChat && socketRef.current) {
-        socketRef.current.emit('leave-chat', activeChat.id);
+      if (activeChat && socket) {
+        socket.emit('leave-chat', activeChat.id);
       }
     };
   }, [activeChat]);
@@ -168,7 +167,10 @@ function AdminChat() {
     try {
       await api.put(`/chat/${chatId}/mark-read`);
       // Уведомляем сервер через WebSocket для обновления других клиентов
-      socketRef.current.emit('mark-read', chatId);
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('mark-read', chatId);
+      }
     } catch (error) {
       console.error('Ошибка при пометке сообщений как прочитанные:', error);
     }
@@ -184,11 +186,12 @@ function AdminChat() {
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
     
-    if (!activeChat || !socketRef.current) return;
+    const socket = getSocket();
+    if (!activeChat || !socket) return;
     
     // Отправляем событие "начал печатать"
     if (e.target.value.length > 0) {
-      socketRef.current.emit('typing-start', {
+      socket.emit('typing-start', {
         chatId: activeChat.id,
         userName: user.full_name || user.username
       });
@@ -200,13 +203,13 @@ function AdminChat() {
       
       // Через 2 секунды без ввода отправляем "перестал печатать"
       typingTimeoutRef.current = setTimeout(() => {
-        socketRef.current.emit('typing-stop', {
+        socket.emit('typing-stop', {
           chatId: activeChat.id
         });
       }, 2000);
     } else {
       // Если поле пустое, сразу отправляем "перестал печатать"
-      socketRef.current.emit('typing-stop', {
+      socket.emit('typing-stop', {
         chatId: activeChat.id
       });
     }
@@ -217,8 +220,11 @@ function AdminChat() {
 
     if (!newMessage.trim() && !selectedFile) return;
 
+    const socket = getSocket();
+    if (!socket) return;
+
     // Отправляем "перестал печатать" при отправке сообщения
-    socketRef.current.emit('typing-stop', {
+    socket.emit('typing-stop', {
       chatId: activeChat.id
     });
 
@@ -238,7 +244,7 @@ function AdminChat() {
           sender_username: user.username
         };
 
-        socketRef.current.emit('send-message', {
+        socket.emit('send-message', {
           chatId: activeChat.id,
           message: messageWithSender
         });
@@ -257,7 +263,7 @@ function AdminChat() {
           sender_username: user.username
         };
 
-        socketRef.current.emit('send-message', {
+        socket.emit('send-message', {
           chatId: activeChat.id,
           message: messageWithSender
         });

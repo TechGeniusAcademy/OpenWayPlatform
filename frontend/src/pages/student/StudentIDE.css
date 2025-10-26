@@ -112,6 +112,39 @@
   cursor: not-allowed;
 }
 
+.student-ide-btn-ai {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.student-ide-btn-ai::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.student-ide-btn-ai:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.student-ide-btn-ai:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5568d3, #6a3f8f);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.student-ide-btn-ai:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .student-ide-container {
   display: flex;
   flex: 1;

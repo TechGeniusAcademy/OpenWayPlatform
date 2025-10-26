@@ -1,0 +1,266 @@
+.chess-game {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.chess-game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.chess-game-header h2 {
+  font-size: 32px;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.chess-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chess-select {
+  padding: 10px 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.chess-select:hover {
+  border-color: #3498db;
+}
+
+.chess-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.chess-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chess-btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.chess-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.chess-btn-secondary {
+  background: #ecf0f1;
+  color: #2c3e50;
+}
+
+.chess-btn-secondary:hover:not(:disabled) {
+  background: #bdc3c7;
+}
+
+.chess-game-status {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  border-radius: 10px;
+}
+
+.chess-game-status h3 {
+  margin: 0;
+  font-size: 24px;
+  color: #2c3e50;
+}
+
+.thinking {
+  display: inline-block;
+  margin-left: 10px;
+  color: #3498db;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.chess-game-container {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 30px;
+  align-items: start;
+}
+
+.chess-board-wrapper {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.chess-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.move-history,
+.game-info {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.move-history h4,
+.game-info h4 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 18px;
+  border-bottom: 2px solid #ecf0f1;
+  padding-bottom: 10px;
+}
+
+.moves-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.moves-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.moves-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.moves-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.moves-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.no-moves {
+  text-align: center;
+  color: #95a5a6;
+  font-style: italic;
+  padding: 20px;
+}
+
+.move-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.move-item:hover {
+  background: #ecf0f1;
+}
+
+.move-number {
+  font-weight: bold;
+  color: #7f8c8d;
+  min-width: 30px;
+}
+
+.move-notation {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.move-notation.white {
+  background: #fff;
+  color: #2c3e50;
+  border: 1px solid #ecf0f1;
+}
+
+.move-notation.black {
+  background: #34495e;
+  color: #ecf0f1;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item span {
+  color: #7f8c8d;
+}
+
+.info-item strong {
+  color: #2c3e50;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .chess-game-container {
+    grid-template-columns: 1fr;
+  }
+
+  .chess-sidebar {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .chess-game-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chess-controls {
+    flex-direction: column;
+  }
+
+  .chess-btn,
+  .chess-select {
+    width: 100%;
+  }
+
+  .chess-board-wrapper {
+    max-width: 100%;
+  }
+
+  .move-history,
+  .game-info {
+    padding: 15px;
+  }
+
+  .chess-game-status h3 {
+    font-size: 20px;
+  }
+}

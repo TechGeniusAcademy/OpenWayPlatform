@@ -6,6 +6,8 @@ import StudentDashboard from './pages/StudentDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Защищенный маршрут
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -51,6 +53,18 @@ function App() {
                 }
               />
             </Routes>
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={true}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
           </Router>
         </NotificationProvider>
       </WebSocketProvider>

@@ -11,7 +11,7 @@ import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
 import { FaTrophy } from 'react-icons/fa';
 import { BiData } from 'react-icons/bi';
 import { VscFiles } from 'react-icons/vsc';
-import { FaPlug, FaPalette } from 'react-icons/fa';
+import { FaPlug, FaPalette, FaGamepad } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import FloatingChat from './FloatingChat';
@@ -209,7 +209,13 @@ function StudentLayout({ children }) {
             <li className="menu-divider"></li>
 
             {/* Магазин */}
-            <li className="menu-category-title">Магазин</li>
+            <li className="menu-category-title">Развлечения</li>
+            <li>
+              <NavLink to="/student/games" onClick={closeSidebar}>
+                <span className="menu-icon"><FaGamepad /></span>
+                <span className="menu-text">Игры</span>
+              </NavLink>
+            </li>
             <li>
               <NavLink to="/student/shop" onClick={closeSidebar}>
                 <span className="menu-icon"><AiOutlineShoppingCart /></span>
@@ -264,7 +270,7 @@ function StudentLayout({ children }) {
               <div className={`sidebar-user-name styled-username ${user?.username_style || 'username-none'}`}>
                 {user?.full_name || user?.username}
               </div>
-              <div className="sidebar-user-role">💰 {user?.points || 0} баллов</div>
+              <div className="sidebar-user-role">🪙 {user?.points || 0} баллов</div>
             </div>
           </div>
           <button className="sidebar-logout-btn" onClick={handleLogout} title="Выйти">

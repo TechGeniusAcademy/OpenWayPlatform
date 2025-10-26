@@ -647,6 +647,37 @@ export const initDatabase = async () => {
     // Добавление подкатегорий
     await addSubcategories();
 
+    // Таблица для онлайн шахматных игр
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS chess_games (
+        id SERIAL PRIMARY KEY,
+        white_player_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        black_player_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        challenger_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        position TEXT NOT NULL DEFAULT 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        move_history JSONB DEFAULT '[]',
+        bet_amount INTEGER DEFAULT 0,
+        white_time_left INTEGER DEFAULT 0,
+        black_time_left INTEGER DEFAULT 0,
+        current_turn_start TIMESTAMP,
+        result VARCHAR(20),
+        end_reason VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        started_at TIMESTAMP,
+        ended_at TIMESTAMP,
+        last_move_at TIMESTAMP
+      );
+    `);
+
+    // Индексы для шахматных игр
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_chess_games_white_player ON chess_games(white_player_id);
+      CREATE INDEX IF NOT EXISTS idx_chess_games_black_player ON chess_games(black_player_id);
+      CREATE INDEX IF NOT EXISTS idx_chess_games_status ON chess_games(status);
+      CREATE INDEX IF NOT EXISTS idx_chess_games_created_at ON chess_games(created_at DESC);
+    `);
+
     // Таблица 26: Обновления (Updates/Changelog)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS updates (

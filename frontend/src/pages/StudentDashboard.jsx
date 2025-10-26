@@ -17,6 +17,7 @@ import StudentProjects from './student/StudentProjects';
 import StudentDatabases from './student/StudentDatabases';
 import StudentPlugins from './student/StudentPlugins';
 import StudentThemes from './student/StudentThemes';
+import Games from './student/Games';
 import './StudentDashboard.css';
 
 function StudentDashboard() {
@@ -42,6 +43,7 @@ function StudentDashboard() {
       <Route path="databases" element={<StudentLayout><StudentDatabases /></StudentLayout>} />
       <Route path="plugins" element={<StudentLayout><StudentPlugins /></StudentLayout>} />
       <Route path="themes" element={<StudentLayout><StudentThemes /></StudentLayout>} />
+      <Route path="games" element={<StudentLayout><Games /></StudentLayout>} />
     </Routes>
   );
 }

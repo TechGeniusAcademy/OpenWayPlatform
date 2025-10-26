@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import FileTree from '../../components/FileTree';
+import AIAssistant from '../../components/AIAssistant';
 import './StudentIDE.css';
 import { FaPlay, FaPlus, FaFolderPlus, FaSave, FaArrowLeft, FaBars, FaTimes } from 'react-icons/fa';
-import { AiOutlineClose } from 'react-icons/ai';
+import { AiOutlineClose, AiOutlineRobot } from 'react-icons/ai';
 import { emmetHTML, emmetCSS, emmetJSX } from 'emmet-monaco-es';
 import { getProject, updateProject } from '../../services/projectService';
 
@@ -38,6 +39,8 @@ function StudentIDE() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTheme, setCurrentTheme] = useState('vs-dark');
   const [unsavedFiles, setUnsavedFiles] = useState(new Set()); // Отслеживание несохранённых файлов
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [selectedCode, setSelectedCode] = useState('');
   const editorRef = useRef(null);
   const previewRef = useRef(null);
   const resizerRef = useRef(null);
@@ -656,7 +659,32 @@ function StudentIDE() {
     return langMap[ext] || 'plaintext';
   };
 
+  // Вставить код из AI Assistant
+  const handleInsertCode = (code) => {
+    if (!activeTab || !editorRef.current) return;
+
+    const selection = editorRef.current.getSelection();
+    const id = { major: 1, minor: 1 };
+    const op = {
+      identifier: id,
+      range: selection,
+      text: code,
+      forceMoveMarkers: true
+    };
+    
+    editorRef.current.executeEdits('ai-assistant', [op]);
+    
+    // Отмечаем файл как несохраненный
+    setUnsavedFiles(prev => new Set([...prev, activeTab]));
+    
+    // Обновляем содержимое файла
+    const updatedContent = editorRef.current.getValue();
+    const updatedFileSystem = updateFileContent([...fileSystem], activeTab, updatedContent);
+    setFileSystem(updatedFileSystem);
+  };
+
   const activeFile = activeTab ? findFile(fileSystem, activeTab) : null;
+  const currentLanguage = activeFile ? getLanguage(activeFile.name) : 'javascript';
 
   return (
     <div className="student-ide-wrapper">
@@ -682,6 +710,18 @@ function StudentIDE() {
           </button>
           <button className="student-ide-btn-secondary" onClick={saveFile} disabled={!activeTab}>
             <FaSave /> Сохранить (Ctrl+S)
+          </button>
+          <button 
+            className="student-ide-btn-ai" 
+            onClick={() => {
+              const selection = editorRef.current?.getModel()?.getValueInRange(editorRef.current?.getSelection());
+              setSelectedCode(selection || '');
+              setShowAIAssistant(true);
+            }} 
+            disabled={!activeTab}
+            title="AI Ассистент (помощь с кодом)"
+          >
+            <AiOutlineRobot /> AI Ассистент
           </button>
           <button className="student-ide-btn-primary" onClick={runCode} disabled={!activeTab}>
             <FaPlay /> Запустить
@@ -988,6 +1028,15 @@ function StudentIDE() {
           )}
         </div>
       </div>
+
+      {/* AI Assistant */}
+      <AIAssistant
+        isOpen={showAIAssistant}
+        onClose={() => setShowAIAssistant(false)}
+        selectedCode={selectedCode}
+        language={currentLanguage}
+        onInsertCode={handleInsertCode}
+      />
     </div>
   );
 }

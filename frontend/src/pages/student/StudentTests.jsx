@@ -321,7 +321,7 @@ function StudentTests() {
                   <div className="test-info">
                     <span>📋 {test.type === 'choice' ? 'Тест с вариантами' : 'Тест с кодом'}</span>
                     <span>⏱️ {test.time_limit || '∞'} мин</span>
-                    <span>💰 {test.points_correct} баллов</span>
+                    <span>🪙 {test.points_correct} баллов</span>
                   </div>
 
                   {lastAttempt && (

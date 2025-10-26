@@ -50,7 +50,43 @@ router.get('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Проект не найден' });
     }
 
-    res.json(result.rows[0]);
+    const project = result.rows[0];
+    
+    // Синхронизируем с диском при каждой загрузке проекта
+    // Это обновит file_system если на диске появились новые файлы (например, .db от PHP)
+    try {
+      const projectDir = path.join(PROJECTS_DIR, req.user.id.toString(), req.params.id);
+      const projectFolder = project.file_system[0];
+      
+      if (projectFolder && projectFolder.name) {
+        const workingDir = path.join(projectDir, projectFolder.name);
+        
+        // Проверяем существует ли директория
+        try {
+          await fs.access(workingDir);
+          // Директория существует, синхронизируем
+          await updateFileSystemFromDisk(req.params.id, req.user.id, workingDir, projectFolder.name);
+          
+          // Получаем обновленные данные
+          const updatedResult = await pool.query(
+            'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+            [req.params.id, req.user.id]
+          );
+          
+          if (updatedResult.rows.length > 0) {
+            return res.json(updatedResult.rows[0]);
+          }
+        } catch (err) {
+          // Директория не существует, возвращаем как есть
+          console.log(`⚠️ Директория проекта не найдена: ${workingDir}`);
+        }
+      }
+    } catch (syncError) {
+      console.error('Ошибка синхронизации:', syncError);
+      // Продолжаем работу даже если синхронизация не удалась
+    }
+
+    res.json(project);
   } catch (error) {
     console.error('Error fetching project:', error);
     res.status(500).json({ message: 'Ошибка при загрузке проекта' });
@@ -151,9 +187,29 @@ router.put('/:id', authenticate, async (req, res) => {
     // Обновляем файлы на диске
     if (fileSystem) {
       const projectDir = path.join(PROJECTS_DIR, req.user.id.toString(), req.params.id);
-      await fs.rm(projectDir, { recursive: true, force: true });
+      
+      // Не удаляем всю директорию, чтобы не потерять .db файлы созданные PHP
+      // Вместо этого обновляем только файлы из fileSystem
       await fs.mkdir(projectDir, { recursive: true });
       await saveFilesToDisk(projectDir, fileSystem);
+      
+      // После сохранения синхронизируем обратно с диска
+      // Это подхватит файлы созданные PHP (например .db)
+      const projectFolder = fileSystem[0];
+      if (projectFolder && projectFolder.name) {
+        const workingDir = path.join(projectDir, projectFolder.name);
+        await updateFileSystemFromDisk(req.params.id, req.user.id, workingDir, projectFolder.name);
+        
+        // Получаем обновленные данные
+        const updatedResult = await pool.query(
+          'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+          [req.params.id, req.user.id]
+        );
+        
+        if (updatedResult.rows.length > 0) {
+          return res.json(updatedResult.rows[0]);
+        }
+      }
     }
 
     res.json(result.rows[0]);

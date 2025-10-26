@@ -22,7 +22,7 @@ function GameCards() {
     { value: 'transfer_question', label: '🔄 Передача вопроса', effect: 0 },
     { value: 'extra_questions', label: '➕ Доп. вопросы (+3)', effect: 3 },
     { value: 'double_points', label: '2️⃣ Удвоение баллов (x2)', effect: 2 },
-    { value: 'steal_points', label: '💰 Кража баллов (+10)', effect: 10 },
+    { value: 'steal_points', label: '🪙 Кража баллов (+10)', effect: 10 },
     { value: 'time_bonus', label: '⏰ Бонус времени (+30сек)', effect: 30 },
     { value: 'minus_time', label: '⏱️ Минус времени (-15сек)', effect: -15 },
     { value: 'random_event', label: '🎲 Случайное событие', effect: 0 }
