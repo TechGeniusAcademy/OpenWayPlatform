@@ -21,6 +21,11 @@ function AdminChat() {
   const [filterType, setFilterType] = useState('all'); // 'all', 'private', 'group'
   const [typingUser, setTypingUser] = useState(null); // Кто печатает
   const [onlineUsers, setOnlineUsers] = useState(new Set()); // Онлайн пользователи
+  const [replyTo, setReplyTo] = useState(null); // Сообщение для ответа
+  const [editingMessage, setEditingMessage] = useState(null); // Редактируемое сообщение
+  const [searchQuery, setSearchQuery] = useState(''); // Поиск по сообщениям
+  const [allUsers, setAllUsers] = useState([]); // Все пользователи для создания чатов
+  const [showCreateChat, setShowCreateChat] = useState(false); // Модал создания чата
   
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -28,6 +33,7 @@ function AdminChat() {
 
   useEffect(() => {
     loadAllChats();
+    loadAllUsers();
     
     // Используем глобальный WebSocket
     const socket = getSocket();
@@ -144,6 +150,27 @@ function AdminChat() {
     }
   };
 
+  const loadAllUsers = async () => {
+    try {
+      const response = await api.get('/users');
+      setAllUsers(response.data.users || response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки пользователей:', error);
+    }
+  };
+
+  const createPrivateChat = async (userId) => {
+    try {
+      const response = await api.post('/chat/private', { userId });
+      setActiveChat(response.data.chat);
+      setShowCreateChat(false);
+      loadAllChats();
+    } catch (error) {
+      console.error('Ошибка создания чата:', error);
+      alert('Не удалось создать чат');
+    }
+  };
+
   const loadMessages = async (chatId) => {
     try {
       const response = await api.get(`/chat/${chatId}/messages`);
@@ -229,10 +256,21 @@ function AdminChat() {
     });
 
     try {
+      if (editingMessage) {
+        // Редактирование существующего сообщения
+        await handleEditMessage(editingMessage.id, newMessage);
+        setNewMessage('');
+        setEditingMessage(null);
+        return;
+      }
+
       if (selectedFile) {
         const formData = new FormData();
         formData.append('file', selectedFile);
         formData.append('caption', newMessage);
+        if (replyTo) {
+          formData.append('replyTo', replyTo.id);
+        }
 
         const response = await api.post(`/chat/${activeChat.id}/upload`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -254,7 +292,8 @@ function AdminChat() {
         const response = await api.post(`/chat/${activeChat.id}/messages`, {
           content: newMessage,
           messageType,
-          codeLanguage: messageType === 'code' ? codeLanguage : null
+          codeLanguage: messageType === 'code' ? codeLanguage : null,
+          replyTo: replyTo?.id
         });
 
         const messageWithSender = {
@@ -271,6 +310,7 @@ function AdminChat() {
 
       setNewMessage('');
       setMessageType('text');
+      setReplyTo(null);
       // scrollToBottom вызовется автоматически через useEffect
     } catch (error) {
       console.error('Ошибка отправки сообщения:', error);
@@ -299,14 +339,86 @@ function AdminChat() {
     }
   };
 
+  const handleReaction = async (messageId, emoji) => {
+    try {
+      await api.post(`/chat/messages/${messageId}/reaction`, { emoji });
+      loadMessages(activeChat.id);
+    } catch (error) {
+      console.error('Ошибка добавления реакции:', error);
+    }
+  };
+
+  const handleEditMessage = async (messageId, newContent) => {
+    try {
+      await api.put(`/chat/messages/${messageId}`, { content: newContent });
+      loadMessages(activeChat.id);
+      setEditingMessage(null);
+    } catch (error) {
+      console.error('Ошибка редактирования сообщения:', error);
+      alert('Не удалось отредактировать сообщение');
+    }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!confirm('Удалить сообщение?')) return;
+    
+    try {
+      await api.delete(`/chat/messages/${messageId}`);
+      loadMessages(activeChat.id);
+    } catch (error) {
+      console.error('Ошибка удаления сообщения:', error);
+      alert('Не удалось удалить сообщение');
+    }
+  };
+
+  const handleReply = (message) => {
+    setReplyTo(message);
+  };
+
   const renderMessage = (message) => {
     const isOwnMessage = message.sender_id === user.id;
 
+    // Если сообщение редактируется
+    if (editingMessage?.id === message.id) {
+      return (
+        <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'} editing`}>
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleEditMessage(message.id, newMessage);
+              }
+            }}
+            className="edit-message-input"
+            autoFocus
+          />
+          <div className="edit-actions">
+            <button onClick={() => handleEditMessage(message.id, newMessage)}>✓</button>
+            <button onClick={() => { setEditingMessage(null); setNewMessage(''); }}>✕</button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'}`}>
+        {message.reply_to_id && (
+          <div className="message-reply">
+            <div className="reply-indicator">↩️</div>
+            <div className="reply-content">
+              {message.reply_to_content?.substring(0, 50)}...
+            </div>
+          </div>
+        )}
+
         <div className="message-header">
           <span className="message-sender">{message.sender_full_name || message.sender_username}</span>
-          <span className="message-time">{new Date(message.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span className="message-time">
+            {new Date(message.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+            {message.is_edited && <span className="edited-badge"> (изменено)</span>}
+          </span>
         </div>
 
         {message.message_type === 'code' ? (
@@ -340,13 +452,69 @@ function AdminChat() {
           <div className="message-content">{message.content}</div>
         )}
 
-        <button 
-          className="pin-message-btn"
-          onClick={() => togglePinMessage(message.id)}
-          title={message.is_pinned ? 'Открепить' : 'Закрепить'}
-        >
-          📌
-        </button>
+        {/* Реакции */}
+        {message.reactions && message.reactions.length > 0 && (
+          <div className="message-reactions">
+            {message.reactions.map((reaction, idx) => (
+              <span key={idx} className="reaction" title={reaction.user_name}>
+                {reaction.emoji} {reaction.count > 1 && reaction.count}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Действия с сообщением */}
+        <div className="message-actions">
+          <button 
+            className="message-action-btn"
+            onClick={() => handleReply(message)}
+            title="Ответить"
+          >
+            ↩️
+          </button>
+          <button 
+            className="message-action-btn"
+            onClick={() => togglePinMessage(message.id)}
+            title={message.is_pinned ? 'Открепить' : 'Закрепить'}
+          >
+            📌
+          </button>
+          <button 
+            className="message-action-btn"
+            onClick={() => handleReaction(message.id, '👍')}
+            title="Лайк"
+          >
+            👍
+          </button>
+          <button 
+            className="message-action-btn"
+            onClick={() => handleReaction(message.id, '❤️')}
+            title="Сердце"
+          >
+            ❤️
+          </button>
+          {isOwnMessage && (
+            <>
+              <button 
+                className="message-action-btn"
+                onClick={() => {
+                  setEditingMessage(message);
+                  setNewMessage(message.content);
+                }}
+                title="Редактировать"
+              >
+                ✏️
+              </button>
+              <button 
+                className="message-action-btn"
+                onClick={() => handleDeleteMessage(message.id)}
+                title="Удалить"
+              >
+                🗑️
+              </button>
+            </>
+          )}
+        </div>
       </div>
     );
   };
@@ -354,6 +522,13 @@ function AdminChat() {
   const filteredChats = allChats.filter(chat => {
     if (filterType === 'all') return true;
     return chat.type === filterType;
+  });
+
+  const filteredMessages = messages.filter(msg => {
+    if (!searchQuery) return true;
+    return msg.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           msg.sender_full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           msg.sender_username?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   if (loading) {
@@ -366,6 +541,13 @@ function AdminChat() {
       <div className="chats-sidebar">
         <div className="sidebar-header">
           <h3>Все чаты</h3>
+          <button 
+            className="create-chat-btn"
+            onClick={() => setShowCreateChat(true)}
+            title="Создать приватный чат"
+          >
+            ➕
+          </button>
         </div>
 
         <div className="chat-filters">
@@ -436,6 +618,15 @@ function AdminChat() {
                   {activeChat.type === 'group' ? '👥 Групповой' : '💬 Приватный'}
                 </span>
               </div>
+              <div className="chat-search">
+                <input
+                  type="text"
+                  placeholder="🔍 Поиск по сообщениям..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input"
+                />
+              </div>
             </div>
 
             {pinnedMessages.length > 0 && (
@@ -450,7 +641,7 @@ function AdminChat() {
             )}
 
             <div className="messages-list">
-              {messages.map(renderMessage)}
+              {filteredMessages.map(renderMessage)}
               {typingUser && (
                 <div className="typing-indicator">
                   <span className="typing-user">{typingUser}</span> печатает
@@ -463,6 +654,15 @@ function AdminChat() {
             </div>
 
             <form className="message-input-area" onSubmit={handleSendMessage}>
+              {replyTo && (
+                <div className="reply-preview">
+                  <div className="reply-preview-content">
+                    <strong>Ответ на:</strong> {replyTo.content?.substring(0, 50)}...
+                  </div>
+                  <button type="button" onClick={() => setReplyTo(null)}>✕</button>
+                </div>
+              )}
+
               <div className="input-controls">
                 <select 
                   value={messageType} 
@@ -540,6 +740,43 @@ function AdminChat() {
           </div>
         )}
       </div>
+
+      {/* Модал создания чата */}
+      {showCreateChat && (
+        <div className="modal-overlay" onClick={() => setShowCreateChat(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Создать приватный чат</h3>
+              <button onClick={() => setShowCreateChat(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="users-list">
+                {allUsers.filter(u => u.id !== user.id).map(u => (
+                  <div 
+                    key={u.id} 
+                    className="user-item"
+                    onClick={() => createPrivateChat(u.id)}
+                  >
+                    <div className="user-avatar">
+                      {u.avatar_url ? (
+                        <img src={`${BASE_URL}${u.avatar_url}`} alt="" />
+                      ) : (
+                        <div className="avatar-placeholder">
+                          {(u.full_name || u.username).charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="user-info">
+                      <div className="user-name">{u.full_name || u.username}</div>
+                      <div className="user-role">{u.role === 'admin' ? 'Админ' : u.role === 'teacher' ? 'Учитель' : 'Студент'}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
