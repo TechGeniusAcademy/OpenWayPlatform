@@ -3,6 +3,7 @@
 ## Проблемы
 1. `column m.reply_to_id does not exist` - отсутствует колонка для ответов на сообщения
 2. `relation "message_reactions" does not exist` - отсутствует таблица реакций
+3. `column "edited_at" does not exist` - отсутствует колонка времени редактирования
 
 ## Решение
 
@@ -49,6 +50,10 @@ CREATE INDEX IF NOT EXISTS idx_messages_reply_to_id ON messages(reply_to_id);
 ALTER TABLE messages 
 ADD COLUMN IF NOT EXISTS is_edited BOOLEAN DEFAULT FALSE;
 
+-- Добавление колонки edited_at
+ALTER TABLE messages 
+ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP;
+
 -- Создание таблицы реакций
 CREATE TABLE IF NOT EXISTS message_reactions (
   id SERIAL PRIMARY KEY,
@@ -82,9 +87,11 @@ pm2 logs openway-backend --lines 30
 После миграции вы должны увидеть:
 - ✅ Логи без ошибок "column m.reply_to_id does not exist"
 - ✅ Логи без ошибок "relation message_reactions does not exist"
+- ✅ Логи без ошибок "column edited_at does not exist"
 - ✅ Чат открывается и загружает сообщения
 - ✅ Можно отправлять и получать сообщения
 - ✅ Работают реакции на сообщения
+- ✅ Работает редактирование сообщений
 
 ## Если проблема сохраняется
 

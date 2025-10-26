@@ -271,7 +271,20 @@ export const initDatabase = async () => {
       END $$;
     `);
 
-    // 8.8. Создание таблицы реакций на сообщения
+    // 8.8. Добавление колонки edited_at в messages, если её нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'messages' AND column_name = 'edited_at'
+        ) THEN
+          ALTER TABLE messages ADD COLUMN edited_at TIMESTAMP;
+        END IF;
+      END $$;
+    `);
+
+    // 8.9. Создание таблицы реакций на сообщения
     await pool.query(`
       CREATE TABLE IF NOT EXISTS message_reactions (
         id SERIAL PRIMARY KEY,
