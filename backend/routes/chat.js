@@ -69,7 +69,8 @@ router.get('/files/*', async (req, res) => {
 router.use(authenticate);
 
 // Получить все чаты (только для админов)
-router.get('/admin/all', async (req, res) => {
+// Получить все чаты (для админов)
+router.get('/admin/all', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Доступ запрещен' });
@@ -109,7 +110,7 @@ router.get('/admin/all', async (req, res) => {
 });
 
 // Получить количество непрочитанных сообщений
-router.get('/unread-count', async (req, res) => {
+router.get('/unread-count', authenticate, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT COALESCE(SUM(
@@ -134,7 +135,7 @@ router.get('/unread-count', async (req, res) => {
 });
 
 // Получить все чаты пользователя
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const chats = await Chat.getUserChats(req.user.id);
     res.json({ chats });
@@ -145,7 +146,8 @@ router.get('/', async (req, res) => {
 });
 
 // Создать или получить приватный чат
-router.post('/private', async (req, res) => {
+// Получить или создать приватный чат
+router.post('/private', authenticate, async (req, res) => {
   try {
     const { userId } = req.body;
 
@@ -166,7 +168,7 @@ router.post('/private', async (req, res) => {
 });
 
 // Получить или создать групповой чат
-router.post('/group', async (req, res) => {
+router.post('/group', authenticate, async (req, res) => {
   try {
     const { groupId } = req.body;
 
@@ -188,7 +190,7 @@ router.post('/group', async (req, res) => {
 });
 
 // Получить сообщения чата
-router.get('/:chatId/messages', async (req, res) => {
+router.get('/:chatId/messages', authenticate, async (req, res) => {
   try {
     const { chatId } = req.params;
     const limit = parseInt(req.query.limit) || 50;
@@ -203,7 +205,8 @@ router.get('/:chatId/messages', async (req, res) => {
 });
 
 // Отметить сообщения как прочитанные
-router.put('/:chatId/mark-read', async (req, res) => {
+// Отметить сообщения как прочитанные
+router.put('/:chatId/mark-read', authenticate, async (req, res) => {
   try {
     const { chatId } = req.params;
     const userId = req.user.id;
@@ -223,7 +226,7 @@ router.put('/:chatId/mark-read', async (req, res) => {
 });
 
 // Получить закрепленные сообщения
-router.get('/:chatId/pinned', async (req, res) => {
+router.get('/:chatId/pinned', authenticate, async (req, res) => {
   try {
     const { chatId } = req.params;
     const pinnedMessages = await Message.getPinnedMessages(chatId);
@@ -235,7 +238,7 @@ router.get('/:chatId/pinned', async (req, res) => {
 });
 
 // Отправить текстовое сообщение
-router.post('/:chatId/messages', async (req, res) => {
+router.post('/:chatId/messages', authenticate, async (req, res) => {
   try {
     const { chatId } = req.params;
     const { content, messageType, codeLanguage, replyTo } = req.body;
@@ -288,7 +291,7 @@ router.post('/:chatId/messages', async (req, res) => {
 });
 
 // Загрузить файл
-router.post('/:chatId/upload', upload.single('file'), async (req, res) => {
+router.post('/:chatId/upload', authenticate, upload.single('file'), async (req, res) => {
   try {
     const { chatId } = req.params;
     const file = req.file;
@@ -338,16 +341,23 @@ router.post('/:chatId/upload', upload.single('file'), async (req, res) => {
 });
 
 // Закрепить/открепить сообщение
-router.put('/messages/:messageId/pin', async (req, res) => {
+router.put('/messages/:messageId/pin', authenticate, async (req, res) => {
   try {
     const { messageId } = req.params;
+
+    console.log('Toggle pin - req.user:', req.user);
+    console.log('Toggle pin - req.user.id:', req.user?.id);
+    console.log('Toggle pin - typeof req.user.id:', typeof req.user?.id);
 
     // Только админы могут закреплять сообщения в групповых чатах
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Только администраторы могут закреплять сообщения' });
     }
 
-    const message = await Message.togglePin(messageId, req.user.id);
+    const userId = parseInt(req.user.id);
+    console.log('Toggle pin - parsed userId:', userId, 'typeof:', typeof userId);
+
+    const message = await Message.togglePin(messageId, userId);
 
     if (!message) {
       return res.status(404).json({ error: 'Сообщение не найдено' });
@@ -451,7 +461,7 @@ router.put('/messages/:messageId', authenticate, async (req, res) => {
 });
 
 // Закрепить/открепить чат
-router.put('/:chatId/pin', async (req, res) => {
+router.put('/:chatId/pin', authenticate, async (req, res) => {
   try {
     const { chatId } = req.params;
     const result = await Chat.togglePinChat(chatId, req.user.id);
@@ -463,7 +473,8 @@ router.put('/:chatId/pin', async (req, res) => {
 });
 
 // Удалить сообщение
-router.delete('/messages/:messageId', async (req, res) => {
+// Удалить сообщение
+router.delete('/messages/:messageId', authenticate, async (req, res) => {
   try {
     const { messageId } = req.params;
     const message = await Message.delete(messageId, req.user.id);
