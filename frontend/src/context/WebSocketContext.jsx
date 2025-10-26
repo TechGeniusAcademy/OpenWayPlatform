@@ -126,7 +126,11 @@ export function WebSocketProvider({ children }) {
     };
   }, [user?.id]);
 
-  const getSocket = () => socketRef.current;
+  // Возвращаем стабильную функцию getSocket для предотвращения лишних пересозданий
+  const getSocket = (() => {
+    // Оборачиваем в замыкание, чтобы вернуть всегда одну и ту же ссылку на функцию
+    return () => socketRef.current;
+  })();
 
   return (
     <WebSocketContext.Provider value={{ getSocket }}>

@@ -86,10 +86,12 @@ function Chat() {
   const [searchQuery, setSearchQuery] = useState(''); // Поиск по сообщениям
   
   const socketRef = useRef();
+  const socketListenersRef = useRef(null); // track which socket id we've attached listeners to
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const activeChatRef = useRef(activeChat); // Ref для отслеживания активного чата
+  const processedChatUpdatesRef = useRef(new Set()); // Для дедупликации обновлений списка чатов
 
   // Обновляем ref при изменении activeChat
   useEffect(() => {
@@ -153,16 +155,35 @@ function Chat() {
 
     // Обработчик уведомлений о новых сообщениях (для обновления списка чатов)
     const handleChatMessageNotification = (message) => {
+      console.log('Chat: Получено уведомление о новом сообщении для обновления списка чатов:', message);
+      
+      // Дедупликация: проверяем, не обрабатывали ли мы уже это сообщение
+      const messageKey = `${message.id}-${message.created_at}`;
+      if (processedChatUpdatesRef.current.has(messageKey)) {
+        console.log('Chat: Обновление списка чатов для этого сообщения уже обработано, пропускаем');
+        return;
+      }
+      processedChatUpdatesRef.current.add(messageKey);
+      
+      // Очищаем старые записи (старше 1 минуты) для предотвращения утечки памяти
+      setTimeout(() => {
+        processedChatUpdatesRef.current.delete(messageKey);
+      }, 60000);
+      
       // Обновляем список чатов для обновления последнего сообщения
       setChats(prevChats => {
+        let chatFound = false;
         const updatedChats = prevChats.map(chat => {
           if (chat.id === message.chat_id) {
+            chatFound = true;
             // Увеличиваем unread_count только если:
             // 1. Сообщение НЕ от текущего пользователя
             // 2. Это НЕ активный чат
             const isFromMe = message.sender_id === user.id;
             const isActiveChat = activeChatRef.current?.id === message.chat_id;
             const shouldIncreaseUnread = !isFromMe && !isActiveChat;
+            
+            console.log(`Chat: Обновление чата ${chat.id}: isFromMe=${isFromMe}, isActiveChat=${isActiveChat}, shouldIncreaseUnread=${shouldIncreaseUnread}, current unread=${chat.unread_count}`);
             
             return {
               ...chat,
@@ -177,6 +198,13 @@ function Chat() {
           }
           return chat;
         });
+        
+        // Если чат не найден в списке (новый чат), перезагружаем весь список
+        if (!chatFound) {
+          console.log('Chat: Чат не найден в списке, перезагружаем список чатов');
+          loadChats();
+          return prevChats;
+        }
         
         // Сортируем чаты: чат с новым сообщением поднимается наверх
         return updatedChats.sort((a, b) => {
@@ -250,30 +278,40 @@ function Chat() {
 
     // Подписываемся на события
     console.log('Chat: Подписываемся на WebSocket события');
-    socket.on('new-message', handleNewMessage);
-    socket.on('chat-message-notification', handleChatMessageNotification);
-    socket.on('chat-list-update', handleChatListUpdate);
-    socket.on('messages-read', handleMessagesRead);
-    socket.on('user-typing', handleUserTyping);
-    socket.on('user-stop-typing', handleUserStopTyping);
-    socket.on('user-online', handleUserOnline);
-    socket.on('user-offline', handleUserOffline);
-    socket.on('message-pinned', handleMessagePinned);
-    socket.on('reaction-updated', handleReactionUpdated);
+    // Avoid attaching listeners multiple times to the same socket instance
+    if (socket.id && socketListenersRef.current === socket.id) {
+      console.log('Chat: Listeners уже прикреплены к этому socket.id, пропускаем');
+    } else {
+      socket.on('new-message', handleNewMessage);
+      socket.on('chat-message-notification', handleChatMessageNotification);
+      socket.on('chat-list-update', handleChatListUpdate);
+      socket.on('messages-read', handleMessagesRead);
+      socket.on('user-typing', handleUserTyping);
+      socket.on('user-stop-typing', handleUserStopTyping);
+      socket.on('user-online', handleUserOnline);
+      socket.on('user-offline', handleUserOffline);
+      socket.on('message-pinned', handleMessagePinned);
+      socket.on('reaction-updated', handleReactionUpdated);
+      socketListenersRef.current = socket.id || true; // mark listeners attached (use id if available)
+    }
 
     return () => {
       console.log('Chat: Отписываемся от WebSocket событий');
       // Отписываемся от событий (но НЕ отключаем сокет)
-      socket.off('new-message', handleNewMessage);
-      socket.off('chat-message-notification', handleChatMessageNotification);
-      socket.off('chat-list-update', handleChatListUpdate);
-      socket.off('messages-read', handleMessagesRead);
-      socket.off('user-typing', handleUserTyping);
-      socket.off('user-stop-typing', handleUserStopTyping);
-      socket.off('user-online', handleUserOnline);
-      socket.off('user-offline', handleUserOffline);
-      socket.off('message-pinned', handleMessagePinned);
-      socket.off('reaction-updated', handleReactionUpdated);
+      // Only remove if we previously attached listeners for this socket.id
+      if (!socketListenersRef.current || socketListenersRef.current === socket.id || socketListenersRef.current === true) {
+        socket.off('new-message', handleNewMessage);
+        socket.off('chat-message-notification', handleChatMessageNotification);
+        socket.off('chat-list-update', handleChatListUpdate);
+        socket.off('messages-read', handleMessagesRead);
+        socket.off('user-typing', handleUserTyping);
+        socket.off('user-stop-typing', handleUserStopTyping);
+        socket.off('user-online', handleUserOnline);
+        socket.off('user-offline', handleUserOffline);
+        socket.off('message-pinned', handleMessagePinned);
+        socket.off('reaction-updated', handleReactionUpdated);
+        socketListenersRef.current = null;
+      }
     };
   }, [user.id, getSocket]); // Убрали activeChat из зависимостей
 
@@ -649,6 +687,8 @@ function Chat() {
           });
         }
 
+        // НЕ обновляем список чатов здесь - это будет сделано через WebSocket событие chat-message-notification
+
         // Сообщение добавится через WebSocket событие 'new-message'
         setSelectedFile(null);
       } else {
@@ -687,6 +727,8 @@ function Chat() {
           
           return newMessages;
         });
+        
+        // НЕ обновляем список чатов здесь - это будет сделано через WebSocket событие chat-message-notification
 
         scrollToBottom();
       }
