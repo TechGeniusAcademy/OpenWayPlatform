@@ -71,6 +71,11 @@ router.get('/', async (req, res) => {
       const studentsAndTeachers = users.filter(u => u.role === 'student' || u.role === 'teacher');
       return res.json({ users: studentsAndTeachers });
     }
+
+    // Если тестер - показываем всех (read-only)
+    if (req.user.role === 'tester') {
+      return res.json({ users });
+    }
     
     // Админы видят всех
     res.json({ users });

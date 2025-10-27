@@ -58,3 +58,11 @@ export const requireTester = (req, res, next) => {
   }
   next();
 };
+
+// Middleware для проверки роли тестера, учителя или админа (read-only доступ)
+export const requireTesterOrTeacherOrAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher' && req.user.role !== 'tester') {
+    return res.status(403).json({ error: 'Доступ запрещен.' });
+  }
+  next();
+};

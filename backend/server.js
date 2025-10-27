@@ -25,6 +25,7 @@ import projectsRoutes from './routes/projects-pg.js';
 import submissionsRoutes from './routes/submissions.js';
 import aiRoutes from './routes/ai.js';
 import chessRoutes from './routes/chess.js';
+import testingRoutes from './routes/testing.js';
 
 dotenv.config();
 
@@ -84,6 +85,7 @@ app.use('/api/projects', projectsRoutes);
 app.use('/api/submissions', submissionsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/chess', chessRoutes);
+app.use('/api/testing', testingRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

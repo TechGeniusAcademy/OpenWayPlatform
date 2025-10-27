@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, requireTeacherOrAdmin } from '../middleware/auth.js';
+import { authenticate, requireTeacherOrAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 import Test from '../models/Test.js';
 import TestAttempt from '../models/TestAttempt.js';
 import { exec } from 'child_process';
@@ -42,8 +42,8 @@ router.get('/student/history', async (req, res) => {
 
 // ========== ADMIN ENDPOINTS ==========
 
-// Получить все тесты (админ и учитель)
-router.get('/', requireTeacherOrAdmin, async (req, res) => {
+// Получить все тесты (админ, учитель и тестер)
+router.get('/', requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const tests = await Test.getAll();
     res.json({ tests });

@@ -1,14 +1,14 @@
 import express from 'express';
 import Group from '../models/Group.js';
-import { authenticate, requireAdmin, requireTeacherOrAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdmin, requireTeacherOrAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Все маршруты требуют аутентификации
 router.use(authenticate);
 
-// Получить все группы (для учителей и админов)
-router.get('/', requireTeacherOrAdmin, async (req, res) => {
+// Получить все группы (для учителей, тестеров и админов)
+router.get('/', requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const groups = await Group.getAll();
     res.json({ groups });
