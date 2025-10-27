@@ -171,10 +171,37 @@ function Chat() {
         processedChatUpdatesRef.current.delete(messageKey);
       }, 5 * 60000);
       
-      // ВАЖНО: НЕ инкрементируем счетчик локально, чтобы избежать дублирования!
-      // Вместо этого перезагружаем список чатов с сервера для получения актуальных данных
-      console.log('Chat: Перезагружаем список чатов с сервера для получения актуального unread_count');
-      loadChatsDebounced();
+      // Проверяем: это мое сообщение в активном чате?
+      const isMyMessageInActiveChat = message.sender_id === user.id && activeChatRef.current?.id === message.chat_id;
+      
+      if (isMyMessageInActiveChat) {
+        // Для своих сообщений в активном чате просто обновляем last_message локально
+        // без перезагрузки всего списка (чтобы не было "перезапуска" чата)
+        console.log('Chat: Мое сообщение в активном чате, обновляем last_message локально');
+        setChats(prevChats => 
+          prevChats.map(chat => 
+            chat.id === message.chat_id 
+              ? {
+                  ...chat,
+                  last_message: {
+                    content: message.content,
+                    message_type: message.message_type,
+                    sender_id: message.sender_id,
+                    created_at: message.created_at
+                  }
+                }
+              : chat
+          ).sort((a, b) => {
+            const dateA = a.last_message?.created_at ? new Date(a.last_message.created_at) : new Date(0);
+            const dateB = b.last_message?.created_at ? new Date(b.last_message.created_at) : new Date(0);
+            return dateB - dateA;
+          })
+        );
+      } else {
+        // Для всех остальных случаев перезагружаем список с сервера
+        console.log('Chat: Перезагружаем список чатов с сервера для получения актуального unread_count');
+        loadChatsDebounced();
+      }
     };
 
     const handleChatListUpdate = () => {
@@ -337,7 +364,9 @@ function Chat() {
     scrollToBottom();
   }, [messages]);
 
-  // Polling для получения новых сообщений каждые 3 секунды
+  // ОТКЛЮЧЕН: Polling больше не нужен, так как WebSocket доставляет все сообщения в реальном времени
+  // Polling может вызывать дублирование и лишнюю нагрузку на сервер
+  /*
   useEffect(() => {
     if (!activeChat) return;
 
@@ -347,12 +376,28 @@ function Chat() {
 
     return () => clearInterval(intervalId);
   }, [activeChat?.id, messages]);
+  */
 
   const loadChats = async () => {
     try {
       setLoading(true);
       const response = await api.get('/chat');
-      setChats(response.data.chats);
+      const newChats = response.data.chats;
+      
+      // Сохраняем ID активного чата перед обновлением
+      const activeChatId = activeChatRef.current?.id;
+      
+      setChats(newChats);
+      
+      // Если был активный чат, обновляем его ссылку на новый объект из списка
+      // Это предотвращает "перезапуск" чата при обновлении списка
+      if (activeChatId) {
+        const updatedActiveChat = newChats.find(c => c.id === activeChatId);
+        if (updatedActiveChat) {
+          setActiveChat(updatedActiveChat);
+          activeChatRef.current = updatedActiveChat;
+        }
+      }
     } catch (error) {
       console.error('Ошибка загрузки чатов:', error);
     } finally {
