@@ -86,13 +86,9 @@ router.get('/:id/submission', async (req, res) => {
 
 // ========== ADMIN ENDPOINTS ==========
 
-// Получить все домашние задания (только админ)
-router.get('/', async (req, res) => {
+// Получить все домашние задания (админ и учитель)
+router.get('/', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const homeworks = await Homework.getAll();
     res.json({ homeworks });
   } catch (error) {
@@ -133,13 +129,9 @@ router.post('/', requireTeacherOrAdmin, async (req, res) => {
   }
 });
 
-// Обновить домашнее задание (только админ)
-router.put('/:id', async (req, res) => {
+// Обновить домашнее задание (админ и учитель)
+router.put('/:id', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const homework = await Homework.update(req.params.id, req.body);
     res.json({ homework });
   } catch (error) {
@@ -148,13 +140,9 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Удалить домашнее задание (только админ)
-router.delete('/:id', async (req, res) => {
+// Удалить домашнее задание (админ и учитель)
+router.delete('/:id', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     await Homework.delete(req.params.id);
     res.json({ success: true });
   } catch (error) {
@@ -163,15 +151,11 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Закрыть/открыть домашнее задание вручную (только админ)
-router.patch('/:id/toggle-closed', async (req, res) => {
+// Закрыть/открыть домашнее задание вручную (админ и учитель)
+router.patch('/:id/toggle-closed', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
-    const { isClosed } = req.body;
-    const homework = await Homework.toggleClosed(req.params.id, isClosed);
+    const { manually_closed } = req.body;
+    const homework = await Homework.toggleClosed(req.params.id, manually_closed);
     res.json({ homework });
   } catch (error) {
     console.error('Ошибка изменения статуса домашнего задания:', error);

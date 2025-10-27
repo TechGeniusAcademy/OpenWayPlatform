@@ -42,13 +42,9 @@ router.get('/student/history', async (req, res) => {
 
 // ========== ADMIN ENDPOINTS ==========
 
-// Получить все тесты (только админ)
-router.get('/', async (req, res) => {
+// Получить все тесты (админ и учитель)
+router.get('/', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const tests = await Test.getAll();
     res.json({ tests });
   } catch (error) {
@@ -103,13 +99,9 @@ router.post('/', requireTeacherOrAdmin, async (req, res) => {
   }
 });
 
-// Обновить тест (только админ)
-router.put('/:id', async (req, res) => {
+// Обновить тест (админ и учитель)
+router.put('/:id', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const { test: testData, questions } = req.body;
     const test = await Test.update(req.params.id, testData, questions);
     
@@ -120,13 +112,9 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Удалить тест (только админ)
-router.delete('/:id', async (req, res) => {
+// Удалить тест (админ и учитель)
+router.delete('/:id', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     await Test.delete(req.params.id);
     res.json({ success: true });
   } catch (error) {
@@ -135,13 +123,9 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Назначить тест группе (только админ)
-router.post('/:id/assign', async (req, res) => {
+// Назначить тест группе (админ и учитель)
+router.post('/:id/assign', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const { groupId } = req.body;
     await Test.assignToGroup(req.params.id, groupId, req.user.id);
     
@@ -152,13 +136,9 @@ router.post('/:id/assign', async (req, res) => {
   }
 });
 
-// Отменить назначение теста группе (только админ)
-router.delete('/:id/assign/:groupId', async (req, res) => {
+// Отменить назначение теста группе (админ и учитель)
+router.delete('/:id/assign/:groupId', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     await Test.unassignFromGroup(req.params.id, req.params.groupId);
     res.json({ success: true });
   } catch (error) {
@@ -167,13 +147,9 @@ router.delete('/:id/assign/:groupId', async (req, res) => {
   }
 });
 
-// Получить назначения теста (только админ)
-router.get('/:id/assignments', async (req, res) => {
+// Получить назначения теста (админ и учитель)
+router.get('/:id/assignments', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const assignments = await Test.getAssignments(req.params.id);
     res.json({ assignments });
   } catch (error) {
@@ -182,13 +158,9 @@ router.get('/:id/assignments', async (req, res) => {
   }
 });
 
-// Получить историю попыток по тесту (только админ)
-router.get('/:id/history', async (req, res) => {
+// Получить историю попыток по тесту (админ и учитель)
+router.get('/:id/history', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const history = await TestAttempt.getTestHistory(req.params.id);
     res.json({ history });
   } catch (error) {
@@ -197,14 +169,10 @@ router.get('/:id/history', async (req, res) => {
   }
 });
 
-// Переназначить тест ученику (только админ)
-router.post('/:testId/reassign/:userId', async (req, res) => {
+// Переназначить тест ученику (админ и учитель)
+router.post('/:testId/reassign/:userId', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
-    await TestAttempt.reassign(req.params.testId, req.params.userId);
+    await Test.reassignToUser(req.params.testId, req.params.userId);
     res.json({ success: true });
   } catch (error) {
     console.error('Ошибка переназначения теста:', error);

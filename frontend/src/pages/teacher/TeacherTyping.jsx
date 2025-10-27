@@ -203,19 +203,19 @@ const TypingManagement = () => {
               <div key={group.id} className="group-card">
                 <h4>{group.name}</h4>
                 <div className="group-metrics">
-                  <div className="metric">
+                  <div key="members" className="metric">
                     <span className="metric-label">Участники:</span>
                     <span className="metric-value">{group.membersCount}</span>
                   </div>
-                  <div className="metric">
+                  <div key="wpm" className="metric">
                     <span className="metric-label">Средняя скорость:</span>
                     <span className="metric-value">{group.averageWpm} зн/мин</span>
                   </div>
-                  <div className="metric">
+                  <div key="accuracy" className="metric">
                     <span className="metric-label">Средняя точность:</span>
                     <span className="metric-value">{group.averageAccuracy}%</span>
                   </div>
-                  <div className="metric">
+                  <div key="tests" className="metric">
                     <span className="metric-label">Всего тестов:</span>
                     <span className="metric-value">{group.totalTests}</span>
                   </div>

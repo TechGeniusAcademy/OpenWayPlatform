@@ -19,9 +19,10 @@ function TeacherProjects() {
     try {
       setLoading(true);
       const response = await api.get('/projects');
-      setProjects(response.data.projects);
+      setProjects(response.data.projects || []);
     } catch (error) {
       console.error('Ошибка загрузки проектов:', error);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -73,15 +74,15 @@ function TeacherProjects() {
       <div className="projects-header">
         <h1>Проверка проектов</h1>
         <div className="stats">
-          <span>Всего проектов: {projects.length}</span>
+          <span>Всего проектов: {projects?.length || 0}</span>
           <span className="pending-count">
-            На проверке: {projects.filter(p => p.status === 'pending').length}
+            На проверке: {projects?.filter(p => p.status === 'pending').length || 0}
           </span>
         </div>
       </div>
 
       <div className="projects-grid">
-        {projects.length === 0 ? (
+        {!projects || projects.length === 0 ? (
           <div className="no-projects">
             <BsFolderCheck />
             <p>Нет проектов</p>
