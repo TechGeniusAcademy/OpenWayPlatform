@@ -1,14 +1,14 @@
 import express from 'express';
 import Group from '../models/Group.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdmin, requireTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Все маршруты требуют аутентификации
 router.use(authenticate);
 
-// Получить все группы (только для админов)
-router.get('/', requireAdmin, async (req, res) => {
+// Получить все группы (для учителей и админов)
+router.get('/', requireTeacherOrAdmin, async (req, res) => {
   try {
     const groups = await Group.getAll();
     res.json({ groups });
@@ -41,8 +41,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Создать новую группу (только админы)
-router.post('/', requireAdmin, async (req, res) => {
+// Создать новую группу (учителя и админы)
+router.post('/', requireTeacherOrAdmin, async (req, res) => {
   try {
     const { name, description } = req.body;
 
@@ -69,8 +69,8 @@ router.post('/', requireAdmin, async (req, res) => {
   }
 });
 
-// Обновить группу (только админы)
-router.put('/:id', requireAdmin, async (req, res) => {
+// Обновить группу (учителя и админы)
+router.put('/:id', requireTeacherOrAdmin, async (req, res) => {
   try {
     const { name, description } = req.body;
     const updates = {};
@@ -94,8 +94,8 @@ router.put('/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// Удалить группу (только админы)
-router.delete('/:id', requireAdmin, async (req, res) => {
+// Удалить группу (учителя и админы)
+router.delete('/:id', requireTeacherOrAdmin, async (req, res) => {
   try {
     const deletedGroup = await Group.delete(req.params.id);
     
@@ -110,8 +110,8 @@ router.delete('/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// Добавить студентов в группу (только админы)
-router.post('/:id/students', requireAdmin, async (req, res) => {
+// Добавить студентов в группу (учителя и админы)
+router.post('/:id/students', requireTeacherOrAdmin, async (req, res) => {
   try {
     const { studentIds } = req.body;
 
@@ -133,8 +133,8 @@ router.post('/:id/students', requireAdmin, async (req, res) => {
   }
 });
 
-// Получить студентов без группы (только админы)
-router.get('/students/available', requireAdmin, async (req, res) => {
+// Получить студентов без группы (учителя и админы)
+router.get('/students/available', requireTeacherOrAdmin, async (req, res) => {
   try {
     const students = await Group.getStudentsWithoutGroup();
     res.json({ students });
@@ -144,8 +144,8 @@ router.get('/students/available', requireAdmin, async (req, res) => {
   }
 });
 
-// Удалить студента из группы (только админы)
-router.delete('/:groupId/students/:studentId', requireAdmin, async (req, res) => {
+// Удалить студента из группы (учителя и админы)
+router.delete('/:groupId/students/:studentId', requireTeacherOrAdmin, async (req, res) => {
   try {
     const removedStudent = await Group.removeStudent(req.params.studentId);
     

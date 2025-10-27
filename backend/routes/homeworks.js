@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireTeacherOrAdmin } from '../middleware/auth.js';
 import Homework from '../models/Homework.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
 
@@ -117,13 +117,9 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Создать домашнее задание (только админ)
-router.post('/', async (req, res) => {
+// Создать домашнее задание (учителя и админы)
+router.post('/', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const homeworkData = {
       ...req.body,
       created_by: req.user.id

@@ -55,7 +55,7 @@ router.get('/online', async (req, res) => {
   }
 });
 
-// Получить всех пользователей (студенты видят только других студентов)
+// Получить всех пользователей (студенты видят только других студентов, учителя видят студентов)
 router.get('/', async (req, res) => {
   try {
     const users = await User.getAll();
@@ -64,6 +64,12 @@ router.get('/', async (req, res) => {
     if (req.user.role === 'student') {
       const studentsOnly = users.filter(u => u.role === 'student');
       return res.json({ users: studentsOnly });
+    }
+    
+    // Если учитель - показываем студентов и учителей
+    if (req.user.role === 'teacher') {
+      const studentsAndTeachers = users.filter(u => u.role === 'student' || u.role === 'teacher');
+      return res.json({ users: studentsAndTeachers });
     }
     
     // Админы видят всех

@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireTeacherOrAdmin } from '../middleware/auth.js';
 import Test from '../models/Test.js';
 import TestAttempt from '../models/TestAttempt.js';
 import { exec } from 'child_process';
@@ -89,13 +89,9 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Создать тест (только админ)
-router.post('/', async (req, res) => {
+// Создать тест (учителя и админы)
+router.post('/', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const { test: testData, questions } = req.body;
     testData.created_by = req.user.id;
 

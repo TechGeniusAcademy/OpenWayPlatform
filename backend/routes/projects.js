@@ -1,6 +1,6 @@
 import express from 'express';
 import Project from '../models/Project.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireTeacherOrAdmin } from '../middleware/auth.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';

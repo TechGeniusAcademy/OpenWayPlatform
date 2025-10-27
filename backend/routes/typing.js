@@ -1,6 +1,6 @@
 import express from 'express';
 import TypingResult from '../models/TypingResult.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireTeacherOrAdmin, requireTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -120,7 +120,7 @@ router.get('/top', async (req, res) => {
 // ========== ADMIN ENDPOINTS ==========
 
 // Получить общую статистику для админ панели
-router.get('/admin/statistics', requireAdmin, async (req, res) => {
+router.get('/admin/statistics', requireTeacherOrAdmin, async (req, res) => {
   try {
     const allResults = await TypingResult.getAll(1000);
     
@@ -141,7 +141,7 @@ router.get('/admin/statistics', requireAdmin, async (req, res) => {
 });
 
 // Получить статистику пользователей
-router.get('/admin/users', requireAdmin, async (req, res) => {
+router.get('/admin/users', requireTeacherOrAdmin, async (req, res) => {
   try {
     const { period = 'all', sortBy = 'wpm', order = 'desc' } = req.query;
     
@@ -216,7 +216,7 @@ router.get('/admin/users', requireAdmin, async (req, res) => {
 });
 
 // Получить статистику по группам
-router.get('/admin/groups', requireAdmin, async (req, res) => {
+router.get('/admin/groups', requireTeacherOrAdmin, async (req, res) => {
   try {
     const groupStats = await TypingResult.getGroupStats();
     res.json(groupStats || []);
@@ -227,7 +227,7 @@ router.get('/admin/groups', requireAdmin, async (req, res) => {
 });
 
 // Получить историю тестов пользователя
-router.get('/admin/user/:userId/history', requireAdmin, async (req, res) => {
+router.get('/admin/user/:userId/history', requireTeacherOrAdmin, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     
@@ -244,7 +244,7 @@ router.get('/admin/user/:userId/history', requireAdmin, async (req, res) => {
 });
 
 // Получить все результаты (только админ)
-router.get('/all-results', requireAdmin, async (req, res) => {
+router.get('/all-results', requireTeacherOrAdmin, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     const results = await TypingResult.getAll(limit);
@@ -257,7 +257,7 @@ router.get('/all-results', requireAdmin, async (req, res) => {
 });
 
 // Получить статистику по группам (только админ)
-router.get('/group-stats', requireAdmin, async (req, res) => {
+router.get('/group-stats', requireTeacherOrAdmin, async (req, res) => {
   try {
     const groupStats = await TypingResult.getGroupStats();
     res.json({ groupStats });
@@ -268,7 +268,7 @@ router.get('/group-stats', requireAdmin, async (req, res) => {
 });
 
 // Получить статистику конкретного пользователя (только админ)
-router.get('/user/:userId/stats', requireAdmin, async (req, res) => {
+router.get('/user/:userId/stats', requireTeacherOrAdmin, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     
@@ -287,7 +287,7 @@ router.get('/user/:userId/stats', requireAdmin, async (req, res) => {
 });
 
 // Получить прогресс конкретного пользователя (только админ)
-router.get('/user/:userId/progress', requireAdmin, async (req, res) => {
+router.get('/user/:userId/progress', requireTeacherOrAdmin, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     const days = parseInt(req.query.days) || 30;
@@ -305,7 +305,7 @@ router.get('/user/:userId/progress', requireAdmin, async (req, res) => {
 });
 
 // Удалить результат (только админ)
-router.delete('/results/:id', requireAdmin, async (req, res) => {
+router.delete('/results/:id', requireTeacherOrAdmin, async (req, res) => {
   try {
     const resultId = parseInt(req.params.id);
     
@@ -335,7 +335,7 @@ router.delete('/results/:id', requireAdmin, async (req, res) => {
 });
 
 // Получить общую статистику системы (только админ)
-router.get('/system-stats', requireAdmin, async (req, res) => {
+router.get('/system-stats', requireTeacherOrAdmin, async (req, res) => {
   try {
     // Можно добавить дополнительные системные метрики
     const allResults = await TypingResult.getAll(1000);
