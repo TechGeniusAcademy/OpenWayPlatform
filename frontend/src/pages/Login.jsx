@@ -69,6 +69,8 @@ function Login() {
     if (user) {
       if (user.role === 'admin') {
         navigate('/admin');
+      } else if (user.role === 'teacher') {
+        navigate('/teacher');
       } else if (user.role === 'student') {
         navigate('/student');
       }
@@ -458,6 +460,8 @@ function Login() {
       // Перенаправление в зависимости от роли
       if (result.user.role === 'admin') {
         navigate('/admin');
+      } else if (result.user.role === 'teacher') {
+        navigate('/teacher');
       } else if (result.user.role === 'student') {
         navigate('/student');
       }

@@ -1,0 +1,171 @@
+/* ============================================================
+   TEACHER LAYOUT STYLES
+   ============================================================ */
+
+.teacher-layout {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.teacher-sidebar {
+  width: 280px;
+  background: white;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 30px 20px;
+  border-bottom: 2px solid #f0f0f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.sidebar-header h2 {
+  margin: 0 0 15px 0;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-info p {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.role-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #333;
+  font-size: 1rem;
+  position: relative;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: #f5f5f5;
+  transform: translateX(5px);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+}
+
+.nav-icon {
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+}
+
+.nav-label {
+  flex: 1;
+}
+
+.nav-badge {
+  background: #f44336;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ============================================================
+   LOGOUT BUTTON
+   ============================================================ */
+
+.logout-btn {
+  margin: 20px;
+  padding: 14px;
+  border: 2px solid #f44336;
+  background: white;
+  color: #f44336;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: #f44336;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+/* ============================================================
+   CONTENT AREA
+   ============================================================ */
+
+.teacher-content {
+  flex: 1;
+  margin-left: 280px;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .teacher-sidebar {
+    width: 100%;
+    position: relative;
+    height: auto;
+  }
+
+  .teacher-content {
+    margin-left: 0;
+    padding: 20px;
+  }
+}

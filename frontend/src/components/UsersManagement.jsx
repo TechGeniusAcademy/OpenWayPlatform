@@ -424,6 +424,7 @@ function UsersManagement() {
                   required
                 >
                   <option value="student">Ученик</option>
+                  <option value="teacher">Учитель</option>
                   <option value="admin">Администратор</option>
                 </select>
               </div>

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
+import TeacherDashboard from './pages/TeacherDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -41,6 +42,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/*"
+                element={
+                  <ProtectedRoute requiredRole="teacher">
+                    <TeacherDashboard />
                   </ProtectedRoute>
                 }
               />
