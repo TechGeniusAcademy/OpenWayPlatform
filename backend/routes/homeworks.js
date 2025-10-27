@@ -163,13 +163,9 @@ router.patch('/:id/toggle-closed', requireTeacherOrAdmin, async (req, res) => {
   }
 });
 
-// Назначить домашнее задание группе (только админ)
-router.post('/:id/assign', async (req, res) => {
+// Назначить домашнее задание группе (админ и учитель)
+router.post('/:id/assign', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const { groupId } = req.body;
     await Homework.assignToGroup(req.params.id, groupId, req.user.id);
     
@@ -180,13 +176,9 @@ router.post('/:id/assign', async (req, res) => {
   }
 });
 
-// Отменить назначение домашнего задания группе (только админ)
-router.delete('/:id/assign/:groupId', async (req, res) => {
+// Отменить назначение домашнего задания группе (админ и учитель)
+router.delete('/:id/assign/:groupId', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     await Homework.unassignFromGroup(req.params.id, req.params.groupId);
     res.json({ success: true });
   } catch (error) {
@@ -195,13 +187,9 @@ router.delete('/:id/assign/:groupId', async (req, res) => {
   }
 });
 
-// Получить назначения домашнего задания (только админ)
-router.get('/:id/assignments', async (req, res) => {
+// Получить назначения домашнего задания (админ и учитель)
+router.get('/:id/assignments', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const assignments = await Homework.getAssignments(req.params.id);
     res.json({ assignments });
   } catch (error) {
@@ -210,13 +198,9 @@ router.get('/:id/assignments', async (req, res) => {
   }
 });
 
-// Получить сдачи домашнего задания (только админ)
-router.get('/:id/submissions', async (req, res) => {
+// Получить сдачи домашнего задания (админ и учитель)
+router.get('/:id/submissions', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const submissions = await Homework.getSubmissions(req.params.id);
     res.json({ submissions });
   } catch (error) {
@@ -225,13 +209,9 @@ router.get('/:id/submissions', async (req, res) => {
   }
 });
 
-// Принять/отклонить сдачу домашнего задания (только админ)
-router.post('/submission/:submissionId/check', async (req, res) => {
+// Принять/отклонить сдачу домашнего задания (админ и учитель)
+router.post('/submission/:submissionId/check', requireTeacherOrAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Доступ запрещен' });
-    }
-
     const { status, reason, pointsEarned } = req.body;
 
     if (!['accepted', 'rejected'].includes(status)) {
