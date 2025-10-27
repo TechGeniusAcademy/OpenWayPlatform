@@ -15,23 +15,23 @@ import Chat from './student/Chat';
 
 function TeacherDashboard() {
   return (
-    <TeacherLayout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/teacher/home" replace />} />
-        <Route path="/home" element={<TeacherHome />} />
-        <Route path="/students" element={<TeacherStudents />} />
-        <Route path="/groups" element={<TeacherGroups />} />
-        <Route path="/tests" element={<TeacherTests />} />
-        <Route path="/homeworks" element={<TeacherHomeworks />} />
-        <Route path="/projects" element={<TeacherProjects />} />
-        <Route path="/typing" element={<TeacherTyping />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/knowledge-base" element={<KnowledgeBase />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/updates" element={<StudentUpdates />} />
-        <Route path="/chat" element={<Chat />} />
-      </Routes>
-    </TeacherLayout>
+    <Routes>
+      <Route path="/" element={<TeacherLayout />}>
+        <Route index element={<Navigate to="/teacher/home" replace />} />
+        <Route path="home" element={<TeacherHome />} />
+        <Route path="students" element={<TeacherStudents />} />
+        <Route path="groups" element={<TeacherGroups />} />
+        <Route path="tests" element={<TeacherTests />} />
+        <Route path="homeworks" element={<TeacherHomeworks />} />
+        <Route path="projects" element={<TeacherProjects />} />
+        <Route path="typing" element={<TeacherTyping />} />
+        <Route path="leaderboard" element={<Leaderboard />} />
+        <Route path="knowledge-base" element={<KnowledgeBase />} />
+        <Route path="shop" element={<Shop />} />
+        <Route path="updates" element={<StudentUpdates />} />
+        <Route path="chat" element={<Chat />} />
+      </Route>
+    </Routes>
   );
 }
 
