@@ -6,12 +6,9 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { 
   BsReply, 
-  BsPinFill, 
-  BsPinAngleFill,
-  BsHeart, 
-  BsHeartFill,
+  BsPinFill,
+  BsHeart,
   BsHandThumbsUp,
-  BsHandThumbsUpFill,
   BsPencil,
   BsTrash,
   BsCheck,
@@ -23,11 +20,31 @@ import {
   BsPeopleFill,
   BsChatDots
 } from 'react-icons/bs';
+import './AdminChatClean.css';
+
+/**
+ * ЧИСТАЯ СИСТЕМА АДМИН-ЧАТА
+ * 
+ * Принципы (те же что и в Student Chat):
+ * - Только WebSocket (нет polling)
+ * - Сервер = источник правды (нет оптимистических обновлений)
+ * - Простая дедупликация (Set с ID)
+ * - Моментальное отображение через WebSocket
+ * 
+ * Особенности админа:
+ * - Видит ВСЕ чаты в системе
+ * - Может создавать приватные чаты
+ * - Может закреплять/откреплять сообщения
+ * - Может добавлять реакции
+ * - Может редактировать/удалять сообщения
+ */
 
 function AdminChat() {
   const { user } = useAuth();
   const { getSocket } = useWebSocket();
-  const [allChats, setAllChats] = useState([]);
+
+  // State
+  const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [pinnedMessages, setPinnedMessages] = useState([]);
@@ -36,191 +53,171 @@ function AdminChat() {
   const [codeLanguage, setCodeLanguage] = useState('javascript');
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState('all'); // 'all', 'private', 'group'
-  const [typingUser, setTypingUser] = useState(null); // Кто печатает
-  const [onlineUsers, setOnlineUsers] = useState(new Set()); // Онлайн пользователи
-  const [replyTo, setReplyTo] = useState(null); // Сообщение для ответа
-  const [editingMessage, setEditingMessage] = useState(null); // Редактируемое сообщение
-  const [searchQuery, setSearchQuery] = useState(''); // Поиск по сообщениям
-  const [allUsers, setAllUsers] = useState([]); // Все пользователи для создания чатов
-  const [showCreateChat, setShowCreateChat] = useState(false); // Модал создания чата
-  
+  const [filterType, setFilterType] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [allUsers, setAllUsers] = useState([]);
+  const [showCreateChat, setShowCreateChat] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [typingUser, setTypingUser] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
+
+  // Refs
+  const socketRef = useRef(null);
+  const activeChatIdRef = useRef(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const processedIds = useRef(new Set());
   const typingTimeoutRef = useRef(null);
 
-  // Компонент для отображения эмодзи как иконок
-  const EmojiIcon = ({ emoji }) => {
-    switch (emoji) {
-      case '👍':
-        return <BsHandThumbsUp />;
-      case '❤️':
-        return <BsHeart />;
-      default:
-        return <span>{emoji}</span>;
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
+
+  useEffect(() => {
+    init();
+    return cleanup;
+  }, [user?.id]);
+
+  const init = async () => {
+    try {
+      setLoading(true);
+      
+      await Promise.all([
+        loadChats(),
+        loadAllUsers(),
+        loadOnlineUsers()
+      ]);
+
+      const socket = getSocket();
+      if (socket) {
+        socketRef.current = socket;
+        socket.on('new-message', onNewMessage);
+        socket.on('messages-read', onMessagesRead);
+        socket.on('message-pinned', onMessagePinned);
+        socket.on('reaction-updated', onReactionUpdated);
+        socket.on('user-online', onUserOnline);
+        socket.on('user-offline', onUserOffline);
+        socket.on('user-typing', onUserTyping);
+        socket.on('user-stop-typing', onUserStopTyping);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Ошибка инициализации AdminChat:', error);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadAllChats();
-    loadAllUsers();
-    loadOnlineUsers(); // Загружаем онлайн пользователей при монтировании
-    
-    // Используем глобальный WebSocket
-    const socket = getSocket();
-    if (!socket) return;
-    
-    socket.on('new-message', (message) => {
-      setMessages(prev => [...prev, message]);
-      // scrollToBottom теперь вызывается автоматически через useEffect при изменении messages
-      
-      // Обновляем список чатов для обновления последнего сообщения
-      setAllChats(prevChats => {
-        return prevChats.map(chat => {
-          if (chat.id === message.chat_id) {
-            return {
-              ...chat,
-              last_message: {
-                content: message.content,
-                message_type: message.message_type,
-                sender_id: message.sender_id,
-                created_at: message.created_at
-              },
-              unread_count: activeChat?.id === message.chat_id ? 0 : (chat.unread_count || 0) + 1
-            };
-          }
-          return chat;
-        });
-      });
+  const cleanup = () => {
+    const socket = socketRef.current;
+    if (socket) {
+      socket.off('new-message', onNewMessage);
+      socket.off('messages-read', onMessagesRead);
+      socket.off('message-pinned', onMessagePinned);
+      socket.off('reaction-updated', onReactionUpdated);
+      socket.off('user-online', onUserOnline);
+      socket.off('user-offline', onUserOffline);
+      socket.off('user-typing', onUserTyping);
+      socket.off('user-stop-typing', onUserStopTyping);
+    }
+  };
+
+  // ============================================================
+  // WEBSOCKET HANDLERS
+  // ============================================================
+
+  const onNewMessage = (msg) => {
+    if (processedIds.current.has(msg.id)) return;
+    processedIds.current.add(msg.id);
+
+    if (activeChatIdRef.current === msg.chat_id) {
+      setMessages(prev => [...prev, msg]);
+      scrollToBottom();
+    }
+
+    loadChats();
+  };
+
+  const onMessagesRead = ({ chatId }) => {
+    setChats(prev => prev.map(c => c.id === chatId ? { ...c, unread_count: 0 } : c));
+  };
+
+  const onMessagePinned = ({ chatId, messageId, isPinned }) => {
+    if (activeChatIdRef.current === chatId) {
+      loadPinnedMessages(chatId);
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_pinned: isPinned } : m));
+    }
+  };
+
+  const onReactionUpdated = ({ messageId, reactions }) => {
+    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, reactions } : m));
+  };
+
+  const onUserOnline = ({ userId }) => {
+    setOnlineUsers(prev => new Set([...prev, userId]));
+  };
+
+  const onUserOffline = ({ userId }) => {
+    setOnlineUsers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(userId);
+      return newSet;
     });
+  };
 
-    socket.on('messages-read', (data) => {
-      // Если кто-то прочитал сообщения, обновляем список чатов
-      if (data.userId !== user.id) {
-        loadAllChats();
-      }
-    });
+  const onUserTyping = ({ userId, userName, chatId }) => {
+    if (userId !== user.id && chatId === activeChatIdRef.current) {
+      setTypingUser(userName);
+    }
+  };
 
-    // Индикатор печати
-    socket.on('user-typing', (data) => {
-      if (data.userId !== user.id && data.chatId === activeChat?.id) {
-        setTypingUser(data.userName);
-      }
-    });
+  const onUserStopTyping = ({ userId }) => {
+    if (userId !== user.id) {
+      setTypingUser(null);
+    }
+  };
 
-    socket.on('user-stop-typing', (data) => {
-      if (data.userId !== user.id) {
-        setTypingUser(null);
-      }
-    });
+  // ============================================================
+  // DATA LOADING
+  // ============================================================
 
-    // Онлайн статус
-    socket.on('user-online', (data) => {
-      setOnlineUsers(prev => new Set([...prev, data.userId]));
-    });
-
-    socket.on('user-offline', (data) => {
-      setOnlineUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(data.userId);
-        return newSet;
-      });
-    });
-
-    socket.on('message-pinned', (data) => {
-      console.log('AdminChat: Сообщение закреплено/откреплено:', data);
-      
-      // Если это активный чат, обновляем закрепленные сообщения
-      if (activeChat?.id === data.chatId) {
-        loadPinnedMessages(data.chatId);
-        
-        // Обновляем is_pinned в списке сообщений
-        setMessages(prev => prev.map(msg => 
-          msg.id === data.messageId ? { ...msg, is_pinned: data.isPinned } : msg
-        ));
-      }
-    });
-
-    socket.on('reaction-updated', (data) => {
-      console.log('AdminChat: Реакция обновлена:', data);
-      
-      // Обновляем реакции для сообщения
-      setMessages(prev => prev.map(msg => 
-        msg.id === data.messageId ? { ...msg, reactions: data.reactions } : msg
-      ));
-    });
-
-    return () => {
-      // Отписываемся от событий
-      socket.off('new-message');
-      socket.off('messages-read');
-      socket.off('user-typing');
-      socket.off('user-stop-typing');
-      socket.off('user-online');
-      socket.off('user-offline');
-      socket.off('message-pinned');
-      socket.off('reaction-updated');
-    };
-  }, [user.id, activeChat]);
-
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket || !activeChat) return;
-    
-    loadMessages(activeChat.id);
-    loadPinnedMessages(activeChat.id);
-    socket.emit('join-chat', activeChat.id);
-      
-    // Отмечаем сообщения как прочитанные
-    markAsRead(activeChat.id);
-      
-    // Обнуляем счетчик непрочитанных сообщений локально
-    setAllChats(prevChats => 
-      prevChats.map(chat => 
-        chat.id === activeChat.id ? { ...chat, unread_count: 0 } : chat
-      )
-    );
-
-    return () => {
-      if (activeChat && socket) {
-        socket.emit('leave-chat', activeChat.id);
-      }
-    };
-  }, [activeChat]);
-
-  // Автоскролл только при изменении сообщений, НЕ при изменении typingUser
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  // Polling для получения новых сообщений каждые 3 секунды
-  useEffect(() => {
-    if (!activeChat) return;
-
-    const intervalId = setInterval(() => {
-      loadNewMessages(activeChat.id);
-    }, 3000);
-
-    return () => clearInterval(intervalId);
-  }, [activeChat?.id, messages]);
-
-  const loadAllChats = async () => {
+  const loadChats = async () => {
     try {
-      setLoading(true);
-      // Для админа получаем все чаты через специальный endpoint
-      const response = await api.get('/chat/admin/all');
-      setAllChats(response.data.chats);
+      const res = await api.get('/chat/admin/all');
+      setChats(res.data.chats);
     } catch (error) {
       console.error('Ошибка загрузки чатов:', error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const loadMessages = async (chatId) => {
+    try {
+      const res = await api.get(`/chat/${chatId}/messages`);
+      setMessages(res.data.messages);
+      
+      processedIds.current.clear();
+      res.data.messages.forEach(m => processedIds.current.add(m.id));
+      
+      scrollToBottom();
+    } catch (error) {
+      console.error('Ошибка загрузки сообщений:', error);
+    }
+  };
+
+  const loadPinnedMessages = async (chatId) => {
+    try {
+      const res = await api.get(`/chat/${chatId}/pinned`);
+      setPinnedMessages(res.data.messages);
+    } catch (error) {
+      console.error('Ошибка загрузки закрепленных:', error);
     }
   };
 
   const loadAllUsers = async () => {
     try {
-      const response = await api.get('/users');
-      setAllUsers(response.data.users || response.data);
+      const res = await api.get('/users');
+      setAllUsers(res.data.users || res.data);
     } catch (error) {
       console.error('Ошибка загрузки пользователей:', error);
     }
@@ -228,133 +225,78 @@ function AdminChat() {
 
   const loadOnlineUsers = async () => {
     try {
-      const response = await api.get('/users/online');
-      const onlineUserIds = response.data.users.map(u => u.id);
-      setOnlineUsers(new Set(onlineUserIds));
-      console.log('Загружено онлайн пользователей:', onlineUserIds.length);
+      const res = await api.get('/users/online');
+      setOnlineUsers(new Set(res.data.users.map(u => u.id)));
     } catch (error) {
-      console.error('Ошибка загрузки онлайн пользователей:', error);
+      console.error('Ошибка загрузки онлайн:', error);
+    }
+  };
+
+  // ============================================================
+  // ACTIONS
+  // ============================================================
+
+  const selectChat = async (chat) => {
+    if (activeChatIdRef.current && socketRef.current) {
+      socketRef.current.emit('leave-chat', activeChatIdRef.current);
+    }
+
+    setActiveChat(chat);
+    activeChatIdRef.current = chat.id;
+    setMessages([]);
+    setPinnedMessages([]);
+
+    if (socketRef.current) {
+      socketRef.current.emit('join-chat', chat.id);
+    }
+
+    await Promise.all([
+      loadMessages(chat.id),
+      loadPinnedMessages(chat.id)
+    ]);
+
+    await markAsRead(chat.id);
+  };
+
+  const markAsRead = async (chatId) => {
+    try {
+      await api.put(`/chat/${chatId}/mark-read`);
+      
+      if (socketRef.current) {
+        socketRef.current.emit('mark-read', chatId);
+      }
+      
+      setChats(prev => prev.map(c => c.id === chatId ? { ...c, unread_count: 0 } : c));
+    } catch (error) {
+      console.error('Ошибка mark-read:', error);
     }
   };
 
   const createPrivateChat = async (userId) => {
     try {
-      const response = await api.post('/chat/private', { userId });
-      setActiveChat(response.data.chat);
+      const res = await api.post('/chat/private', { userId });
+      setActiveChat(res.data.chat);
       setShowCreateChat(false);
-      loadAllChats();
+      loadChats();
     } catch (error) {
       console.error('Ошибка создания чата:', error);
       alert('Не удалось создать чат');
     }
   };
 
-  const loadMessages = async (chatId) => {
-    try {
-      const response = await api.get(`/chat/${chatId}/messages`);
-      setMessages(response.data.messages);
-      scrollToBottom();
-    } catch (error) {
-      console.error('Ошибка загрузки сообщений:', error);
-    }
-  };
-
-  // Функция для получения новых сообщений (polling)
-  const loadNewMessages = async (chatId) => {
-    try {
-      if (messages.length === 0) return;
-      
-      const lastMessageId = Math.max(...messages.map(m => m.id));
-      const response = await api.get(`/chat/${chatId}/messages/new/${lastMessageId}`);
-      
-      if (response.data.messages && response.data.messages.length > 0) {
-        console.log(`📨 AdminChat: Получено ${response.data.messages.length} новых сообщений`);
-        
-        setMessages(prev => [...prev, ...response.data.messages]);
-        scrollToBottom();
-      }
-    } catch (error) {
-      console.error('Ошибка получения новых сообщений:', error);
-    }
-  };
-
-  const loadPinnedMessages = async (chatId) => {
-    try {
-      const response = await api.get(`/chat/${chatId}/pinned`);
-      setPinnedMessages(response.data.messages);
-    } catch (error) {
-      console.error('Ошибка загрузки закрепленных сообщений:', error);
-    }
-  };
-
-  const markAsRead = async (chatId) => {
-    try {
-      await api.put(`/chat/${chatId}/mark-read`);
-      // Уведомляем сервер через WebSocket для обновления других клиентов
-      const socket = getSocket();
-      if (socket) {
-        socket.emit('mark-read', chatId);
-      }
-    } catch (error) {
-      console.error('Ошибка при пометке сообщений как прочитанные:', error);
-    }
-  };
-
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
-
-  // Обработка ввода текста (индикатор печати)
-  const handleTyping = (e) => {
-    setNewMessage(e.target.value);
-    
-    const socket = getSocket();
-    if (!activeChat || !socket) return;
-    
-    // Отправляем событие "начал печатать"
-    if (e.target.value.length > 0) {
-      socket.emit('typing-start', {
-        chatId: activeChat.id,
-        userName: user.full_name || user.username
-      });
-      
-      // Очищаем предыдущий таймер
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      // Через 2 секунды без ввода отправляем "перестал печатать"
-      typingTimeoutRef.current = setTimeout(() => {
-        socket.emit('typing-stop', {
-          chatId: activeChat.id
-        });
-      }, 2000);
-    } else {
-      // Если поле пустое, сразу отправляем "перестал печатать"
-      socket.emit('typing-stop', {
-        chatId: activeChat.id
-      });
-    }
-  };
-
-  const handleSendMessage = async (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault();
-
+    
     if (!newMessage.trim() && !selectedFile) return;
+    if (!activeChat) return;
 
-    const socket = getSocket();
-    if (!socket) return;
-
-    // Отправляем "перестал печатать" при отправке сообщения
-    socket.emit('typing-stop', {
-      chatId: activeChat.id
-    });
+    // Останавливаем индикатор печати
+    if (socketRef.current) {
+      socketRef.current.emit('typing-stop', { chatId: activeChat.id });
+    }
 
     try {
       if (editingMessage) {
-        // Редактирование существующего сообщения
         await handleEditMessage(editingMessage.id, newMessage);
         setNewMessage('');
         setEditingMessage(null);
@@ -365,86 +307,45 @@ function AdminChat() {
         const formData = new FormData();
         formData.append('file', selectedFile);
         formData.append('caption', newMessage);
-        if (replyTo) {
-          formData.append('replyTo', replyTo.id);
-        }
+        if (replyTo) formData.append('replyTo', replyTo.id);
 
-        const response = await api.post(`/chat/${activeChat.id}/upload`, formData, {
+        await api.post(`/chat/${activeChat.id}/upload`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
-        });
-
-        const messageWithSender = {
-          ...response.data.message,
-          sender_full_name: user.full_name,
-          sender_username: user.username
-        };
-
-        socket.emit('send-message', {
-          chatId: activeChat.id,
-          message: messageWithSender
         });
 
         setSelectedFile(null);
       } else {
-        const response = await api.post(`/chat/${activeChat.id}/messages`, {
+        await api.post(`/chat/${activeChat.id}/messages`, {
           content: newMessage,
           messageType,
           codeLanguage: messageType === 'code' ? codeLanguage : null,
           replyTo: replyTo?.id
         });
-
-        const messageWithSender = {
-          ...response.data.message,
-          sender_full_name: user.full_name,
-          sender_username: user.username
-        };
-
-        // Добавляем сообщение локально сразу
-        setMessages(prev => [...prev, messageWithSender]);
-        scrollToBottom();
       }
 
       setNewMessage('');
       setMessageType('text');
       setReplyTo(null);
-      // scrollToBottom вызовется автоматически через useEffect
     } catch (error) {
-      console.error('Ошибка отправки сообщения:', error);
-      alert('Не удалось отправить сообщение');
-    }
-  };
-
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 100 * 1024 * 1024) {
-        alert('Файл слишком большой. Максимальный размер: 100MB');
-        return;
-      }
-      setSelectedFile(file);
+      console.error('Ошибка отправки:', error);
+      alert('Не удалось отправить');
     }
   };
 
   const togglePinMessage = async (messageId) => {
     try {
       await api.put(`/chat/messages/${messageId}/pin`);
-      loadMessages(activeChat.id);
-      loadPinnedMessages(activeChat.id);
     } catch (error) {
-      console.error('Ошибка закрепления сообщения:', error);
+      console.error('Ошибка закрепления:', error);
     }
   };
 
   const handleReaction = async (messageId, emoji) => {
     try {
-      const response = await api.post(`/chat/messages/${messageId}/reaction`, { emoji });
-      
-      // Обновляем реакции локально
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId ? { ...msg, reactions: response.data.reactions } : msg
-      ));
+      const res = await api.post(`/chat/messages/${messageId}/reaction`, { emoji });
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, reactions: res.data.reactions } : m));
     } catch (error) {
-      console.error('Ошибка добавления реакции:', error);
+      console.error('Ошибка реакции:', error);
     }
   };
 
@@ -454,48 +355,82 @@ function AdminChat() {
       loadMessages(activeChat.id);
       setEditingMessage(null);
     } catch (error) {
-      console.error('Ошибка редактирования сообщения:', error);
-      alert('Не удалось отредактировать сообщение');
+      console.error('Ошибка редактирования:', error);
+      alert('Не удалось отредактировать');
     }
   };
 
   const handleDeleteMessage = async (messageId) => {
-    if (!confirm('Удалить сообщение?')) return;
+    if (!confirm('Удалить?')) return;
     
     try {
       await api.delete(`/chat/messages/${messageId}`);
-      loadMessages(activeChat.id);
+      setMessages(prev => prev.filter(m => m.id !== messageId));
     } catch (error) {
-      console.error('Ошибка удаления сообщения:', error);
-      alert('Не удалось удалить сообщение');
+      console.error('Ошибка удаления:', error);
     }
   };
 
-  const handleReply = (message) => {
-    setReplyTo(message);
+  const handleTyping = (e) => {
+    setNewMessage(e.target.value);
+    
+    if (!socketRef.current || !activeChat) return;
+    
+    if (e.target.value.length > 0) {
+      socketRef.current.emit('typing-start', {
+        chatId: activeChat.id,
+        userName: user.full_name || user.username
+      });
+      
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        socketRef.current.emit('typing-stop', { chatId: activeChat.id });
+      }, 2000);
+    } else {
+      socketRef.current.emit('typing-stop', { chatId: activeChat.id });
+    }
   };
 
-  const renderMessage = (message) => {
-    const isOwnMessage = message.sender_id === user.id;
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 100 * 1024 * 1024) {
+        alert('Файл слишком большой. Макс: 100MB');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
 
-    // Если сообщение редактируется
-    if (editingMessage?.id === message.id) {
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  // ============================================================
+  // RENDER
+  // ============================================================
+
+  const renderMessage = (msg) => {
+    const isOwn = msg.sender_id === user.id;
+
+    if (editingMessage?.id === msg.id) {
       return (
-        <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'} editing`}>
+        <div key={msg.id} className={`message ${isOwn ? 'own' : 'other'} editing`}>
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleEditMessage(message.id, newMessage);
-              }
+              if (e.key === 'Enter') handleEditMessage(msg.id, newMessage);
             }}
-            className="edit-message-input"
+            className="edit-input"
             autoFocus
           />
           <div className="edit-actions">
-            <button onClick={() => handleEditMessage(message.id, newMessage)}><BsCheck /></button>
+            <button onClick={() => handleEditMessage(msg.id, newMessage)}><BsCheck /></button>
             <button onClick={() => { setEditingMessage(null); setNewMessage(''); }}><BsX /></button>
           </div>
         </div>
@@ -503,121 +438,76 @@ function AdminChat() {
     }
 
     return (
-      <div key={message.id} className={`message ${isOwnMessage ? 'own' : 'other'} ${message.is_pinned ? 'pinned' : ''}`}>
-        {message.is_pinned && (
+      <div key={msg.id} className={`message ${isOwn ? 'own' : 'other'} ${msg.is_pinned ? 'pinned' : ''}`}>
+        {msg.is_pinned && (
           <div className="pinned-indicator">
             <BsPinFill /> Закреплено
           </div>
         )}
         
-        {message.reply_to_id && (
+        {msg.reply_to_id && (
           <div className="message-reply">
-            <div className="reply-indicator"><BsReply /></div>
-            <div className="reply-content">
-              {message.reply_to_content?.substring(0, 50)}...
-            </div>
+            <BsReply /> {msg.reply_to_content?.substring(0, 50)}...
           </div>
         )}
 
         <div className="message-header">
-          <span className="message-sender">{message.sender_full_name || message.sender_username}</span>
-          <span className="message-time">
-            {new Date(message.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-            {message.is_edited && <span className="edited-badge"> (изменено)</span>}
+          <span className="sender">{msg.sender_full_name || msg.sender_username}</span>
+          <span className="time">
+            {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+            {msg.is_edited && <span className="edited"> (изм.)</span>}
           </span>
         </div>
 
-        {message.message_type === 'code' ? (
-          <div className="message-code">
-            <div className="code-header">
-              <span>{message.code_language}</span>
+        <div className="message-body">
+          {msg.message_type === 'code' ? (
+            <div className="code-block">
+              <div className="code-lang">{msg.code_language}</div>
+              <SyntaxHighlighter language={msg.code_language} style={vscDarkPlus}>
+                {msg.content}
+              </SyntaxHighlighter>
             </div>
-            <SyntaxHighlighter language={message.code_language} style={vscDarkPlus}>
-              {message.content}
-            </SyntaxHighlighter>
-          </div>
-        ) : message.message_type === 'file' ? (
-          <div className="message-file">
-            <span className="file-icon"><BsPaperclip /></span>
-            <div className="file-info">
-              <div className="file-name">{message.file_name}</div>
-              <div className="file-size">{(message.file_size / 1024 / 1024).toFixed(2)} MB</div>
-              <a 
-                href={`${BASE_URL}/api/chat/files${message.file_path}`} 
-                download={message.file_name}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="file-download"
-              >
-                Скачать
-              </a>
+          ) : msg.message_type === 'file' ? (
+            <div className="file-block">
+              <BsPaperclip />
+              <div className="file-info">
+                <div className="file-name">{msg.file_name}</div>
+                <div className="file-size">{(msg.file_size / 1024 / 1024).toFixed(2)} MB</div>
+                <a 
+                  href={`${BASE_URL}/api/chat/files${msg.file_path}`} 
+                  download={msg.file_name}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Скачать
+                </a>
+              </div>
+              {msg.content && <div className="file-caption">{msg.content}</div>}
             </div>
-            {message.content && <div className="file-caption">{message.content}</div>}
-          </div>
-        ) : (
-          <div className="message-content">{message.content}</div>
-        )}
+          ) : (
+            <p>{msg.content}</p>
+          )}
+        </div>
 
-        {/* Реакции */}
-        {message.reactions && message.reactions.length > 0 && (
-          <div className="message-reactions">
-            {message.reactions.map((reaction, idx) => (
-              <span key={idx} className="reaction" title={reaction.user_name}>
-                <EmojiIcon emoji={reaction.emoji} /> {reaction.count > 1 && reaction.count}
+        {msg.reactions && msg.reactions.length > 0 && (
+          <div className="reactions">
+            {msg.reactions.map((r, i) => (
+              <span key={i} className="reaction" title={r.user_name}>
+                {r.emoji} {r.count > 1 && r.count}
               </span>
             ))}
           </div>
         )}
 
-        {/* Действия с сообщением */}
         <div className="message-actions">
-          <button 
-            className="message-action-btn"
-            onClick={() => handleReply(message)}
-            title="Ответить"
-          >
-            <BsReply />
-          </button>
-          <button 
-            className="message-action-btn"
-            onClick={() => togglePinMessage(message.id)}
-            title={message.is_pinned ? 'Открепить' : 'Закрепить'}
-          >
-            <BsPinFill />
-          </button>
-          <button 
-            className="message-action-btn"
-            onClick={() => handleReaction(message.id, '👍')}
-            title="Лайк"
-          >
-            <BsHandThumbsUp />
-          </button>
-          <button 
-            className="message-action-btn"
-            onClick={() => handleReaction(message.id, '❤️')}
-            title="Сердце"
-          >
-            <BsHeart />
-          </button>
-          {isOwnMessage && (
+          <button onClick={() => setReplyTo(msg)} title="Ответить"><BsReply /></button>
+          <button onClick={() => togglePinMessage(msg.id)} title={msg.is_pinned ? 'Открепить' : 'Закрепить'}><BsPinFill /></button>
+          <button onClick={() => handleReaction(msg.id, '👍')} title="Лайк"><BsHandThumbsUp /></button>
+          <button onClick={() => handleReaction(msg.id, '❤️')} title="Сердце"><BsHeart /></button>
+          {isOwn && (
             <>
-              <button 
-                className="message-action-btn"
-                onClick={() => {
-                  setEditingMessage(message);
-                  setNewMessage(message.content);
-                }}
-                title="Редактировать"
-              >
-                <BsPencil />
-              </button>
-              <button 
-                className="message-action-btn"
-                onClick={() => handleDeleteMessage(message.id)}
-                title="Удалить"
-              >
-                <BsTrash />
-              </button>
+              <button onClick={() => { setEditingMessage(msg); setNewMessage(msg.content); }} title="Редактировать"><BsPencil /></button>
+              <button onClick={() => handleDeleteMessage(msg.id)} title="Удалить"><BsTrash /></button>
             </>
           )}
         </div>
@@ -625,259 +515,204 @@ function AdminChat() {
     );
   };
 
-  const filteredChats = allChats.filter(chat => {
+  const filteredChats = chats.filter(c => {
     if (filterType === 'all') return true;
-    return chat.type === filterType;
+    return c.type === filterType;
   });
 
-  const filteredMessages = messages.filter(msg => {
+  const filteredMessages = messages.filter(m => {
     if (!searchQuery) return true;
-    return msg.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           msg.sender_full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           msg.sender_username?.toLowerCase().includes(searchQuery.toLowerCase());
+    return m.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           m.sender_full_name?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   if (loading) {
-    return <div className="chat-loading">Загрузка чатов...</div>;
+    return <div className="admin-chat-loading">Загрузка...</div>;
   }
 
   return (
-    <div className="chat-container">
-      {/* Сайдбар с чатами */}
-      <div className="chats-sidebar">
+    <div className="admin-chat">
+      {/* SIDEBAR */}
+      <div className="chat-sidebar">
         <div className="sidebar-header">
           <h3>Все чаты</h3>
-          <button 
-            className="create-chat-btn"
-            onClick={() => setShowCreateChat(true)}
-            title="Создать приватный чат"
-          >
+          <button className="create-btn" onClick={() => setShowCreateChat(true)} title="Создать чат">
             <BsPlusCircle />
           </button>
         </div>
 
-        <div className="chat-filters">
-          <button 
-            className={`filter-btn ${filterType === 'all' ? 'active' : ''}`}
-            onClick={() => setFilterType('all')}
-          >
-            Все
-          </button>
-          <button 
-            className={`filter-btn ${filterType === 'private' ? 'active' : ''}`}
-            onClick={() => setFilterType('private')}
-          >
-            Приватные
-          </button>
-          <button 
-            className={`filter-btn ${filterType === 'group' ? 'active' : ''}`}
-            onClick={() => setFilterType('group')}
-          >
-            Групповые
-          </button>
+        <div className="filters">
+          <button className={filterType === 'all' ? 'active' : ''} onClick={() => setFilterType('all')}>Все</button>
+          <button className={filterType === 'private' ? 'active' : ''} onClick={() => setFilterType('private')}>Приватные</button>
+          <button className={filterType === 'group' ? 'active' : ''} onClick={() => setFilterType('group')}>Групповые</button>
         </div>
 
         <div className="chats-list">
-          {filteredChats.length === 0 ? (
-            <div className="no-chats">
-              <p>Нет чатов</p>
-            </div>
-          ) : (
-            filteredChats.map(chat => (
-              <div 
-                key={chat.id} 
-                className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
-                onClick={() => setActiveChat(chat)}
-              >
-                <div className="chat-avatar">
-                  {chat.type === 'group' ? <BsPeopleFill /> : <BsChatDots />}
-                </div>
-                <div className="chat-info">
-                  <div className="chat-name">
-                    {chat.name || `Чат #${chat.id}`}
-                  </div>
-                  <div className="chat-type-badge">
-                    {chat.type === 'group' ? 'Групповой' : 'Приватный'}
-                  </div>
-                  {chat.last_message && (
-                    <div className="chat-last-message">
-                      {chat.last_message.message_type === 'file' ? <><BsPaperclip /> Файл</> : 
-                       chat.last_message.message_type === 'code' ? <><BsCode /> Код</> : 
-                       chat.last_message.content?.substring(0, 30)}
-                    </div>
-                  )}
-                </div>
+          {filteredChats.map(chat => (
+            <div 
+              key={chat.id} 
+              className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
+              onClick={() => selectChat(chat)}
+            >
+              <div className="chat-icon">
+                {chat.type === 'group' ? <BsPeopleFill /> : <BsChatDots />}
               </div>
-            ))
-          )}
+              <div className="chat-info">
+                <div className="chat-name">{chat.name || `Чат #${chat.id}`}</div>
+                <div className="chat-badge">{chat.type === 'group' ? 'Групповой' : 'Приватный'}</div>
+                {chat.last_message && (
+                  <div className="last-msg">
+                    {chat.last_message.message_type === 'file' ? <><BsPaperclip /> Файл</> : 
+                     chat.last_message.message_type === 'code' ? <><BsCode /> Код</> : 
+                     chat.last_message.content?.substring(0, 30)}
+                  </div>
+                )}
+              </div>
+              {chat.unread_count > 0 && (
+                <div className="unread">{chat.unread_count}</div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Область сообщений */}
-      <div className="messages-area">
-        {activeChat ? (
-          <>
-            <div className="messages-header">
-              <div className="chat-title">
-                {activeChat.name || `Чат #${activeChat.id}`}
-                <span className="chat-type-tag">
-                  {activeChat.type === 'group' ? <><BsPeopleFill /> Групповой</> : <><BsChatDots /> Приватный</>}
-                </span>
-              </div>
-              <div className="chat-search">
-                <input
-                  type="text"
-                  placeholder="Поиск по сообщениям..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="search-input"
-                />
-              </div>
+      {/* MAIN */}
+      {activeChat ? (
+        <div className="chat-main">
+          <div className="chat-header">
+            <div className="chat-title">
+              {activeChat.name || `Чат #${activeChat.id}`}
+              <span className="type-badge">
+                {activeChat.type === 'group' ? <><BsPeopleFill /> Групповой</> : <><BsChatDots /> Приватный</>}
+              </span>
             </div>
-
-            <div className="messages-list">
-              {pinnedMessages.length > 0 && (
-                <div className="pinned-messages">
-                  <h4><BsPinFill /> Закрепленное сообщение</h4>
-                  {pinnedMessages.map(msg => (
-                    <div key={msg.id} className="pinned-message-item">
-                      <strong>{msg.sender_full_name}:</strong> {msg.content?.substring(0, 50)}...
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {filteredMessages.map(renderMessage)}
-              {typingUser && (
-                <div className="typing-indicator">
-                  <span className="typing-user">{typingUser}</span> печатает
-                  <span className="typing-dots">
-                    <span>.</span><span>.</span><span>.</span>
-                  </span>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+            <div className="search-box">
+              <BsSearch />
+              <input
+                type="text"
+                placeholder="Поиск..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-
-            <form className="message-input-area" onSubmit={handleSendMessage}>
-              {replyTo && (
-                <div className="reply-preview">
-                  <div className="reply-preview-content">
-                    <strong>Ответ на:</strong> {replyTo.content?.substring(0, 50)}...
-                  </div>
-                  <button type="button" onClick={() => setReplyTo(null)}><BsX /></button>
-                </div>
-              )}
-
-              <div className="input-controls">
-                <select 
-                  value={messageType} 
-                  onChange={(e) => setMessageType(e.target.value)}
-                  className="message-type-select"
-                >
-                  <option value="text">Текст</option>
-                  <option value="code">Код</option>
-                </select>
-
-                {messageType === 'code' && (
-                  <select 
-                    value={codeLanguage} 
-                    onChange={(e) => setCodeLanguage(e.target.value)}
-                    className="code-language-select"
-                  >
-                    <option value="javascript">JavaScript</option>
-                    <option value="python">Python</option>
-                    <option value="java">Java</option>
-                    <option value="cpp">C++</option>
-                    <option value="csharp">C#</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="sql">SQL</option>
-                  </select>
-                )}
-
-                <button
-                  className="btn-file"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Прикрепить файл"
-                >
-                  <BsPaperclip />
-                </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef}
-                  onChange={handleFileSelect}
-                  style={{ display: 'none' }}
-                />
-              </div>
-
-              {selectedFile && (
-                <div className="selected-file">
-                  <span><BsPaperclip /> {selectedFile.name}</span>
-                  <button type="button" onClick={() => setSelectedFile(null)}><BsX /></button>
-                </div>
-              )}
-
-              <div className="input-row">
-                <textarea
-                  value={newMessage}
-                  onChange={handleTyping}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage(e);
-                    }
-                  }}
-                  placeholder={messageType === 'code' ? 'Введите код...' : 'Введите сообщение...'}
-                  className="message-input"
-                  rows={messageType === 'code' ? 5 : 2}
-                />
-                <button type="submit" className="btn-send">
-                  Отправить
-                </button>
-              </div>
-            </form>
-          </>
-        ) : (
-          <div className="no-chat-selected">
-            <h3>Выберите чат для просмотра</h3>
-            <p>Вы можете просматривать и управлять всеми чатами в системе</p>
           </div>
-        )}
-      </div>
 
-      {/* Модал создания чата */}
+          <div className="messages-container">
+            {pinnedMessages.length > 0 && (
+              <div className="pinned-section">
+                <h4><BsPinFill /> Закреплено</h4>
+                {pinnedMessages.map(m => (
+                  <div key={m.id} className="pinned-item">
+                    <strong>{m.sender_full_name}:</strong> {m.content?.substring(0, 50)}...
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {filteredMessages.map(renderMessage)}
+            
+            {typingUser && (
+              <div className="typing">
+                <span>{typingUser}</span> печатает<span className="dots">...</span>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+
+          <form className="message-input" onSubmit={sendMessage}>
+            {replyTo && (
+              <div className="reply-preview">
+                <div><strong>Ответ на:</strong> {replyTo.content?.substring(0, 50)}...</div>
+                <button type="button" onClick={() => setReplyTo(null)}><BsX /></button>
+              </div>
+            )}
+
+            <div className="input-controls">
+              <select value={messageType} onChange={(e) => setMessageType(e.target.value)}>
+                <option value="text">💬 Текст</option>
+                <option value="code">💻 Код</option>
+              </select>
+
+              {messageType === 'code' && (
+                <select value={codeLanguage} onChange={(e) => setCodeLanguage(e.target.value)}>
+                  <option value="javascript">JavaScript</option>
+                  <option value="python">Python</option>
+                  <option value="java">Java</option>
+                  <option value="cpp">C++</option>
+                  <option value="csharp">C#</option>
+                  <option value="html">HTML</option>
+                  <option value="css">CSS</option>
+                  <option value="sql">SQL</option>
+                </select>
+              )}
+
+              <button type="button" onClick={() => fileInputRef.current?.click()} title="Файл">
+                <BsPaperclip />
+              </button>
+              <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} />
+            </div>
+
+            {selectedFile && (
+              <div className="selected-file">
+                <BsPaperclip /> {selectedFile.name}
+                <button type="button" onClick={() => setSelectedFile(null)}><BsX /></button>
+              </div>
+            )}
+
+            <div className="input-row">
+              <textarea
+                value={newMessage}
+                onChange={handleTyping}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage(e);
+                  }
+                }}
+                placeholder={messageType === 'code' ? 'Код...' : 'Сообщение...'}
+                rows={messageType === 'code' ? 5 : 2}
+              />
+              <button type="submit">Отправить</button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="chat-empty">
+          <h3>Выберите чат</h3>
+          <p>Управление всеми чатами в системе</p>
+        </div>
+      )}
+
+      {/* CREATE MODAL */}
       {showCreateChat && (
         <div className="modal-overlay" onClick={() => setShowCreateChat(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Создать приватный чат</h3>
               <button onClick={() => setShowCreateChat(false)}><BsX /></button>
             </div>
             <div className="modal-body">
-              <div className="users-list">
-                {allUsers.filter(u => u.id !== user.id).map(u => (
-                  <div 
-                    key={u.id} 
-                    className="user-item"
-                    onClick={() => createPrivateChat(u.id)}
-                  >
-                    <div className="user-avatar">
-                      {u.avatar_url ? (
-                        <img src={`${BASE_URL}${u.avatar_url}`} alt="" />
-                      ) : (
-                        <div className="avatar-placeholder">
-                          {(u.full_name || u.username).charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="user-info">
-                      <div className="user-name">{u.full_name || u.username}</div>
-                      <div className="user-role">{u.role === 'admin' ? 'Админ' : u.role === 'teacher' ? 'Учитель' : 'Студент'}</div>
+              {allUsers.filter(u => u.id !== user.id).map(u => (
+                <div key={u.id} className="user-item" onClick={() => createPrivateChat(u.id)}>
+                  <div className="user-avatar">
+                    {u.avatar_url ? (
+                      <img src={`${BASE_URL}${u.avatar_url}`} alt="" />
+                    ) : (
+                      <div className="avatar-placeholder">
+                        {(u.full_name || u.username).charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="user-info">
+                    <div className="user-name">{u.full_name || u.username}</div>
+                    <div className="user-role">
+                      {u.role === 'admin' ? 'Админ' : u.role === 'teacher' ? 'Учитель' : 'Студент'}
                     </div>
                   </div>
-                ))}
-              </div>
+                  {onlineUsers.has(u.id) && <div className="online-dot"></div>}
+                </div>
+              ))}
             </div>
           </div>
         </div>
