@@ -1,6 +1,6 @@
 import express from 'express';
 import TypingResult from '../models/TypingResult.js';
-import { authenticate, requireTeacherOrAdmin, requireTeacherOrAdmin } from '../middleware/auth.js';
+import { authenticate, requireTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
