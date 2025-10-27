@@ -23,7 +23,6 @@ import {
   BsPeopleFill,
   BsChatDots
 } from 'react-icons/bs';
-import '../pages/student/Chat.css';
 
 function AdminChat() {
   const { user } = useAuth();

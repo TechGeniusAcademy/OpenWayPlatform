@@ -5,169 +5,118 @@ import { useWebSocket } from '../../context/WebSocketContext';
 import api, { BASE_URL } from '../../utils/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { 
-  BsReply, BsPinFill, BsHeart, BsHandThumbsUp, BsPencil, BsTrash, 
-  BsCheck, BsX, BsPaperclip, BsCode, BsChatDots, BsPeopleFill 
-} from 'react-icons/bs';
-import './Chat.css';
-import '../../styles/UsernameStyles.css';
-import '../../styles/MessageColors.css';
+import { BsPeopleFill, BsPencil, BsTrash } from 'react-icons/bs';
+import './ChatClean.css';
 
 /**
- * НОВАЯ СИСТЕМА ЧАТА - ЧИСТАЯ АРХИТЕКТУРА
+ * ЧИСТАЯ СИСТЕМА ЧАТА
  * 
  * Принципы:
- * 1. Только WebSocket для real-time обновлений (нет polling)
- * 2. Один источник правды - сервер (нет оптимистических обновлений)
- * 3. Простая дедупликация через Set с ID сообщений
- * 4. Минимум state, максимум ссылок (refs)
- * 5. Четкое разделение ответственности
+ * - Только WebSocket (нет polling)
+ * - Сервер = источник правды (нет оптимистических обновлений)
+ * - Простая дедупликация (Set с ID)
+ * - Моментальное отображение через WebSocket
  */
 
-const EmojiIcon = ({ emoji }) => {
-  if (emoji === '👍') return <BsHandThumbsUp />;
-  if (emoji === '❤️') return <BsHeart />;
-  return <span>{emoji}</span>;
-};
-
-const detectLanguage = (code) => {
-  if (code.includes('<?php')) return 'php';
-  if (code.includes('<!DOCTYPE') || code.includes('<html')) return 'markup';
-  if (code.includes('function') && code.includes('=>')) return 'javascript';
-  if (code.includes('def ') || code.includes('import ')) return 'python';
-  if (code.includes('SELECT') && code.includes('FROM')) return 'sql';
-  return 'javascript';
-};
-
-function ChatNew() {
+function Chat() {
   const { user } = useAuth();
   const { loadUnreadCount } = useNotifications();
   const { getSocket } = useWebSocket();
 
-  // Основные state
+  // State
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  
-  // UI state
   const [messageType, setMessageType] = useState('text');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [replyTo, setReplyTo] = useState(null);
-  const [editingMessage, setEditingMessage] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typingUser, setTypingUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  
-  // Refs для оптимизации
+  const [typingUser, setTypingUser] = useState(null);
+
+  // Refs
   const socketRef = useRef(null);
   const activeChatIdRef = useRef(null);
   const messagesEndRef = useRef(null);
-  const processedMessageIds = useRef(new Set()); // Простая дедупликация по ID
-  
-  // =============================================================================
-  // INITIALIZATION - Загрузка данных при монтировании
-  // =============================================================================
-  
+  const processedIds = useRef(new Set());
+
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
+
   useEffect(() => {
-    loadInitialData();
-    setupSocketListeners();
-    
-    return () => cleanupSocketListeners();
+    init();
+    return cleanup;
   }, [user?.id]);
 
-  const loadInitialData = async () => {
+  const init = async () => {
     try {
       setLoading(true);
+      
+      // Загружаем данные
       await Promise.all([
         loadChats(),
         loadOnlineUsers()
       ]);
+
+      // Подключаем WebSocket
+      const socket = getSocket();
+      if (socket) {
+        socketRef.current = socket;
+        socket.on('new-message', onNewMessage);
+        socket.on('messages-read', onMessagesRead);
+        socket.on('user-online', onUserOnline);
+        socket.on('user-offline', onUserOffline);
+        socket.on('user-typing', onUserTyping);
+        socket.on('user-stop-typing', onUserStopTyping);
+      }
+
+      setLoading(false);
     } catch (error) {
-      console.error('Ошибка загрузки данных:', error);
-    } finally {
+      console.error('Ошибка инициализации:', error);
       setLoading(false);
     }
   };
 
-  // =============================================================================
-  // WEBSOCKET SETUP - Настройка слушателей WebSocket
-  // =============================================================================
-  
-  const setupSocketListeners = () => {
-    const socket = getSocket();
-    if (!socket) {
-      console.warn('Socket не готов при монтировании');
-      return;
-    }
-    
-    socketRef.current = socket;
-    
-    // Один обработчик для новых сообщений
-    socket.on('new-message', handleNewMessage);
-    socket.on('messages-read', handleMessagesRead);
-    socket.on('user-online', handleUserOnline);
-    socket.on('user-offline', handleUserOffline);
-    socket.on('user-typing', handleUserTyping);
-    socket.on('user-stop-typing', handleUserStopTyping);
-    
-    console.log('✅ WebSocket слушатели подключены');
-  };
-
-  const cleanupSocketListeners = () => {
+  const cleanup = () => {
     const socket = socketRef.current;
-    if (!socket) return;
-    
-    socket.off('new-message', handleNewMessage);
-    socket.off('messages-read', handleMessagesRead);
-    socket.off('user-online', handleUserOnline);
-    socket.off('user-offline', handleUserOffline);
-    socket.off('user-typing', handleUserTyping);
-    socket.off('user-stop-typing', handleUserStopTyping);
-    
-    console.log('🧹 WebSocket слушатели отключены');
+    if (socket) {
+      socket.off('new-message', onNewMessage);
+      socket.off('messages-read', onMessagesRead);
+      socket.off('user-online', onUserOnline);
+      socket.off('user-offline', onUserOffline);
+      socket.off('user-typing', onUserTyping);
+      socket.off('user-stop-typing', onUserStopTyping);
+    }
   };
 
-  // =============================================================================
-  // WEBSOCKET HANDLERS - Обработчики событий
-  // =============================================================================
-  
-  const handleNewMessage = (message) => {
-    console.log('📨 Получено новое сообщение:', message.id);
-    
-    // Дедупликация - пропускаем если уже обработали
-    if (processedMessageIds.current.has(message.id)) {
-      console.log('⏭️ Сообщение уже обработано, пропускаем');
-      return;
-    }
-    processedMessageIds.current.add(message.id);
-    
-    // Добавляем в список сообщений если это активный чат
-    if (activeChatIdRef.current === message.chat_id) {
-      setMessages(prev => [...prev, message]);
+  // ============================================================
+  // WEBSOCKET HANDLERS
+  // ============================================================
+
+  const onNewMessage = (msg) => {
+    // Дедупликация
+    if (processedIds.current.has(msg.id)) return;
+    processedIds.current.add(msg.id);
+
+    // Добавляем в активный чат
+    if (activeChatIdRef.current === msg.chat_id) {
+      setMessages(prev => [...prev, msg]);
       scrollToBottom();
     }
-    
-    // ВСЕГДА перезагружаем список чатов для обновления last_message и unread_count
+
+    // Обновляем список чатов
     loadChats();
   };
 
-  const handleMessagesRead = ({ chatId }) => {
-    setChats(prev => 
-      prev.map(chat => 
-        chat.id === chatId ? { ...chat, unread_count: 0 } : chat
-      )
-    );
+  const onMessagesRead = ({ chatId }) => {
+    setChats(prev => prev.map(c => c.id === chatId ? { ...c, unread_count: 0 } : c));
   };
 
-  const handleUserOnline = ({ userId }) => {
+  const onUserOnline = ({ userId }) => {
     setOnlineUsers(prev => new Set([...prev, userId]));
   };
 
-  const handleUserOffline = ({ userId }) => {
+  const onUserOffline = ({ userId }) => {
     setOnlineUsers(prev => {
       const newSet = new Set(prev);
       newSet.delete(userId);
@@ -175,26 +124,26 @@ function ChatNew() {
     });
   };
 
-  const handleUserTyping = ({ userId, userName, chatId }) => {
+  const onUserTyping = ({ userId, userName, chatId }) => {
     if (userId !== user.id && chatId === activeChatIdRef.current) {
       setTypingUser(userName);
     }
   };
 
-  const handleUserStopTyping = ({ userId }) => {
+  const onUserStopTyping = ({ userId }) => {
     if (userId !== user.id) {
       setTypingUser(null);
     }
   };
 
-  // =============================================================================
-  // DATA LOADING - Загрузка данных с сервера
-  // =============================================================================
-  
+  // ============================================================
+  // DATA LOADING
+  // ============================================================
+
   const loadChats = async () => {
     try {
-      const response = await api.get('/chat');
-      setChats(response.data.chats);
+      const res = await api.get('/chat');
+      setChats(res.data.chats);
     } catch (error) {
       console.error('Ошибка загрузки чатов:', error);
     }
@@ -202,13 +151,12 @@ function ChatNew() {
 
   const loadMessages = async (chatId) => {
     try {
-      const response = await api.get(`/chat/${chatId}/messages`);
-      setMessages(response.data.messages);
+      const res = await api.get(`/chat/${chatId}/messages`);
+      setMessages(res.data.messages);
       
-      // Очищаем processed IDs для нового чата
-      processedMessageIds.current.clear();
-      // Добавляем загруженные сообщения в processed
-      response.data.messages.forEach(msg => processedMessageIds.current.add(msg.id));
+      // Обновляем processedIds
+      processedIds.current.clear();
+      res.data.messages.forEach(m => processedIds.current.add(m.id));
       
       scrollToBottom();
     } catch (error) {
@@ -218,43 +166,38 @@ function ChatNew() {
 
   const loadOnlineUsers = async () => {
     try {
-      const response = await api.get('/users/online');
-      setOnlineUsers(new Set(response.data.users.map(u => u.id)));
+      const res = await api.get('/users/online');
+      setOnlineUsers(new Set(res.data.users.map(u => u.id)));
     } catch (error) {
-      console.error('Ошибка загрузки онлайн пользователей:', error);
+      console.error('Ошибка загрузки онлайн:', error);
     }
   };
 
-  // =============================================================================
-  // CHAT ACTIONS - Действия с чатами
-  // =============================================================================
-  
+  // ============================================================
+  // ACTIONS
+  // ============================================================
+
   const selectChat = async (chat) => {
-    console.log('💬 Выбран чат:', chat.id);
-    
-    // Покидаем предыдущий чат
+    // Покидаем старый чат
     if (activeChatIdRef.current && socketRef.current) {
       socketRef.current.emit('leave-chat', activeChatIdRef.current);
     }
-    
+
+    // Устанавливаем новый
     setActiveChat(chat);
     activeChatIdRef.current = chat.id;
     setMessages([]);
-    
-    // Присоединяемся к новому чату
+
+    // Присоединяемся
     if (socketRef.current) {
       socketRef.current.emit('join-chat', chat.id);
     }
-    
+
     // Загружаем сообщения
     await loadMessages(chat.id);
-    
-    // Отмечаем как прочитанное
-    markAsRead(chat.id);
-    
-    if (isMobile) {
-      setShowSidebar(false);
-    }
+
+    // Отмечаем прочитанным
+    await markAsRead(chat.id);
   };
 
   const markAsRead = async (chatId) => {
@@ -265,111 +208,46 @@ function ChatNew() {
         socketRef.current.emit('mark-read', chatId);
       }
       
-      // Обновляем счетчик уведомлений
       loadUnreadCount();
-      
-      // Сбрасываем локально
-      setChats(prev => 
-        prev.map(chat => 
-          chat.id === chatId ? { ...chat, unread_count: 0 } : chat
-        )
-      );
+      setChats(prev => prev.map(c => c.id === chatId ? { ...c, unread_count: 0 } : c));
     } catch (error) {
-      console.error('Ошибка отметки как прочитанное:', error);
+      console.error('Ошибка mark-read:', error);
     }
   };
 
-  // =============================================================================
-  // MESSAGE ACTIONS - Отправка и управление сообщениями
-  // =============================================================================
-  
-  const handleSendMessage = async (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault();
     
-    if (!newMessage.trim() && !selectedFile) return;
-    if (!activeChat) return;
-    
+    if (!newMessage.trim() || !activeChat) return;
+
     try {
-      if (selectedFile) {
-        await sendFileMessage();
-      } else {
-        await sendTextMessage();
-      }
-      
+      await api.post(`/chat/${activeChat.id}/messages`, {
+        content: newMessage,
+        messageType: messageType
+      });
+
       // Очищаем форму
       setNewMessage('');
       setMessageType('text');
-      setSelectedFile(null);
-      setReplyTo(null);
-      setEditingMessage(null);
-      
+
+      // Сообщение придет через WebSocket автоматически
     } catch (error) {
-      console.error('Ошибка отправки сообщения:', error);
-      alert('Не удалось отправить сообщение');
+      console.error('Ошибка отправки:', error);
+      alert('Не удалось отправить');
     }
   };
 
-  const sendTextMessage = async () => {
-    const response = await api.post(`/chat/${activeChat.id}/messages`, {
-      content: newMessage,
-      messageType: messageType,
-      codeLanguage: messageType === 'code' ? detectLanguage(newMessage) : null,
-      replyTo: replyTo?.id
-    });
-    
-    console.log('✅ Сообщение отправлено:', response.data.message.id);
-    // НЕ добавляем локально - придет через WebSocket
-  };
-
-  const sendFileMessage = async () => {
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('caption', newMessage);
-    if (replyTo) formData.append('replyTo', replyTo.id);
-    
-    const response = await api.post(`/chat/${activeChat.id}/upload`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    
-    console.log('✅ Файл отправлен:', response.data.message.id);
-    // НЕ добавляем локально - придет через WebSocket
-  };
-
-  const handleDeleteMessage = async (messageId) => {
-    if (!confirm('Удалить сообщение?')) return;
+  const deleteMessage = async (msgId) => {
+    if (!confirm('Удалить?')) return;
     
     try {
-      await api.delete(`/chat/messages/${messageId}`);
-      setMessages(prev => prev.filter(m => m.id !== messageId));
+      await api.delete(`/chat/messages/${msgId}`);
+      setMessages(prev => prev.filter(m => m.id !== msgId));
     } catch (error) {
-      console.error('Ошибка удаления сообщения:', error);
+      console.error('Ошибка удаления:', error);
     }
   };
 
-  const handleEditMessage = async (messageId, content) => {
-    try {
-      await api.put(`/chat/messages/${messageId}`, { content });
-      // Перезагружаем сообщения
-      loadMessages(activeChat.id);
-      setEditingMessage(null);
-    } catch (error) {
-      console.error('Ошибка редактирования:', error);
-    }
-  };
-
-  const handleReaction = async (messageId, emoji) => {
-    try {
-      await api.post(`/chat/messages/${messageId}/reaction`, { emoji });
-      // Обновление придет через WebSocket event 'reaction-updated'
-    } catch (error) {
-      console.error('Ошибка реакции:', error);
-    }
-  };
-
-  // =============================================================================
-  // TYPING INDICATOR - Индикатор печати
-  // =============================================================================
-  
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
     
@@ -385,98 +263,93 @@ function ChatNew() {
     }
   };
 
-  // =============================================================================
-  // UTILITY FUNCTIONS - Вспомогательные функции
-  // =============================================================================
-  
   const scrollToBottom = () => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   };
 
-  const filteredMessages = messages.filter(msg => {
-    if (!searchQuery) return true;
-    return msg.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           msg.sender_full_name?.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
-  // =============================================================================
+  // ============================================================
   // RENDER
-  // =============================================================================
-  
+  // ============================================================
+
   if (loading) {
     return <div className="chat-page"><div className="loading">Загрузка...</div></div>;
   }
 
   return (
     <div className="chat-page">
-      {/* Sidebar с чатами */}
-      {(!isMobile || showSidebar) && (
-        <div className="chat-sidebar">
-          <h2>Чаты</h2>
-          <div className="chat-list">
-            {chats.map(chat => (
-              <div
-                key={chat.id}
-                className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
-                onClick={() => selectChat(chat)}
-              >
-                <div className="chat-info">
-                  <div className="chat-name">
-                    {chat.type === 'group' ? (
-                      <><BsPeopleFill /> {chat.name}</>
-                    ) : (
-                      chat.other_user?.full_name || chat.other_user?.username
-                    )}
-                  </div>
-                  <div className="chat-last-message">
-                    {chat.last_message?.content?.substring(0, 30)}...
-                  </div>
+      {/* SIDEBAR */}
+      <div className="chat-sidebar">
+        <h2>Чаты</h2>
+        <div className="chat-list">
+          {chats.map(chat => (
+            <div
+              key={chat.id}
+              className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
+              onClick={() => selectChat(chat)}
+            >
+              <div className="chat-info">
+                <div className="chat-name">
+                  {chat.type === 'group' ? (
+                    <><BsPeopleFill /> {chat.name}</>
+                  ) : (
+                    chat.other_user?.full_name || chat.other_user?.username
+                  )}
                 </div>
-                {chat.unread_count > 0 && (
-                  <div className="unread-badge">{chat.unread_count}</div>
-                )}
-                {chat.type === 'private' && onlineUsers.has(chat.other_user?.id) && (
-                  <div className="online-indicator"></div>
-                )}
+                <div className="chat-last-message">
+                  {chat.last_message?.content?.substring(0, 40) || 'Нет сообщений'}
+                </div>
               </div>
-            ))}
-          </div>
+              
+              {chat.unread_count > 0 && (
+                <div className="unread-badge">{chat.unread_count}</div>
+              )}
+              
+              {chat.type === 'private' && onlineUsers.has(chat.other_user?.id) && (
+                <div className="online-indicator"></div>
+              )}
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Область сообщений */}
+      {/* MAIN CHAT */}
       {activeChat ? (
         <div className="chat-main">
           <div className="chat-header">
             <h3>
-              {activeChat.type === 'group' ? activeChat.name : activeChat.other_user?.full_name}
+              {activeChat.type === 'group' 
+                ? activeChat.name 
+                : activeChat.other_user?.full_name}
             </h3>
             {typingUser && <div className="typing-indicator">{typingUser} печатает...</div>}
           </div>
 
           <div className="messages-container">
-            {filteredMessages.map(msg => (
+            {messages.map(msg => (
               <div
                 key={msg.id}
                 className={`message ${msg.sender_id === user.id ? 'own' : 'other'}`}
               >
                 <div className="message-content">
                   {msg.message_type === 'code' ? (
-                    <SyntaxHighlighter language={msg.code_language || 'javascript'} style={vscDarkPlus}>
+                    <SyntaxHighlighter language="javascript" style={vscDarkPlus}>
                       {msg.content}
                     </SyntaxHighlighter>
                   ) : (
                     <p>{msg.content}</p>
                   )}
                 </div>
+                
                 <div className="message-meta">
                   <span>{new Date(msg.created_at).toLocaleTimeString()}</span>
+                  
                   {msg.sender_id === user.id && (
                     <>
-                      <button onClick={() => setEditingMessage(msg)}><BsPencil /></button>
-                      <button onClick={() => handleDeleteMessage(msg.id)}><BsTrash /></button>
+                      <button onClick={() => deleteMessage(msg.id)}>
+                        <BsTrash />
+                      </button>
                     </>
                   )}
                 </div>
@@ -485,17 +358,20 @@ function ChatNew() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form className="message-input" onSubmit={handleSendMessage}>
+          <form className="message-input" onSubmit={sendMessage}>
             <select value={messageType} onChange={e => setMessageType(e.target.value)}>
               <option value="text">💬 Текст</option>
               <option value="code">💻 Код</option>
             </select>
+            
             <input
               type="text"
               value={newMessage}
               onChange={handleTyping}
               placeholder="Введите сообщение..."
+              autoFocus
             />
+            
             <button type="submit">Отправить</button>
           </form>
         </div>
@@ -508,4 +384,4 @@ function ChatNew() {
   );
 }
 
-export default ChatNew;
+export default Chat;
