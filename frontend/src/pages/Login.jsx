@@ -71,6 +71,8 @@ function Login() {
         navigate('/admin');
       } else if (user.role === 'teacher') {
         navigate('/teacher');
+      } else if (user.role === 'tester') {
+        navigate('/tester');
       } else if (user.role === 'student') {
         navigate('/student');
       }
@@ -462,6 +464,8 @@ function Login() {
         navigate('/admin');
       } else if (result.user.role === 'teacher') {
         navigate('/teacher');
+      } else if (result.user.role === 'tester') {
+        navigate('/tester');
       } else if (result.user.role === 'student') {
         navigate('/student');
       }

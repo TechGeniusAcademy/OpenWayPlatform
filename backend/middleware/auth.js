@@ -50,3 +50,11 @@ export const requireStudent = (req, res, next) => {
   }
   next();
 };
+
+// Middleware для проверки роли тестера
+export const requireTester = (req, res, next) => {
+  if (req.user.role !== 'tester' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Доступ запрещен. Требуются права тестера.' });
+  }
+  next();
+};

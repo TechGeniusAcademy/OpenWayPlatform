@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
+import TesterDashboard from './pages/TesterDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -50,6 +51,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredRole="teacher">
                     <TeacherDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tester/*"
+                element={
+                  <ProtectedRoute requiredRole="tester">
+                    <TesterDashboard />
                   </ProtectedRoute>
                 }
               />
