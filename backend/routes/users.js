@@ -76,6 +76,11 @@ router.get('/', async (req, res) => {
     if (req.user.role === 'tester') {
       return res.json({ users });
     }
+
+    // Если CSS редактор - показываем всех (read-only)
+    if (req.user.role === 'css_editor') {
+      return res.json({ users });
+    }
     
     // Админы видят всех
     res.json({ users });
@@ -123,6 +128,25 @@ router.post('/', requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Ошибка создания пользователя:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Получить текущего пользователя (аутентифицированного)
+router.get('/me', authenticate, async (req, res) => {
+  try {
+    console.log('[USERS] /me request from user ID:', req.user?.id);
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      console.log('[USERS] User not found:', req.user.id);
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    console.log('[USERS] Returning user:', { id: user.id, username: user.username, points: user.points });
+    res.json(user);
+  } catch (error) {
+    console.error('Ошибка получения текущего пользователя:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });

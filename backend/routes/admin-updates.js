@@ -1,11 +1,11 @@
 import express from 'express';
 import Update from '../models/Update.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Получить все обновления (только для админов)
-router.get('/', authenticate, requireAdmin, async (req, res) => {
+// Получить все обновления (админ, тестер, CSS редактор)
+router.get('/', authenticate, requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const updates = await Update.getAll();
     res.json({ updates });
@@ -15,8 +15,8 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
-// Получить обновление по ID (для админов)
-router.get('/:id', authenticate, requireAdmin, async (req, res) => {
+// Получить обновление по ID (админ, тестер, CSS редактор)
+router.get('/:id', authenticate, requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const update = await Update.getById(req.params.id);
     if (!update) {

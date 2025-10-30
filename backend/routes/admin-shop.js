@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import pool from '../config/database.js';
-import { authenticate, authorizeAdmin } from '../middleware/auth.js';
+import { authenticate, authorizeAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -41,8 +41,8 @@ const upload = multer({
   }
 });
 
-// Получить все предметы магазина (для админа)
-router.get('/items', authenticate, authorizeAdmin, async (req, res) => {
+// Получить все предметы магазина (для админа, тестера, CSS редактора)
+router.get('/items', authenticate, requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT * FROM shop_items ORDER BY item_type, created_at DESC'

@@ -2,7 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ChessGame from '../../components/ChessGame';
 import OnlineChess from '../../components/OnlineChess';
+import QuizBattle from '../../components/QuizBattle';
+import CrashGame from '../../components/CrashGame';
+import PokerGame from '../../components/PokerGame';
 import './Games.css';
+import { MdOutlineQuiz } from "react-icons/md";
+import { FaChess, FaRocket } from "react-icons/fa";
+import { GiPokerHand } from "react-icons/gi";
+
+
 
 function Games() {
   const navigate = useNavigate();
@@ -10,9 +18,33 @@ function Games() {
 
   const games = [
     {
+      id: 'crash',
+      title: 'Crash Game 🚀',
+      icon: <FaRocket />,
+      description: 'Азартная игра с множителями! Ставь баллы и выводи их вовремя, пока не произошел краш',
+      color: '#f093fb',
+      available: true
+    },
+    {
+      id: 'poker',
+      title: 'Техасский Холдем ♠ (Еще в разработке)',
+      icon: <GiPokerHand />,
+      description: 'Классический покер! Раздача карт, флоп, терн и ривер. Полноценная игра на весь экран',
+      color: '#2ecc71',
+      available: true
+    },
+    {
+      id: 'quiz-battle',
+      title: 'Битва Знаний',
+      icon: <MdOutlineQuiz />,
+      description: 'PvP викторина в реальном времени! Соревнуйся с другими учениками на скорость и знания',
+      color: '#667eea',
+      available: true
+    },
+    {
       id: 'online-chess',
       title: 'Онлайн Шахматы',
-      icon: '♟️',
+      icon: <FaChess />,
       description: 'Играй в шахматы онлайн с другими игроками из твоей группы',
       color: '#667eea',
       available: true
@@ -20,7 +52,7 @@ function Games() {
     {
       id: 'chess',
       title: 'Шахматы vs AI',
-      icon: '🤖',
+      icon: <FaChess />,
       description: 'Классическая игра в шахматы против компьютера с разными уровнями сложности',
       color: '#764ba2',
       available: true
@@ -36,6 +68,39 @@ function Games() {
   const handleBack = () => {
     setSelectedGame(null);
   };
+
+  if (selectedGame === 'crash') {
+    return (
+      <div className="games-page">
+        <button onClick={handleBack} className="back-button">
+          ← Назад к играм
+        </button>
+        <CrashGame />
+      </div>
+    );
+  }
+
+  if (selectedGame === 'poker') {
+    return (
+      <div className="games-page">
+        <button onClick={handleBack} className="back-button">
+          ← Назад к играм
+        </button>
+        <PokerGame />
+      </div>
+    );
+  }
+
+  if (selectedGame === 'quiz-battle') {
+    return (
+      <div className="games-page">
+        <button onClick={handleBack} className="back-button">
+          ← Назад к играм
+        </button>
+        <QuizBattle />
+      </div>
+    );
+  }
 
   if (selectedGame === 'online-chess') {
     return (

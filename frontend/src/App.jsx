@@ -5,6 +5,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TesterDashboard from './pages/TesterDashboard';
+import CSSEditorDashboard from './pages/CSSEditorDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -59,6 +60,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredRole="tester">
                     <TesterDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/css-editor/*"
+                element={
+                  <ProtectedRoute requiredRole="css_editor">
+                    <CSSEditorDashboard />
                   </ProtectedRoute>
                 }
               />

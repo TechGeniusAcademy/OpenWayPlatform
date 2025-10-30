@@ -6,24 +6,24 @@ function StudentHome() {
 
   return (
     <div className="student-page">
-      <div className="page-header">
+      <div className="dashboard-page-header">
         <h1>Главная</h1>
         <p>Добро пожаловать в систему обучения</p>
       </div>
 
       <div className="stats-banner">
-        <div className="stat-item">
+        <div className="dashboard-stat-item">
           <div className="stat-icon"><AiOutlineWallet /></div>
-          <div className="stat-content">
-            <div className="stat-value">{user?.points || 0}</div>
-            <div className="stat-label">Мои баллы</div>
+          <div className="dashboard-stat-content">
+            <div className="dashboard-stat-value">{user?.points || 0}</div>
+            <div className="dashboard-stat-label">Мои баллы</div>
           </div>
         </div>
-        <div className="stat-item">
+        <div className="dashboard-stat-item">
           <div className="stat-icon"><AiOutlineUsergroupAdd /></div>
-          <div className="stat-content">
-            <div className="stat-value">{user?.group_id ? 'В группе' : 'Нет группы'}</div>
-            <div className="stat-label">Статус группы</div>
+          <div className="dashboard-stat-content">
+            <div className="dashboard-stat-value">{user?.group_id ? 'В группе' : 'Нет группы'}</div>
+            <div className="dashboard-stat-label">Статус группы</div>
           </div>
         </div>
       </div>

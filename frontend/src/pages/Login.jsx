@@ -73,6 +73,8 @@ function Login() {
         navigate('/teacher');
       } else if (user.role === 'tester') {
         navigate('/tester');
+      } else if (user.role === 'css_editor') {
+        navigate('/css-editor');
       } else if (user.role === 'student') {
         navigate('/student');
       }
@@ -466,6 +468,8 @@ function Login() {
         navigate('/teacher');
       } else if (result.user.role === 'tester') {
         navigate('/tester');
+      } else if (result.user.role === 'css_editor') {
+        navigate('/css-editor');
       } else if (result.user.role === 'student') {
         navigate('/student');
       }

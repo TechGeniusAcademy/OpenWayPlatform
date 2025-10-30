@@ -12,6 +12,7 @@ import ShopManagement from '../components/ShopManagement';
 import KnowledgeBaseManagement from '../components/KnowledgeBaseManagement';
 import UpdatesManagement from '../components/UpdatesManagement';
 import AdminSubmissions from './admin/AdminSubmissions';
+import GamesManagement from './admin/GamesManagement';
 
 function AdminDashboard() {
   return (
@@ -25,6 +26,7 @@ function AdminDashboard() {
         <Route path="/homeworks" element={<HomeworksManagement />} />
         <Route path="/typing" element={<TypingManagement />} />
         <Route path="/game" element={<GameManagement />} />
+        <Route path="/games" element={<GamesManagement />} />
         <Route path="/shop" element={<ShopManagement />} />
         <Route path="/knowledge" element={<KnowledgeBaseManagement />} />
         <Route path="/updates" element={<UpdatesManagement />} />

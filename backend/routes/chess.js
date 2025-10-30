@@ -589,4 +589,28 @@ router.post('/end/:gameId', authenticate, async (req, res) => {
   }
 });
 
+// Получить историю всех шахматных игр (для админа)
+router.get('/history', authenticate, async (req, res) => {
+  try {
+    const limit = req.query.limit || 50;
+    const result = await pool.query(
+      `SELECT 
+        cg.*,
+        u1.username as white_player_username,
+        u2.username as black_player_username
+      FROM chess_games cg
+      LEFT JOIN users u1 ON cg.white_player_id = u1.id
+      LEFT JOIN users u2 ON cg.black_player_id = u2.id
+      ORDER BY cg.created_at DESC
+      LIMIT $1`,
+      [limit]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Ошибка получения истории шахмат:', error);
+    res.status(500).json({ error: 'Ошибка получения истории' });
+  }
+});
+
 export default router;

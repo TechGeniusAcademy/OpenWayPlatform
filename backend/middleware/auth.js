@@ -61,8 +61,16 @@ export const requireTester = (req, res, next) => {
 
 // Middleware для проверки роли тестера, учителя или админа (read-only доступ)
 export const requireTesterOrTeacherOrAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'teacher' && req.user.role !== 'tester') {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher' && req.user.role !== 'tester' && req.user.role !== 'css_editor') {
     return res.status(403).json({ error: 'Доступ запрещен.' });
+  }
+  next();
+};
+
+// Middleware для проверки роли CSS редактора
+export const requireCSSEditor = (req, res, next) => {
+  if (req.user.role !== 'css_editor' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Доступ запрещен. Требуются права CSS редактора.' });
   }
   next();
 };

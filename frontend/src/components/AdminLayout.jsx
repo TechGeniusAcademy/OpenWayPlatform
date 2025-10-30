@@ -11,6 +11,7 @@ import { BsKeyboard } from "react-icons/bs";
 import { FaRegNoteSticky, FaQuestion } from "react-icons/fa6";
 import { LuBookOpenText } from "react-icons/lu";
 import { AiOutlineSend } from "react-icons/ai";
+import { IoGameControllerOutline } from "react-icons/io5";
 
 function AdminLayout({ children }) {
   const { user, logout } = useAuth();
@@ -100,6 +101,12 @@ function AdminLayout({ children }) {
               <NavLink to="/admin/game" onClick={closeSidebar}>
                 <span className="admin-menu-icon"><FaQuestion /></span>
                 <span className="admin-menu-text">Вопросы-Ответы</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/admin/games" onClick={closeSidebar}>
+                <span className="admin-menu-icon"><IoGameControllerOutline /></span>
+                <span className="admin-menu-text">Игры</span>
               </NavLink>
             </li>
             <li>

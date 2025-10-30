@@ -1,0 +1,276 @@
+.css-editor-home {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.editor-header {
+  text-align: center;
+  margin-bottom: 40px;
+  color: white;
+}
+
+.editor-header h1 {
+  font-size: 42px;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.editor-header p {
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-bottom: 50px;
+}
+
+.feature-card {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+.feature-icon {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: white;
+}
+
+.feature-card h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 22px;
+}
+
+.feature-card p {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.feature-badge {
+  display: inline-block;
+  padding: 6px 15px;
+  background: rgba(30, 60, 114, 0.1);
+  border: 1px solid rgba(30, 60, 114, 0.3);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3c72;
+}
+
+.demo-section {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  margin-bottom: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.demo-section h2 {
+  text-align: center;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.demo-section p {
+  text-align: center;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.demo-section kbd {
+  background: rgba(30, 60, 114, 0.1);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(30, 60, 114, 0.3);
+  font-family: 'Courier New', monospace;
+  color: #1e3c72;
+  font-weight: 600;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.demo-box {
+  padding: 30px;
+  border-radius: 12px;
+  min-height: 200px;
+  transition: all 0.3s ease;
+}
+
+.demo-box.flexbox {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.demo-box.flexbox.hovered {
+  transform: scale(1.05);
+}
+
+.demo-item {
+  padding: 15px 30px;
+  background: white;
+  border-radius: 8px;
+  color: #667eea;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.demo-box.gridbox {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  padding: 30px;
+}
+
+.grid-item {
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  color: #f5576c;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.instructions {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  margin-bottom: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.instructions h3 {
+  margin: 0 0 25px 0;
+  color: #333;
+  font-size: 24px;
+  text-align: center;
+}
+
+.instructions ol {
+  list-style-position: inside;
+  color: #666;
+  line-height: 2.2;
+  font-size: 16px;
+}
+
+.instructions li {
+  padding: 8px 0;
+}
+
+.instructions kbd {
+  background: rgba(30, 60, 114, 0.1);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(30, 60, 114, 0.3);
+  font-family: 'Courier New', monospace;
+  color: #1e3c72;
+  font-weight: 600;
+}
+
+.role-views {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.role-views h3 {
+  margin: 0 0 30px 0;
+  color: #333;
+  font-size: 24px;
+  text-align: center;
+}
+
+.views-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.view-card {
+  padding: 25px;
+  border-radius: 12px;
+  border: 2px solid;
+  transition: all 0.3s ease;
+}
+
+.view-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.view-card.student {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
+}
+
+.view-card.teacher {
+  background: rgba(118, 75, 162, 0.1);
+  border-color: #764ba2;
+}
+
+.view-card.admin {
+  background: rgba(250, 112, 154, 0.1);
+  border-color: #fa709a;
+}
+
+.view-card.tester {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
+}
+
+.view-card h4 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.view-card p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .features-grid,
+  .demo-grid,
+  .views-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-header h1 {
+    font-size: 32px;
+  }
+}

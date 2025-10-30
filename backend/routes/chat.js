@@ -69,10 +69,10 @@ router.get('/files/*', async (req, res) => {
 router.use(authenticate);
 
 // Получить все чаты (только для админов)
-// Получить все чаты (для админов)
+// Получить все чаты (для админов и CSS редакторов)
 router.get('/admin/all', authenticate, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'admin' && req.user.role !== 'css_editor') {
       return res.status(403).json({ error: 'Доступ запрещен' });
     }
 

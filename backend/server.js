@@ -26,6 +26,9 @@ import submissionsRoutes from './routes/submissions.js';
 import aiRoutes from './routes/ai.js';
 import chessRoutes from './routes/chess.js';
 import testingRoutes from './routes/testing.js';
+import quizBattleRoutes from './routes/quiz-battle.js';
+import crashRoutes from './routes/crash.js';
+import rouletteRoutes from './routes/roulette.js';
 
 dotenv.config();
 
@@ -60,6 +63,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/shop', express.static(path.join(__dirname, 'uploads', 'shop')));
 
+// Делаем io доступным в маршрутах
+app.set('io', io);
+
 // Логирование запросов
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -86,6 +92,9 @@ app.use('/api/submissions', submissionsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/chess', chessRoutes);
 app.use('/api/testing', testingRoutes);
+app.use('/api/quiz-battle', quizBattleRoutes);
+app.use('/api/crash', crashRoutes);
+app.use('/api/roulette', rouletteRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
@@ -178,6 +187,18 @@ io.on('connection', (socket) => {
   socket.on('leave-chat', (chatId) => {
     socket.leave(`chat-${chatId}`);
     console.log(`📤 Пользователь ${socket.userId} покинул чат ${chatId}`);
+  });
+
+  // Присоединение к любой комнате (универсальный обработчик)
+  socket.on('join', (room) => {
+    socket.join(room);
+    console.log(`🚪 Socket ${socket.id} присоединился к комнате: ${room}`);
+  });
+
+  // Покинуть комнату (универсальный обработчик)
+  socket.on('leave', (room) => {
+    socket.leave(room);
+    console.log(`🚪 Socket ${socket.id} покинул комнату: ${room}`);
   });
 
   // Пользователь печатает
@@ -342,6 +363,373 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+// ========================================
+// CRASH GAME WEBSOCKET LOGIC
+// ========================================
+import CrashGame from './models/CrashGame.js';
+
+let currentCrashGame = null;
+let crashGameInterval = null;
+
+// Функция создания новой игры
+async function createNewCrashGame() {
+  try {
+    const crashPoint = CrashGame.generateFairCrashPoint();
+    currentCrashGame = await CrashGame.createGame(crashPoint);
+    
+    console.log(`🎰 Новая Crash игра создана: ID ${currentCrashGame.id}, crash point: ${crashPoint}x`);
+    
+    // Уведомить всех о новой игре
+    io.to('crash-room').emit('crash:new-game', {
+      gameId: currentCrashGame.id,
+      status: 'waiting'
+    });
+    
+    // Через 10 секунд начать игру
+    setTimeout(() => startCrashGame(), 10000);
+    
+  } catch (error) {
+    console.error('Ошибка создания Crash игры:', error);
+  }
+}
+
+// Функция старта игры
+async function startCrashGame() {
+  try {
+    if (!currentCrashGame) return;
+    
+    // Обновить статус на running
+    await CrashGame.startGame(currentCrashGame.id);
+    currentCrashGame.status = 'running';
+    
+    console.log(`🚀 Crash игра ${currentCrashGame.id} началась!`);
+    
+    // Уведомить всех о старте
+    io.to('crash-room').emit('crash:game-started', {
+      gameId: currentCrashGame.id
+    });
+    
+    // Начать обновление множителя
+    let multiplier = 1.00;
+    const crashPoint = currentCrashGame.crash_point;
+    
+    crashGameInterval = setInterval(async () => {
+      if (multiplier >= crashPoint) {
+        // КРАШ!
+        await crashGameNow();
+        clearInterval(crashGameInterval);
+        return;
+      }
+      
+      // Увеличиваем множитель
+      multiplier += 0.01;
+      
+      // Обновляем в базе
+      await CrashGame.updateMultiplier(currentCrashGame.id, multiplier);
+      
+      // Отправляем обновление клиентам
+      io.to('crash-room').emit('crash:multiplier-update', {
+        gameId: currentCrashGame.id,
+        multiplier: parseFloat(multiplier.toFixed(2))
+      });
+      
+    }, 100); // Обновление каждые 100ms
+    
+  } catch (error) {
+    console.error('Ошибка старта Crash игры:', error);
+  }
+}
+
+// Функция краша
+async function crashGameNow() {
+  try {
+    if (!currentCrashGame) return;
+    
+    // Обновить статус на crashed
+    await CrashGame.crashGame(currentCrashGame.id);
+    
+    console.log(`💥 Crash! Игра ${currentCrashGame.id} упала на ${currentCrashGame.crash_point}x`);
+    
+    // Сохранить в историю
+    await CrashGame.saveToHistory(currentCrashGame.id);
+    
+    // Уведомить всех о краше
+    io.to('crash-room').emit('crash:game-crashed', {
+      gameId: currentCrashGame.id,
+      crashPoint: currentCrashGame.crash_point
+    });
+    
+    // Через 5 секунд создать новую игру
+    setTimeout(() => {
+      currentCrashGame = null;
+      createNewCrashGame();
+    }, 5000);
+    
+  } catch (error) {
+    console.error('Ошибка краша игры:', error);
+  }
+}
+
+// Crash WebSocket обработчики
+io.on('connection', (socket) => {
+  
+  // Присоединиться к Crash комнате
+  socket.on('crash:join', async () => {
+    socket.join('crash-room');
+    console.log(`🎰 Пользователь ${socket.userId} присоединился к Crash комнате`);
+    
+    // Отправить текущее состояние игры
+    if (currentCrashGame) {
+      socket.emit('crash:current-game', {
+        game: currentCrashGame,
+        bets: await CrashGame.getGameBets(currentCrashGame.id)
+      });
+    } else {
+      socket.emit('crash:no-game');
+    }
+  });
+  
+  // Покинуть Crash комнату
+  socket.on('crash:leave', () => {
+    socket.leave('crash-room');
+    console.log(`🎰 Пользователь ${socket.userId} покинул Crash комнату`);
+  });
+  
+  // Разместить ставку через WebSocket
+  socket.on('crash:place-bet', async (data) => {
+    try {
+      const { betAmount } = data;
+      
+      console.log(`[CRASH] Place bet request from socket ${socket.id}, userId: ${socket.userId}`);
+      
+      if (!socket.userId) {
+        socket.emit('crash:bet-error', { error: 'Пользователь не авторизован. Перезагрузите страницу.' });
+        return;
+      }
+      
+      if (!currentCrashGame || currentCrashGame.status !== 'waiting') {
+        socket.emit('crash:bet-error', { error: 'Нет доступной игры для ставок' });
+        return;
+      }
+      
+      // Разместить ставку
+      const bet = await CrashGame.placeBet(currentCrashGame.id, socket.userId, betAmount);
+      
+      // Уведомить игрока
+      socket.emit('crash:bet-placed', { bet });
+      
+      // Уведомить всех о новой ставке
+      const bets = await CrashGame.getGameBets(currentCrashGame.id);
+      io.to('crash-room').emit('crash:bets-update', { bets });
+      
+      console.log(`💰 Ставка ${betAmount} от пользователя ${socket.userId} в игре ${currentCrashGame.id}`);
+      
+    } catch (error) {
+      console.error('Ошибка размещения ставки:', error);
+      socket.emit('crash:bet-error', { error: error.message });
+    }
+  });
+  
+  // Кешаут через WebSocket
+  socket.on('crash:cashout', async (data) => {
+    try {
+      const { betId } = data;
+      
+      if (!currentCrashGame || currentCrashGame.status !== 'running') {
+        socket.emit('crash:cashout-error', { error: 'Игра не активна' });
+        return;
+      }
+      
+      const multiplier = currentCrashGame.current_multiplier;
+      
+      // Кешаут
+      const result = await CrashGame.cashout(betId, socket.userId, multiplier);
+      
+      // Уведомить игрока
+      socket.emit('crash:cashout-success', { 
+        betId, 
+        multiplier, 
+        winAmount: result.winAmount 
+      });
+      
+      // Уведомить всех об обновлении ставок
+      const bets = await CrashGame.getGameBets(currentCrashGame.id);
+      io.to('crash-room').emit('crash:bets-update', { bets });
+      
+      console.log(`💸 Кешаут на ${multiplier}x от пользователя ${socket.userId}, выигрыш: ${result.winAmount}`);
+      
+    } catch (error) {
+      console.error('Ошибка кешаута:', error);
+      socket.emit('crash:cashout-error', { error: error.message });
+    }
+  });
+});
+
+// Создать первую игру при запуске
+setTimeout(() => {
+  createNewCrashGame();
+}, 2000);
+
+// ========================================
+// END OF CRASH GAME LOGIC
+// ========================================
+
+// ========================================
+// ROULETTE GAME LOGIC
+// ========================================
+
+import RouletteGame from './models/RouletteGame.js';
+
+let currentRouletteGame = null;
+let rouletteGameInterval = null;
+
+// Создать новую игру рулетки
+async function createNewRouletteGame() {
+  try {
+    currentRouletteGame = await RouletteGame.createGame();
+    io.emit('roulette:new-game', {
+      gameId: currentRouletteGame.id,
+      gameNumber: currentRouletteGame.game_number,
+      status: 'waiting'
+    });
+
+    // Через 10 секунд начать прием ставок
+    setTimeout(() => {
+      startRouletteBetting();
+    }, 10000);
+
+  } catch (error) {
+    console.error('❌ Ошибка создания игры рулетки:', error);
+  }
+}
+
+// Начать прием ставок
+async function startRouletteBetting() {
+  try {
+    await RouletteGame.updateGameStatus(currentRouletteGame.id, 'betting');
+    currentRouletteGame.status = 'betting'; // Обновляем локальный объект
+    io.emit('roulette:betting-start', {
+      gameId: currentRouletteGame.id,
+      timeLeft: 30
+    });
+
+    // Через 30 секунд запустить рулетку
+    setTimeout(() => {
+      spinRoulette();
+    }, 30000);
+
+  } catch (error) {
+    console.error('❌ Ошибка начала приема ставок:', error);
+  }
+}
+
+// Запустить рулетку
+async function spinRoulette() {
+  try {
+    await RouletteGame.updateGameStatus(currentRouletteGame.id, 'spinning');
+    currentRouletteGame.status = 'spinning'; // Обновляем локальный объект
+    
+    io.emit('roulette:spinning', {
+      gameId: currentRouletteGame.id
+    });
+
+    // Через 5 секунд показать результат
+    setTimeout(() => {
+      finishRouletteGame();
+    }, 5000);
+
+  } catch (error) {
+    console.error('❌ Ошибка запуска рулетки:', error);
+  }
+}
+
+// Завершить игру рулетки
+async function finishRouletteGame() {
+  try {
+    const result = await RouletteGame.finishGame(currentRouletteGame.id);
+    
+    io.emit('roulette:result', {
+      gameId: currentRouletteGame.id,
+      winningNumber: result.winningNumber,
+      winningColor: result.winningColor,
+      totalPayout: result.totalPayout
+    });
+
+    // Через 5 секунд создать новую игру
+    setTimeout(() => {
+      createNewRouletteGame();
+    }, 5000);
+
+  } catch (error) {
+    console.error('❌ Ошибка завершения игры рулетки:', error);
+  }
+}
+
+// WebSocket обработчики для рулетки
+io.on('connection', (socket) => {
+  socket.on('roulette:join', async () => {
+    try {
+      if (currentRouletteGame) {
+        const bets = await RouletteGame.getGameBets(currentRouletteGame.id);
+        socket.emit('roulette:current-game', {
+          game: currentRouletteGame,
+          bets
+        });
+      }
+    } catch (error) {
+      console.error('[Roulette] Ошибка присоединения:', error);
+    }
+  });
+
+  socket.on('roulette:place-bet', async (data) => {
+    try {
+      if (!socket.userId) {
+        socket.emit('roulette:bet-error', { error: 'Не авторизован' });
+        return;
+      }
+
+      const { betType, betValue, betAmount } = data;
+      
+      if (!currentRouletteGame || currentRouletteGame.status !== 'betting') {
+        socket.emit('roulette:bet-error', { error: 'Ставки закрыты' });
+        return;
+      }
+
+      const bet = await RouletteGame.placeBet(
+        currentRouletteGame.id,
+        socket.userId,
+        betType,
+        betValue,
+        betAmount
+      );
+
+      // Отправить подтверждение игроку
+      socket.emit('roulette:bet-success', { bet });
+
+      // Обновить список ставок для всех
+      const bets = await RouletteGame.getGameBets(currentRouletteGame.id);
+      io.emit('roulette:bets-update', { bets });
+
+    } catch (error) {
+      console.error('[Roulette] Ошибка размещения ставки:', error);
+      socket.emit('roulette:bet-error', { error: error.message });
+    }
+  });
+
+  socket.on('roulette:leave', () => {
+    console.log(`[Roulette] Игрок ${socket.userId} покинул рулетку`);
+  });
+});
+
+// Создать первую игру рулетки при запуске
+setTimeout(() => {
+  createNewRouletteGame();
+}, 3000);
+
+// ========================================
+// END OF ROULETTE GAME LOGIC
+// ========================================
 
 // Запуск сервера
 const startServer = async () => {

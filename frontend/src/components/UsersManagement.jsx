@@ -426,6 +426,7 @@ function UsersManagement() {
                   <option value="student">Ученик</option>
                   <option value="teacher">Учитель</option>
                   <option value="tester">Тестер</option>
+                  <option value="css_editor">CSS Редактор</option>
                   <option value="admin">Администратор</option>
                 </select>
               </div>

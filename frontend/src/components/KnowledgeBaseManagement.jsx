@@ -4,6 +4,14 @@ import 'react-quill/dist/quill.snow.css';
 import api from '../utils/api';
 import './KnowledgeBaseManagement.css';
 import './ArticleModal.css';
+import { 
+  FaBook, FaLaptopCode, FaGlobe, FaDatabase, FaCalculator, 
+  FaRandom, FaPalette, FaTools, FaChartBar, FaRocket,
+  FaLightbulb, FaBullseye, FaLock, FaMobileAlt, FaCog,
+  FaFileAlt, FaEdit, FaClipboard, FaThumbtack, FaMapMarkerAlt,
+  FaFont, FaBolt, FaBox, FaClock, FaWrench, FaSearch,
+  FaFolder, FaEye, FaCheckCircle, FaPencilAlt, FaTrash, FaPlus
+} from 'react-icons/fa';
 
 // Wrapper для ReactQuill чтобы избежать findDOMNode warning
 const QuillEditor = ({ value, onChange, modules, placeholder }) => {
@@ -37,14 +45,14 @@ function KnowledgeBaseManagement() {
   
   const [categoryForm, setCategoryForm] = useState({
     name: '',
-    icon: '📚',
+    icon: 'FaBook',
     description: ''
   });
 
   const [subcategoryForm, setSubcategoryForm] = useState({
     name: '',
     category_id: '',
-    icon: '📄',
+    icon: 'FaFileAlt',
     description: '',
     order_index: 0
   });
@@ -62,10 +70,42 @@ function KnowledgeBaseManagement() {
   const [success, setSuccess] = useState('');
 
   // Иконки для категорий
-  const iconOptions = ['📚', '💻', '🌐', '🗄️', '🧮', '🔀', '🎨', '🔧', '📊', '🚀', '💡', '🎯', '🔐', '📱', '⚙️'];
+  const iconOptions = [
+    { icon: <FaBook />, name: 'FaBook' },
+    { icon: <FaLaptopCode />, name: 'FaLaptopCode' },
+    { icon: <FaGlobe />, name: 'FaGlobe' },
+    { icon: <FaDatabase />, name: 'FaDatabase' },
+    { icon: <FaCalculator />, name: 'FaCalculator' },
+    { icon: <FaRandom />, name: 'FaRandom' },
+    { icon: <FaPalette />, name: 'FaPalette' },
+    { icon: <FaTools />, name: 'FaTools' },
+    { icon: <FaChartBar />, name: 'FaChartBar' },
+    { icon: <FaRocket />, name: 'FaRocket' },
+    { icon: <FaLightbulb />, name: 'FaLightbulb' },
+    { icon: <FaBullseye />, name: 'FaBullseye' },
+    { icon: <FaLock />, name: 'FaLock' },
+    { icon: <FaMobileAlt />, name: 'FaMobileAlt' },
+    { icon: <FaCog />, name: 'FaCog' }
+  ];
   
   // Иконки для подкатегорий
-  const subIconOptions = ['📄', '📝', '📋', '📌', '📍', '🔤', '⚡', '📦', '⏱️', '🎯', '🔧', '⚙️', '🛠️', '💡', '🔍'];
+  const subIconOptions = [
+    { icon: <FaFileAlt />, name: 'FaFileAlt' },
+    { icon: <FaEdit />, name: 'FaEdit' },
+    { icon: <FaClipboard />, name: 'FaClipboard' },
+    { icon: <FaThumbtack />, name: 'FaThumbtack' },
+    { icon: <FaMapMarkerAlt />, name: 'FaMapMarkerAlt' },
+    { icon: <FaFont />, name: 'FaFont' },
+    { icon: <FaBolt />, name: 'FaBolt' },
+    { icon: <FaBox />, name: 'FaBox' },
+    { icon: <FaClock />, name: 'FaClock' },
+    { icon: <FaBullseye />, name: 'FaBullseye' },
+    { icon: <FaWrench />, name: 'FaWrench' },
+    { icon: <FaCog />, name: 'FaCog' },
+    { icon: <FaTools />, name: 'FaTools' },
+    { icon: <FaLightbulb />, name: 'FaLightbulb' },
+    { icon: <FaSearch />, name: 'FaSearch' }
+  ];
 
   useEffect(() => {
     loadData();
@@ -140,7 +180,7 @@ function KnowledgeBaseManagement() {
 
   const resetCategoryForm = () => {
     setEditingCategory(null);
-    setCategoryForm({ name: '', icon: '📚', description: '' });
+    setCategoryForm({ name: '', icon: 'FaBook', description: '' });
   };
 
   // Подкатегории
@@ -196,7 +236,7 @@ function KnowledgeBaseManagement() {
 
   const resetSubcategoryForm = () => {
     setEditingSubcategory(null);
-    setSubcategoryForm({ name: '', category_id: '', icon: '📄', description: '', order_index: 0 });
+    setSubcategoryForm({ name: '', category_id: '', icon: 'FaFileAlt', description: '', order_index: 0 });
   };
 
   // Статьи
@@ -276,6 +316,39 @@ function KnowledgeBaseManagement() {
     ]
   };
 
+  // Функция для рендеринга иконки по имени
+  const renderIcon = (iconName) => {
+    const iconMap = {
+      FaBook: <FaBook />,
+      FaLaptopCode: <FaLaptopCode />,
+      FaGlobe: <FaGlobe />,
+      FaDatabase: <FaDatabase />,
+      FaCalculator: <FaCalculator />,
+      FaRandom: <FaRandom />,
+      FaPalette: <FaPalette />,
+      FaTools: <FaTools />,
+      FaChartBar: <FaChartBar />,
+      FaRocket: <FaRocket />,
+      FaLightbulb: <FaLightbulb />,
+      FaBullseye: <FaBullseye />,
+      FaLock: <FaLock />,
+      FaMobileAlt: <FaMobileAlt />,
+      FaCog: <FaCog />,
+      FaFileAlt: <FaFileAlt />,
+      FaEdit: <FaEdit />,
+      FaClipboard: <FaClipboard />,
+      FaThumbtack: <FaThumbtack />,
+      FaMapMarkerAlt: <FaMapMarkerAlt />,
+      FaFont: <FaFont />,
+      FaBolt: <FaBolt />,
+      FaBox: <FaBox />,
+      FaClock: <FaClock />,
+      FaWrench: <FaWrench />,
+      FaSearch: <FaSearch />
+    };
+    return iconMap[iconName] || <FaBook />;
+  };
+
   if (loading) {
     return (
       <div className="kb-management-loading">
@@ -288,7 +361,7 @@ function KnowledgeBaseManagement() {
   return (
     <div className="kb-management">
       <div className="kb-management-header">
-        <h1>📚 Управление Базой Знаний</h1>
+        <h1><FaBook /> Управление Базой Знаний</h1>
         <p>Создавайте категории и статьи для учеников</p>
       </div>
 
@@ -302,19 +375,19 @@ function KnowledgeBaseManagement() {
           className={`kb-tab ${activeTab === 'categories' ? 'active' : ''}`}
           onClick={() => setActiveTab('categories')}
         >
-          🗂️ Категории ({categories.length})
+          <FaFolder /> Категории ({categories.length})
         </button>
         <button
           className={`kb-tab ${activeTab === 'subcategories' ? 'active' : ''}`}
           onClick={() => setActiveTab('subcategories')}
         >
-          📑 Подкатегории ({subcategories.length})
+          <FaClipboard /> Подкатегории ({subcategories.length})
         </button>
         <button
           className={`kb-tab ${activeTab === 'articles' ? 'active' : ''}`}
           onClick={() => setActiveTab('articles')}
         >
-          📄 Статьи ({articles.length})
+          <FaFileAlt /> Статьи ({articles.length})
         </button>
       </div>
 
@@ -330,7 +403,7 @@ function KnowledgeBaseManagement() {
                 setShowCategoryModal(true);
               }}
             >
-              + Создать категорию
+              <FaPlus /> Создать категорию
             </button>
           </div>
 
@@ -342,24 +415,24 @@ function KnowledgeBaseManagement() {
             ) : (
               categories.map(category => (
                 <div key={category.id} className="category-card">
-                  <div className="category-icon">{category.icon}</div>
+                  <div className="category-icon">{renderIcon(category.icon)}</div>
                   <h3>{category.name}</h3>
                   <p>{category.description}</p>
                   <div className="category-stats">
-                    📄 {category.articles_count} статей
+                    <FaFileAlt /> {category.articles_count} статей
                   </div>
                   <div className="category-actions">
                     <button
                       className="btn btn-small btn-edit"
                       onClick={() => handleEditCategory(category)}
                     >
-                      ✏️ Изменить
+                      <FaPencilAlt /> Изменить
                     </button>
                     <button
                       className="btn btn-small btn-delete"
                       onClick={() => handleDeleteCategory(category.id)}
                     >
-                      🗑️ Удалить
+                      <FaTrash /> Удалить
                     </button>
                   </div>
                 </div>
@@ -381,17 +454,17 @@ function KnowledgeBaseManagement() {
                 setShowSubcategoryModal(true);
               }}
             >
-              + Создать подкатегорию
+              <FaPlus /> Создать подкатегорию
             </button>
           </div>
 
           <div className="kb-categories-grid">
             {subcategories.map(subcategory => (
               <div key={subcategory.id} className="kb-category-card">
-                <div className="kb-category-icon">{subcategory.icon}</div>
+                <div className="kb-category-icon">{renderIcon(subcategory.icon)}</div>
                 <div className="kb-category-info">
                   <h3>{subcategory.name}</h3>
-                  <p className="category-name">📁 {subcategory.category_name}</p>
+                  <p className="category-name"><FaFolder /> {subcategory.category_name}</p>
                   <p>{subcategory.description || 'Нет описания'}</p>
                   <span className="kb-category-count">
                     {subcategory.articles_count} {subcategory.articles_count === 1 ? 'статья' : 'статей'}
@@ -402,13 +475,13 @@ function KnowledgeBaseManagement() {
                     className="btn btn-small btn-edit"
                     onClick={() => handleEditSubcategory(subcategory)}
                   >
-                    ✏️ Редактировать
+                    <FaPencilAlt /> Редактировать
                   </button>
                   <button
                     className="btn btn-small btn-delete"
                     onClick={() => handleDeleteSubcategory(subcategory.id)}
                   >
-                    🗑️ Удалить
+                    <FaTrash /> Удалить
                   </button>
                 </div>
               </div>
@@ -429,7 +502,7 @@ function KnowledgeBaseManagement() {
                 setShowArticleModal(true);
               }}
             >
-              + Создать статью
+              <FaPlus /> Создать статью
             </button>
           </div>
 
@@ -461,10 +534,10 @@ function KnowledgeBaseManagement() {
                       </td>
                       <td>{article.category_name}</td>
                       <td>{article.subcategory_name || '—'}</td>
-                      <td>👁️ {article.views}</td>
+                      <td><FaEye /> {article.views}</td>
                       <td>
                         <span className={`status-badge ${article.published ? 'published' : 'draft'}`}>
-                          {article.published ? '✅ Опубликовано' : '📝 Черновик'}
+                          {article.published ? <><FaCheckCircle /> Опубликовано</> : <><FaPencilAlt /> Черновик</>}
                         </span>
                       </td>
                       <td>{new Date(article.created_at).toLocaleDateString('ru-RU')}</td>
@@ -474,13 +547,13 @@ function KnowledgeBaseManagement() {
                             className="btn btn-small btn-edit"
                             onClick={() => handleEditArticle(article)}
                           >
-                            ✏️
+                            <FaPencilAlt />
                           </button>
                           <button
                             className="btn btn-small btn-delete"
                             onClick={() => handleDeleteArticle(article.id)}
                           >
-                            🗑️
+                            <FaTrash />
                           </button>
                         </div>
                       </td>
@@ -517,14 +590,14 @@ function KnowledgeBaseManagement() {
               <div className="form-group">
                 <label>Иконка</label>
                 <div className="icon-selector">
-                  {iconOptions.map(icon => (
+                  {iconOptions.map(iconObj => (
                     <button
-                      key={icon}
+                      key={iconObj.name}
                       type="button"
-                      className={`icon-option ${categoryForm.icon === icon ? 'selected' : ''}`}
-                      onClick={() => setCategoryForm({ ...categoryForm, icon })}
+                      className={`icon-option ${categoryForm.icon === iconObj.name ? 'selected' : ''}`}
+                      onClick={() => setCategoryForm({ ...categoryForm, icon: iconObj.name })}
                     >
-                      {icon}
+                      {iconObj.icon}
                     </button>
                   ))}
                 </div>
@@ -584,7 +657,7 @@ function KnowledgeBaseManagement() {
                   <option value="">Выберите категорию</option>
                   {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>
-                      {cat.icon} {cat.name}
+                      {cat.name}
                     </option>
                   ))}
                 </select>
@@ -593,14 +666,14 @@ function KnowledgeBaseManagement() {
               <div className="form-group">
                 <label>Иконка</label>
                 <div className="icon-selector">
-                  {subIconOptions.map(icon => (
+                  {subIconOptions.map(iconObj => (
                     <button
-                      key={icon}
+                      key={iconObj.name}
                       type="button"
-                      className={`icon-option ${subcategoryForm.icon === icon ? 'selected' : ''}`}
-                      onClick={() => setSubcategoryForm({ ...subcategoryForm, icon })}
+                      className={`icon-option ${subcategoryForm.icon === iconObj.name ? 'selected' : ''}`}
+                      onClick={() => setSubcategoryForm({ ...subcategoryForm, icon: iconObj.name })}
                     >
-                      {icon}
+                      {iconObj.icon}
                     </button>
                   ))}
                 </div>
@@ -673,7 +746,7 @@ function KnowledgeBaseManagement() {
                       <option value="">Выберите категорию</option>
                       {categories.map(cat => (
                         <option key={cat.id} value={cat.id}>
-                          {cat.icon} {cat.name}
+                          {cat.name}
                         </option>
                       ))}
                     </select>
@@ -691,7 +764,7 @@ function KnowledgeBaseManagement() {
                         .filter(sub => sub.category_id === parseInt(articleForm.category_id))
                         .map(sub => (
                           <option key={sub.id} value={sub.id}>
-                            {sub.icon} {sub.name}
+                            {sub.name}
                           </option>
                         ))}
                     </select>

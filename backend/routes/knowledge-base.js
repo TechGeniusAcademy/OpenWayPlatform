@@ -1,6 +1,6 @@
 import express from 'express';
 import pool from '../config/database.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate, requireAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -235,8 +235,8 @@ router.delete('/subcategories/:id', authenticate, requireAdmin, async (req, res)
 
 // ============= СТАТЬИ =============
 
-// Получить все статьи
-router.get('/articles', authenticate, requireAdmin, async (req, res) => {
+// Получить все статьи (админ, тестер, CSS редактор)
+router.get('/articles', authenticate, requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 

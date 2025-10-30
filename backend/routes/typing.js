@@ -1,6 +1,6 @@
 import express from 'express';
 import TypingResult from '../models/TypingResult.js';
-import { authenticate, requireTeacherOrAdmin } from '../middleware/auth.js';
+import { authenticate, requireTeacherOrAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -120,7 +120,7 @@ router.get('/top', async (req, res) => {
 // ========== ADMIN ENDPOINTS ==========
 
 // Получить общую статистику для админ панели
-router.get('/admin/statistics', requireTeacherOrAdmin, async (req, res) => {
+router.get('/admin/statistics', requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const allResults = await TypingResult.getAll(1000);
     
@@ -141,7 +141,7 @@ router.get('/admin/statistics', requireTeacherOrAdmin, async (req, res) => {
 });
 
 // Получить статистику пользователей
-router.get('/admin/users', requireTeacherOrAdmin, async (req, res) => {
+router.get('/admin/users', requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const { period = 'all', sortBy = 'wpm', order = 'desc' } = req.query;
     
@@ -216,7 +216,7 @@ router.get('/admin/users', requireTeacherOrAdmin, async (req, res) => {
 });
 
 // Получить статистику по группам
-router.get('/admin/groups', requireTeacherOrAdmin, async (req, res) => {
+router.get('/admin/groups', requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const groupStats = await TypingResult.getGroupStats();
     res.json(groupStats || []);

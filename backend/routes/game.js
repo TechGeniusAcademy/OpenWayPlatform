@@ -47,7 +47,7 @@ router.use(authenticate);
 // Получить все карточки
 router.get('/cards', async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'admin' && req.user.role !== 'css_editor' && req.user.role !== 'tester') {
       return res.status(403).json({ error: 'Доступ запрещен' });
     }
 
@@ -193,7 +193,7 @@ router.delete('/questions/:id', async (req, res) => {
 // Получить все сессии (ADMIN)
 router.get('/sessions', async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'admin' && req.user.role !== 'css_editor' && req.user.role !== 'tester') {
       return res.status(403).json({ error: 'Доступ запрещен' });
     }
 

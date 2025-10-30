@@ -1,0 +1,76 @@
+.readonly-wrapper {
+  position: relative;
+  pointer-events: auto;
+}
+
+.readonly-overlay-notice {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.readonly-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  background: rgba(255, 193, 7, 0.95);
+  color: #000;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+.readonly-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 20px 40px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  z-index: 99999;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease;
+}
+
+.readonly-notification.fade-out {
+  animation: fadeOut 0.3s ease;
+  opacity: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

@@ -145,7 +145,7 @@ function StudentProfile() {
           </button>
           <div className="user-points">
             <span className="points-icon"><AiOutlineWallet /></span>
-            <span className="points-value">{userPoints}</span>
+            <span className="dashboard-points-value">{userPoints}</span>
             <span className="points-label">баллов</span>
           </div>
         </div>

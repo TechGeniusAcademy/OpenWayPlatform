@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, requireTeacherOrAdmin } from '../middleware/auth.js';
+import { authenticate, requireTeacherOrAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 import Homework from '../models/Homework.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
 
@@ -86,8 +86,8 @@ router.get('/:id/submission', async (req, res) => {
 
 // ========== ADMIN ENDPOINTS ==========
 
-// Получить все домашние задания (админ и учитель)
-router.get('/', requireTeacherOrAdmin, async (req, res) => {
+// Получить все домашние задания (админ, учитель, тестер, CSS редактор)
+router.get('/', requireTesterOrTeacherOrAdmin, async (req, res) => {
   try {
     const homeworks = await Homework.getAll();
     res.json({ homeworks });

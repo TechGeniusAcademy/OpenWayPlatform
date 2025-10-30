@@ -1,0 +1,40 @@
+.view-page-wrapper {
+  width: 100%;
+}
+
+.view-page-banner {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  padding: 20px 30px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.view-page-banner h2 {
+  margin: 0 0 8px 0;
+  color: white;
+  font-size: 24px;
+}
+
+.view-page-banner p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+.view-page-banner kbd {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-family: 'Courier New', monospace;
+  color: #00ff00;
+  font-weight: 600;
+}
+
+.view-page-content {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}

@@ -532,11 +532,34 @@ export const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS game_questions (
         id SERIAL PRIMARY KEY,
         question TEXT NOT NULL,
+        option_a TEXT,
+        option_b TEXT,
+        option_c TEXT,
+        option_d TEXT,
+        correct_option VARCHAR(1),
         category VARCHAR(100),
         difficulty VARCHAR(50) DEFAULT 'medium', -- 'easy', 'medium', 'hard'
         created_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // Добавление колонок для вариантов ответа если их нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'game_questions' AND column_name = 'option_a'
+        ) THEN
+          ALTER TABLE game_questions 
+          ADD COLUMN option_a TEXT,
+          ADD COLUMN option_b TEXT,
+          ADD COLUMN option_c TEXT,
+          ADD COLUMN option_d TEXT,
+          ADD COLUMN correct_option VARCHAR(1);
+        END IF;
+      END $$;
     `);
 
     // Таблица 23: Предметы магазина (рамки и баннеры)

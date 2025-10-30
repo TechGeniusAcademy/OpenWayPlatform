@@ -410,7 +410,7 @@ function GameManagement() {
           <h3 style={{ marginTop: '30px', marginBottom: '20px', color: '#2c3e50', fontSize: '24px' }}>
             Выберите группу для создания игры:
           </h3>
-          <div className="groups-grid">
+          <div className="mana-groups-grid">
             {groups.map(group => (
               <div key={group.id} className="group-card">
                 <h4>{group.name}</h4>
