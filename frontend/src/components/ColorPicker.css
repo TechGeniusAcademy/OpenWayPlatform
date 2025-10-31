@@ -1,0 +1,321 @@
+/* Color Picker Overlay */
+.color-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+
+.color-picker {
+  background: #2a2a2a;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  padding: 16px;
+  width: 280px;
+  user-select: none;
+  border: 1px solid #404040;
+}
+
+/* Header */
+.color-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #404040;
+}
+
+.color-picker-header span {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.color-picker-close {
+  background: none;
+  border: none;
+  color: #999999;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.color-picker-close:hover {
+  background: #404040;
+  color: #ffffff;
+}
+
+/* Saturation & Lightness Picker */
+.saturation-lightness-picker {
+  width: 100%;
+  height: 180px;
+  border-radius: 8px;
+  position: relative;
+  cursor: crosshair;
+  margin-bottom: 12px;
+  border: 1px solid #404040;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.saturation-cursor {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Hue Slider */
+.hue-slider-container {
+  margin-bottom: 12px;
+}
+
+.hue-slider {
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(to right, 
+    #ff0000 0%, 
+    #ffff00 17%, 
+    #00ff00 33%, 
+    #00ffff 50%, 
+    #0000ff 67%, 
+    #ff00ff 83%, 
+    #ff0000 100%
+  );
+  position: relative;
+  cursor: pointer;
+  border: 1px solid #404040;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hue-cursor {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+/* Alpha Slider */
+.alpha-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.alpha-slider {
+  flex: 1;
+  height: 12px;
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+  border: 1px solid #404040;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3);
+  background-image: 
+    linear-gradient(45deg, #404040 25%, transparent 25%),
+    linear-gradient(-45deg, #404040 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #404040 75%),
+    linear-gradient(-45deg, transparent 75%, #404040 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+}
+
+.alpha-cursor {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.alpha-value {
+  color: #cccccc;
+  font-size: 12px;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Color Input Section */
+.color-input-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.color-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid #404040;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+  background-image: 
+    linear-gradient(45deg, #333333 25%, transparent 25%),
+    linear-gradient(-45deg, #333333 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #333333 75%),
+    linear-gradient(-45deg, transparent 75%, #333333 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+}
+
+.hex-input-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  padding: 0 12px;
+  height: 48px;
+  width: 70%;
+}
+
+.hex-label {
+  color: #999999;
+  font-size: 18px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.hex-input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  outline: none;
+  text-transform: uppercase;
+}
+
+.hex-input::placeholder {
+  color: #666666;
+}
+
+/* Preset Colors */
+.preset-colors {
+  margin-bottom: 12px;
+}
+
+.preset-colors-label {
+  color: #999999;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.preset-colors-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+}
+
+.preset-color {
+  width: 100%;
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.preset-color:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  z-index: 1;
+}
+
+.preset-color:active {
+  transform: scale(1.05);
+}
+
+/* RGB Values */
+.rgb-values {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.rgb-value {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rgb-value span {
+  color: #999999;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rgb-value input {
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 13px;
+  padding: 6px 8px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.rgb-value input:focus {
+  border-color: #0d99ff;
+}
+
+.rgb-value input::-webkit-inner-spin-button,
+.rgb-value input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.color-picker {
+  animation: fadeIn 0.2s ease-out;
+}

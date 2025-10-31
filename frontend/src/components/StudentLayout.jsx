@@ -8,10 +8,9 @@ import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlin
 import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
 import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
-import { FaTrophy } from 'react-icons/fa';
+import { FaTrophy, FaPlug, FaPalette, FaGamepad, FaPen, FaFileAlt } from 'react-icons/fa';
 import { BiData } from 'react-icons/bi';
 import { VscFiles } from 'react-icons/vsc';
-import { FaPlug, FaPalette, FaGamepad } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import FloatingChat from './FloatingChat';
@@ -179,6 +178,18 @@ function StudentLayout({ children }) {
               <NavLink to="/student/themes" onClick={closeSidebar}>
                 <span className="menu-icon"><FaPalette /></span>
                 <span className="menu-text">Темы</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/design" onClick={closeSidebar}>
+                <span className="menu-icon"><FaPen /></span>
+                <span className="menu-text">Дизайн</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/technical-specs" onClick={closeSidebar}>
+                <span className="menu-icon"><FaFileAlt /></span>
+                <span className="menu-text">Технические задания</span>
               </NavLink>
             </li>
 

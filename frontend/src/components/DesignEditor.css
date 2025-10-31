@@ -1,0 +1,2780 @@
+/* Figma-подобный дизайн-редактор */
+.figma-editor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #2C2C2C;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+/* Убираем скролл у родителей */
+.student-main-content:has(.figma-editor),
+.games-page:has(.figma-editor) {
+  overflow: hidden !important;
+  height: 100vh !important;
+}
+
+/* ============================================================
+   HEADER (Верхняя панель как в Figma)
+   ============================================================ */
+
+.figma-header {
+  height: 48px;
+  background: #2C2C2C;
+  border-bottom: 1px solid #3C3C3C;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+  z-index: 1001;
+}
+
+.figma-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.figma-logo {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.figma-file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.file-status {
+  font-size: 12px;
+  color: #999999;
+  transition: color 0.3s ease;
+}
+
+.file-status.saving {
+  color: #ffa500;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.figma-header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.figma-tools {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #383838;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.figma-tool {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 14px;
+  position: relative;
+}
+
+.figma-tool:hover {
+  background: #4C4C4C;
+  color: #ffffff;
+}
+
+.figma-tool.active {
+  background: #0D99FF;
+  color: #ffffff;
+}
+
+.tool-dropdown {
+  position: relative;
+}
+
+.tool-dropdown-content {
+  position: absolute;
+  top: calc(100% - 4px);
+  left: 0;
+  background: #2C2C2C;
+  border: 1px solid #3C3C3C;
+  border-radius: 8px;
+  padding: 8px 4px 4px 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: none;
+  min-width: 150px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.tool-dropdown:hover .tool-dropdown-content {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+.tool-dropdown-content button {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #CCCCCC;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.tool-dropdown-content button:hover {
+  background: #383838;
+  color: #ffffff;
+}
+
+.figma-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.view-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 13px;
+}
+
+.view-btn:hover {
+  background: #383838;
+  color: #ffffff;
+}
+
+.view-btn.active {
+  background: #0D99FF;
+  color: #ffffff;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #383838;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.zoom-controls button {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.zoom-controls button:hover {
+  background: #4C4C4C;
+  color: #ffffff;
+}
+
+.zoom-value {
+  font-size: 12px;
+  color: #CCCCCC;
+  padding: 0 8px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.zoom-hint {
+  font-size: 11px;
+  color: #999999;
+  padding: 0 8px;
+  margin-left: 4px;
+  border-left: 1px solid #4C4C4C;
+  cursor: help;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.zoom-hint:hover {
+  color: #0D99FF;
+}
+
+.figma-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.save-btn, .export-btn, .close-btn, .import-btn, .fig-export-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 14px;
+}
+
+.save-btn:hover, .export-btn:hover {
+  background: #383838;
+  color: #ffffff;
+}
+
+.import-btn:hover {
+  background: #2d4a22;
+  color: #81c784;
+}
+
+.fig-export-btn:hover {
+  background: #4a148c;
+  color: #ce93d8;
+}
+
+.close-btn:hover {
+  background: #F24822;
+  color: #ffffff;
+}
+
+/* ============================================================
+   MODE TABS (Вкладки режимов)
+   ============================================================ */
+
+.figma-mode-tabs {
+  height: 40px;
+  background: #383838;
+  border-bottom: 1px solid #3C3C3C;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.mode-tab {
+  height: 32px;
+  padding: 0 16px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.mode-tab:hover {
+  background: #4C4C4C;
+  color: #ffffff;
+}
+
+.mode-tab.active {
+  background: #0D99FF;
+  color: #ffffff;
+}
+
+/* ============================================================
+   WORKSPACE (Основная рабочая область)
+   ============================================================ */
+
+.figma-workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: #1E1E1E;
+}
+
+/* ============================================================
+   SIDEBARS (Боковые панели)
+   ============================================================ */
+
+.figma-sidebar {
+  background: #2C2C2C;
+  border-right: 1px solid #3C3C3C;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.figma-sidebar-left {
+  width: 0;
+  border-right: 1px solid #3C3C3C;
+}
+
+.figma-sidebar-left.open {
+  width: 280px;
+}
+
+.figma-sidebar-right {
+  width: 280px;
+  border-left: 1px solid #3C3C3C;
+  border-right: none;
+}
+
+.figma-sidebar-right:not(.open) {
+  width: 0;
+  border-left: none;
+}
+
+.sidebar-tabs {
+  height: 40px;
+  background: #383838;
+  border-bottom: 1px solid #3C3C3C;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sidebar-tab {
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-tab:hover {
+  background: #4C4C4C;
+  color: #ffffff;
+}
+
+.sidebar-tab.active {
+  background: #0D99FF;
+  color: #ffffff;
+}
+
+/* ============================================================
+   LAYERS PANEL (Панель слоев)
+   ============================================================ */
+
+.figma-layers-panel {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.layers-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #3C3C3C;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2C2C2C;
+}
+
+.layers-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.layers-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.layers-actions button {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 12px;
+}
+
+.layers-actions button:hover {
+  background: #383838;
+  color: #ffffff;
+}
+
+.layers-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.figma-layer-item {
+  padding: 6px 12px;
+  margin: 1px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.figma-layer-item:hover {
+  background: #383838;
+}
+
+.figma-layer-item.selected {
+  background: #0D99FF;
+  border-color: #0D99FF;
+}
+
+.figma-layer-item.hidden {
+  opacity: 0.5;
+}
+
+.layer-main-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.layer-controls {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.layer-control {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.layer-control:hover {
+  background: #4C4C4C;
+  color: #ffffff;
+}
+
+.layer-icon {
+  width: 16px;
+  height: 16px;
+  color: #CCCCCC;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.figma-layer-item.selected .layer-icon {
+  color: #ffffff;
+}
+
+.layer-name {
+  font-size: 12px;
+  color: #CCCCCC;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.figma-layer-item.selected .layer-name {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.empty-layers {
+  padding: 32px 16px;
+  text-align: center;
+  color: #999999;
+}
+
+.empty-layers h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #CCCCCC;
+}
+
+.empty-layers p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   ASSETS PANEL (Панель ресурсов)
+   ============================================================ */
+
+.figma-assets-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.assets-header h4 {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.assets-section {
+  margin-bottom: 24px;
+}
+
+.assets-section h5 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #CCCCCC;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.color-swatch:hover {
+  border-color: #0D99FF;
+  transform: scale(1.1);
+}
+
+.components-list .empty-text {
+  color: #999999;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ============================================================
+   CANVAS AREA (Область холста)
+   ============================================================ */
+
+.figma-canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1E1E1E;
+}
+
+/* Линейки */
+.ruler {
+  position: absolute;
+  background: #2C2C2C;
+  border: 1px solid #3C3C3C;
+  z-index: 10;
+}
+
+.ruler-horizontal {
+  top: 0;
+  left: 20px;
+  right: 0;
+  height: 20px;
+  border-bottom: 1px solid #3C3C3C;
+}
+
+.ruler-vertical {
+  top: 20px;
+  left: 0;
+  bottom: 0;
+  width: 20px;
+  border-right: 1px solid #3C3C3C;
+}
+
+.ruler-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.ruler-mark {
+  position: absolute;
+  color: #CCCCCC;
+  font-size: 10px;
+  font-family: monospace;
+}
+
+.ruler-horizontal .ruler-mark {
+  border-left: 1px solid #555555;
+  height: 100%;
+  padding-left: 2px;
+  line-height: 20px;
+}
+
+.ruler-vertical .ruler-mark {
+  border-top: 1px solid #555555;
+  width: 100%;
+  padding-top: 2px;
+  text-align: center;
+  transform: rotate(-90deg);
+  transform-origin: left top;
+}
+
+/* Viewport холста */
+.canvas-viewport {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+/* Индикатор панорамирования */
+.pan-indicator {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(13, 153, 255, 0.95);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  z-index: 10000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  animation: slideDown 0.2s ease-out;
+  pointer-events: none;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.canvas-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Сетка */
+.canvas-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  pointer-events: none;
+}
+
+/* Холст */
+.figma-canvas {
+  display: block;
+  background: transparent;
+  transition: cursor 0.1s ease;
+  pointer-events: auto;
+}
+
+/* Курсор при панорамировании */
+.figma-canvas[style*="cursor: grabbing"] {
+  cursor: grabbing !important;
+}
+
+.figma-canvas[style*="cursor: default"] {
+  cursor: default !important;
+}
+
+.canvas-viewport.panning {
+  cursor: grabbing !important;
+}
+
+.canvas-viewport.panning * {
+  cursor: grabbing !important;
+}
+
+/* Направляющие */
+.guide {
+  position: absolute;
+  background: #0D99FF;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.guide.horizontal {
+  cursor: ns-resize;
+}
+
+.guide.vertical {
+  cursor: ew-resize;
+}
+
+/* ============================================================
+   DESIGN PANEL (Панель дизайна)
+   ============================================================ */
+
+.figma-design-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.element-properties {
+  padding: 16px;
+}
+
+.element-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.element-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.element-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.element-actions button {
+  background: #383838;
+  border: none;
+  color: #CCCCCC;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.element-actions button:hover {
+  background: #4a4a4a;
+  color: #ffffff;
+}
+
+.element-actions button.active {
+  background: #0D99FF;
+  color: #ffffff;
+}
+
+.alignment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.alignment-grid button {
+  background: #383838;
+  border: none;
+  color: #CCCCCC;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.alignment-grid button:hover {
+  background: #0D99FF;
+  color: #ffffff;
+}
+
+.group-btn {
+  width: 100%;
+  background: #0D99FF;
+  border: none;
+  color: #ffffff;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.group-btn:hover {
+  background: #0A7ACC;
+}
+
+.layer-order-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.layer-order-controls button {
+  background: #383838;
+  border: none;
+  color: #CCCCCC;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layer-order-controls button:hover {
+  background: #4a4a4a;
+  color: #ffffff;
+}
+
+.property-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.property-group {
+  margin-bottom: 20px;
+}
+
+.property-group > label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #CCCCCC;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-pair {
+  display: flex;
+  gap: 8px;
+}
+
+.input-with-label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.input-with-label > span {
+  font-size: 11px;
+  color: #999999;
+  font-weight: 500;
+}
+
+.input-with-label input,
+.input-with-label select,
+.input-with-label textarea {
+  width: 100%;
+  padding: 6px 8px;
+  background: #383838;
+  border: 1px solid #4C4C4C;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 12px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.input-with-label input:focus,
+.input-with-label select:focus,
+.input-with-label textarea:focus {
+  outline: none;
+  border-color: #0D99FF;
+  box-shadow: 0 0 0 2px rgba(13, 153, 255, 0.2);
+}
+
+.input-with-label textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+/* Селектор шрифтов */
+.input-with-label select[style*="fontFamily"] {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.input-with-label select option {
+  padding: 8px;
+  background: #383838;
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.input-with-label select option:hover {
+  background: #4C4C4C;
+}
+
+/* Кнопка предварительного просмотра цвета */
+.color-preview-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 2px solid #404040;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
+  position: relative;
+  background-image: 
+    linear-gradient(45deg, #808080 25%, transparent 25%),
+    linear-gradient(-45deg, #808080 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #808080 75%),
+    linear-gradient(-45deg, transparent 75%, #808080 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  background-color: #ffffff;
+}
+
+.color-preview-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: inherit;
+  background-image: none;
+}
+
+.color-preview-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-color: #0D99FF;
+}
+
+.color-preview-button:active {
+  transform: scale(0.98);
+}
+
+/* Контролы цвета */
+.fill-controls,
+.stroke-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.color-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #383838;
+  border: 1px solid #4C4C4C;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.color-input:hover {
+  border-color: #5C5C5C;
+}
+
+.color-preview {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #5C5C5C;
+  flex-shrink: 0;
+}
+
+.color-input input[type="color"] {
+  width: 0;
+  height: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.color-input span {
+  font-size: 12px;
+  color: #CCCCCC;
+  font-family: monospace;
+  flex: 1;
+}
+
+.opacity-control,
+.stroke-width {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opacity-control span:first-child,
+.stroke-width span:first-child {
+  font-size: 11px;
+  color: #999999;
+  min-width: 80px;
+}
+
+.opacity-control input[type="range"] {
+  flex: 1;
+}
+
+.opacity-control span:last-child,
+.stroke-width span:last-child {
+  font-size: 11px;
+  color: #CCCCCC;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* Контролы текста */
+.text-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.text-content span {
+  font-size: 11px;
+  color: #999999;
+  font-weight: 500;
+}
+
+/* Image adjustments */
+.image-adjustments {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.image-adjustments .input-with-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.image-adjustments .input-with-label input[type="range"] {
+  width: 100%;
+  height: 4px;
+  background: #404040;
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.image-adjustments .input-with-label input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #0d99ff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.image-adjustments .input-with-label input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #0d99ff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.image-adjustments .input-with-label > span:first-child {
+  font-size: 11px;
+  color: #999999;
+  font-weight: 500;
+}
+
+.image-adjustments .input-with-label > span:last-child {
+  font-size: 11px;
+  color: #cccccc;
+  text-align: right;
+}
+
+/* Кнопки стилей текста */
+.text-style-buttons {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #2C2C2C;
+  border-radius: 6px;
+  border: 1px solid #4C4C4C;
+}
+
+.text-style-buttons button {
+  flex: 1;
+  padding: 8px;
+  background: #383838;
+  border: 1px solid #4C4C4C;
+  border-radius: 4px;
+  color: #CCCCCC;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+}
+
+.text-style-buttons button:hover {
+  background: #4C4C4C;
+  border-color: #5C5C5C;
+}
+
+.text-style-buttons button.active {
+  background: #0D99FF;
+  border-color: #0D99FF;
+  color: #ffffff;
+}
+
+.text-style-buttons button:active {
+  transform: scale(0.95);
+}
+
+/* Кнопки выравнивания текста */
+.text-align-buttons {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #2C2C2C;
+  border-radius: 6px;
+  border: 1px solid #4C4C4C;
+}
+
+.text-align-buttons button {
+  flex: 1;
+  padding: 8px;
+  background: #383838;
+  border: 1px solid #4C4C4C;
+  border-radius: 4px;
+  color: #CCCCCC;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+}
+
+.text-align-buttons button:hover {
+  background: #4C4C4C;
+  border-color: #5C5C5C;
+}
+
+.text-align-buttons button.active {
+  background: #0D99FF;
+  border-color: #0D99FF;
+  color: #ffffff;
+}
+
+.text-align-buttons button:active {
+  transform: scale(0.95);
+}
+
+/* Состояние "ничего не выбрано" */
+.no-selection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.no-selection-content {
+  text-align: center;
+  color: #999999;
+}
+
+.no-selection-content svg {
+  margin-bottom: 16px;
+  color: #666666;
+}
+
+.no-selection-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #CCCCCC;
+  font-weight: 600;
+}
+
+.no-selection-content p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #999999;
+}
+
+/* ============================================================
+   INSPECT PANEL (Панель инспектора)
+   ============================================================ */
+
+.figma-inspect-panel {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.inspect-content {
+  padding: 16px;
+}
+
+.inspect-content h4 {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.inspect-section {
+  margin-bottom: 24px;
+}
+
+.inspect-section h5 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #CCCCCC;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.code-block {
+  background: #1A1A1A;
+  border: 1px solid #333333;
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.code-block pre {
+  margin: 0;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #E1E4E8;
+}
+
+.data-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #383838;
+  border-radius: 4px;
+}
+
+.data-key {
+  font-size: 12px;
+  color: #999999;
+  font-weight: 500;
+}
+
+.data-value {
+  font-size: 12px;
+  color: #ffffff;
+  font-family: monospace;
+}
+
+.inspect-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.copy-css-btn,
+.copy-data-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #0D99FF;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.copy-css-btn:hover,
+.copy-data-btn:hover {
+  background: #0A7FD4;
+  transform: translateY(-1px);
+}
+
+.copy-data-btn {
+  background: #383838;
+}
+
+.copy-data-btn:hover {
+  background: #4C4C4C;
+}
+
+/* ============================================================
+   PROTOTYPE PANEL (Панель прототипа)
+   ============================================================ */
+
+.figma-prototype-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.prototype-content {
+  text-align: center;
+  color: #999999;
+}
+
+.prototype-content h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #CCCCCC;
+  font-weight: 600;
+}
+
+.prototype-content p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   PROJECT MANAGER (Менеджер проектов)
+   ============================================================ */
+
+.project-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.project-manager {
+  background: #2C2C2C;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  border: 1px solid #3C3C3C;
+}
+
+.project-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #3C3C3C;
+  background: #333333;
+}
+
+.project-manager-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.project-manager-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.project-manager-header .clear-all-btn {
+  padding: 8px 16px;
+  border: none;
+  background: #F24822;
+  color: #ffffff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.project-manager-header .clear-all-btn:hover {
+  background: #d93d1a;
+  transform: translateY(-1px);
+}
+
+.project-manager-header .close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #CCCCCC;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 16px;
+}
+
+.project-manager-header .close-btn:hover {
+  background: #4C4C4C;
+  color: #ffffff;
+}
+
+.project-manager-content {
+  padding: 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.project-card {
+  background: #383838;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  border: 1px solid #4C4C4C;
+  cursor: pointer;
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  border-color: #0D99FF;
+}
+
+.project-preview {
+  height: 120px;
+  background: linear-gradient(135deg, #0D99FF 0%, #0A7FD4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: #ffffff;
+}
+
+.project-elements-count {
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.project-info {
+  padding: 16px;
+}
+
+.project-info h4 {
+  margin: 0 0 4px 0;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.project-info p {
+  margin: 0;
+  color: #CCCCCC;
+  font-size: 12px;
+}
+
+.project-actions {
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid #4C4C4C;
+  background: #2C2C2C;
+}
+
+.load-btn {
+  flex: 1;
+  background: #0D99FF;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.load-btn:hover {
+  background: #0A7FD4;
+}
+
+.delete-btn {
+  background: #F24822;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-btn:hover {
+  background: #D63916;
+}
+
+.new-project {
+  border: 2px dashed #666666;
+  cursor: pointer;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.new-project:hover {
+  border-color: #0D99FF;
+  background: rgba(13, 153, 255, 0.1);
+}
+
+.new-project-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #CCCCCC;
+  font-size: 14px;
+  gap: 12px;
+  padding: 40px;
+}
+
+.new-project-content svg {
+  font-size: 32px;
+  color: #666666;
+}
+
+/* ============================================================
+   SCROLLBARS
+   ============================================================ */
+
+.layers-list::-webkit-scrollbar,
+.figma-assets-panel::-webkit-scrollbar,
+.figma-design-panel::-webkit-scrollbar,
+.figma-inspect-panel::-webkit-scrollbar,
+.canvas-viewport::-webkit-scrollbar,
+.project-manager-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.layers-list::-webkit-scrollbar-track,
+.figma-assets-panel::-webkit-scrollbar-track,
+.figma-design-panel::-webkit-scrollbar-track,
+.figma-inspect-panel::-webkit-scrollbar-track,
+.canvas-viewport::-webkit-scrollbar-track,
+.project-manager-content::-webkit-scrollbar-track {
+  background: #1E1E1E;
+}
+
+.layers-list::-webkit-scrollbar-thumb,
+.figma-assets-panel::-webkit-scrollbar-thumb,
+.figma-design-panel::-webkit-scrollbar-thumb,
+.figma-inspect-panel::-webkit-scrollbar-thumb,
+.canvas-viewport::-webkit-scrollbar-thumb,
+.project-manager-content::-webkit-scrollbar-thumb {
+  background: #4C4C4C;
+  border-radius: 4px;
+}
+
+.layers-list::-webkit-scrollbar-thumb:hover,
+.figma-assets-panel::-webkit-scrollbar-thumb:hover,
+.figma-design-panel::-webkit-scrollbar-thumb:hover,
+.figma-inspect-panel::-webkit-scrollbar-thumb:hover,
+.canvas-viewport::-webkit-scrollbar-thumb:hover,
+.project-manager-content::-webkit-scrollbar-thumb:hover {
+  background: #666666;
+}
+
+/* ============================================================
+   RANGE INPUTS
+   ============================================================ */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #4C4C4C;
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #0D99FF;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #0A7FD4;
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #0D99FF;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #0A7FD4;
+  transform: scale(1.1);
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.figma-editor {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.figma-layer-item {
+  animation: slideIn 0.2s ease-out;
+}
+
+.project-manager {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+@media (max-width: 1200px) {
+  .figma-sidebar-right {
+    width: 260px;
+  }
+  
+  .figma-sidebar-left.open {
+    width: 260px;
+  }
+}
+
+@media (max-width: 900px) {
+  .figma-header-center {
+    display: none;
+  }
+  
+  .figma-sidebar-left {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .figma-sidebar-right {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .figma-header {
+    padding: 0 12px;
+  }
+  
+  .figma-mode-tabs {
+    padding: 0 12px;
+  }
+  
+  .view-controls {
+    gap: 2px;
+  }
+  
+  .figma-actions {
+    gap: 2px;
+  }
+  
+  .zoom-controls {
+    display: none;
+  }
+  
+  .project-manager {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .project-manager-content {
+    padding: 16px;
+  }
+  
+  .figma-sidebar-left.open,
+  .figma-sidebar-right {
+    width: 280px;
+  }
+}
+
+/* ============================================================
+   TOOLTIPS
+   ============================================================ */
+
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000000;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* Верхняя панель инструментов */
+.toolbar {
+  background: #2c2c2c;
+  border-bottom: 1px solid #404040;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border-right: 1px solid #404040;
+}
+
+.toolbar-section:last-child {
+  border-right: none;
+}
+
+.tool-btn {
+  background: transparent;
+  border: none;
+  color: #cccccc;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.tool-btn:hover {
+  background: #404040;
+  color: #ffffff;
+}
+
+.tool-btn.active {
+  background: #007bff;
+  color: #ffffff;
+}
+
+.tool-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-controls button {
+  background: #404040;
+  border: none;
+  color: #ffffff;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-controls button:hover {
+  background: #505050;
+}
+
+.zoom-controls button.zoom-fit,
+.zoom-controls button.zoom-selection {
+  width: 32px;
+}
+
+.zoom-controls .zoom-input {
+  background: #404040;
+  border: 1px solid #505050;
+  color: #ffffff;
+  width: 50px;
+  height: 24px;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.zoom-controls .zoom-input:focus {
+  outline: none;
+  border-color: #0d99ff;
+}
+
+.zoom-controls .zoom-percent {
+  font-size: 12px;
+  color: #cccccc;
+  margin-left: -6px;
+}
+
+.zoom-controls span {
+  font-size: 12px;
+  color: #cccccc;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Основной контейнер редактора */
+.editor-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Левая панель свойств */
+.properties-panel {
+  width: 280px;
+  background: #2a2a2a;
+  border-right: 1px solid #404040;
+  padding: 16px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.properties-panel h3 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.property-group {
+  margin-bottom: 16px;
+}
+
+.property-group label {
+  display: block;
+  font-size: 12px;
+  color: #cccccc;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.property-group input[type="color"] {
+  width: 40px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.property-group input[type="range"] {
+  width: 100%;
+  margin: 4px 0;
+}
+
+.property-group input[type="number"],
+.property-group input[type="text"] {
+  width: 100%;
+  background: #404040;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.property-group input[type="number"]:focus,
+.property-group input[type="text"]:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.property-group select {
+  width: 100%;
+  background: #404040;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.property-group span {
+  font-size: 11px;
+  color: #999999;
+  margin-left: 8px;
+}
+
+.selected-element-info {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #404040;
+}
+
+.selected-element-info h4 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  color: #007bff;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.selected-element-info p {
+  margin: 4px 0;
+  font-size: 11px;
+  color: #cccccc;
+}
+
+/* Рабочая область канваса */
+.canvas-container {
+  flex: 1;
+  background: #1a1a1a;
+  position: relative;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-wrapper {
+  transform-origin: center;
+  transition: transform 0.2s ease;
+  border: 1px solid #404040;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.design-canvas {
+  background: #ffffff;
+  cursor: crosshair;
+  display: block;
+}
+
+.design-canvas:hover {
+  cursor: crosshair;
+}
+
+.design-editor .tool-btn.active ~ .design-canvas {
+  cursor: crosshair;
+}
+
+.design-editor .tool-btn[title="Выбрать"].active ~ .canvas-container .design-canvas {
+  cursor: default;
+}
+
+/* Правая панель слоев */
+.layers-panel {
+  width: 240px;
+  background: #2a2a2a;
+  border-left: 1px solid #404040;
+  padding: 16px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.layers-panel h3 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.layers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.layer-item:hover {
+  background: #404040;
+}
+
+.layer-item.selected {
+  background: #007bff;
+  border-color: #0056b3;
+}
+
+.layer-icon {
+  color: #cccccc;
+  font-size: 12px;
+  width: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.layer-item.selected .layer-icon {
+  color: #ffffff;
+}
+
+.layer-name {
+  font-size: 12px;
+  color: #cccccc;
+  font-weight: 500;
+}
+
+.layer-item.selected .layer-name {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Скроллбары */
+.properties-panel::-webkit-scrollbar,
+.layers-panel::-webkit-scrollbar,
+.canvas-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.properties-panel::-webkit-scrollbar-track,
+.layers-panel::-webkit-scrollbar-track,
+.canvas-container::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.properties-panel::-webkit-scrollbar-thumb,
+.layers-panel::-webkit-scrollbar-thumb,
+.canvas-container::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+.properties-panel::-webkit-scrollbar-thumb:hover,
+.layers-panel::-webkit-scrollbar-thumb:hover,
+.canvas-container::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .properties-panel {
+    width: 240px;
+  }
+  
+  .layers-panel {
+    width: 200px;
+  }
+}
+
+@media (max-width: 900px) {
+  .editor-container {
+    flex-direction: column;
+  }
+  
+  .properties-panel,
+  .layers-panel {
+    width: 100%;
+    height: 200px;
+    border: none;
+    border-top: 1px solid #404040;
+  }
+  
+  .canvas-container {
+    order: -1;
+    min-height: 300px;
+  }
+  
+  .toolbar {
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 8px;
+  }
+  
+  .toolbar-section {
+    border-right: none;
+    border-bottom: 1px solid #404040;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+  
+  .toolbar-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+}
+
+/* Анимации */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.design-editor {
+  animation: slideIn 0.3s ease-out;
+}
+
+.layer-item {
+  animation: slideIn 0.2s ease-out;
+}
+
+/* Кастомные элементы управления */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #404040;
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* Кнопка закрытия */
+.close-btn {
+  background: #e74c3c !important;
+  color: #ffffff !important;
+}
+
+.close-btn:hover {
+  background: #c0392b !important;
+}
+
+/* Менеджер проектов */
+.project-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.project-manager {
+  background: #2a2a2a;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 1000px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.project-manager-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #404040;
+  background: #333333;
+}
+
+.project-manager-header h3 {
+  margin: 0;
+  flex: 1;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.project-manager-content {
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.project-card {
+  background: #404040;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  border: 1px solid #555555;
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border-color: #007bff;
+}
+
+.project-preview {
+  height: 120px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.project-elements-count {
+  background: rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.project-info {
+  padding: 12px 16px;
+}
+
+.project-info h4 {
+  margin: 0 0 4px 0;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.project-info p {
+  margin: 0;
+  color: #cccccc;
+  font-size: 12px;
+}
+
+.project-actions {
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid #555555;
+}
+
+.load-btn {
+  flex: 1;
+  background: #007bff;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.load-btn:hover {
+  background: #0056b3;
+}
+
+.delete-btn {
+  background: #e74c3c;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
+}
+
+.new-project {
+  border: 2px dashed #666666;
+  cursor: pointer;
+  background: transparent;
+}
+
+.new-project:hover {
+  border-color: #007bff;
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.new-project-content {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #cccccc;
+  font-size: 14px;
+  gap: 8px;
+}
+
+.new-project-content svg {
+  font-size: 32px;
+  color: #666666;
+}
+
+/* Слои с контролами */
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.layer-item.hidden {
+  opacity: 0.5;
+}
+
+.layer-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.layer-control-btn {
+  background: transparent;
+  border: none;
+  color: #cccccc;
+  padding: 2px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 10px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.layer-control-btn:hover {
+  background: #555555;
+  color: #ffffff;
+}
+
+.layer-icon {
+  color: #cccccc;
+  font-size: 11px;
+  width: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.layer-item.selected .layer-icon {
+  color: #ffffff;
+}
+
+.layer-name {
+  font-size: 11px;
+  color: #cccccc;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layer-item.selected .layer-name {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.layer-order-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.layer-order-controls .layer-control-btn {
+  width: 14px;
+  height: 12px;
+  font-size: 8px;
+  line-height: 1;
+}
+
+/* Тултипы */
+.tool-btn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000000;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.tool-btn {
+  position: relative;
+}
+
+/* Дополнительные стили для canvas */
+.canvas-wrapper {
+  border: 2px solid #404040;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Курсоры для разных инструментов */
+.design-canvas[data-tool="pen"] {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="2" fill="white" stroke="black"/></svg>') 10 10, crosshair;
+}
+
+.design-canvas[data-tool="eraser"] {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect x="7" y="7" width="6" height="6" fill="white" stroke="black"/></svg>') 10 10, crosshair;
+}
+
+/* Быстрый доступ к инструментам */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.tool-btn.active {
+  animation: pulse 2s infinite;
+}
+
+/* Модальные окна */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+/* Диалог импорта */
+.import-dialog {
+  background: #2c2c2c;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.import-dialog .dialog-header h3 {
+  color: #ffffff;
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.import-progress {
+  text-align: center;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #3c3c3c;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.import-progress p {
+  color: #cccccc;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Подсказка для пустого холста */
+.empty-canvas-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(44, 44, 44, 0.95);
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  border: 2px dashed #555;
+  max-width: 500px;
+  z-index: 100;
+}
+
+.hint-content .hint-icon {
+  font-size: 48px;
+  color: #1976d2;
+  margin-bottom: 20px;
+}
+
+.hint-content h3 {
+  color: #ffffff;
+  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.hint-content p {
+  color: #cccccc;
+  margin: 0 0 20px 0;
+  font-size: 16px;
+}
+
+.hint-content ul {
+  text-align: left;
+  color: #cccccc;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.hint-content li {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
