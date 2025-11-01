@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
-import './GameManagement.css';
+import styles from './GameManagement.module.css';
 
 function GameQuestions() {
   const [questions, setQuestions] = useState([]);
@@ -89,15 +89,15 @@ function GameQuestions() {
   };
 
   return (
-    <div className="game-questions-management">
-      <div className="header">
+    <div className={styles['game-questions-management']}>
+      <div className={styles.header}>
         <h2>❓ Банк вопросов</h2>
-        <button className="btn-primary" onClick={() => openForm()}>
+        <button className={styles['btn-primary']} onClick={() => openForm()}>
           + Добавить вопрос
         </button>
       </div>
 
-      <div className="questions-list">
+      <div className={styles['questions-list']}>
         <table>
           <thead>
             <tr>
@@ -110,20 +110,20 @@ function GameQuestions() {
           <tbody>
             {questions.map(q => (
               <tr key={q.id}>
-                <td className="question-text">{q.question}</td>
+                <td className={styles['question-text']}>{q.question}</td>
                 <td>
                   {q.category && (
-                    <span className="category-badge">{q.category}</span>
+                    <span className={styles['category-badge']}>{q.category}</span>
                   )}
                 </td>
                 <td>
-                  <span className={`difficulty-badge ${q.difficulty}`}>
+                  <span className={`${styles['difficulty-badge']} ${styles[q.difficulty]}`}>
                     {getDifficultyBadge(q.difficulty)}
                   </span>
                 </td>
-                <td className="actions">
-                  <button onClick={() => openForm(q)} className="btn-icon">✏️</button>
-                  <button onClick={() => handleDelete(q.id)} className="btn-icon">🗑️</button>
+                <td className={styles.actions}>
+                  <button onClick={() => openForm(q)} className={styles['btn-icon']}>✏️</button>
+                  <button onClick={() => handleDelete(q.id)} className={styles['btn-icon']}>🗑️</button>
                 </td>
               </tr>
             ))}
@@ -132,19 +132,19 @@ function GameQuestions() {
       </div>
 
       {questions.length === 0 && (
-        <div className="empty-state">
+        <div className={styles['empty-state']}>
           <p>📭 Банк вопросов пуст. Добавьте первый вопрос!</p>
         </div>
       )}
 
       {/* Form Modal */}
       {showForm && (
-        <div className="modal-overlay" onClick={closeForm}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className={styles['modal-overlay']} onClick={closeForm}>
+          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
             <h3>{editingQuestion ? 'Редактировать вопрос' : 'Добавить вопрос'}</h3>
             
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label>Вопрос *</label>
                 <textarea
                   value={formData.question}
@@ -155,8 +155,8 @@ function GameQuestions() {
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
+              <div className={styles['form-row']}>
+                <div className={styles['form-group']}>
                   <label>Категория</label>
                   <input
                     type="text"
@@ -166,7 +166,7 @@ function GameQuestions() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles['form-group']}>
                   <label>Сложность *</label>
                   <select
                     value={formData.difficulty}
@@ -182,9 +182,9 @@ function GameQuestions() {
                 </div>
               </div>
 
-              <div className="form-actions">
+              <div className={styles['form-actions']}>
                 <button type="button" onClick={closeForm}>Отмена</button>
-                <button type="submit" className="btn-primary">
+                <button type="submit" className={styles['btn-primary']}>
                   {editingQuestion ? 'Сохранить' : 'Добавить'}
                 </button>
               </div>

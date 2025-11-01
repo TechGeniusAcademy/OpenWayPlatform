@@ -193,15 +193,15 @@ function GroupsManagement() {
 
   if (loading) {
     return (
-      <div className={styles.loading-state}>
+      <div className={styles['loading-state']}>
         <p>Загрузка групп...</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.groups-page}>
-      <div className={styles.page-header}>
+    <div className={styles['groups-page']}>
+      <div className={styles['page-header']}>
         <h1>Управление группами</h1>
         <p>Создание групп и распределение студентов</p>
       </div>
@@ -209,27 +209,27 @@ function GroupsManagement() {
       {success && <div className="alert alert-success">{success}</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className={styles.page-actions}>
+      <div className={styles['page-actions']}>
         <button className="btn btn-primary" onClick={openCreateModal}>
           + Создать группу
         </button>
       </div>
 
       {groups.length === 0 ? (
-        <div className={styles.empty-state}>
-          <div className={styles.empty-state-icon}>📚</div>
+        <div className={styles['empty-state']}>
+          <div className={styles['empty-state-icon']}>📚</div>
           <h3>Нет групп</h3>
           <p>Создайте первую группу, нажав кнопку выше</p>
         </div>
       ) : (
-        <div className={styles.groups-grid}>
+        <div className={styles['groups-grid']}>
           {groups.map((group) => (
-            <div key={group.id} className={styles.group-card}>
-              <div className={styles.group-card-header}>
+            <div key={group.id} className={styles['group-card']}>
+              <div className={styles['group-card-header']}>
                 <h3>{group.name}</h3>
-                <div className={styles.group-actions}>
+                <div className={styles['group-actions']}>
                   <button
-                    className={styles.icon-btn}
+                    className={styles['icon-btn']}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEdit(group);
@@ -251,19 +251,19 @@ function GroupsManagement() {
                 </div>
               </div>
 
-              <div className={styles.group-card-body}>
-                <p className={styles.group-description}>
+              <div className={styles['group-card-body']}>
+                <p className={styles['group-description']}>
                   {group.description || 'Нет описания'}
                 </p>
               </div>
 
-              <div className={styles.group-card-footer}>
-                <div className={styles.student-count}>
-                  <HiUserGroup className={styles.student-count-icon} />
+              <div className={styles['group-card-footer']}>
+                <div className={styles['student-count']}>
+                  <HiUserGroup className={styles['student-count-icon']} />
                   <span>{group.student_count} студентов</span>
                 </div>
                 <button
-                  className={styles.manage-btn}
+                  className={styles['manage-btn']}
                   onClick={() => handleManageStudents(group)}
                 >
                   <AiOutlineUserAdd style={{ marginRight: '5px' }} />
@@ -277,33 +277,33 @@ function GroupsManagement() {
 
       {/* Модальное окно создания/редактирования группы */}
       {showModal && (
-        <div className={styles.modal-overlay} onClick={closeModal}>
+        <div className={styles['modal-overlay']} onClick={closeModal}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modal-header}>
+            <div className={styles['modal-header']}>
               <h2>{editingGroup ? 'Редактирование группы' : 'Новая группа'}</h2>
-              <button className={styles.close-btn} onClick={closeModal}>&times;</button>
+              <button className={styles['close-btn']} onClick={closeModal}>&times;</button>
             </div>
 
-            <form className={styles.modal-form} onSubmit={handleSubmit}>
+            <form className={styles['modal-form']} onSubmit={handleSubmit}>
               {error && <div className="alert alert-error">{error}</div>}
 
-              <div className={styles.form-group}>
-                <label className={styles.form-label}>Название группы *</label>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Название группы *</label>
                 <input
                   type="text"
                   name="name"
-                  className={styles.form-input}
+                  className={styles['form-input']}
                   value={formData.name}
                   onChange={handleInputChange}
                   required
                 />
               </div>
 
-              <div className={styles.form-group}>
-                <label className={styles.form-label}>Описание</label>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Описание</label>
                 <textarea
                   name="description"
-                  className={styles.form-input}
+                  className={styles['form-input']}
                   value={formData.description}
                   onChange={handleInputChange}
                   rows="4"
@@ -311,7 +311,7 @@ function GroupsManagement() {
                 />
               </div>
 
-              <div className={styles.form-actions}>
+              <div className={styles['form-actions']}>
                 <button type="button" className="btn btn-cancel" onClick={closeModal}>
                   Отмена
                 </button>
@@ -326,29 +326,29 @@ function GroupsManagement() {
 
       {/* Модальное окно управления студентами */}
       {showManageModal && selectedGroup && (
-        <div className={styles.modal-overlay} onClick={closeManageModal}>
+        <div className={styles['modal-overlay']} onClick={closeManageModal}>
           <div className="modal large" onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modal-header}>
+            <div className={styles['modal-header']}>
               <h2>Управление группой: {selectedGroup.name}</h2>
-              <button className={styles.close-btn} onClick={closeManageModal}>&times;</button>
+              <button className={styles['close-btn']} onClick={closeManageModal}>&times;</button>
             </div>
 
             {success && <div className="alert alert-success">{success}</div>}
             {error && <div className="alert alert-error">{error}</div>}
 
             {/* Текущие студенты */}
-            <div className={styles.group-detail-section}>
+            <div className={styles['group-detail-section']}>
               <h3>Студенты в группе ({selectedGroup.students?.length || 0})</h3>
               {selectedGroup.students?.length > 0 ? (
-                <div className={styles.students-list}>
+                <div className={styles['students-list']}>
                   {selectedGroup.students.map((student) => (
-                    <div key={student.id} className={styles.student-item}>
-                      <div className={styles.student-info}>
+                    <div key={student.id} className={styles['student-item']}>
+                      <div className={styles['student-info']}>
                         <strong>{student.full_name || student.username}</strong>
                         <small>{student.email}</small>
                       </div>
                       <button
-                        className={styles.remove-student-btn}
+                        className={styles['remove-student-btn']}
                         onClick={() => handleRemoveStudent(student.id)}
                       >
                         Удалить
@@ -357,18 +357,18 @@ function GroupsManagement() {
                   ))}
                 </div>
               ) : (
-                <p className={styles.no-students-message}>В группе пока нет студентов</p>
+                <p className={styles['no-students-message']}>В группе пока нет студентов</p>
               )}
             </div>
 
             {/* Добавление студентов */}
-            <div className={styles.group-detail-section}>
+            <div className={styles['group-detail-section']}>
               <h3>Добавить студентов</h3>
               {availableStudents.length > 0 ? (
                 <>
-                  <div className={styles.available-students}>
+                  <div className={styles['available-students']}>
                     {availableStudents.map((student) => (
-                      <div key={student.id} className={styles.student-checkbox-item}>
+                      <div key={student.id} className={styles['student-checkbox-item']}>
                         <input
                           type="checkbox"
                           id={`student-${student.id}`}
@@ -377,7 +377,7 @@ function GroupsManagement() {
                         />
                         <label 
                           htmlFor={`student-${student.id}`}
-                          className={styles.student-checkbox-label}
+                          className={styles['student-checkbox-label']}
                         >
                           <strong>{student.full_name || student.username}</strong>
                           <small>{student.email}</small>
@@ -385,7 +385,7 @@ function GroupsManagement() {
                       </div>
                     ))}
                   </div>
-                  <div className={styles.form-actions}>
+                  <div className={styles['form-actions']}>
                     <button
                       type="button"
                       className="btn btn-primary"
@@ -397,11 +397,11 @@ function GroupsManagement() {
                   </div>
                 </>
               ) : (
-                <p className={styles.no-students-message}>Нет доступных студентов без группы</p>
+                <p className={styles['no-students-message']}>Нет доступных студентов без группы</p>
               )}
             </div>
 
-            <div className={styles.form-actions}>
+            <div className={styles['form-actions']}>
               <button type="button" className="btn btn-cancel" onClick={closeManageModal}>
                 Закрыть
               </button>

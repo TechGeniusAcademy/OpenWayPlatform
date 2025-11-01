@@ -178,42 +178,42 @@ function Shop() {
 
   return (
     <div className="student-page shop-page">
-      <div className={styles.shop-header}>
-        <div className={styles.shop-header-left}>
-          <h1><AiOutlineShoppingCart className={styles.header-icon} /> Магазин косметики</h1>
+      <div className={styles['shop-header']}>
+        <div className={styles['shop-header-left']}>
+          <h1><AiOutlineShoppingCart className={styles['header-icon']} /> Магазин косметики</h1>
           <p>Персонализируйте свой профиль</p>
         </div>
-        <div className={styles.shop-header-right}>
-          <div className={styles.user-points-badge}>
-            <span className={styles.points-icon}><AiOutlineWallet /></span>
-            <div className={styles.points-info}>
-              <span className={styles.points-value}>{userPoints}</span>
-              <span className={styles.points-label}>Ваши баллы</span>
+        <div className={styles['shop-header-right']}>
+          <div className={styles['user-points-badge']}>
+            <span className={styles['points-icon']}><AiOutlineWallet /></span>
+            <div className={styles['points-info']}>
+              <span className={styles['points-value']}>{userPoints}</span>
+              <span className={styles['points-label']}>Ваши баллы</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className={styles.shop-layout}>
+      <div className={styles['shop-layout']}>
         {/* Сайдбар с фильтрами */}
-        <aside className={styles.shop-sidebar}>
-          <div className={styles.filter-section}>
-            <h3><AiOutlineSearch className={styles.filter-icon} /> Поиск</h3>
+        <aside className={styles['shop-sidebar']}>
+          <div className={styles['filter-section']}>
+            <h3><AiOutlineSearch className={styles['filter-icon']} /> Поиск</h3>
             <input 
               type="text"
-              className={styles.search-input}
+              className={styles['search-input']}
               placeholder="Найти предмет..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className={styles.filter-divider}></div>
+          <div className={styles['filter-divider']}></div>
 
-          <div className={styles.filter-section}>
-            <h3><AiOutlinePicture className={styles.filter-icon} /> Категория</h3>
-            <div className={styles.filter-options}>
-              <label className={styles.filter-option}>
+          <div className={styles['filter-section']}>
+            <h3><AiOutlinePicture className={styles['filter-icon']} /> Категория</h3>
+            <div className={styles['filter-options']}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="type"
@@ -222,9 +222,9 @@ function Shop() {
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
                 <span>Все предметы</span>
-                <span className={styles.filter-count}>{shopItems.length}</span>
+                <span className={styles['filter-count']}>{shopItems.length}</span>
               </label>
-              <label className={styles.filter-option}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="type"
@@ -232,12 +232,12 @@ function Shop() {
                   checked={selectedType === 'frame'}
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
-                <span><AiOutlinePicture className={styles.inline-icon} /> Рамки</span>
-                <span className={styles.filter-count}>
+                <span><AiOutlinePicture className={styles['inline-icon']} /> Рамки</span>
+                <span className={styles['filter-count']}>
                   {shopItems.filter(i => i.item_type === 'frame').length}
                 </span>
               </label>
-              <label className={styles.filter-option}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="type"
@@ -245,12 +245,12 @@ function Shop() {
                   checked={selectedType === 'banner'}
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
-                <span><AiOutlinePicture className={styles.inline-icon} /> Баннеры</span>
-                <span className={styles.filter-count}>
+                <span><AiOutlinePicture className={styles['inline-icon']} /> Баннеры</span>
+                <span className={styles['filter-count']}>
                   {shopItems.filter(i => i.item_type === 'banner').length}
                 </span>
               </label>
-              <label className={styles.filter-option}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="type"
@@ -258,12 +258,12 @@ function Shop() {
                   checked={selectedType === 'username'}
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
-                <span><AiOutlineFontSize className={styles.inline-icon} /> Стили Никнейма</span>
-                <span className={styles.filter-count}>
+                <span><AiOutlineFontSize className={styles['inline-icon']} /> Стили Никнейма</span>
+                <span className={styles['filter-count']}>
                   {shopItems.filter(i => i.item_type === 'username').length}
                 </span>
               </label>
-              <label className={styles.filter-option}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="type"
@@ -271,20 +271,20 @@ function Shop() {
                   checked={selectedType === 'message_color'}
                   onChange={(e) => setSelectedType(e.target.value)}
                 />
-                <span><MdFormatColorText className={styles.inline-icon} /> Цвета Текста</span>
-                <span className={styles.filter-count}>
+                <span><MdFormatColorText className={styles['inline-icon']} /> Цвета Текста</span>
+                <span className={styles['filter-count']}>
                   {shopItems.filter(i => i.item_type === 'message_color').length}
                 </span>
               </label>
             </div>
           </div>
 
-          <div className={styles.filter-divider}></div>
+          <div className={styles['filter-divider']}></div>
 
-          <div className={styles.filter-section}>
-            <h3><AiOutlineDollarCircle className={styles.filter-icon} /> Цена</h3>
-            <div className={styles.filter-options}>
-              <label className={styles.filter-option}>
+          <div className={styles['filter-section']}>
+            <h3><AiOutlineDollarCircle className={styles['filter-icon']} /> Цена</h3>
+            <div className={styles['filter-options']}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="price"
@@ -294,7 +294,7 @@ function Shop() {
                 />
                 <span>Любая цена</span>
               </label>
-              <label className={styles.filter-option}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="price"
@@ -304,7 +304,7 @@ function Shop() {
                 />
                 <span>До 100</span>
               </label>
-              <label className={styles.filter-option}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="price"
@@ -314,7 +314,7 @@ function Shop() {
                 />
                 <span>100 - 200</span>
               </label>
-              <label className={styles.filter-option}>
+              <label className={styles['filter-option']}>
                 <input 
                   type="radio" 
                   name="price"
@@ -327,12 +327,12 @@ function Shop() {
             </div>
           </div>
 
-          <div className={styles.filter-divider}></div>
+          <div className={styles['filter-divider']}></div>
 
-          <div className={styles.filter-section}>
-            <h3><AiOutlineReload className={styles.filter-icon} /> Сортировка</h3>
+          <div className={styles['filter-section']}>
+            <h3><AiOutlineReload className={styles['filter-icon']} /> Сортировка</h3>
             <select 
-              className={styles.sort-select}
+              className={styles['sort-select']}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -342,11 +342,11 @@ function Shop() {
             </select>
           </div>
 
-          <div className={styles.filter-divider}></div>
+          <div className={styles['filter-divider']}></div>
 
-          <div className={styles.filter-section}>
+          <div className={styles['filter-section']}>
               <button 
-              className={styles.reset-filters-btn}
+              className={styles['reset-filters-btn']}
               onClick={() => {
                 setSelectedType('all');
                 setSearchQuery('');
@@ -354,25 +354,25 @@ function Shop() {
                 setSortBy('price-asc');
               }}
             >
-              <AiOutlineReload className={styles.btn-reset-icon} /> Сбросить фильтры
+              <AiOutlineReload className={styles['btn-reset-icon']} /> Сбросить фильтры
             </button>
           </div>
         </aside>
 
         {/* Основной контент с товарами */}
-        <main className={styles.shop-content}>
-          <div className={styles.shop-toolbar}>
-            <div className={styles.results-info}>
+        <main className={styles['shop-content']}>
+          <div className={styles['shop-toolbar']}>
+            <div className={styles['results-info']}>
               Найдено предметов: <strong>{filteredItems.length}</strong>
             </div>
           </div>
 
-          <div className={styles.shop-items-grid}>
+          <div className={styles['shop-items-grid']}>
             {/* Базовая рамка */}
             {(selectedType === 'all' || selectedType === 'frame') && !searchQuery && (
-              <div className={styles.shop-card}>
+              <div className={styles['shop-card']}>
                 <div className={`card-preview frame-none`}>
-                  <div className={styles.preview-avatar}>
+                  <div className={styles['preview-avatar']}>
                     {user?.avatar_url ? (
                       <img src={`${BASE_URL}${user.avatar_url}`} alt="" />
                     ) : (
@@ -380,17 +380,17 @@ function Shop() {
                     )}
                   </div>
                 </div>
-                <div className={styles.card-body}>
-                  <div className={styles.shop-card-header}>
-                    <h3 className={styles.card-title}>Без рамки</h3>
+                <div className={styles['card-body']}>
+                  <div className={styles['shop-card-header']}>
+                    <h3 className={styles['card-title']}>Без рамки</h3>
                     {user?.avatar_frame === 'none' && (
                       <span className="badge badge-active">✓ Активна</span>
                     )}
                   </div>
-                  <p className={styles.card-description}>Базовая рамка без украшений</p>
-                  <div className={styles.card-footer}>
-                    <span className={styles.card-price}>
-                      <span className={styles.price-free}>Бесплатно</span>
+                  <p className={styles['card-description']}>Базовая рамка без украшений</p>
+                  <div className={styles['card-footer']}>
+                    <span className={styles['card-price']}>
+                      <span className={styles['price-free']}>Бесплатно</span>
                     </span>
                     <button 
                       className={`card-btn ${user?.avatar_frame === 'none' ? 'btn-active' : 'btn-apply'}`}
@@ -406,19 +406,19 @@ function Shop() {
 
             {/* Базовый баннер */}
             {(selectedType === 'all' || selectedType === 'banner') && !searchQuery && (
-              <div className={styles.shop-card}>
+              <div className={styles['shop-card']}>
                 <div className="card-banner-preview banner-default"></div>
-                <div className={styles.card-body}>
-                  <div className={styles.shop-card-header}>
-                    <h3 className={styles.card-title}>Базовый баннер</h3>
+                <div className={styles['card-body']}>
+                  <div className={styles['shop-card-header']}>
+                    <h3 className={styles['card-title']}>Базовый баннер</h3>
                     {user?.profile_banner === 'default' && (
                       <span className="badge badge-active">✓ Активен</span>
                     )}
                   </div>
-                  <p className={styles.card-description}>Стандартный градиентный баннер</p>
-                  <div className={styles.card-footer}>
-                    <span className={styles.card-price}>
-                      <span className={styles.price-free}>Бесплатно</span>
+                  <p className={styles['card-description']}>Стандартный градиентный баннер</p>
+                  <div className={styles['card-footer']}>
+                    <span className={styles['card-price']}>
+                      <span className={styles['price-free']}>Бесплатно</span>
                     </span>
                     <button 
                       className={`card-btn ${user?.profile_banner === 'default' ? 'btn-active' : 'btn-apply'}`}
@@ -434,25 +434,25 @@ function Shop() {
 
             {/* Базовый стиль никнейма */}
             {(selectedType === 'all' || selectedType === 'username') && !searchQuery && (
-              <div className={styles.shop-card}>
-                <div className={styles.card-username-preview}>
-                  <div className={styles.username-preview}>
+              <div className={styles['shop-card']}>
+                <div className={styles['card-username-preview']}>
+                  <div className={styles['username-preview']}>
                     <span className="styled-username username-none">
                       {user?.username || 'Никнейм'}
                     </span>
                   </div>
                 </div>
-                <div className={styles.card-body}>
-                  <div className={styles.shop-card-header}>
-                    <h3 className={styles.card-title}>Без стиля</h3>
+                <div className={styles['card-body']}>
+                  <div className={styles['shop-card-header']}>
+                    <h3 className={styles['card-title']}>Без стиля</h3>
                     {user?.username_style === 'none' && (
                       <span className="badge badge-active">✓ Активен</span>
                     )}
                   </div>
-                  <p className={styles.card-description}>Обычный стиль без эффектов</p>
-                  <div className={styles.card-footer}>
-                    <span className={styles.card-price}>
-                      <span className={styles.price-free}>Бесплатно</span>
+                  <p className={styles['card-description']}>Обычный стиль без эффектов</p>
+                  <div className={styles['card-footer']}>
+                    <span className={styles['card-price']}>
+                      <span className={styles['price-free']}>Бесплатно</span>
                     </span>
                     <button 
                       className={`card-btn ${user?.username_style === 'none' ? 'btn-active' : 'btn-apply'}`}
@@ -468,25 +468,25 @@ function Shop() {
 
             {/* Базовый цвет текста */}
             {(selectedType === 'all' || selectedType === 'message_color') && !searchQuery && (
-              <div className={styles.shop-card}>
-                <div className={styles.card-message-preview}>
-                  <div className={styles.message-preview}>
-                    <span className={styles.message-none}>
+              <div className={styles['shop-card']}>
+                <div className={styles['card-message-preview']}>
+                  <div className={styles['message-preview']}>
+                    <span className={styles['message-none']}>
                       Привет! Это пример сообщения
                     </span>
                   </div>
                 </div>
-                <div className={styles.card-body}>
-                  <div className={styles.shop-card-header}>
-                    <h3 className={styles.card-title}>Без цвета</h3>
+                <div className={styles['card-body']}>
+                  <div className={styles['shop-card-header']}>
+                    <h3 className={styles['card-title']}>Без цвета</h3>
                     {user?.message_color === 'none' && (
                       <span className="badge badge-active">✓ Активен</span>
                     )}
                   </div>
-                  <p className={styles.card-description}>Обычный цвет текста</p>
-                  <div className={styles.card-footer}>
-                    <span className={styles.card-price}>
-                      <span className={styles.price-free}>Бесплатно</span>
+                  <p className={styles['card-description']}>Обычный цвет текста</p>
+                  <div className={styles['card-footer']}>
+                    <span className={styles['card-price']}>
+                      <span className={styles['price-free']}>Бесплатно</span>
                     </span>
                     <button 
                       className={`card-btn ${user?.message_color === 'none' ? 'btn-active' : 'btn-apply'}`}
@@ -502,10 +502,10 @@ function Shop() {
 
             {/* Магазинные предметы */}
             {filteredItems.map(item => (
-              <div key={item.id} className={styles.shop-card}>
+              <div key={item.id} className={styles['shop-card']}>
                 {item.item_type === 'frame' ? (
-                  <div className={styles.card-preview}>
-                    <div className={styles.preview-avatar}>
+                  <div className={styles['card-preview']}>
+                    <div className={styles['preview-avatar']}>
                       {user?.avatar_url ? (
                         <img src={`${BASE_URL}${user.avatar_url}`} alt="" />
                       ) : (
@@ -516,33 +516,33 @@ function Shop() {
                       <img 
                         src={`${BASE_URL}${item.image_url}`} 
                         alt={item.name}
-                        className={styles.frame-overlay}
+                        className={styles['frame-overlay']}
                       />
                     )}
                   </div>
                 ) : item.item_type === 'banner' ? (
-                  <div className={styles.card-banner-preview}>
+                  <div className={styles['card-banner-preview']}>
                     {item.image_url ? (
                       <img 
                         src={`${BASE_URL}${item.image_url}`} 
                         alt={item.name}
-                        className={styles.banner-image}
+                        className={styles['banner-image']}
                       />
                     ) : (
-                      <div className={styles.no-image}>Нет изображения</div>
+                      <div className={styles['no-image']}>Нет изображения</div>
                     )}
                   </div>
                 ) : item.item_type === 'username' ? (
-                  <div className={styles.card-username-preview}>
-                    <div className={styles.username-preview}>
+                  <div className={styles['card-username-preview']}>
+                    <div className={styles['username-preview']}>
                       <span className={`styled-username ${item.item_key}`}>
                         {user?.username || 'Никнейм'}
                       </span>
                     </div>
                   </div>
                 ) : item.item_type === 'message_color' ? (
-                  <div className={styles.card-message-preview}>
-                    <div className={styles.message-preview}>
+                  <div className={styles['card-message-preview']}>
+                    <div className={styles['message-preview']}>
                       <span className={item.item_key}>
                         Привет! Это пример сообщения
                       </span>
@@ -550,9 +550,9 @@ function Shop() {
                   </div>
                 ) : null}
                 
-                <div className={styles.card-body}>
-                  <div className={styles.shop-card-header}>
-                    <h3 className={styles.card-title}>{item.name}</h3>
+                <div className={styles['card-body']}>
+                  <div className={styles['shop-card-header']}>
+                    <h3 className={styles['card-title']}>{item.name}</h3>
                     {purchases.includes(item.item_key) && (
                       <span className="badge badge-owned">✓ Куплено</span>
                     )}
@@ -563,11 +563,11 @@ function Shop() {
                       <span className="badge badge-active">✓ Активно</span>
                     )}
                   </div>
-                  <p className={styles.card-description}>{item.description}</p>
-                  <div className={styles.card-footer}>
-                    <span className={styles.card-price}>
-                      <span className={styles.price-icon}><AiOutlineDollarCircle /></span>
-                      <span className={styles.price-value}>{item.price}</span>
+                  <p className={styles['card-description']}>{item.description}</p>
+                  <div className={styles['card-footer']}>
+                    <span className={styles['card-price']}>
+                      <span className={styles['price-icon']}><AiOutlineDollarCircle /></span>
+                      <span className={styles['price-value']}>{item.price}</span>
                     </span>
                     {purchases.includes(item.item_key) ? (
                       <button 
@@ -619,8 +619,8 @@ function Shop() {
           </div>
 
           {filteredItems.length === 0 && (
-            <div className={styles.no-results}>
-              <div className={styles.no-results-icon}><AiOutlineSearch /></div>
+            <div className={styles['no-results']}>
+              <div className={styles['no-results-icon']}><AiOutlineSearch /></div>
               <h3>Ничего не найдено</h3>
               <p>Попробуйте изменить параметры поиска или фильтры</p>
             </div>

@@ -64,20 +64,20 @@ window.addEventListener('beforeunload', () => {
 });`;
 
   return (
-    <div className={styles.student-plugins}>
-      <div className={styles.student-plugins-header}>
+    <div className={styles['student-plugins']}>
+      <div className={styles['student-plugins-header']}>
         <div>
           <h1><FaPlug /> Плагины редактора</h1>
           <p>Расширьте возможности IDE с помощью собственных плагинов</p>
         </div>
-        <button className={styles.btn-add-plugin} onClick={() => setShowAddModal(true)}>
+        <button className={styles['btn-add-plugin']} onClick={() => setShowAddModal(true)}>
           <FaPlus /> Добавить плагин
         </button>
       </div>
 
-      <div className={styles.plugins-grid}>
+      <div className={styles['plugins-grid']}>
         {plugins.length === 0 ? (
-          <div className={styles.plugins-empty}>
+          <div className={styles['plugins-empty']}>
             <FaCode size={64} />
             <h3>Нет установленных плагинов</h3>
             <p>Создайте свой первый плагин для расширения редактора</p>
@@ -86,9 +86,9 @@ window.addEventListener('beforeunload', () => {
         ) : (
           plugins.map(plugin => (
             <div key={plugin.id} className={`plugin-card ${plugin.enabled ? 'enabled' : 'disabled'}`}>
-              <div className={styles.plugin-header}>
+              <div className={styles['plugin-header']}>
                 <h3>{plugin.name}</h3>
-                <div className={styles.plugin-actions}>
+                <div className={styles['plugin-actions']}>
                   <button 
                     onClick={() => togglePlugin(plugin.id)}
                     className={plugin.enabled ? 'toggle-on' : 'toggle-off'}
@@ -96,16 +96,16 @@ window.addEventListener('beforeunload', () => {
                   >
                     {plugin.enabled ? <FaToggleOn /> : <FaToggleOff />}
                   </button>
-                  <button onClick={() => deletePlugin(plugin.id)} className={styles.btn-delete} title="Удалить">
+                  <button onClick={() => deletePlugin(plugin.id)} className={styles['btn-delete']} title="Удалить">
                     <FaTrash />
                   </button>
                 </div>
               </div>
-              <p className={styles.plugin-description}>{plugin.description || 'Без описания'}</p>
-              <div className={styles.plugin-code}>
+              <p className={styles['plugin-description']}>{plugin.description || 'Без описания'}</p>
+              <div className={styles['plugin-code']}>
                 <pre>{plugin.code.substring(0, 200)}{plugin.code.length > 200 ? '...' : ''}</pre>
               </div>
-              <div className={styles.plugin-meta}>
+              <div className={styles['plugin-meta']}>
                 Создан: {new Date(plugin.createdAt).toLocaleDateString()}
               </div>
             </div>
@@ -114,14 +114,14 @@ window.addEventListener('beforeunload', () => {
       </div>
 
       {showAddModal && (
-        <div className={styles.plugin-modal-overlay} onClick={() => setShowAddModal(false)}>
-          <div className={styles.plugin-modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modal-header}>
+        <div className={styles['plugin-modal-overlay']} onClick={() => setShowAddModal(false)}>
+          <div className={styles['plugin-modal']} onClick={e => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
               <h2>Создать плагин</h2>
               <button onClick={() => setShowAddModal(false)}>×</button>
             </div>
-            <div className={styles.modal-body}>
-              <div className={styles.form-group}>
+            <div className={styles['modal-body']}>
+              <div className={styles['form-group']}>
                 <label>Название плагина</label>
                 <input
                   type="text"
@@ -130,7 +130,7 @@ window.addEventListener('beforeunload', () => {
                   placeholder="Автосохранение"
                 />
               </div>
-              <div className={styles.form-group}>
+              <div className={styles['form-group']}>
                 <label>Описание</label>
                 <input
                   type="text"
@@ -139,7 +139,7 @@ window.addEventListener('beforeunload', () => {
                   placeholder="Автоматически сохраняет файл каждые 5 секунд"
                 />
               </div>
-              <div className={styles.form-group}>
+              <div className={styles['form-group']}>
                 <label>Код плагина (JavaScript)</label>
                 <textarea
                   value={newPlugin.code}
@@ -148,7 +148,7 @@ window.addEventListener('beforeunload', () => {
                   rows={15}
                 />
               </div>
-              <div className={styles.form-group-checkbox}>
+              <div className={styles['form-group-checkbox']}>
                 <input
                   type="checkbox"
                   id="enabled"
@@ -158,11 +158,11 @@ window.addEventListener('beforeunload', () => {
                 <label htmlFor="enabled">Включить сразу после создания</label>
               </div>
             </div>
-            <div className={styles.modal-footer}>
-              <button onClick={() => setShowAddModal(false)} className={styles.btn-cancel}>
+            <div className={styles['modal-footer']}>
+              <button onClick={() => setShowAddModal(false)} className={styles['btn-cancel']}>
                 Отмена
               </button>
-              <button onClick={addPlugin} className={styles.btn-save}>
+              <button onClick={addPlugin} className={styles['btn-save']}>
                 Создать плагин
               </button>
             </div>
@@ -170,9 +170,9 @@ window.addEventListener('beforeunload', () => {
         </div>
       )}
 
-      <div className={styles.plugins-help}>
+      <div className={styles['plugins-help']}>
         <h3><FaBook /> Справка по созданию плагинов</h3>
-        <div className={styles.help-content}>
+        <div className={styles['help-content']}>
           <p>Плагины имеют доступ к объектам <code>editor</code> и <code>monaco</code> (Monaco API).</p>
           <h4>Примеры:</h4>
           <pre>{examplePlugin}</pre>

@@ -134,44 +134,44 @@ function StudentProjects() {
   };
 
   return (
-    <div className={styles.student-projects}>
-      <div className={styles.page-header}>
-        <div className={styles.header-content}>
+    <div className={styles['student-projects']}>
+      <div className={styles['page-header']}>
+        <div className={styles['header-content']}>
           <h1>Мои проекты</h1>
           <p>Управляйте своими проектами программирования</p>
         </div>
-        <button className={styles.create-project-btn} onClick={createNewProject}>
+        <button className={styles['create-project-btn']} onClick={createNewProject}>
           <AiOutlinePlus />
           Новый проект
         </button>
       </div>
 
       {loading && (
-        <div className={styles.loading-message}>Загрузка проектов...</div>
+        <div className={styles['loading-message']}>Загрузка проектов...</div>
       )}
 
       {error && (
-        <div className={styles.error-message}>{error}</div>
+        <div className={styles['error-message']}>{error}</div>
       )}
 
       {!loading && !error && projects.length === 0 && (
-        <div className={styles.empty-message}>
+        <div className={styles['empty-message']}>
           <h2>У вас пока нет проектов</h2>
           <p>Создайте свой первый проект, нажав кнопку "Новый проект"</p>
         </div>
       )}
 
       {!loading && !error && projects.length > 0 && (
-        <div className={styles.projects-grid}>
+        <div className={styles['projects-grid']}>
           {projects.map(project => (
-            <div key={project.id || project._id} className={styles.project-card} onClick={() => openProject(project)}>
-              <div className={styles.project-header}>
-                <div className={styles.project-info}>
-                  <h3 className={styles.project-name}>{project.name}</h3>
-                  <p className={styles.project-description}>{project.description}</p>
+            <div key={project.id || project._id} className={styles['project-card']} onClick={() => openProject(project)}>
+              <div className={styles['project-header']}>
+                <div className={styles['project-info']}>
+                  <h3 className={styles['project-name']}>{project.name}</h3>
+                  <p className={styles['project-description']}>{project.description}</p>
                 </div>
-                <div className={styles.project-actions}>
-                  <button className={styles.action-btn} onClick={(e) => { e.stopPropagation(); openProject(project); }} title="Открыть в IDE">
+                <div className={styles['project-actions']}>
+                  <button className={styles['action-btn']} onClick={(e) => { e.stopPropagation(); openProject(project); }} title="Открыть в IDE">
                     <AiOutlineCode />
                   </button>
                   <button className="action-btn submit" onClick={(e) => openSubmitModal(project, e)} title="Отправить на проверку">
@@ -183,11 +183,11 @@ function StudentProjects() {
                 </div>
               </div>
 
-              <div className={styles.project-meta}>
-                <div className={styles.language-info}>
-                  <span className={styles.language-name}>{project.language}</span>
+              <div className={styles['project-meta']}>
+                <div className={styles['language-info']}>
+                  <span className={styles['language-name']}>{project.language}</span>
                 </div>
-                <div className={styles.files-count}>
+                <div className={styles['files-count']}>
                   <VscFiles />
                   {project.files_count || project.filesCount || 0} файлов
                 </div>
@@ -199,21 +199,21 @@ function StudentProjects() {
 
       {/* Модальное окно отправки проекта */}
       {showSubmitModal && (
-        <div className={styles.submit-modal-overlay} onClick={() => setShowSubmitModal(false)}>
-          <div className={styles.submit-modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modal-header}>
+        <div className={styles['submit-modal-overlay']} onClick={() => setShowSubmitModal(false)}>
+          <div className={styles['submit-modal']} onClick={e => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
               <h2>Отправить проект на проверку</h2>
               <button onClick={() => setShowSubmitModal(false)}>×</button>
             </div>
 
-            <div className={styles.modal-body}>
-              <div className={styles.project-info-display}>
+            <div className={styles['modal-body']}>
+              <div className={styles['project-info-display']}>
                 <h3>{selectedProject?.name}</h3>
                 <p>{selectedProject?.description}</p>
               </div>
 
-              <div className={styles.submission-type-selector}>
-                <label className={styles.radio-option}>
+              <div className={styles['submission-type-selector']}>
+                <label className={styles['radio-option']}>
                   <input
                     type="radio"
                     name="submissionType"
@@ -221,13 +221,13 @@ function StudentProjects() {
                     checked={submissionType === 'homework'}
                     onChange={(e) => setSubmissionType(e.target.value)}
                   />
-                  <div className={styles.radio-content}>
+                  <div className={styles['radio-content']}>
                     <strong>Домашнее задание</strong>
                     <span>Отправить как выполнение ДЗ</span>
                   </div>
                 </label>
 
-                <label className={styles.radio-option}>
+                <label className={styles['radio-option']}>
                   <input
                     type="radio"
                     name="submissionType"
@@ -235,7 +235,7 @@ function StudentProjects() {
                     checked={submissionType === 'project'}
                     onChange={(e) => setSubmissionType(e.target.value)}
                   />
-                  <div className={styles.radio-content}>
+                  <div className={styles['radio-content']}>
                     <strong>Личный проект</strong>
                     <span>Отправить на проверку как проект</span>
                   </div>
@@ -243,7 +243,7 @@ function StudentProjects() {
               </div>
 
               {submissionType === 'homework' && (
-                <div className={styles.homework-selector}>
+                <div className={styles['homework-selector']}>
                   <label>Выберите домашнее задание:</label>
                   <select
                     value={selectedHomework || ''}
@@ -260,13 +260,13 @@ function StudentProjects() {
               )}
             </div>
 
-            <div className={styles.modal-footer}>
-              <button onClick={() => setShowSubmitModal(false)} className={styles.btn-cancel}>
+            <div className={styles['modal-footer']}>
+              <button onClick={() => setShowSubmitModal(false)} className={styles['btn-cancel']}>
                 Отмена
               </button>
               <button 
                 onClick={handleSubmitProject} 
-                className={styles.btn-submit}
+                className={styles['btn-submit']}
                 disabled={submitting || (submissionType === 'homework' && !selectedHomework)}
               >
                 {submitting ? 'Отправка...' : 'Отправить на проверку'}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api, { BASE_URL } from '../utils/api';
-import './GameManagement.css';
+import styles from './GameManagement.module.css';
 
 function GameCards() {
   const [cards, setCards] = useState([]);
@@ -129,44 +129,44 @@ function GameCards() {
   };
 
   return (
-    <div className="game-cards-management">
-      <div className="header">
+    <div className={styles['game-cards-management']}>
+      <div className={styles.header}>
         <h2> Карточки для игры</h2>
-        <button className="btn-primary" onClick={() => openForm()}>
+        <button className={styles['btn-primary']} onClick={() => openForm()}>
           + Создать карточку
         </button>
       </div>
 
-      <div className="cards-grid">
+      <div className={styles['cards-grid']}>
         {cards.map(card => (
-          <div key={card.id} className={`card-item ${card.team}`}>
-            <div className="card-image">
+          <div key={card.id} className={`${styles['card-item']} ${styles[card.team]}`}>
+            <div className={styles['card-image']}>
               {card.image_url ? (
                 <img src={`${BASE_URL}${card.image_url}`} alt={card.name} />
               ) : (
-                <div className="placeholder-image">🎴</div>
+                <div className={styles['placeholder-image']}>🎴</div>
               )}
             </div>
             
-            <div className="card-content">
+            <div className={styles['card-content']}>
               <h3>{card.name}</h3>
-              <p className="card-description">{card.description}</p>
+              <p className={styles['card-description']}>{card.description}</p>
               
-              <div className="card-stats">
-                <div className="stat">
-                  <span className="label">Тип:</span>
-                  <span className="value">{getCardTypeLabel(card.card_type)}</span>
+              <div className={styles['card-stats']}>
+                <div className={styles.stat}>
+                  <span className={styles.label}>Тип:</span>
+                  <span className={styles.value}>{getCardTypeLabel(card.card_type)}</span>
                 </div>
-                <div className="stat">
-                  <span className="label">Эффект:</span>
-                  <span className="value">{card.effect_value}</span>
+                <div className={styles.stat}>
+                  <span className={styles.label}>Эффект:</span>
+                  <span className={styles.value}>{card.effect_value}</span>
                 </div>
-                <div className="stat">
-                  <span className="label">Шанс:</span>
-                  <span className="value">{card.drop_chance}%</span>
+                <div className={styles.stat}>
+                  <span className={styles.label}>Шанс:</span>
+                  <span className={styles.value}>{card.drop_chance}%</span>
                 </div>
-                <div className="stat">
-                  <span className="label">Команда:</span>
+                <div className={styles.stat}>
+                  <span className={styles.label}>Команда:</span>
                   <span className={`team-badge ${card.team}`}>
                     {card.team === 'team_a' ? 'Команда' : card.team === 'team_b' ? 'Команда' : 'Нейтральная'}
                   </span>
@@ -174,28 +174,28 @@ function GameCards() {
               </div>
             </div>
             
-            <div className="card-actions">
-              <button onClick={() => openForm(card)} className="btn-edit">✏️</button>
-              <button onClick={() => handleDelete(card.id)} className="btn-delete">🗑️</button>
+            <div className={styles['card-actions']}>
+              <button onClick={() => openForm(card)} className={styles['btn-edit']}>✏️</button>
+              <button onClick={() => handleDelete(card.id)} className={styles['btn-delete']}>🗑️</button>
             </div>
           </div>
         ))}
       </div>
 
       {cards.length === 0 && (
-        <div className="empty-state">
+        <div className={styles['empty-state']}>
           <p>📭 Пока нет карточек. Создайте первую!</p>
         </div>
       )}
 
       {/* Form Modal */}
       {showForm && (
-        <div className="modal-overlay" onClick={closeForm}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className={styles['modal-overlay']} onClick={closeForm}>
+          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
             <h3>{editingCard ? 'Редактировать карточку' : 'Создать карточку'}</h3>
             
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label>Название карточки</label>
                 <input
                   type="text"
@@ -205,7 +205,7 @@ function GameCards() {
                 />
               </div>
 
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label>Описание</label>
                 <textarea
                   value={formData.description}
@@ -214,7 +214,7 @@ function GameCards() {
                 />
               </div>
 
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label>Изображение карточки</label>
                 <input
                   type="file"
@@ -240,8 +240,8 @@ function GameCards() {
                 )}
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
+              <div className={styles['form-row']}>
+                <div className={styles['form-group']}>
                   <label>Тип карточки</label>
                   <select
                     value={formData.card_type}
@@ -262,7 +262,7 @@ function GameCards() {
                   </select>
                 </div>
 
-                <div className="form-group">
+                <div className={styles['form-group']}>
                   <label>Значение эффекта (автоматически)</label>
                   <input
                     type="number"
@@ -279,8 +279,8 @@ function GameCards() {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
+              <div className={styles['form-row']}>
+                <div className={styles['form-group']}>
                   <label>Шанс выпадения (%)</label>
                   <input
                     type="number"
@@ -293,7 +293,7 @@ function GameCards() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles['form-group']}>
                   <label>Принадлежность</label>
                   <select
                     value={formData.team}
@@ -306,9 +306,9 @@ function GameCards() {
                 </div>
               </div>
 
-              <div className="form-actions">
+              <div className={styles['form-actions']}>
                 <button type="button" onClick={closeForm}>Отмена</button>
-                <button type="submit" className="btn-primary">
+                <button type="submit" className={styles['btn-primary']}>
                   {editingCard ? 'Сохранить' : 'Создать'}
                 </button>
               </div>

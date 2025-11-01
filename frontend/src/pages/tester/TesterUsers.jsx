@@ -30,10 +30,10 @@ function TesterUsers() {
   );
 
   return (
-    <div className={styles.tester-users}>
-      <div className={styles.users-header}>
+    <div className={styles['tester-users']}>
+      <div className={styles['users-header']}>
         <h1><BsPeople /> Users Testing</h1>
-        <div className={styles.search-box}>
+        <div className={styles['search-box']}>
           <BsSearch />
           <input
             type="text"
@@ -47,8 +47,8 @@ function TesterUsers() {
       {loading ? (
         <div className={styles.loading}>Загрузка...</div>
       ) : (
-        <div className={styles.users-table}>
-          <div className={styles.table-header}>
+        <div className={styles['users-table']}>
+          <div className={styles['table-header']}>
             <span>ID</span>
             <span>Имя</span>
             <span>Email</span>
@@ -57,7 +57,7 @@ function TesterUsers() {
             <span>Регистрация</span>
           </div>
           {filteredUsers.map(user => (
-            <div key={user.id} className={styles.table-row}>
+            <div key={user.id} className={styles['table-row']}>
               <span>#{user.id}</span>
               <span><strong>{user.full_name || user.username}</strong></span>
               <span>{user.email}</span>

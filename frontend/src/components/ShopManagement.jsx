@@ -136,30 +136,30 @@ function ShopManagement() {
   const banners = items.filter(item => item.item_type === 'banner');
 
   return (
-    <div className={styles.shop-management}>
-      <div className={styles.page-header}>
-        <h1><AiOutlineShoppingCart className={styles.header-icon} /> Управление магазином</h1>
-        <button className={styles.btn-primary} onClick={() => setShowForm(true)}>
-          <AiOutlinePlus className={styles.btn-icon} /> Добавить предмет
+    <div className={styles['shop-management']}>
+      <div className={styles['page-header']}>
+        <h1><AiOutlineShoppingCart className={styles['header-icon']} /> Управление магазином</h1>
+        <button className={styles['btn-primary']} onClick={() => setShowForm(true)}>
+          <AiOutlinePlus className={styles['btn-icon']} /> Добавить предмет
         </button>
       </div>
 
       {/* Информация о рекомендуемых размерах */}
-      <div className={styles.image-guidelines}>
-  <h3><AiOutlinePicture className={styles.guide-icon} /> Рекомендуемые размеры изображений:</h3>
-        <div className={styles.guidelines-grid}>
-          <div className={styles.guideline-card}>
-            <div className={styles.guideline-icon}><AiOutlinePicture /></div>
+      <div className={styles['image-guidelines']}>
+  <h3><AiOutlinePicture className={styles['guide-icon']} /> Рекомендуемые размеры изображений:</h3>
+        <div className={styles['guidelines-grid']}>
+          <div className={styles['guideline-card']}>
+            <div className={styles['guideline-icon']}><AiOutlinePicture /></div>
             <h4>Рамки для аватара</h4>
-            <p className={styles.size-info}>200×200 пикселей</p>
-            <p className={styles.format-info}>Формат: PNG с прозрачностью</p>
+            <p className={styles['size-info']}>200×200 пикселей</p>
+            <p className={styles['format-info']}>Формат: PNG с прозрачностью</p>
             <p className={styles.note}>Рамка должна быть квадратной с прозрачным центром</p>
           </div>
-          <div className={styles.guideline-card}>
-            <div className={styles.guideline-icon}><AiOutlinePicture /></div>
+          <div className={styles['guideline-card']}>
+            <div className={styles['guideline-icon']}><AiOutlinePicture /></div>
             <h4>Баннеры профиля</h4>
-            <p className={styles.size-info}>800×200 пикселей</p>
-            <p className={styles.format-info}>Формат: PNG, JPG, WebP</p>
+            <p className={styles['size-info']}>800×200 пикселей</p>
+            <p className={styles['format-info']}>Формат: PNG, JPG, WebP</p>
             <p className={styles.note}>Баннер отображается в верхней части профиля</p>
           </div>
         </div>
@@ -167,14 +167,14 @@ function ShopManagement() {
 
       {/* Форма добавления/редактирования */}
       {showForm && (
-        <div className={styles.modal-overlay} onClick={() => !loading && resetForm()}>
-          <div className={styles.modal-content} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.modal-header}>
+        <div className={styles['modal-overlay']} onClick={() => !loading && resetForm()}>
+          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
+              <div className={styles['modal-header']}>
               <h2>{editingItem ? 'Редактировать предмет' : 'Добавить предмет'}</h2>
-              <button className={styles.close-btn} onClick={resetForm}><AiOutlineClose /></button>
+              <button className={styles['close-btn']} onClick={resetForm}><AiOutlineClose /></button>
             </div>
-            <form onSubmit={handleSubmit} className={styles.shop-form}>
-              <div className={styles.form-group}>
+            <form onSubmit={handleSubmit} className={styles['shop-form']}>
+              <div className={styles['form-group']}>
                 <label>Тип предмета *</label>
                 <select
                   name="item_type"
@@ -187,7 +187,7 @@ function ShopManagement() {
                 </select>
               </div>
 
-              <div className={styles.form-group}>
+              <div className={styles['form-group']}>
                 <label>Уникальный ключ *</label>
                 <input
                   type="text"
@@ -200,7 +200,7 @@ function ShopManagement() {
                 <small>Только латинские буквы, цифры и подчеркивания</small>
               </div>
 
-              <div className={styles.form-group}>
+              <div className={styles['form-group']}>
                 <label>Название *</label>
                 <input
                   type="text"
@@ -212,7 +212,7 @@ function ShopManagement() {
                 />
               </div>
 
-              <div className={styles.form-group}>
+              <div className={styles['form-group']}>
                 <label>Описание</label>
                 <textarea
                   name="description"
@@ -223,7 +223,7 @@ function ShopManagement() {
                 />
               </div>
 
-              <div className={styles.form-group}>
+              <div className={styles['form-group']}>
                 <label>Цена (в баллах) *</label>
                 <input
                   type="number"
@@ -235,7 +235,7 @@ function ShopManagement() {
                 />
               </div>
 
-              <div className={styles.form-group}>
+              <div className={styles['form-group']}>
                 <label>Изображение {!editingItem && '*'}</label>
                 <input
                   type="file"
@@ -244,17 +244,17 @@ function ShopManagement() {
                   required={!editingItem}
                 />
                 {imagePreview && (
-                  <div className={styles.image-preview}>
+                  <div className={styles['image-preview']}>
                     <img src={imagePreview} alt="Preview" />
                   </div>
                 )}
               </div>
 
-              <div className={styles.form-actions}>
-                <button type="button" className={styles.btn-secondary} onClick={resetForm} disabled={loading}>
+              <div className={styles['form-actions']}>
+                <button type="button" className={styles['btn-secondary']} onClick={resetForm} disabled={loading}>
                   Отмена
                 </button>
-                <button type="submit" className={styles.btn-primary} disabled={loading}>
+                <button type="submit" className={styles['btn-primary']} disabled={loading}>
                   {loading ? 'Сохранение...' : editingItem ? 'Обновить' : 'Создать'}
                 </button>
               </div>
@@ -264,38 +264,38 @@ function ShopManagement() {
       )}
 
       {/* Список рамок */}
-      <div className={styles.items-section}>
+      <div className={styles['items-section']}>
         <h2>🖼️ Рамки для аватара ({frames.length})</h2>
-        <div className={styles.items-grid}>
+        <div className={styles['items-grid']}>
           {frames.map(item => (
-            <div key={item.id} className={styles.shop-item-card}>
-              <div className={styles.item-image}>
+            <div key={item.id} className={styles['shop-item-card']}>
+              <div className={styles['item-image']}>
                 {item.image_url ? (
                   <img src={`${BASE_URL}${item.image_url}`} alt={item.name} />
                 ) : (
-                  <div className={styles.no-image}>Нет изображения</div>
+                  <div className={styles['no-image']}>Нет изображения</div>
                 )}
               </div>
-              <div className={styles.item-info}>
+              <div className={styles['item-info']}>
                 <h3>{item.name}</h3>
-                <p className={styles.item-description}>{item.description}</p>
-                <div className={styles.item-meta}>
-                  <span className={styles.item-key}><AiOutlineKey /> {item.item_key}</span>
-                  <span className={styles.item-price}><AiOutlineDollar /> {item.price}</span>
+                <p className={styles['item-description']}>{item.description}</p>
+                <div className={styles['item-meta']}>
+                  <span className={styles['item-key']}><AiOutlineKey /> {item.item_key}</span>
+                  <span className={styles['item-price']}><AiOutlineDollar /> {item.price}</span>
                 </div>
               </div>
-              <div className={styles.item-actions}>
-                <button className={styles.btn-edit} onClick={() => handleEdit(item)}>
-                  <AiOutlineEdit className={styles.btn-icon} /> Изменить
+              <div className={styles['item-actions']}>
+                <button className={styles['btn-edit']} onClick={() => handleEdit(item)}>
+                  <AiOutlineEdit className={styles['btn-icon']} /> Изменить
                 </button>
-                <button className={styles.btn-delete} onClick={() => handleDelete(item.id)}>
-                  <AiOutlineDelete className={styles.btn-icon} /> Удалить
+                <button className={styles['btn-delete']} onClick={() => handleDelete(item.id)}>
+                  <AiOutlineDelete className={styles['btn-icon']} /> Удалить
                 </button>
               </div>
             </div>
           ))}
           {frames.length === 0 && (
-            <div className={styles.no-items}>
+            <div className={styles['no-items']}>
               <p>Рамки еще не добавлены</p>
             </div>
           )}
@@ -303,7 +303,7 @@ function ShopManagement() {
       </div>
 
       {/* Список баннеров */}
-      <div className={styles.items-section}>
+      <div className={styles['items-section']}>
         <h2>🎨 Баннеры профиля ({banners.length})</h2>
         <div className="items-grid banners-grid">
           {banners.map(item => (
@@ -312,29 +312,29 @@ function ShopManagement() {
                 {item.image_url ? (
                   <img src={`${BASE_URL}${item.image_url}`} alt={item.name} />
                 ) : (
-                  <div className={styles.no-image}>Нет изображения</div>
+                  <div className={styles['no-image']}>Нет изображения</div>
                 )}
               </div>
-              <div className={styles.item-info}>
+              <div className={styles['item-info']}>
                 <h3>{item.name}</h3>
-                <p className={styles.item-description}>{item.description}</p>
-                <div className={styles.item-meta}>
-                  <span className={styles.item-key}><AiOutlineKey /> {item.item_key}</span>
-                  <span className={styles.item-price}><AiOutlineDollar /> {item.price}</span>
+                <p className={styles['item-description']}>{item.description}</p>
+                <div className={styles['item-meta']}>
+                  <span className={styles['item-key']}><AiOutlineKey /> {item.item_key}</span>
+                  <span className={styles['item-price']}><AiOutlineDollar /> {item.price}</span>
                 </div>
               </div>
-              <div className={styles.item-actions}>
-                <button className={styles.btn-edit} onClick={() => handleEdit(item)}>
-                  <AiOutlineEdit className={styles.btn-icon} /> Изменить
+              <div className={styles['item-actions']}>
+                <button className={styles['btn-edit']} onClick={() => handleEdit(item)}>
+                  <AiOutlineEdit className={styles['btn-icon']} /> Изменить
                 </button>
-                <button className={styles.btn-delete} onClick={() => handleDelete(item.id)}>
-                  <AiOutlineDelete className={styles.btn-icon} /> Удалить
+                <button className={styles['btn-delete']} onClick={() => handleDelete(item.id)}>
+                  <AiOutlineDelete className={styles['btn-icon']} /> Удалить
                 </button>
               </div>
             </div>
           ))}
           {banners.length === 0 && (
-            <div className={styles.no-items}>
+            <div className={styles['no-items']}>
               <p>Баннеры еще не добавлены</p>
             </div>
           )}

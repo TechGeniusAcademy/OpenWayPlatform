@@ -123,15 +123,15 @@ function StudentHomeworks() {
   };
 
   return (
-    <div className={styles.student-homeworks}>
+    <div className={styles['student-homeworks']}>
       <div className={styles.header}>
         <h2><FaBook /> Домашние задания</h2>
       </div>
 
-      <div className={styles.homeworks-grid}>
+      <div className={styles['homeworks-grid']}>
         {homeworks.map((homework) => (
-          <div key={homework.id} className={styles.homework-card}>
-            <div className={styles.card-header}>
+          <div key={homework.id} className={styles['homework-card']}>
+            <div className={styles['card-header']}>
               <h3>{homework.title}</h3>
               <div className={styles.badges}>
                 {getStatusBadge(homework.status)}
@@ -139,18 +139,18 @@ function StudentHomeworks() {
               </div>
             </div>
 
-            <div className={styles.card-body}>
+            <div className={styles['card-body']}>
               <div 
-                className={styles.homework-description} 
+                className={styles['homework-description']} 
                 dangerouslySetInnerHTML={{ __html: homework.description }}
               />
               
-              <div className={styles.homework-info}>
-                <div className={styles.info-item}>
+              <div className={styles['homework-info']}>
+                <div className={styles['info-item']}>
                   <span className={styles.label}><FaCalendar /> Дедлайн:</span>
                   <span className={styles.value}>{formatDate(homework.deadline)}</span>
                 </div>
-                <div className={styles.info-item}>
+                <div className={styles['info-item']}>
                   <span className={styles.label}>🪙 Баллы:</span>
                   <span className={styles.value}>{homework.points}</span>
                 </div>
@@ -163,28 +163,28 @@ function StudentHomeworks() {
               </div>
 
               {homework.submission_status === 'rejected' && homework.reason && (
-                <div className={styles.rejection-reason}>
+                <div className={styles['rejection-reason']}>
                   <strong><FaTimes /> Причина отклонения:</strong>
                   <p>{homework.reason}</p>
                 </div>
               )}
             </div>
 
-            <div className={styles.card-footer}>
+            <div className={styles['card-footer']}>
               {homework.status === 'active' && (
                 <button 
-                  className={styles.btn-submit}
+                  className={styles['btn-submit']}
                   onClick={() => openSubmitModal(homework)}
                 >
                   {homework.submission_status ? <><FaEdit /> Изменить ответ</> : <><FaPen /> Сдать работу</>}
                 </button>
               )}
               {homework.status !== 'active' && !homework.submission_status && (
-                <span className={styles.text-muted}>Время сдачи истекло</span>
+                <span className={styles['text-muted']}>Время сдачи истекло</span>
               )}
               {homework.submission_status && (
                 <button 
-                  className={styles.btn-view}
+                  className={styles['btn-view']}
                   onClick={() => openSubmitModal(homework)}
                 >
                   <FaEye /> Посмотреть ответ
@@ -196,39 +196,39 @@ function StudentHomeworks() {
       </div>
 
       {homeworks.length === 0 && (
-        <div className={styles.empty-state}>
+        <div className={styles['empty-state']}>
           <p><FaInbox /> Пока нет домашних заданий</p>
         </div>
       )}
 
       {/* Submit Modal */}
       {showSubmitModal && (
-        <div className={styles.modal-overlay} onClick={closeModal}>
+        <div className={styles['modal-overlay']} onClick={closeModal}>
           <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <h3>{selectedHomework?.title}</h3>
             
-            <div className={styles.homework-description-modal}>
+            <div className={styles['homework-description-modal']}>
               <h4>Задание:</h4>
               <div dangerouslySetInnerHTML={{ __html: selectedHomework?.description }} />
             </div>
 
             {userSubmission && (
-              <div className={styles.submission-info}>
+              <div className={styles['submission-info']}>
                 <h4>Статус: {getSubmissionStatusBadge(userSubmission.status)}</h4>
                 {userSubmission.status === 'accepted' && (
-                  <p className={styles.points-info}><FaTrophy /> Получено баллов: <strong>{userSubmission.points_earned}</strong></p>
+                  <p className={styles['points-info']}><FaTrophy /> Получено баллов: <strong>{userSubmission.points_earned}</strong></p>
                 )}
                 {userSubmission.status === 'rejected' && userSubmission.reason && (
-                  <div className={styles.rejection-info}>
+                  <div className={styles['rejection-info']}>
                     <strong><FaTimes /> Причина отклонения:</strong>
                     <p>{userSubmission.reason}</p>
                   </div>
                 )}
-                <p className={styles.submitted-at}>
+                <p className={styles['submitted-at']}>
                   Отправлено: {formatDate(userSubmission.submitted_at)}
                 </p>
                 {userSubmission.checked_at && (
-                  <p className={styles.checked-at}>
+                  <p className={styles['checked-at']}>
                     Проверено: {formatDate(userSubmission.checked_at)}
                   </p>
                 )}
@@ -237,7 +237,7 @@ function StudentHomeworks() {
 
             {selectedHomework?.status === 'active' ? (
               <>
-                <div className={styles.form-group}>
+                <div className={styles['form-group']}>
                   <label>Ваш ответ:</label>
                   <QuillEditor
                     value={submissionText}
@@ -247,10 +247,10 @@ function StudentHomeworks() {
                   />
                 </div>
 
-                <div className={styles.form-actions}>
+                <div className={styles['form-actions']}>
                   <button type="button" onClick={closeModal}>Отмена</button>
                   <button 
-                    className={styles.btn-primary} 
+                    className={styles['btn-primary']} 
                     onClick={handleSubmit}
                     disabled={loading || !submissionText.trim()}
                   >
@@ -260,11 +260,11 @@ function StudentHomeworks() {
               </>
             ) : (
               <>
-                <div className={styles.submitted-answer}>
+                <div className={styles['submitted-answer']}>
                   <h4>Ваш ответ:</h4>
                   <div dangerouslySetInnerHTML={{ __html: submissionText }} />
                 </div>
-                <div className={styles.form-actions}>
+                <div className={styles['form-actions']}>
                   <button type="button" onClick={closeModal}>Закрыть</button>
                 </div>
               </>

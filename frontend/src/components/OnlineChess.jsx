@@ -528,18 +528,18 @@ const OnlineChess = () => {
   };
 
   return (
-    <div className={styles.online-chess-container}>
+    <div className={styles['online-chess-container']}>
       {view === 'menu' && (
-        <div className={styles.chess-menu}>
+        <div className={styles['chess-menu']}>
           <h1>Онлайн Шахматы</h1>
           
-          <div className={styles.chess-sections}>
-            <div className={styles.chess-section}>
+          <div className={styles['chess-sections']}>
+            <div className={styles['chess-section']}>
               <h2>Мои игры</h2>
               {myGames.length === 0 ? (
-                <p className={styles.no-games}>Нет активных игр</p>
+                <p className={styles['no-games']}>Нет активных игр</p>
               ) : (
-                <div className={styles.games-list}>
+                <div className={styles['games-list']}>
                   {myGames.map((g) => {
                     if (!currentUserId) return null;
                     
@@ -571,7 +571,7 @@ const OnlineChess = () => {
                     return (
                       <div 
                         key={g.id} 
-                        className={styles.game-card}
+                        className={styles['game-card']}
                         style={{
                           backgroundImage: bannerImage 
                             ? `url(${bannerImage})` 
@@ -581,20 +581,20 @@ const OnlineChess = () => {
                         }}
                       >
                         {(bannerImage || opponent.banner === 'default') && (
-                          <div className={styles.game-card-overlay}></div>
+                          <div className={styles['game-card-overlay']}></div>
                         )}
-                        <div className={styles.game-info}>
-                          <div className={styles.opponent-avatar-wrapper}>
+                        <div className={styles['game-info']}>
+                          <div className={styles['opponent-avatar-wrapper']}>
                             <img 
                               src={avatarUrl} 
                               alt={opponent.name}
-                              className={styles.opponent-avatar}
+                              className={styles['opponent-avatar']}
                             />
                             {frameImage && (
                               <img 
                                 src={frameImage}
                                 alt="Frame"
-                                className={styles.opponent-avatar-frame}
+                                className={styles['opponent-avatar-frame']}
                               />
                             )}
                           </div>
@@ -602,27 +602,27 @@ const OnlineChess = () => {
                             <h3 className={`styled-username ${opponent.usernameStyle || 'username-none'}`}>
                               {opponent.name}
                             </h3>
-                            <p className={styles.game-status-text}>
+                            <p className={styles['game-status-text']}>
                               {isPending 
                                 ? (isChallenger ? 'Ожидание ответа...' : `Входящий вызов (ставка: ${g.bet_amount || 0} 💎)`) 
                                 : 'Активная игра'}
                             </p>
                             {g.bet_amount > 0 && (
-                              <p className={styles.bet-info}>Ставка: {g.bet_amount} 💎</p>
+                              <p className={styles['bet-info']}>Ставка: {g.bet_amount} 💎</p>
                             )}
                           </div>
                         </div>
-                        <div className={styles.game-actions}>
+                        <div className={styles['game-actions']}>
                           {isPending && !isChallenger && (
                             <>
                               <button 
-                                className={styles.btn-accept}
+                                className={styles['btn-accept']}
                                 onClick={() => acceptChallenge(g.id, g.challenger_id)}
                               >
                                 Принять
                               </button>
                               <button 
-                                className={styles.btn-decline}
+                                className={styles['btn-decline']}
                                 onClick={() => declineChallenge(g.id, g.challenger_id)}
                               >
                                 Отклонить
@@ -631,7 +631,7 @@ const OnlineChess = () => {
                           )}
                           {g.status === 'active' && (
                             <button 
-                              className={styles.btn-play}
+                              className={styles['btn-play']}
                               onClick={() => loadGame(g.id)}
                             >
                               Играть
@@ -645,10 +645,10 @@ const OnlineChess = () => {
               )}
             </div>
 
-            <div className={styles.chess-section}>
+            <div className={styles['chess-section']}>
               <h2>Доступные игроки</h2>
               <button 
-                className={styles.btn-challenge}
+                className={styles['btn-challenge']}
                 onClick={() => setView('challenge')}
               >
                 Бросить вызов
@@ -659,13 +659,13 @@ const OnlineChess = () => {
       )}
 
       {view === 'challenge' && (
-        <div className={styles.challenge-view}>
-          <button className={styles.btn-back} onClick={() => setView('menu')}>
+        <div className={styles['challenge-view']}>
+          <button className={styles['btn-back']} onClick={() => setView('menu')}>
             ← Назад
           </button>
           <h2>Выберите соперника</h2>
           
-          <div className={styles.bet-selector}>
+          <div className={styles['bet-selector']}>
             <label>
               <span>Ставка (баллы):</span>
               <input
@@ -674,15 +674,15 @@ const OnlineChess = () => {
                 step="10"
                 value={betAmount}
                 onChange={(e) => setBetAmount(parseInt(e.target.value) || 0)}
-                className={styles.bet-input}
+                className={styles['bet-input']}
               />
             </label>
-            <p className={styles.bet-hint}>
+            <p className={styles['bet-hint']}>
               🪙 При выигрыше получите {betAmount * 2 - Math.floor(betAmount * 2 * 0.05)} баллов (комиссия 5%)
             </p>
           </div>
           
-          <div className={styles.color-selector}>
+          <div className={styles['color-selector']}>
             <label>
               <input
                 type="radio"
@@ -703,7 +703,7 @@ const OnlineChess = () => {
             </label>
           </div>
 
-          <div className={styles.players-list}>
+          <div className={styles['players-list']}>
             {availablePlayers.map((player) => {
               const frameImage = getFrameImage(player.avatar_frame);
               const avatarUrl = player.avatar_url ? `${BASE_URL}${player.avatar_url}` : '/default-avatar.png';
@@ -715,7 +715,7 @@ const OnlineChess = () => {
               return (
                 <div 
                   key={player.id} 
-                  className={styles.player-card}
+                  className={styles['player-card']}
                   style={{
                     backgroundImage: bannerImage 
                       ? `url(${bannerImage})` 
@@ -725,23 +725,23 @@ const OnlineChess = () => {
                   }}
                 >
                   {(bannerImage || player.profile_banner === 'default') && (
-                    <div className={styles.player-card-overlay}></div>
+                    <div className={styles['player-card-overlay']}></div>
                   )}
-                  <div className={styles.player-avatar-wrapper}>
+                  <div className={styles['player-avatar-wrapper']}>
                     <img 
                       src={avatarUrl} 
                       alt={player.full_name}
-                      className={styles.player-avatar}
+                      className={styles['player-avatar']}
                     />
                     {frameImage && (
                       <img 
                         src={frameImage}
                         alt="Frame"
-                        className={styles.player-avatar-frame-small}
+                        className={styles['player-avatar-frame-small']}
                       />
                     )}
                   </div>
-                  <div className={styles.player-info}>
+                  <div className={styles['player-info']}>
                     <h3 className={`styled-username ${player.username_style || 'username-none'}`}>
                       {player.full_name || player.username}
                     </h3>
@@ -750,7 +750,7 @@ const OnlineChess = () => {
                     </span>
                   </div>
                   <button 
-                    className={styles.btn-send-challenge}
+                    className={styles['btn-send-challenge']}
                     onClick={() => sendChallenge(player.id)}
                   >
                     Вызвать
@@ -763,27 +763,27 @@ const OnlineChess = () => {
       )}
 
       {view === 'game' && currentGame && (
-        <div className={styles.game-view}>
-          <button className={styles.btn-back} onClick={backToMenu}>
+        <div className={styles['game-view']}>
+          <button className={styles['btn-back']} onClick={backToMenu}>
             ← Вернуться к меню
           </button>
           
-          <div className={styles.game-layout}>
-            <div className={styles.board-container}>
-              <h2 className={styles.game-status}>{gameStatus}</h2>
+          <div className={styles['game-layout']}>
+            <div className={styles['board-container']}>
+              <h2 className={styles['game-status']}>{gameStatus}</h2>
               
               {/* Таймер */}
-              <div className={styles.timer-display}>
+              <div className={styles['timer-display']}>
                 <div className={`timer ${game.turn() === 'w' && playerColor === 'white' || game.turn() === 'b' && playerColor === 'black' ? 'active' : ''}`}>
-                  <span className={styles.timer-label}>Ваше время:</span>
+                  <span className={styles['timer-label']}>Ваше время:</span>
                   <span className={`timer-value ${displayTime < 30 ? 'warning' : ''}`}>
                     {Math.floor(displayTime / 60)}:{String(displayTime % 60).padStart(2, '0')}
                   </span>
-                  {displayTime < 30 && <span className={styles.grace-period}>⚠️ Мало времени!</span>}
+                  {displayTime < 30 && <span className={styles['grace-period']}>⚠️ Мало времени!</span>}
                 </div>
                 <div className={styles.timer}>
-                  <span className={styles.timer-label}>Противник:</span>
-                  <span className={styles.timer-value}>
+                  <span className={styles['timer-label']}>Противник:</span>
+                  <span className={styles['timer-value']}>
                     {Math.floor(opponentTimeLeft / 60)}:{String(opponentTimeLeft % 60).padStart(2, '0')}
                   </span>
                 </div>
@@ -800,27 +800,27 @@ const OnlineChess = () => {
               />
             </div>
 
-            <div className={styles.game-sidebar}>
-              <div className={styles.players-info}>
+            <div className={styles['game-sidebar']}>
+              <div className={styles['players-info']}>
                 {/* Белые */}
-                <div className={styles.chess-player-card}>
+                <div className={styles['chess-player-card']}>
                   {getBannerImage(currentGame.white_player_banner) && (
                     <div 
-                      className={styles.chess-player-banner}
+                      className={styles['chess-player-banner']}
                       style={{ backgroundImage: `url(${getBannerImage(currentGame.white_player_banner)})` }}
                     />
                   )}
-                  <div className={styles.chess-avatar-container}>
+                  <div className={styles['chess-avatar-container']}>
                     <img 
                       src={currentGame.white_avatar ? `${BASE_URL}${currentGame.white_avatar}` : '/default-avatar.png'} 
                       alt="Белые"
-                      className={styles.chess-avatar}
+                      className={styles['chess-avatar']}
                     />
                     {getFrameImage(currentGame.white_player_frame) && (
                       <img 
                         src={getFrameImage(currentGame.white_player_frame)}
                         alt="Frame"
-                        className={styles.chess-avatar-frame}
+                        className={styles['chess-avatar-frame']}
                       />
                     )}
                   </div>
@@ -830,24 +830,24 @@ const OnlineChess = () => {
                 </div>
 
                 {/* Чёрные */}
-                <div className={styles.chess-player-card}>
+                <div className={styles['chess-player-card']}>
                   {getBannerImage(currentGame.black_player_banner) && (
                     <div 
-                      className={styles.chess-player-banner}
+                      className={styles['chess-player-banner']}
                       style={{ backgroundImage: `url(${getBannerImage(currentGame.black_player_banner)})` }}
                     />
                   )}
-                  <div className={styles.chess-avatar-container}>
+                  <div className={styles['chess-avatar-container']}>
                     <img 
                       src={currentGame.black_avatar ? `${BASE_URL}${currentGame.black_avatar}` : '/default-avatar.png'} 
                       alt="Чёрные"
-                      className={styles.chess-avatar}
+                      className={styles['chess-avatar']}
                     />
                     {getFrameImage(currentGame.black_player_frame) && (
                       <img 
                         src={getFrameImage(currentGame.black_player_frame)}
                         alt="Frame"
-                        className={styles.chess-avatar-frame}
+                        className={styles['chess-avatar-frame']}
                       />
                     )}
                   </div>
@@ -857,20 +857,20 @@ const OnlineChess = () => {
                 </div>
               </div>
 
-              <div className={styles.move-history}>
+              <div className={styles['move-history']}>
                 <h3>История ходов</h3>
-                <div className={styles.moves-list}>
+                <div className={styles['moves-list']}>
                   {moveHistory.map((move, index) => (
                     <div key={index} className={`move ${index % 2 === 0 ? 'white' : 'black'}`}>
-                      <span className={styles.move-number}>{Math.floor(index / 2) + 1}.</span>
-                      <span className={styles.move-text}>{move.san || move}</span>
+                      <span className={styles['move-number']}>{Math.floor(index / 2) + 1}.</span>
+                      <span className={styles['move-text']}>{move.san || move}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className={styles.game-controls}>
-                <button className={styles.btn-resign} onClick={resign}>
+              <div className={styles['game-controls']}>
+                <button className={styles['btn-resign']} onClick={resign}>
                   Сдаться
                 </button>
               </div>

@@ -326,8 +326,8 @@ function CrashGame() {
   // Проверяем загружен ли пользователь
   if (!user) {
     return (
-      <div className={styles.crash-game}>
-        <div className={styles.crash-header}>
+      <div className={styles['crash-game']}>
+        <div className={styles['crash-header']}>
           <h1><FaRocket /> Crash Game</h1>
         </div>
         <div style={{ padding: '40px', textAlign: 'center' }}>
@@ -338,22 +338,22 @@ function CrashGame() {
   }
 
   return (
-    <div className={styles.crash-game}>
-      <div className={styles.crash-header}>
+    <div className={styles['crash-game']}>
+      <div className={styles['crash-header']}>
         <h1><FaRocket /> Crash Game</h1>
         <div className={styles.balance}>Баланс: {balance} баллов</div>
       </div>
 
-      <div className={styles.crash-main}>
-        <div className={styles.crash-game-area}>
-          <div className={styles.multiplier-display} style={{ color: getMultiplierColor() }}>
+      <div className={styles['crash-main']}>
+        <div className={styles['crash-game-area']}>
+          <div className={styles['multiplier-display']} style={{ color: getMultiplierColor() }}>
             {gameState === 'crashed' ? (
-              <div className={styles.crashed-text}>
+              <div className={styles['crashed-text']}>
                 <div><FaBomb /> CRASHED!</div>
-                <div className={styles.crash-point}>{crashPoint}x</div>
+                <div className={styles['crash-point']}>{crashPoint}x</div>
               </div>
             ) : (
-              <div className={styles.current-multiplier}>
+              <div className={styles['current-multiplier']}>
                 {multiplier.toFixed(2)}x
               </div>
             )}
@@ -363,20 +363,20 @@ function CrashGame() {
             ref={canvasRef} 
             width={800} 
             height={400}
-            className={styles.crash-canvas}
+            className={styles['crash-canvas']}
           />
 
           {countdown !== null && (
-            <div className={styles.countdown-overlay}>
-              <div className={styles.countdown-text}>
+            <div className={styles['countdown-overlay']}>
+              <div className={styles['countdown-text']}>
                 Игра начнется через {countdown}...
               </div>
             </div>
           )}
         </div>
 
-        <div className={styles.crash-controls}>
-          <div className={styles.bet-input-group}>
+        <div className={styles['crash-controls']}>
+          <div className={styles['bet-input-group']}>
             <label>Ставка:</label>
             <input
               type="number"
@@ -386,7 +386,7 @@ function CrashGame() {
               max="1000"
               disabled={gameState !== 'waiting' || currentBet}
             />
-            <div className={styles.quick-bets}>
+            <div className={styles['quick-bets']}>
               <button onClick={() => setBetAmount(10)}>10</button>
               <button onClick={() => setBetAmount(50)}>50</button>
               <button onClick={() => setBetAmount(100)}>100</button>
@@ -395,41 +395,41 @@ function CrashGame() {
           </div>
 
           {!currentBet && gameState === 'waiting' && (
-            <button className={styles.bet-button} onClick={placeBet}>
+            <button className={styles['bet-button']} onClick={placeBet}>
               Сделать ставку {betAmount} баллов
             </button>
           )}
 
           {currentBet && !cashedOut && gameState === 'running' && (
-            <button className={styles.cashout-button} onClick={cashOut}>
+            <button className={styles['cashout-button']} onClick={cashOut}>
               Вывести {(currentBet.bet_amount * multiplier).toFixed(0)} баллов
             </button>
           )}
 
           {currentBet && gameState === 'waiting' && (
-            <div className={styles.bet-placed}>
+            <div className={styles['bet-placed']}>
               <FaCheckCircle /> Ставка {currentBet.bet_amount} баллов размещена
             </div>
           )}
 
           {cashedOut && (
-            <div className={styles.cashed-out}>
+            <div className={styles['cashed-out']}>
               <FaDollarSign /> Вы вывели деньги!
             </div>
           )}
         </div>
       </div>
 
-      <div className={styles.crash-sidebar}>
-        <div className={styles.current-bets}>
+      <div className={styles['crash-sidebar']}>
+        <div className={styles['current-bets']}>
           <h3>Текущие ставки ({bets.length})</h3>
-          <div className={styles.bets-list}>
+          <div className={styles['bets-list']}>
             {bets.slice(0, 10).map((bet) => (
               <div key={bet.id} className={`bet-item ${bet.status}`}>
                 <span className={styles.username}>{bet.username}</span>
                 <span className={styles.amount}>{bet.bet_amount}</span>
                 {bet.status === 'cashed_out' && (
-                  <span className={styles.cashout-info}>
+                  <span className={styles['cashout-info']}>
                     {bet.cashout_multiplier}x = {bet.win_amount}
                   </span>
                 )}
@@ -438,13 +438,13 @@ function CrashGame() {
           </div>
         </div>
 
-        <div className={styles.game-history}>
+        <div className={styles['game-history']}>
           <h3>История</h3>
-          <div className={styles.history-list}>
+          <div className={styles['history-list']}>
             {history.map((game) => (
               <div 
                 key={game.id} 
-                className={styles.history-item}
+                className={styles['history-item']}
                 style={{
                   backgroundColor: game.crash_point < 2 ? '#ff5722' : 
                                    game.crash_point < 5 ? '#ff9800' : '#00ff88'
@@ -457,25 +457,25 @@ function CrashGame() {
         </div>
 
         {stats && (
-          <div className={styles.player-stats}>
+          <div className={styles['player-stats']}>
             <h3>Ваша статистика</h3>
-            <div className={styles.stat-row}>
+            <div className={styles['stat-row']}>
               <span>Игр:</span>
               <span>{stats.total_games}</span>
             </div>
-            <div className={styles.stat-row}>
+            <div className={styles['stat-row']}>
               <span>Побед:</span>
               <span>{stats.wins}</span>
             </div>
-            <div className={styles.stat-row}>
+            <div className={styles['stat-row']}>
               <span>Поражений:</span>
               <span>{stats.losses}</span>
             </div>
-            <div className={styles.stat-row}>
+            <div className={styles['stat-row']}>
               <span>Выигрыш:</span>
               <span className={styles.positive}>+{stats.total_won}</span>
             </div>
-            <div className={styles.stat-row}>
+            <div className={styles['stat-row']}>
               <span>Лучший:</span>
               <span className={styles.highlight}>{stats.best_multiplier}x</span>
             </div>

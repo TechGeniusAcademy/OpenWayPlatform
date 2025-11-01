@@ -73,7 +73,7 @@ function KnowledgeBase() {
 
   if (loading) {
     return (
-      <div className={styles.knowledge-base-loading}>
+      <div className={styles['knowledge-base-loading']}>
         <div className={styles.loader}></div>
         <p>Загрузка базы знаний...</p>
       </div>
@@ -81,34 +81,34 @@ function KnowledgeBase() {
   }
 
   return (
-    <div className={styles.knowledge-base}>
+    <div className={styles['knowledge-base']}>
       {!selectedArticle ? (
         <>
           {/* Заголовок и поиск */}
-          <div className={styles.kb-header}>
-            <div className={styles.kb-header-content}>
+          <div className={styles['kb-header']}>
+            <div className={styles['kb-header-content']}>
               <h1>📚 База знаний</h1>
               <p>Изучайте материалы и расширяйте свои знания</p>
             </div>
-            <div className={styles.kb-search}>
+            <div className={styles['kb-search']}>
               <input
                 type="text"
                 placeholder="🔍 Поиск по базе знаний..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={styles.kb-search-input}
+                className={styles['kb-search-input']}
               />
             </div>
           </div>
 
           {/* Категории */}
-          <div className={styles.kb-categories}>
+          <div className={styles['kb-categories']}>
             <button
               className={`kb-category ${selectedCategory === 'all' ? 'active' : ''}`}
               onClick={() => setSelectedCategory('all')}
             >
-              <span className={styles.category-icon}>📋</span>
-              <span className={styles.category-name}>Все темы</span>
+              <span className={styles['category-icon']}>📋</span>
+              <span className={styles['category-name']}>Все темы</span>
             </button>
             {categories.map(category => (
               <button
@@ -116,15 +116,15 @@ function KnowledgeBase() {
                 className={`kb-category ${selectedCategory === category.id ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(category.id)}
               >
-                <span className={styles.category-icon}>{category.icon}</span>
-                <span className={styles.category-name}>{category.name}</span>
+                <span className={styles['category-icon']}>{category.icon}</span>
+                <span className={styles['category-name']}>{category.name}</span>
               </button>
             ))}
           </div>
 
           {/* Подкатегории */}
           {subcategories.length > 0 && (
-            <div className={styles.kb-subcategories}>
+            <div className={styles['kb-subcategories']}>
               <button
                 className={`kb-subcategory ${selectedSubcategory === 'all' ? 'active' : ''}`}
                 onClick={() => setSelectedSubcategory('all')}
@@ -144,10 +144,10 @@ function KnowledgeBase() {
           )}
 
           {/* Список статей */}
-          <div className={styles.kb-articles-grid}>
+          <div className={styles['kb-articles-grid']}>
             {filteredArticles.length === 0 ? (
-              <div className={styles.kb-empty}>
-                <div className={styles.kb-empty-icon}>🔍</div>
+              <div className={styles['kb-empty']}>
+                <div className={styles['kb-empty-icon']}>🔍</div>
                 <h3>Ничего не найдено</h3>
                 <p>Попробуйте изменить параметры поиска</p>
               </div>
@@ -155,20 +155,20 @@ function KnowledgeBase() {
               filteredArticles.map(article => (
                 <div
                   key={article.id}
-                  className={styles.kb-article-card}
+                  className={styles['kb-article-card']}
                   onClick={() => handleArticleClick(article)}
                 >
-                  <div className={styles.kb-article-header}>
-                    <span className={styles.kb-article-category}>{article.category}</span>
-                    <span className={styles.kb-article-views}>👁️ {article.views}</span>
+                  <div className={styles['kb-article-header']}>
+                    <span className={styles['kb-article-category']}>{article.category}</span>
+                    <span className={styles['kb-article-views']}>👁️ {article.views}</span>
                   </div>
-                  <h3 className={styles.kb-article-title}>{article.title}</h3>
-                  <p className={styles.kb-article-description}>{article.description}</p>
-                  <div className={styles.kb-article-footer}>
-                    <span className={styles.kb-article-date}>
+                  <h3 className={styles['kb-article-title']}>{article.title}</h3>
+                  <p className={styles['kb-article-description']}>{article.description}</p>
+                  <div className={styles['kb-article-footer']}>
+                    <span className={styles['kb-article-date']}>
                       📅 {new Date(article.created_at).toLocaleDateString('ru-RU')}
                     </span>
-                    <span className={styles.kb-article-link}>Читать →</span>
+                    <span className={styles['kb-article-link']}>Читать →</span>
                   </div>
                 </div>
               ))
@@ -177,28 +177,28 @@ function KnowledgeBase() {
         </>
       ) : (
         /* Просмотр статьи */
-        <div className={styles.kb-article-view}>
+        <div className={styles['kb-article-view']}>
           <button
-            className={styles.kb-back-button}
+            className={styles['kb-back-button']}
             onClick={() => setSelectedArticle(null)}
           >
             ← Назад к списку
           </button>
           
-          <div className={styles.kb-article-content}>
-            <div className={styles.kb-article-meta}>
-              <span className={styles.kb-article-category-badge}>{selectedArticle.category}</span>
-              <span className={styles.kb-article-views-badge}>👁️ {selectedArticle.views} просмотров</span>
+          <div className={styles['kb-article-content']}>
+            <div className={styles['kb-article-meta']}>
+              <span className={styles['kb-article-category-badge']}>{selectedArticle.category}</span>
+              <span className={styles['kb-article-views-badge']}>👁️ {selectedArticle.views} просмотров</span>
             </div>
             
-            <h1 className={styles.kb-article-main-title}>{selectedArticle.title}</h1>
+            <h1 className={styles['kb-article-main-title']}>{selectedArticle.title}</h1>
             
-            <div className={styles.kb-article-info}>
+            <div className={styles['kb-article-info']}>
               <span>📅 {new Date(selectedArticle.created_at).toLocaleDateString('ru-RU')}</span>
             </div>
 
             <div 
-              className={styles.kb-article-body}
+              className={styles['kb-article-body']}
               dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
             />
           </div>

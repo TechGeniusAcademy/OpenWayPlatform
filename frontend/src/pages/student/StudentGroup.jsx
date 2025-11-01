@@ -122,8 +122,8 @@ function StudentGroup() {
 
   if (loading) {
     return (
-      <div className={styles.student-page}>
-        <div className={styles.page-header}>
+      <div className={styles['student-page']}>
+        <div className={styles['page-header']}>
           <h1>Моя группа</h1>
           <p>Загрузка...</p>
         </div>
@@ -133,14 +133,14 @@ function StudentGroup() {
 
   if (!groupInfo) {
     return (
-      <div className={styles.student-page}>
-        <div className={styles.page-header}>
+      <div className={styles['student-page']}>
+        <div className={styles['page-header']}>
           <h1>Моя группа</h1>
           <p>Информация о вашей группе</p>
         </div>
 
-        <div className={styles.empty-state}>
-          <div className={styles.empty-state-icon}>👥</div>
+        <div className={styles['empty-state']}>
+          <div className={styles['empty-state-icon']}>👥</div>
           <h3>Вы не состоите в группе</h3>
           <p>Обратитесь к администратору для добавления в группу</p>
         </div>
@@ -149,33 +149,33 @@ function StudentGroup() {
   }
 
   return (
-    <div className={styles.student-page}>
-      <div className={styles.page-header}>
+    <div className={styles['student-page']}>
+      <div className={styles['page-header']}>
         <h1>Моя группа: {groupInfo.name}</h1>
         <p>Информация о вашей группе</p>
       </div>
 
-      <div className={styles.group-info-card}>
-        <div className={styles.group-info-section}>
+      <div className={styles['group-info-card']}>
+        <div className={styles['group-info-section']}>
           <h3>Информация о группе</h3>
-          <div className={styles.profile-info-grid}>
-            <div className={styles.info-row}>
-              <span className={styles.info-label}>Название:</span>
-              <span className={styles.info-value}>{groupInfo.name}</span>
+          <div className={styles['profile-info-grid']}>
+            <div className={styles['info-row']}>
+              <span className={styles['info-label']}>Название:</span>
+              <span className={styles['info-value']}>{groupInfo.name}</span>
             </div>
             {groupInfo.description && (
-              <div className={styles.info-row}>
-                <span className={styles.info-label}>Описание:</span>
-                <span className={styles.info-value}>{groupInfo.description}</span>
+              <div className={styles['info-row']}>
+                <span className={styles['info-label']}>Описание:</span>
+                <span className={styles['info-value']}>{groupInfo.description}</span>
               </div>
             )}
-            <div className={styles.info-row}>
-              <span className={styles.info-label}>Количество студентов:</span>
-              <span className={styles.info-value}>{groupInfo.students?.length || 0} человек</span>
+            <div className={styles['info-row']}>
+              <span className={styles['info-label']}>Количество студентов:</span>
+              <span className={styles['info-value']}>{groupInfo.students?.length || 0} человек</span>
             </div>
-            <div className={styles.info-row}>
-              <span className={styles.info-label}>Дата создания:</span>
-              <span className={styles.info-value}>
+            <div className={styles['info-row']}>
+              <span className={styles['info-label']}>Дата создания:</span>
+              <span className={styles['info-value']}>
                 {new Date(groupInfo.created_at).toLocaleDateString('ru-RU')}
               </span>
             </div>
@@ -183,9 +183,9 @@ function StudentGroup() {
         </div>
 
         {groupInfo.students && groupInfo.students.length > 0 && (
-          <div className={styles.group-info-section}>
+          <div className={styles['group-info-section']}>
             <h3>Студенты группы</h3>
-            <div className={styles.students-list}>
+            <div className={styles['students-list']}>
               {groupInfo.students.map((student) => {
                 const frameImage = getFrameImage(student.avatar_frame);
                 const bannerImage = getBannerImage(student.profile_banner);
@@ -196,7 +196,7 @@ function StudentGroup() {
                 return (
                   <div 
                     key={student.id} 
-                    className={styles.student-list-item}
+                    className={styles['student-list-item']}
                     onClick={() => openStudentProfile(student)}
                     style={{
                       backgroundImage: bannerImage 
@@ -210,11 +210,11 @@ function StudentGroup() {
                     }}
                   >
                     {(bannerImage || student.profile_banner === 'default') && (
-                      <div className={styles.student-item-overlay}></div>
+                      <div className={styles['student-item-overlay']}></div>
                     )}
                     
-                    <div className={styles.student-avatar-wrapper}>
-                      <div className={styles.student-avatar}>
+                    <div className={styles['student-avatar-wrapper']}>
+                      <div className={styles['student-avatar']}>
                         {student.avatar_url ? (
                           <img src={`${BASE_URL}${student.avatar_url}`} alt={student.username} />
                         ) : (
@@ -225,17 +225,17 @@ function StudentGroup() {
                         <img 
                           src={frameImage}
                           alt="Frame"
-                          className={styles.student-avatar-frame}
+                          className={styles['student-avatar-frame']}
                         />
                       )}
                     </div>
                     
-                    <div className={styles.student-info}>
+                    <div className={styles['student-info']}>
                       <strong className={`styled-username ${student.username_style || 'username-none'}`}>
                         {student.full_name || student.username}
                       </strong>
                       <small>{student.email}</small>
-                      <div className={styles.student-points}><AiOutlineWallet className={styles.points-inline} /> {student.points || 0} баллов</div>
+                      <div className={styles['student-points']}><AiOutlineWallet className={styles['points-inline']} /> {student.points || 0} баллов</div>
                     </div>
                   </div>
                 );
@@ -247,15 +247,15 @@ function StudentGroup() {
 
       {/* Модальное окно профиля студента */}
       {showModal && selectedStudent && (
-        <div className={styles.student-profile-modal-overlay} onClick={closeModal}>
-          <div className={styles.student-profile-modal} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.modal-close-btn} onClick={closeModal}>
+        <div className={styles['student-profile-modal-overlay']} onClick={closeModal}>
+          <div className={styles['student-profile-modal']} onClick={(e) => e.stopPropagation()}>
+            <button className={styles['modal-close-btn']} onClick={closeModal}>
               <AiOutlineClose />
             </button>
 
             {/* Баннер профиля */}
             <div 
-              className={styles.modal-profile-banner}
+              className={styles['modal-profile-banner']}
               style={{
                 backgroundImage: getBannerImage(selectedStudent.profile_banner)
                   ? `url(${getBannerImage(selectedStudent.profile_banner)})`
@@ -266,17 +266,17 @@ function StudentGroup() {
                 backgroundPosition: 'center'
               }}
             >
-              <div className={styles.modal-banner-overlay}></div>
+              <div className={styles['modal-banner-overlay']}></div>
             </div>
 
             {/* Аватар с рамкой */}
-            <div className={styles.modal-avatar-section}>
-              <div className={styles.modal-avatar-wrapper}>
-                <div className={styles.modal-avatar}>
+            <div className={styles['modal-avatar-section']}>
+              <div className={styles['modal-avatar-wrapper']}>
+                <div className={styles['modal-avatar']}>
                   {selectedStudent.avatar_url ? (
                     <img src={`${BASE_URL}${selectedStudent.avatar_url}`} alt={selectedStudent.username} />
                   ) : (
-                    <span className={styles.avatar-letter}>
+                    <span className={styles['avatar-letter']}>
                       {(selectedStudent.full_name || selectedStudent.username).charAt(0).toUpperCase()}
                     </span>
                   )}
@@ -285,77 +285,77 @@ function StudentGroup() {
                   <img 
                     src={getFrameImage(selectedStudent.avatar_frame)}
                     alt="Frame"
-                    className={styles.modal-avatar-frame}
+                    className={styles['modal-avatar-frame']}
                   />
                 )}
               </div>
               
-              <div className={styles.modal-user-info}>
+              <div className={styles['modal-user-info']}>
                 <h2 className={`styled-username ${selectedStudent.username_style || 'username-none'}`}>
                   {selectedStudent.full_name || selectedStudent.username}
                 </h2>
-                <p className={styles.modal-username}>@{selectedStudent.username}</p>
+                <p className={styles['modal-username']}>@{selectedStudent.username}</p>
               </div>
             </div>
 
             {/* Информация о студенте */}
-            <div className={styles.modal-info-section}>
-              <div className={styles.modal-stats}>
-                <div className={styles.modal-stat-card}>
-                  <div className={styles.stat-icon}>
+            <div className={styles['modal-info-section']}>
+              <div className={styles['modal-stats']}>
+                <div className={styles['modal-stat-card']}>
+                  <div className={styles['stat-icon']}>
                     <AiOutlineWallet />
                   </div>
-                  <div className={styles.stat-info}>
-                    <span className={styles.stat-value}>{selectedStudent.points || 0}</span>
-                    <span className={styles.stat-label}>Баллов</span>
+                  <div className={styles['stat-info']}>
+                    <span className={styles['stat-value']}>{selectedStudent.points || 0}</span>
+                    <span className={styles['stat-label']}>Баллов</span>
                   </div>
                 </div>
 
-                <div className={styles.modal-stat-card}>
-                  <div className={styles.stat-icon}>
+                <div className={styles['modal-stat-card']}>
+                  <div className={styles['stat-icon']}>
                     <AiOutlineTrophy />
                   </div>
-                  <div className={styles.stat-info}>
-                    <span className={styles.stat-value}>{selectedStudent.rank || 'Новичок'}</span>
-                    <span className={styles.stat-label}>Ранг</span>
+                  <div className={styles['stat-info']}>
+                    <span className={styles['stat-value']}>{selectedStudent.rank || 'Новичок'}</span>
+                    <span className={styles['stat-label']}>Ранг</span>
                   </div>
                 </div>
 
-                <div className={styles.modal-stat-card}>
-                  <div className={styles.stat-icon}>
+                <div className={styles['modal-stat-card']}>
+                  <div className={styles['stat-icon']}>
                     <AiOutlineStar />
                   </div>
-                  <div className={styles.stat-info}>
-                    <span className={styles.stat-value}>{selectedStudent.level || 1}</span>
-                    <span className={styles.stat-label}>Уровень</span>
+                  <div className={styles['stat-info']}>
+                    <span className={styles['stat-value']}>{selectedStudent.level || 1}</span>
+                    <span className={styles['stat-label']}>Уровень</span>
                   </div>
                 </div>
               </div>
 
-              <div className={styles.modal-details}>
+              <div className={styles['modal-details']}>
                 <h3>Информация</h3>
-                <div className={styles.modal-details-grid}>
-                  <div className={styles.detail-row}>
-                    <span className={styles.detail-label}>Email:</span>
-                    <span className={styles.detail-value}>{selectedStudent.email}</span>
+                <div className={styles['modal-details-grid']}>
+                  <div className={styles['detail-row']}>
+                    <span className={styles['detail-label']}>Email:</span>
+                    <span className={styles['detail-value']}>{selectedStudent.email}</span>
                   </div>
                   {selectedStudent.phone && (
-                    <div className={styles.detail-row}>
-                      <span className={styles.detail-label}>Телефон:</span>
-                      <span className={styles.detail-value}>{selectedStudent.phone}</span>
+                    <div className={styles['detail-row']}>
+                      <span className={styles['detail-label']}>Телефон:</span>
+                      <span className={styles['detail-value']}>{selectedStudent.phone}</span>
                     </div>
                   )}
-                  <div className={styles.detail-row}>
-                    <span className={styles.detail-label}>Статус:</span>
-                    <span className={styles.detail-value}>
+                  <div className={styles['detail-row']}>
+                    <span className={styles['detail-label']}>Статус:</span>
+                    <span className={styles['detail-value']}>
                       <span className={`status-badge ${selectedStudent.is_online ? 'online' : 'offline'}`}>
                         {selectedStudent.is_online ? 'Онлайн' : 'Офлайн'}
                       </span>
                     </span>
                   </div>
-                  <div className={styles.detail-row}>
-                    <span className={styles.detail-label}>Дата регистрации:</span>
-                    <span className={styles.detail-value}>
+                  <div className={styles['detail-row']}>
+                    <span className={styles['detail-label']}>Дата регистрации:</span>
+                    <span className={styles['detail-value']}>
                       {new Date(selectedStudent.created_at).toLocaleDateString('ru-RU', {
                         day: 'numeric',
                         month: 'long',
@@ -368,26 +368,26 @@ function StudentGroup() {
 
               {/* Кнопка передачи баллов */}
               {selectedStudent.id !== user.id && (
-                <div className={styles.modal-transfer-section}>
+                <div className={styles['modal-transfer-section']}>
                   {!showTransferForm ? (
                     <button 
-                      className={styles.transfer-points-btn}
+                      className={styles['transfer-points-btn']}
                       onClick={() => setShowTransferForm(true)}
                     >
                       <AiOutlineSend />
                       Передать баллы
                     </button>
                   ) : (
-                    <form className={styles.transfer-form} onSubmit={handleTransferPoints}>
+                    <form className={styles['transfer-form']} onSubmit={handleTransferPoints}>
                       <h3>Передать баллы</h3>
-                      <p className={styles.transfer-info}>
+                      <p className={styles['transfer-info']}>
                         Вы можете передать баллы пользователю {selectedStudent.full_name || selectedStudent.username}
                       </p>
-                      <p className={styles.your-balance}>
+                      <p className={styles['your-balance']}>
                         Ваш баланс: <strong>{user.points} баллов</strong>
                       </p>
                       
-                      <div className={styles.form-group}>
+                      <div className={styles['form-group']}>
                         <label>Количество баллов:</label>
                         <input
                           type="number"
@@ -401,7 +401,7 @@ function StudentGroup() {
                         />
                       </div>
 
-                      <div className={styles.form-group}>
+                      <div className={styles['form-group']}>
                         <label>Сообщение (необязательно):</label>
                         <textarea
                           value={transferMessage}
@@ -413,15 +413,15 @@ function StudentGroup() {
                       </div>
 
                       {transferError && (
-                        <div className={styles.transfer-error}>
+                        <div className={styles['transfer-error']}>
                           {transferError}
                         </div>
                       )}
 
-                      <div className={styles.transfer-actions}>
+                      <div className={styles['transfer-actions']}>
                         <button 
                           type="button" 
-                          className={styles.cancel-btn}
+                          className={styles['cancel-btn']}
                           onClick={() => {
                             setShowTransferForm(false);
                             setTransferAmount('');
@@ -434,7 +434,7 @@ function StudentGroup() {
                         </button>
                         <button 
                           type="submit" 
-                          className={styles.submit-btn}
+                          className={styles['submit-btn']}
                           disabled={transfering || !transferAmount}
                         >
                           {transfering ? 'Отправка...' : 'Отправить'}
@@ -446,28 +446,28 @@ function StudentGroup() {
               )}
 
               {/* Косметика */}
-              <div className={styles.modal-cosmetics}>
+              <div className={styles['modal-cosmetics']}>
                 <h3>Активная косметика</h3>
-                <div className={styles.cosmetics-grid}>
-                  <div className={styles.cosmetic-item}>
-                    <span className={styles.cosmetic-label}>Рамка аватара:</span>
-                    <span className={styles.cosmetic-value}>
+                <div className={styles['cosmetics-grid']}>
+                  <div className={styles['cosmetic-item']}>
+                    <span className={styles['cosmetic-label']}>Рамка аватара:</span>
+                    <span className={styles['cosmetic-value']}>
                       {selectedStudent.avatar_frame && selectedStudent.avatar_frame !== 'none' 
                         ? cosmetics.frames.find(f => f.item_key === selectedStudent.avatar_frame)?.name || 'Неизвестно'
                         : 'Не выбрано'}
                     </span>
                   </div>
-                  <div className={styles.cosmetic-item}>
-                    <span className={styles.cosmetic-label}>Баннер профиля:</span>
-                    <span className={styles.cosmetic-value}>
+                  <div className={styles['cosmetic-item']}>
+                    <span className={styles['cosmetic-label']}>Баннер профиля:</span>
+                    <span className={styles['cosmetic-value']}>
                       {selectedStudent.profile_banner && selectedStudent.profile_banner !== 'default'
                         ? cosmetics.banners.find(b => b.item_key === selectedStudent.profile_banner)?.name || 'Неизвестно'
                         : 'По умолчанию'}
                     </span>
                   </div>
-                  <div className={styles.cosmetic-item}>
-                    <span className={styles.cosmetic-label}>Стиль никнейма:</span>
-                    <span className={styles.cosmetic-value}>
+                  <div className={styles['cosmetic-item']}>
+                    <span className={styles['cosmetic-label']}>Стиль никнейма:</span>
+                    <span className={styles['cosmetic-value']}>
                       {selectedStudent.username_style && selectedStudent.username_style !== 'username-none'
                         ? selectedStudent.username_style.replace('username-', '').toUpperCase()
                         : 'Обычный'}

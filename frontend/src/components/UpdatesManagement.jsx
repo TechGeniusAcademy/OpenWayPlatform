@@ -118,40 +118,40 @@ function UpdatesManagement() {
   };
 
   return (
-    <div className={styles.updates-management}>
-      <div className={styles.page-header}>
+    <div className={styles['updates-management']}>
+      <div className={styles['page-header']}>
         <h1>Управление обновлениями</h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           <AiOutlinePlus /> Добавить обновление
         </button>
       </div>
 
-      <div className={styles.updates-list}>
+      <div className={styles['updates-list']}>
         {updates.length === 0 ? (
-          <div className={styles.empty-state}>
+          <div className={styles['empty-state']}>
             <p>Обновления ещё не добавлены</p>
           </div>
         ) : (
           updates.map(update => (
-            <div key={update.id} className={styles.update-card}>
-              <div className={styles.update-header}>
-                <div className={styles.update-version-badge}>{update.version}</div>
-                <div className={styles.update-status}>
+            <div key={update.id} className={styles['update-card']}>
+              <div className={styles['update-header']}>
+                <div className={styles['update-version-badge']}>{update.version}</div>
+                <div className={styles['update-status']}>
                   {update.published ? (
-                    <span className={styles.status-published}><AiOutlineEye /> Опубликовано</span>
+                    <span className={styles['status-published']}><AiOutlineEye /> Опубликовано</span>
                   ) : (
-                    <span className={styles.status-draft}><AiOutlineEyeInvisible /> Черновик</span>
+                    <span className={styles['status-draft']}><AiOutlineEyeInvisible /> Черновик</span>
                   )}
                 </div>
               </div>
               <h3>{update.title}</h3>
-              {update.description && <p className={styles.update-description}>{update.description}</p>}
-              <div className={styles.update-meta}>
-                <span className={styles.update-date}>
+              {update.description && <p className={styles['update-description']}>{update.description}</p>}
+              <div className={styles['update-meta']}>
+                <span className={styles['update-date']}>
                   {new Date(update.created_at).toLocaleDateString('ru-RU')}
                 </span>
               </div>
-              <div className={styles.update-actions}>
+              <div className={styles['update-actions']}>
                 <button 
                   className="btn btn-edit" 
                   onClick={() => handleEdit(update)}
@@ -172,19 +172,19 @@ function UpdatesManagement() {
 
       {/* Модальное окно */}
       {showModal && (
-        <div className={styles.update-modal-overlay} onClick={resetForm}>
-          <div className={styles.update-modal-content} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.update-modal-header}>
+        <div className={styles['update-modal-overlay']} onClick={resetForm}>
+          <div className={styles['update-modal-content']} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['update-modal-header']}>
               <h2>{editingUpdate ? 'Редактировать обновление' : 'Новое обновление'}</h2>
-              <button className={styles.update-modal-close} onClick={resetForm}>
+              <button className={styles['update-modal-close']} onClick={resetForm}>
                 <AiOutlineClose />
               </button>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className={styles.update-form-fields}>
-                <div className={styles.form-row}>
-                  <div className={styles.form-group}>
+              <div className={styles['update-form-fields']}>
+                <div className={styles['form-row']}>
+                  <div className={styles['form-group']}>
                     <label>Версия *</label>
                     <input
                       type="text"
@@ -195,8 +195,8 @@ function UpdatesManagement() {
                     />
                   </div>
 
-                  <div className={styles.form-group}>
-                    <label className={styles.checkbox-label}>
+                  <div className={styles['form-group']}>
+                    <label className={styles['checkbox-label']}>
                       <input
                         type="checkbox"
                         checked={formData.published}
@@ -207,7 +207,7 @@ function UpdatesManagement() {
                   </div>
                 </div>
 
-                <div className={styles.form-group}>
+                <div className={styles['form-group']}>
                   <label>Заголовок *</label>
                   <input
                     type="text"
@@ -218,7 +218,7 @@ function UpdatesManagement() {
                   />
                 </div>
 
-                <div className={styles.form-group}>
+                <div className={styles['form-group']}>
                   <label>Краткое описание</label>
                   <input
                     type="text"
@@ -230,7 +230,7 @@ function UpdatesManagement() {
 
                 <div className="form-group quill-group">
                   <label>Содержание обновления *</label>
-                  <div className={styles.quill-wrapper}>
+                  <div className={styles['quill-wrapper']}>
                     <QuillEditor
                       value={formData.content}
                       onChange={(content) => setFormData({ ...formData, content })}
@@ -241,7 +241,7 @@ function UpdatesManagement() {
                 </div>
               </div>
 
-              <div className={styles.update-modal-actions}>
+              <div className={styles['update-modal-actions']}>
                 <button type="button" className="btn btn-secondary" onClick={resetForm}>
                   Отмена
                 </button>

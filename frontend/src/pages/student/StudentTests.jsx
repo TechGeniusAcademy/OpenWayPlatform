@@ -212,8 +212,8 @@ function StudentTests() {
     const progress = ((currentQuestionIndex + 1) / activeTest.questions.length) * 100;
 
     return (
-      <div className={styles.test-taking}>
-        <div className={styles.test-header}>
+      <div className={styles['test-taking']}>
+        <div className={styles['test-header']}>
           <h2>{activeTest.title}</h2>
           {timeLeft !== null && (
             <div className={`timer ${timeLeft < 60 ? 'warning' : ''}`}>
@@ -222,13 +222,13 @@ function StudentTests() {
           )}
         </div>
 
-        <div className={styles.progress-bar}>
-          <div className={styles.progress-fill} style={{ width: `${progress}%` }}></div>
+        <div className={styles['progress-bar']}>
+          <div className={styles['progress-fill']} style={{ width: `${progress}%` }}></div>
         </div>
 
-        <div className={styles.question-container}>
+        <div className={styles['question-container']}>
           <h3>Вопрос {currentQuestionIndex + 1} из {activeTest.questions.length}</h3>
-          <p className={styles.question-text}>{currentQuestion.question_text}</p>
+          <p className={styles['question-text']}>{currentQuestion.question_text}</p>
 
           {currentQuestion.question_type === 'choice' ? (
             <div className={styles.options}>
@@ -246,7 +246,7 @@ function StudentTests() {
               ))}
             </div>
           ) : (
-            <div className={styles.code-editor}>
+            <div className={styles['code-editor']}>
               <label>Напишите код ({currentQuestion.code_language}):</label>
               <textarea
                 value={answers[currentQuestion.id]?.code || currentQuestion.code_template || ''}
@@ -257,15 +257,15 @@ function StudentTests() {
             </div>
           )}
 
-          <div className={styles.navigation-buttons}>
+          <div className={styles['navigation-buttons']}>
             {activeTest.can_retry && currentQuestionIndex > 0 && (
               <button onClick={handlePrevious}>← Назад</button>
             )}
             
             {currentQuestionIndex < activeTest.questions.length - 1 ? (
-              <button className={styles.btn-primary} onClick={handleNext}>Далее →</button>
+              <button className={styles['btn-primary']} onClick={handleNext}>Далее →</button>
             ) : (
-              <button className={styles.btn-complete} onClick={handleComplete}>Завершить тест</button>
+              <button className={styles['btn-complete']} onClick={handleComplete}>Завершить тест</button>
             )}
           </div>
         </div>
@@ -276,17 +276,17 @@ function StudentTests() {
   // Экран результата
   if (showResult && result) {
     return (
-      <div className={styles.test-result}>
-        <div className={styles.result-card}>
+      <div className={styles['test-result']}>
+        <div className={styles['result-card']}>
           <h2>Тест завершен!</h2>
-          <div className={styles.result-score}>
-            <div className={styles.score-circle}>{result.score}%</div>
+          <div className={styles['result-score']}>
+            <div className={styles['score-circle']}>{result.score}%</div>
             <p>Правильных ответов: {result.correctAnswers} из {result.totalQuestions}</p>
           </div>
-          <div className={styles.result-points}>
+          <div className={styles['result-points']}>
             <p>Заработано баллов: <strong>{result.pointsEarned > 0 ? '+' : ''}{result.pointsEarned}</strong></p>
           </div>
-          <button className={styles.btn-primary} onClick={() => setShowResult(false)}>
+          <button className={styles['btn-primary']} onClick={() => setShowResult(false)}>
             Вернуться к списку тестов
           </button>
         </div>
@@ -296,7 +296,7 @@ function StudentTests() {
 
   // Главный экран с списком тестов
   return (
-    <div className={styles.student-tests}>
+    <div className={styles['student-tests']}>
       <div className={styles.header}>
         <h2>Мои тесты</h2>
         <button onClick={() => setShowHistory(!showHistory)}>
@@ -305,7 +305,7 @@ function StudentTests() {
       </div>
 
       {!showHistory ? (
-        <div className={styles.tests-grid}>
+        <div className={styles['tests-grid']}>
           {tests.length === 0 ? (
             <p>Вам пока не назначено ни одного теста</p>
           ) : (
@@ -315,18 +315,18 @@ function StudentTests() {
               const lastAttempt = completedAttempts[completedAttempts.length - 1];
 
               return (
-                <div key={test.id} className={styles.test-card}>
+                <div key={test.id} className={styles['test-card']}>
                   <h3>{test.title}</h3>
                   {test.description && <p>{test.description}</p>}
                   
-                  <div className={styles.test-info}>
+                  <div className={styles['test-info']}>
                     <span><FaClipboardList /> {test.type === 'choice' ? 'Тест с вариантами' : 'Тест с кодом'}</span>
                     <span>⏱️ {test.time_limit || '∞'} мин</span>
                     <span>🪙 {test.points_correct} баллов</span>
                   </div>
 
                   {lastAttempt && (
-                    <div className={styles.last-result}>
+                    <div className={styles['last-result']}>
                       Последний результат: {lastAttempt.score}% ({lastAttempt.points_earned} баллов)
                     </div>
                   )}
@@ -348,7 +348,7 @@ function StudentTests() {
           )}
         </div>
       ) : (
-        <div className={styles.history-list}>
+        <div className={styles['history-list']}>
           {history.length === 0 ? (
             <p>История пуста</p>
           ) : (

@@ -70,18 +70,18 @@ const PlayingCard = ({ card, size = 120 }) => {
   const color = SUIT_COLORS[suitCode];
   
   return (
-    <div className={styles.playing-card} style={{ width: `${size}px`, height: `${size * 1.4}px` }}>
-      <div className={styles.card-inner}>
+    <div className={styles['playing-card']} style={{ width: `${size}px`, height: `${size * 1.4}px` }}>
+      <div className={styles['card-inner']}>
         <div className="card-corner top-left" style={{ color }}>
-          <div className={styles.card-rank}>{rank}</div>
-          <div className={styles.card-suit}>{suit}</div>
+          <div className={styles['card-rank']}>{rank}</div>
+          <div className={styles['card-suit']}>{suit}</div>
         </div>
-        <div className={styles.card-center} style={{ color }}>
-          <span className={styles.card-suit-large}>{suit}</span>
+        <div className={styles['card-center']} style={{ color }}>
+          <span className={styles['card-suit-large']}>{suit}</span>
         </div>
         <div className="card-corner bottom-right" style={{ color }}>
-          <div className={styles.card-rank}>{rank}</div>
-          <div className={styles.card-suit}>{suit}</div>
+          <div className={styles['card-rank']}>{rank}</div>
+          <div className={styles['card-suit']}>{suit}</div>
         </div>
       </div>
     </div>
@@ -156,37 +156,37 @@ export default function PokerGame() {
   };
 
   return (
-    <div className={styles.poker-game-fullscreen}>
-      <div className={styles.poker-game-container}>
+    <div className={styles['poker-game-fullscreen']}>
+      <div className={styles['poker-game-container']}>
         {/* Левая часть - игровой стол */}
-        <div className={styles.poker-table-area}>
-          <div className={styles.poker-table}>
-            <h2 className={styles.poker-title}>♠ Техасский Холдем ♥</h2>
+        <div className={styles['poker-table-area']}>
+          <div className={styles['poker-table']}>
+            <h2 className={styles['poker-title']}>♠ Техасский Холдем ♥</h2>
             
             {/* Стол (Board) */}
-            <div className={styles.board-area}>
+            <div className={styles['board-area']}>
               <h3>Стол ({board.length}/5 карт)</h3>
-              <div className={styles.cards-container}>
+              <div className={styles['cards-container']}>
                 {board.length > 0 ? (
                   board.map((card, idx) => (
                     <PlayingCard key={idx} card={card} size={140} />
                   ))
                 ) : (
-                  <div className={styles.empty-board}>Карты не розданы</div>
+                  <div className={styles['empty-board']}>Карты не розданы</div>
                 )}
               </div>
             </div>
 
             {/* Рука игрока */}
-            <div className={styles.player-hand-area}>
+            <div className={styles['player-hand-area']}>
               <h3>Ваши карты ({playerHand.length}/2)</h3>
-              <div className={styles.player-cards}>
+              <div className={styles['player-cards']}>
                 {playerHand.length > 0 ? (
                   playerHand.map((card, idx) => (
                     <PlayingCard key={idx} card={card} size={120} />
                   ))
                 ) : (
-                  <div className={styles.empty-cards}>Карты не розданы</div>
+                  <div className={styles['empty-cards']}>Карты не розданы</div>
                 )}
               </div>
             </div>
@@ -194,22 +194,22 @@ export default function PokerGame() {
         </div>
 
         {/* Правая часть - контроль */}
-        <div className={styles.poker-controls}>
-          <div className={styles.controls-content}>
+        <div className={styles['poker-controls']}>
+          <div className={styles['controls-content']}>
             <h3>Управление игрой</h3>
             
-            <div className={styles.game-status}>
-              <div className={styles.status-badge} data-state={gameState}>
+            <div className={styles['game-status']}>
+              <div className={styles['status-badge']} data-state={gameState}>
                 {gameState === 'ready' && '⏳ Ожидание'}
                 {gameState === 'preflop' && '🎴 Префлоп'}
                 {gameState === 'flop' && '🃏 Флоп'}
                 {gameState === 'turn' && '🎯 Терн'}
                 {gameState === 'river' && '🏁 Ривер'}
               </div>
-              <p className={styles.status-message}>{message}</p>
+              <p className={styles['status-message']}>{message}</p>
             </div>
 
-            <div className={styles.control-buttons}>
+            <div className={styles['control-buttons']}>
               <button 
                 className="btn btn-primary"
                 onClick={newRound}
@@ -250,37 +250,37 @@ export default function PokerGame() {
               </button>
             </div>
 
-            <div className={styles.cards-info}>
+            <div className={styles['cards-info']}>
               <h4>Карты на столе:</h4>
               {board.length > 0 ? (
-                <ul className={styles.card-list}>
+                <ul className={styles['card-list']}>
                   {board.map((card, idx) => (
-                    <li key={idx} className={styles.card-item}>
+                    <li key={idx} className={styles['card-item']}>
                       {getCardName(card)}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className={styles.no-cards}>Стол пуст</p>
+                <p className={styles['no-cards']}>Стол пуст</p>
               )}
 
               <h4>Ваши карты:</h4>
               {playerHand.length > 0 ? (
-                <ul className={styles.card-list}>
+                <ul className={styles['card-list']}>
                   {playerHand.map((card, idx) => (
-                    <li key={idx} className={styles.card-item}>
+                    <li key={idx} className={styles['card-item']}>
                       {getCardName(card)}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className={styles.no-cards}>Карты не розданы</p>
+                <p className={styles['no-cards']}>Карты не розданы</p>
               )}
             </div>
 
-            <div className={styles.game-info}>
+            <div className={styles['game-info']}>
               <h4>📋 Правила</h4>
-              <ul className={styles.rules-list}>
+              <ul className={styles['rules-list']}>
                 <li>1. Начните новую раздачу</li>
                 <li>2. Получите 2 карты в руку</li>
                 <li>3. Флоп - 3 карты на стол</li>
@@ -289,7 +289,7 @@ export default function PokerGame() {
               </ul>
             </div>
 
-            <div className={styles.deck-info}>
+            <div className={styles['deck-info']}>
               <p>📦 Карт в колоде: <strong>{deck.length}</strong></p>
             </div>
           </div>

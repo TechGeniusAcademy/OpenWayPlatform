@@ -687,32 +687,32 @@ function StudentIDE() {
   const currentLanguage = activeFile ? getLanguage(activeFile.name) : 'javascript';
 
   return (
-    <div className={styles.student-ide-wrapper}>
-      <div className={styles.student-ide-header}>
-        <div className={styles.student-ide-header-left}>
+    <div className={styles['student-ide-wrapper']}>
+      <div className={styles['student-ide-header']}>
+        <div className={styles['student-ide-header-left']}>
           <button 
-            className={styles.student-ide-btn-back} 
+            className={styles['student-ide-btn-back']} 
             onClick={() => navigate('/student/projects')}
             title="Вернуться к проектам"
           >
             <FaArrowLeft />
           </button>
           <h1>{project?.name || 'Онлайн IDE'}</h1>
-          {project?.description && <span className={styles.project-description-header}>• {project.description}</span>}
+          {project?.description && <span className={styles['project-description-header']}>• {project.description}</span>}
         </div>
-        <div className={styles.student-ide-header-actions}>
+        <div className={styles['student-ide-header-actions']}>
           <button 
-            className={styles.student-ide-btn-secondary} 
+            className={styles['student-ide-btn-secondary']} 
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             title={sidebarCollapsed ? "Показать проводник" : "Скрыть проводник"}
           >
             {sidebarCollapsed ? <FaBars /> : <FaTimes />}
           </button>
-          <button className={styles.student-ide-btn-secondary} onClick={saveFile} disabled={!activeTab}>
+          <button className={styles['student-ide-btn-secondary']} onClick={saveFile} disabled={!activeTab}>
             <FaSave /> Сохранить (Ctrl+S)
           </button>
           <button 
-            className={styles.student-ide-btn-ai} 
+            className={styles['student-ide-btn-ai']} 
             onClick={() => {
               const selection = editorRef.current?.getModel()?.getValueInRange(editorRef.current?.getSelection());
               setSelectedCode(selection || '');
@@ -723,19 +723,19 @@ function StudentIDE() {
           >
             <AiOutlineRobot /> AI Ассистент
           </button>
-          <button className={styles.student-ide-btn-primary} onClick={runCode} disabled={!activeTab}>
+          <button className={styles['student-ide-btn-primary']} onClick={runCode} disabled={!activeTab}>
             <FaPlay /> Запустить
           </button>
         </div>
       </div>
 
-      <div className={styles.student-ide-container}>
+      <div className={styles['student-ide-container']}>
         {/* Боковая панель с файлами */}
         {!sidebarCollapsed && (
-          <div className={styles.student-ide-sidebar}>
-          <div className={styles.student-ide-sidebar-header}>
+          <div className={styles['student-ide-sidebar']}>
+          <div className={styles['student-ide-sidebar-header']}>
             <h3>Проводник</h3>
-            <div className={styles.student-ide-sidebar-actions}>
+            <div className={styles['student-ide-sidebar-actions']}>
               <button 
                 title="Новый файл"
                 onClick={() => {
@@ -778,10 +778,10 @@ function StudentIDE() {
         )}
 
         {/* Редактор кода */}
-        <div className={styles.student-ide-main}>
+        <div className={styles['student-ide-main']}>
           {/* Вкладки открытых файлов */}
           {openTabs.length > 0 && (
-            <div className={styles.student-ide-tabs-container}>
+            <div className={styles['student-ide-tabs-container']}>
               {openTabs.map(tab => {
                 const isUnsaved = unsavedFiles.has(tab.path);
                 return (
@@ -792,10 +792,10 @@ function StudentIDE() {
                   >
                     <span>{tab.name}</span>
                     {isUnsaved ? (
-                      <div className={styles.unsaved-indicator} onClick={(e) => closeTab(tab.path, e)}>●</div>
+                      <div className={styles['unsaved-indicator']} onClick={(e) => closeTab(tab.path, e)}>●</div>
                     ) : (
                       <AiOutlineClose 
-                        className={styles.close-icon}
+                        className={styles['close-icon']}
                         onClick={(e) => closeTab(tab.path, e)} 
                       />
                     )}
@@ -806,7 +806,7 @@ function StudentIDE() {
           )}
 
           {/* Редактор */}
-          <div className={styles.student-ide-editor-wrapper}>
+          <div className={styles['student-ide-editor-wrapper']}>
             {activeFile ? (
               <Editor
                 key={activeFile.path}
@@ -972,7 +972,7 @@ function StudentIDE() {
                 }}
               />
             ) : (
-              <div className={styles.student-ide-no-file}>
+              <div className={styles['student-ide-no-file']}>
                 <h3>📁 Файл не выбран</h3>
                 <p>Выберите файл из проводника или создайте новый</p>
               </div>
@@ -981,24 +981,24 @@ function StudentIDE() {
 
           {/* Предпросмотр HTML */}
           {showPreview && (
-            <div className={styles.student-ide-preview} style={{ height: `${previewHeight}px` }}>
+            <div className={styles['student-ide-preview']} style={{ height: `${previewHeight}px` }}>
               <div 
-                className={styles.student-ide-preview-resizer} 
+                className={styles['student-ide-preview-resizer']} 
                 onMouseDown={startResize}
                 style={{ 
                   cursor: isResizing ? 'ns-resize' : 'ns-resize',
                   userSelect: 'none'
                 }}
               >
-                <div className={styles.resizer-handle}></div>
+                <div className={styles['resizer-handle']}></div>
               </div>
-              <div className={styles.student-ide-preview-header}>
+              <div className={styles['student-ide-preview-header']}>
                 <h3>Предпросмотр</h3>
                 <button onClick={() => setShowPreview(false)}>Закрыть</button>
               </div>
               <iframe
                 ref={previewRef}
-                className={styles.student-ide-preview-iframe}
+                className={styles['student-ide-preview-iframe']}
                 title="HTML Preview"
                 sandbox="allow-scripts allow-forms allow-same-origin"
                 srcDoc={previewHtml}
@@ -1008,18 +1008,18 @@ function StudentIDE() {
 
           {/* Консоль вывода */}
           {output && (
-            <div className={styles.student-ide-output} style={{ height: `${previewHeight}px` }}>
+            <div className={styles['student-ide-output']} style={{ height: `${previewHeight}px` }}>
               <div 
-                className={styles.student-ide-output-resizer} 
+                className={styles['student-ide-output-resizer']} 
                 onMouseDown={startResize}
                 style={{ 
                   cursor: isResizing ? 'ns-resize' : 'ns-resize',
                   userSelect: 'none'
                 }}
               >
-                <div className={styles.resizer-handle}></div>
+                <div className={styles['resizer-handle']}></div>
               </div>
-              <div className={styles.student-ide-output-header}>
+              <div className={styles['student-ide-output-header']}>
                 <h3>Консоль</h3>
                 <button onClick={() => setOutput('')}>Очистить</button>
               </div>

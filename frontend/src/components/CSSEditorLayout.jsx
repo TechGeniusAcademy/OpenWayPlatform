@@ -35,9 +35,9 @@ function CSSEditorLayout() {
   };
 
   return (
-    <div className={styles.css-editor-layout}>
-      <aside className={styles.css-editor-sidebar}>
-        <div className={styles.sidebar-header}>
+    <div className={styles['css-editor-layout']}>
+      <aside className={styles['css-editor-sidebar']}>
+        <div className={styles['sidebar-header']}>
           <h2><FaPalette /> CSS Editor</h2>
           <button 
             className={`inspector-toggle ${inspectorActive ? 'active' : ''}`}
@@ -48,7 +48,7 @@ function CSSEditorLayout() {
           </button>
         </div>
 
-        <nav className={styles.sidebar-nav}>
+        <nav className={styles['sidebar-nav']}>
           <Link 
             to="/css-editor" 
             className={`nav-item ${isActive('/css-editor') && location.pathname === '/css-editor' ? 'active' : ''}`}
@@ -90,19 +90,19 @@ function CSSEditorLayout() {
           </Link>
         </nav>
 
-        <div className={styles.sidebar-footer}>
-          <div className={styles.inspector-hint}>
-            <BsLightning className={styles.hint-icon} />
+        <div className={styles['sidebar-footer']}>
+          <div className={styles['inspector-hint']}>
+            <BsLightning className={styles['hint-icon']} />
             <span>Ctrl+Shift+I</span>
           </div>
-          <button onClick={handleLogout} className={styles.logout-btn}>
+          <button onClick={handleLogout} className={styles['logout-btn']}>
             <BsBoxArrowRight />
             <span>Выйти</span>
           </button>
         </div>
       </aside>
 
-      <main className={styles.css-editor-content}>
+      <main className={styles['css-editor-content']}>
         <Outlet />
       </main>
 

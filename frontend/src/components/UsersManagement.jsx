@@ -236,15 +236,15 @@ function UsersManagement() {
 
   if (loading) {
     return (
-      <div className={styles.loading-state}>
+      <div className={styles['loading-state']}>
         <p>Загрузка пользователей...</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.users-page}>
-      <div className={styles.page-header}>
+    <div className={styles['users-page']}>
+      <div className={styles['page-header']}>
         <h1>Управление пользователями</h1>
         <p>Регистрация и управление учетными записями</p>
       </div>
@@ -252,21 +252,21 @@ function UsersManagement() {
       {success && <div className="alert alert-success">{success}</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className={styles.page-actions}>
+      <div className={styles['page-actions']}>
         <button className="btn btn-primary" onClick={openCreateModal}>
           + Добавить пользователя
         </button>
       </div>
 
-      <div className={styles.users-table-container}>
+      <div className={styles['users-table-container']}>
         {users.length === 0 ? (
-          <div className={styles.empty-state}>
-            <div className={styles.empty-state-icon}>👥</div>
+          <div className={styles['empty-state']}>
+            <div className={styles['empty-state-icon']}>👥</div>
             <h3>Нет пользователей</h3>
             <p>Создайте первого пользователя, нажав кнопку выше</p>
           </div>
         ) : (
-          <table className={styles.users-table}>
+          <table className={styles['users-table']}>
             <thead>
               <tr>
                 <th>ID</th>
@@ -286,15 +286,15 @@ function UsersManagement() {
                 <tr key={user.id}>
                   <td>{user.id}</td>
                   <td>
-                    <div className={styles.user-avatar-cell}>
+                    <div className={styles['user-avatar-cell']}>
                       {user.avatar_url ? (
                         <img 
                           src={`${BASE_URL}${user.avatar_url}`} 
                           alt={user.username}
-                          className={styles.user-avatar-small}
+                          className={styles['user-avatar-small']}
                         />
                       ) : (
-                        <div className={styles.user-avatar-placeholder}>
+                        <div className={styles['user-avatar-placeholder']}>
                           {(user.full_name || user.username).charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -310,11 +310,11 @@ function UsersManagement() {
                   </td>
                   <td>{user.group_name || '-'}</td>
                   <td>
-                    <span className={styles.points-badge}>{user.points || 0}</span>
+                    <span className={styles['points-badge']}>{user.points || 0}</span>
                   </td>
                   <td>{new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
                   <td>
-                    <div className={styles.action-buttons}>
+                    <div className={styles['action-buttons']}>
                       {user.role === 'student' && (
                         <>
                           <button 
@@ -355,70 +355,70 @@ function UsersManagement() {
       </div>
 
       {showModal && (
-        <div className={styles.modal-overlay} onClick={closeModal}>
+        <div className={styles['modal-overlay']} onClick={closeModal}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modal-header}>
+            <div className={styles['modal-header']}>
               <h2>{editingUser ? 'Редактирование пользователя' : 'Новый пользователь'}</h2>
-              <button className={styles.close-btn} onClick={closeModal}>&times;</button>
+              <button className={styles['close-btn']} onClick={closeModal}>&times;</button>
             </div>
 
-            <form className={styles.modal-form} onSubmit={handleSubmit}>
+            <form className={styles['modal-form']} onSubmit={handleSubmit}>
               {error && <div className="alert alert-error">{error}</div>}
 
-              <div className={styles.form-group}>
-                <label className={styles.form-label}>Имя пользователя *</label>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Имя пользователя *</label>
                 <input
                   type="text"
                   name="username"
-                  className={styles.form-input}
+                  className={styles['form-input']}
                   value={formData.username}
                   onChange={handleInputChange}
                   required
                 />
               </div>
 
-              <div className={styles.form-group}>
-                <label className={styles.form-label}>Email *</label>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Email *</label>
                 <input
                   type="email"
                   name="email"
-                  className={styles.form-input}
+                  className={styles['form-input']}
                   value={formData.email}
                   onChange={handleInputChange}
                   required
                 />
               </div>
 
-              <div className={styles.form-group}>
-                <label className={styles.form-label}>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>
                   Пароль {editingUser ? '(оставьте пустым, чтобы не менять)' : '*'}
                 </label>
                 <input
                   type="password"
                   name="password"
-                  className={styles.form-input}
+                  className={styles['form-input']}
                   value={formData.password}
                   onChange={handleInputChange}
                   required={!editingUser}
                 />
               </div>
 
-              <div className={styles.form-group}>
-                <label className={styles.form-label}>ФИО</label>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>ФИО</label>
                 <input
                   type="text"
                   name="full_name"
-                  className={styles.form-input}
+                  className={styles['form-input']}
                   value={formData.full_name}
                   onChange={handleInputChange}
                 />
               </div>
 
-              <div className={styles.form-group}>
-                <label className={styles.form-label}>Роль *</label>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Роль *</label>
                 <select
                   name="role"
-                  className={styles.form-select}
+                  className={styles['form-select']}
                   value={formData.role}
                   onChange={handleInputChange}
                   required
@@ -431,7 +431,7 @@ function UsersManagement() {
                 </select>
               </div>
 
-              <div className={styles.form-actions}>
+              <div className={styles['form-actions']}>
                 <button type="button" className="btn btn-cancel" onClick={closeModal}>
                   Отмена
                 </button>
@@ -445,41 +445,41 @@ function UsersManagement() {
       )}
 
       {showPointsModal && selectedUser && (
-        <div className={styles.modal-overlay} onClick={closePointsModal}>
+        <div className={styles['modal-overlay']} onClick={closePointsModal}>
           <div className="modal modal-small" onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modal-header}>
+            <div className={styles['modal-header']}>
               <h2>🪙 Управление баллами</h2>
-              <button className={styles.close-btn} onClick={closePointsModal}>&times;</button>
+              <button className={styles['close-btn']} onClick={closePointsModal}>&times;</button>
             </div>
 
-            <div className={styles.modal-body}>
-              <div className={styles.user-info-box}>
+            <div className={styles['modal-body']}>
+              <div className={styles['user-info-box']}>
                 <p><strong>Студент:</strong> {selectedUser.full_name || selectedUser.username}</p>
-                <p><strong>Текущие баллы:</strong> <span className={styles.points-badge}>{selectedUser.points || 0}</span></p>
+                <p><strong>Текущие баллы:</strong> <span className={styles['points-badge']}>{selectedUser.points || 0}</span></p>
               </div>
 
-              <div className={styles.form-group}>
-                <label className={styles.form-label}>Количество баллов (+ добавить, - списать)</label>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Количество баллов (+ добавить, - списать)</label>
                 <input
                   type="number"
-                  className={styles.form-input}
+                  className={styles['form-input']}
                   value={pointsAmount}
                   onChange={(e) => setPointsAmount(e.target.value)}
                   placeholder="Например: 10 или -5"
                 />
-                <small className={styles.form-hint}>
+                <small className={styles['form-hint']}>
                   Используйте отрицательные числа для списания баллов
                 </small>
               </div>
 
-              <div className={styles.quick-buttons}>
+              <div className={styles['quick-buttons']}>
                 <button className="btn btn-quick" onClick={() => setPointsAmount(5)}>+5</button>
                 <button className="btn btn-quick" onClick={() => setPointsAmount(10)}>+10</button>
                 <button className="btn btn-quick" onClick={() => setPointsAmount(20)}>+20</button>
                 <button className="btn btn-quick btn-negative" onClick={() => setPointsAmount(-5)}>-5</button>
               </div>
 
-              <div className={styles.form-actions}>
+              <div className={styles['form-actions']}>
                 <button type="button" className="btn btn-cancel" onClick={closePointsModal}>
                   Отмена
                 </button>
@@ -494,44 +494,44 @@ function UsersManagement() {
 
       {/* Модальное окно для загрузки аватарки */}
       {showAvatarModal && selectedAvatarUser && (
-        <div className={styles.modal-overlay} onClick={closeAvatarModal}>
+        <div className={styles['modal-overlay']} onClick={closeAvatarModal}>
           <div className="modal modal-small" onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modal-header}>
+            <div className={styles['modal-header']}>
               <h2>🖼️ Изменить аватарку</h2>
-              <button className={styles.close-btn} onClick={closeAvatarModal}>&times;</button>
+              <button className={styles['close-btn']} onClick={closeAvatarModal}>&times;</button>
             </div>
 
-            <div className={styles.modal-body}>
-              <div className={styles.user-info-box}>
+            <div className={styles['modal-body']}>
+              <div className={styles['user-info-box']}>
                 <p><strong>Студент:</strong> {selectedAvatarUser.full_name || selectedAvatarUser.username}</p>
               </div>
 
-              <div className={styles.avatar-upload-section}>
-                <div className={styles.avatar-preview}>
+              <div className={styles['avatar-upload-section']}>
+                <div className={styles['avatar-preview']}>
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="Preview" />
                   ) : (
-                    <div className={styles.avatar-placeholder-large}>
+                    <div className={styles['avatar-placeholder-large']}>
                       {(selectedAvatarUser.full_name || selectedAvatarUser.username).charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
 
-                <div className={styles.form-group}>
-                  <label className={styles.form-label}>Выберите изображение</label>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Выберите изображение</label>
                   <input
                     type="file"
-                    className={styles.form-input}
+                    className={styles['form-input']}
                     accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                     onChange={handleAvatarChange}
                   />
-                  <small className={styles.form-hint}>
+                  <small className={styles['form-hint']}>
                     Поддерживаемые форматы: JPEG, PNG, GIF, WebP (макс. 5MB)
                   </small>
                 </div>
               </div>
 
-              <div className={styles.form-actions}>
+              <div className={styles['form-actions']}>
                 {selectedAvatarUser.avatar_url && (
                   <button 
                     type="button" 

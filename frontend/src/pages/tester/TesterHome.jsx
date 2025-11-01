@@ -80,61 +80,61 @@ function TesterHome() {
   };
 
   if (loading) {
-    return <div className={styles.tester-loading}>Загрузка...</div>;
+    return <div className={styles['tester-loading']}>Загрузка...</div>;
   }
 
   return (
-    <div className={styles.tester-home}>
-      <div className={styles.tester-header}>
+    <div className={styles['tester-home']}>
+      <div className={styles['tester-header']}>
         <h1>🧪 Testing Dashboard</h1>
         <p>Полный контроль и тестирование системы</p>
       </div>
 
-      <div className={styles.stats-grid}>
+      <div className={styles['stats-grid']}>
         <div className="stat-card users">
-          <div className={styles.stat-icon}>
+          <div className={styles['stat-icon']}>
             <BsPeople />
           </div>
-          <div className={styles.stat-info}>
+          <div className={styles['stat-info']}>
             <h3>Пользователи</h3>
-            <p className={styles.stat-value}>{stats.users}</p>
+            <p className={styles['stat-value']}>{stats.users}</p>
           </div>
         </div>
 
         <div className="stat-card groups">
-          <div className={styles.stat-icon}>
+          <div className={styles['stat-icon']}>
             <BsCollection />
           </div>
-          <div className={styles.stat-info}>
+          <div className={styles['stat-info']}>
             <h3>Группы</h3>
-            <p className={styles.stat-value}>{stats.groups}</p>
+            <p className={styles['stat-value']}>{stats.groups}</p>
           </div>
         </div>
 
         <div className="stat-card tests">
-          <div className={styles.stat-icon}>
+          <div className={styles['stat-icon']}>
             <BsFileText />
           </div>
-          <div className={styles.stat-info}>
+          <div className={styles['stat-info']}>
             <h3>Тесты</h3>
-            <p className={styles.stat-value}>{stats.tests}</p>
+            <p className={styles['stat-value']}>{stats.tests}</p>
           </div>
         </div>
 
         <div className="stat-card bugs">
-          <div className={styles.stat-icon}>
+          <div className={styles['stat-icon']}>
             <BsBug />
           </div>
-          <div className={styles.stat-info}>
+          <div className={styles['stat-info']}>
             <h3>Баги</h3>
-            <p className={styles.stat-value}>{stats.bugs}</p>
+            <p className={styles['stat-value']}>{stats.bugs}</p>
           </div>
         </div>
       </div>
 
-      <div className={styles.quick-actions}>
+      <div className={styles['quick-actions']}>
         <h2>Быстрые действия</h2>
-        <div className={styles.actions-grid}>
+        <div className={styles['actions-grid']}>
           <button 
             className="action-btn stress"
             onClick={() => runStressTest('users')}
@@ -169,7 +169,7 @@ function TesterHome() {
         </div>
       </div>
 
-      <div className={styles.testing-tips}>
+      <div className={styles['testing-tips']}>
         <h3>💡 Инструменты тестирования</h3>
         <ul>
           <li><strong>Users Testing:</strong> Просмотр и тестирование пользователей</li>

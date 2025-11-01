@@ -35,8 +35,8 @@ function StudentUpdates() {
 
   if (loading) {
     return (
-      <div className={styles.student-page}>
-        <div className={styles.page-header}>
+      <div className={styles['student-page']}>
+        <div className={styles['page-header']}>
           <h1>Обновления</h1>
           <p>Загрузка...</p>
         </div>
@@ -45,30 +45,30 @@ function StudentUpdates() {
   }
 
   return (
-    <div className={styles.student-page}>
-      <div className={styles.page-header}>
+    <div className={styles['student-page']}>
+      <div className={styles['page-header']}>
         <h1>Обновления платформы</h1>
         <p>История обновлений и новых функций</p>
       </div>
 
       {updates.length === 0 ? (
-        <div className={styles.empty-state}>
-          <div className={styles.empty-state-icon}><FaBullhorn /></div>
+        <div className={styles['empty-state']}>
+          <div className={styles['empty-state-icon']}><FaBullhorn /></div>
           <h3>Нет обновлений</h3>
           <p>Обновления ещё не опубликованы</p>
         </div>
       ) : (
-        <div className={styles.dota-updates-list}>
+        <div className={styles['dota-updates-list']}>
           {updates.map((update, index) => (
             <div key={update.id} className={`update-item ${expandedId === update.id ? "expanded" : ""} ${index === 0 ? "newest" : ""}`}>
-              <div className={styles.update-item-header} onClick={() => toggleExpand(update.id)}>
-                <div className={styles.update-item-left}>
-                  <div className={styles.update-item-version}>{update.version}</div>
-                  <h3 className={styles.update-item-title}>{update.title}</h3>
-                  {update.description && !expandedId === update.id && <p className={styles.update-item-description}>{update.description}</p>}
+              <div className={styles['update-item-header']} onClick={() => toggleExpand(update.id)}>
+                <div className={styles['update-item-left']}>
+                  <div className={styles['update-item-version']}>{update.version}</div>
+                  <h3 className={styles['update-item-title']}>{update.title}</h3>
+                  {update.description && !expandedId === update.id && <p className={styles['update-item-description']}>{update.description}</p>}
                 </div>
-                <div className={styles.update-item-right}>
-                  <div className={styles.update-item-date}>
+                <div className={styles['update-item-right']}>
+                  <div className={styles['update-item-date']}>
                     <AiOutlineCalendar />
                     <span>
                       {new Date(update.created_at).toLocaleDateString("ru-RU", {
@@ -78,14 +78,14 @@ function StudentUpdates() {
                       })}
                     </span>
                   </div>
-                  <button className={styles.update-item-toggle}>{expandedId === update.id ? <AiOutlineUp /> : <AiOutlineDown />}</button>
+                  <button className={styles['update-item-toggle']}>{expandedId === update.id ? <AiOutlineUp /> : <AiOutlineDown />}</button>
                 </div>
               </div>
 
               {expandedId === update.id && (
-                <div className={styles.update-item-content}>
-                  {update.description && <p className={styles.update-content-description}>{update.description}</p>}
-                  <div className={styles.update-content-html} dangerouslySetInnerHTML={{ __html: update.content }} />
+                <div className={styles['update-item-content']}>
+                  {update.description && <p className={styles['update-content-description']}>{update.description}</p>}
+                  <div className={styles['update-content-html']} dangerouslySetInnerHTML={{ __html: update.content }} />
                 </div>
               )}
             </div>

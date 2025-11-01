@@ -104,9 +104,9 @@ function ReadOnlyWrapper({ children, roleName, basePath }) {
   };
 
   return (
-    <div className={styles.readonly-wrapper}>
-      <div className={styles.readonly-overlay-notice}>
-        <span className={styles.readonly-badge}>🔒 Read-Only</span>
+    <div className={styles['readonly-wrapper']}>
+      <div className={styles['readonly-overlay-notice']}>
+        <span className={styles['readonly-badge']}>🔒 Read-Only</span>
       </div>
       {children}
     </div>

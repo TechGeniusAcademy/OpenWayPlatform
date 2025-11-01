@@ -131,43 +131,43 @@ function StudentProfile() {
   };
 
   return (
-    <div className={styles.student-page}>
-      <div className={styles.page-header}>
+    <div className={styles['student-page']}>
+      <div className={styles['page-header']}>
         <h1>Мой профиль</h1>
-        <div className={styles.header-actions}>
+        <div className={styles['header-actions']}>
           <button 
-            className={styles.history-btn}
+            className={styles['history-btn']}
             onClick={() => setShowHistory(true)}
             title="История транзакций"
           >
             <AiOutlineHistory />
             <span>История баллов</span>
           </button>
-          <div className={styles.user-points}>
-            <span className={styles.points-icon}><AiOutlineWallet /></span>
-            <span className={styles.dashboard-points-value}>{userPoints}</span>
-            <span className={styles.points-label}>баллов</span>
+          <div className={styles['user-points']}>
+            <span className={styles['points-icon']}><AiOutlineWallet /></span>
+            <span className={styles['dashboard-points-value']}>{userPoints}</span>
+            <span className={styles['points-label']}>баллов</span>
           </div>
         </div>
       </div>
 
-      <div className={styles.profile-card}>
-        <div className={styles.profile-avatar-section} style={{
+      <div className={styles['profile-card']}>
+        <div className={styles['profile-avatar-section']} style={{
           backgroundImage: appliedBanner?.image_url 
             ? `url(${BASE_URL}${appliedBanner.image_url})`
             : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}>
-          <div className={styles.avatar-wrapper}>
+          <div className={styles['avatar-wrapper']}>
             {preview || user?.avatar_url ? (
               <img 
                 src={preview || `${BASE_URL}${user.avatar_url}`} 
                 alt={user.username}
-                className={styles.profile-avatar}
+                className={styles['profile-avatar']}
               />
             ) : (
-              <div className={styles.profile-avatar-placeholder}>
+              <div className={styles['profile-avatar-placeholder']}>
                 {(user?.full_name || user?.username || 'U').charAt(0).toUpperCase()}
               </div>
             )}
@@ -175,13 +175,13 @@ function StudentProfile() {
               <img 
                 src={`${BASE_URL}${appliedFrame.image_url}`}
                 alt="Frame"
-                className={styles.avatar-frame-overlay}
+                className={styles['avatar-frame-overlay']}
               />
             )}
           </div>
           
-          <div className={styles.avatar-upload}>
-            <label className={styles.avatar-upload-btn}>
+          <div className={styles['avatar-upload']}>
+            <label className={styles['avatar-upload-btn']}>
               {uploading ? 'Загрузка...' : 'Выбрать фото'}
               <input 
                 type="file" 
@@ -193,7 +193,7 @@ function StudentProfile() {
             </label>
             {preview && (
               <button 
-                className={styles.avatar-upload-confirm} 
+                className={styles['avatar-upload-confirm']} 
                 onClick={handleAvatarUpload}
                 disabled={uploading}
               >
@@ -203,28 +203,28 @@ function StudentProfile() {
           </div>
         </div>
 
-        <div className={styles.profile-info-grid}>
-          <div className={styles.info-row}>
-            <span className={styles.info-label}>Имя пользователя:</span>
+        <div className={styles['profile-info-grid']}>
+          <div className={styles['info-row']}>
+            <span className={styles['info-label']}>Имя пользователя:</span>
             <span className={`info-value styled-username ${user?.username_style || 'username-none'}`}>
               {user?.username}
             </span>
           </div>
-          <div className={styles.info-row}>
-            <span className={styles.info-label}>Email:</span>
-            <span className={styles.info-value}>{user?.email}</span>
+          <div className={styles['info-row']}>
+            <span className={styles['info-label']}>Email:</span>
+            <span className={styles['info-value']}>{user?.email}</span>
           </div>
-          <div className={styles.info-row}>
-            <span className={styles.info-label}>ФИО:</span>
-            <span className={styles.info-value}>{user?.full_name || 'Не указано'}</span>
+          <div className={styles['info-row']}>
+            <span className={styles['info-label']}>ФИО:</span>
+            <span className={styles['info-value']}>{user?.full_name || 'Не указано'}</span>
           </div>
-          <div className={styles.info-row}>
-            <span className={styles.info-label}>Роль:</span>
-            <span className={styles.info-value}>Ученик</span>
+          <div className={styles['info-row']}>
+            <span className={styles['info-label']}>Роль:</span>
+            <span className={styles['info-value']}>Ученик</span>
           </div>
-          <div className={styles.info-row}>
-            <span className={styles.info-label}>Дата регистрации:</span>
-            <span className={styles.info-value}>
+          <div className={styles['info-row']}>
+            <span className={styles['info-label']}>Дата регистрации:</span>
+            <span className={styles['info-value']}>
               {new Date(user?.created_at).toLocaleDateString('ru-RU')}
             </span>
           </div>

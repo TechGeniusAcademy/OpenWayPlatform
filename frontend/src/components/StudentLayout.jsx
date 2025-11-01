@@ -70,22 +70,22 @@ function StudentLayout({ children }) {
   };
 
   return (
-    <div className={styles.student-layout}>
+    <div className={styles['student-layout']}>
       {/* Мобильное меню кнопка */}
-      <button className={styles.mobile-menu-btn} onClick={toggleSidebar}>
+      <button className={styles['mobile-menu-btn']} onClick={toggleSidebar}>
         {sidebarOpen ? <HiX /> : <HiMenu />}
       </button>
 
       {/* Оверлей для мобильных */}
-      {sidebarOpen && <div className={styles.sidebar-overlay} onClick={closeSidebar}></div>}
+      {sidebarOpen && <div className={styles['sidebar-overlay']} onClick={closeSidebar}></div>}
 
-      <aside className={`student-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className={styles.student-sidebar-header}>
-          <div className={styles.sidebar-header-content}>
-            <div className={styles.sidebar-logo}>
-              <img src="/logo.jpg" alt="OpenWay" className={styles.logo-image} />
+      <aside className={`${styles['student-sidebar']} ${sidebarOpen ? styles.open : ''}`}>
+        <div className={styles['student-sidebar-header']}>
+          <div className={styles['sidebar-header-content']}>
+            <div className={styles['sidebar-logo']}>
+              <img src="/logo.jpg" alt="OpenWay" className={styles['logo-image']} />
             </div>
-            <div className={styles.sidebar-title}>
+            <div className={styles['sidebar-title']}>
               <h2>OpenWay</h2>
               <p>Платформа обучения</p>
             </div>
@@ -93,163 +93,163 @@ function StudentLayout({ children }) {
         </div>
 
         <nav>
-          <ul className={styles.student-sidebar-menu}>
+          <ul className={styles['student-sidebar-menu']}>
             {/* Основное меню */}
-            <li className={styles.menu-category-title}>Основное</li>
+            <li className={styles['menu-category-title']}>Основное</li>
             <li>
               <NavLink to="/student" end onClick={closeSidebar}>
-                <span className={styles.menu-icon}><AiOutlineHome /></span>
-                <span className={styles.menu-text}>Главная</span>
+                <span className={styles['menu-icon']}><AiOutlineHome /></span>
+                <span className={styles['menu-text']}>Главная</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/profile" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><AiOutlineUser /></span>
-                <span className={styles.menu-text}>Профиль</span>
+                <span className={styles['menu-icon']}><AiOutlineUser /></span>
+                <span className={styles['menu-text']}>Профиль</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/group" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><HiUserGroup /></span>
-                <span className={styles.menu-text}>Моя группа</span>
+                <span className={styles['menu-icon']}><HiUserGroup /></span>
+                <span className={styles['menu-text']}>Моя группа</span>
               </NavLink>
             </li>
 
             {/* Разделитель */}
-            <li className={styles.menu-divider}></li>
+            <li className={styles['menu-divider']}></li>
 
             {/* Обучение */}
-            <li className={styles.menu-category-title}>Обучение</li>
+            <li className={styles['menu-category-title']}>Обучение</li>
             <li>
               <NavLink to="/student/courses" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><AiOutlineBook /></span>
-                <span className={styles.menu-text}>Курсы</span>
+                <span className={styles['menu-icon']}><AiOutlineBook /></span>
+                <span className={styles['menu-text']}>Курсы</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/knowledge" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><LuBookCopy /></span>
-                <span className={styles.menu-text}>База знаний</span>
+                <span className={styles['menu-icon']}><LuBookCopy /></span>
+                <span className={styles['menu-text']}>База знаний</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/tests" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><LuPencilLine /></span>
-                <span className={styles.menu-text}>Тесты</span>
+                <span className={styles['menu-icon']}><LuPencilLine /></span>
+                <span className={styles['menu-text']}>Тесты</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/homeworks" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><LuHouse /></span>
-                <span className={styles.menu-text}>Домашние задания</span>
+                <span className={styles['menu-icon']}><LuHouse /></span>
+                <span className={styles['menu-text']}>Домашние задания</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/typing" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><RxKeyboard /></span>
-                <span className={styles.menu-text}>Клавиатурный тренажер</span>
+                <span className={styles['menu-icon']}><RxKeyboard /></span>
+                <span className={styles['menu-text']}>Клавиатурный тренажер</span>
               </NavLink>
             </li>
 
             {/* Разделитель */}
-            <li className={styles.menu-divider}></li>
+            <li className={styles['menu-divider']}></li>
 
             {/* Программирование */}
-            <li className={styles.menu-category-title}>Программирование</li>
+            <li className={styles['menu-category-title']}>Программирование</li>
             <li>
               <NavLink to="/student/projects" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><VscFiles /></span>
-                <span className={styles.menu-text}>Мои проекты</span>
+                <span className={styles['menu-icon']}><VscFiles /></span>
+                <span className={styles['menu-text']}>Мои проекты</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/databases" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><BiData /></span>
-                <span className={styles.menu-text}>Базы данных</span>
+                <span className={styles['menu-icon']}><BiData /></span>
+                <span className={styles['menu-text']}>Базы данных</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/plugins" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><FaPlug /></span>
-                <span className={styles.menu-text}>Плагины</span>
+                <span className={styles['menu-icon']}><FaPlug /></span>
+                <span className={styles['menu-text']}>Плагины</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/themes" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><FaPalette /></span>
-                <span className={styles.menu-text}>Темы</span>
+                <span className={styles['menu-icon']}><FaPalette /></span>
+                <span className={styles['menu-text']}>Темы</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/design" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><FaPen /></span>
-                <span className={styles.menu-text}>Дизайн</span>
+                <span className={styles['menu-icon']}><FaPen /></span>
+                <span className={styles['menu-text']}>Дизайн</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/technical-specs" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><FaFileAlt /></span>
-                <span className={styles.menu-text}>Технические задания</span>
+                <span className={styles['menu-icon']}><FaFileAlt /></span>
+                <span className={styles['menu-text']}>Технические задания</span>
               </NavLink>
             </li>
 
             {/* Разделитель */}
-            <li className={styles.menu-divider}></li>
+            <li className={styles['menu-divider']}></li>
 
             {/* Социальное */}
-            <li className={styles.menu-category-title}>Социальное</li>
+            <li className={styles['menu-category-title']}>Социальное</li>
             <li>
               <NavLink to="/student/chat" onClick={closeSidebar}>
-                <span className={styles.menu-icon}>
+                <span className={styles['menu-icon']}>
                   <AiOutlineMessage />
                   {unreadCount > 0 && (
-                    <span className={styles.notification-badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
+                    <span className={styles['notification-badge']}>{unreadCount > 99 ? '99+' : unreadCount}</span>
                   )}
                 </span>
-                <span className={styles.menu-text}>Чат</span>
+                <span className={styles['menu-text']}>Чат</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/leaderboard" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><FaTrophy /></span>
-                <span className={styles.menu-text}>Топы</span>
+                <span className={styles['menu-icon']}><FaTrophy /></span>
+                <span className={styles['menu-text']}>Топы</span>
               </NavLink>
             </li>
 
             {/* Разделитель */}
-            <li className={styles.menu-divider}></li>
+            <li className={styles['menu-divider']}></li>
 
             {/* Магазин */}
-            <li className={styles.menu-category-title}>Развлечения</li>
+            <li className={styles['menu-category-title']}>Развлечения</li>
             <li>
               <NavLink to="/student/games" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><FaGamepad /></span>
-                <span className={styles.menu-text}>Игры</span>
+                <span className={styles['menu-icon']}><FaGamepad /></span>
+                <span className={styles['menu-text']}>Игры</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/student/shop" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><AiOutlineShoppingCart /></span>
-                <span className={styles.menu-text}>Косметика</span>
+                <span className={styles['menu-icon']}><AiOutlineShoppingCart /></span>
+                <span className={styles['menu-text']}>Косметика</span>
               </NavLink>
             </li>
 
             {/* Разделитель */}
-            <li className={styles.menu-divider}></li>
+            <li className={styles['menu-divider']}></li>
 
             {/* Информация */}
-            <li className={styles.menu-category-title}>Информация</li>
+            <li className={styles['menu-category-title']}>Информация</li>
             <li>
               <NavLink to="/student/updates" onClick={closeSidebar}>
-                <span className={styles.menu-icon}><AiOutlineBell /></span>
-                <span className={styles.menu-text}>Обновления</span>
+                <span className={styles['menu-icon']}><AiOutlineBell /></span>
+                <span className={styles['menu-text']}>Обновления</span>
               </NavLink>
             </li>
           </ul>
         </nav>
 
         <div 
-          className={styles.sidebar-footer}
+          className={styles['sidebar-footer']}
           style={{
             backgroundImage: bannerImage 
               ? `url(${BASE_URL}${bannerImage})` 
@@ -258,11 +258,11 @@ function StudentLayout({ children }) {
                 : 'rgba(0, 0, 0, 0.2)'
           }}
         >
-          <div className={styles.sidebar-footer-overlay}></div>
+          <div className={styles['sidebar-footer-overlay']}></div>
           
-          <div className={styles.sidebar-user}>
-            <div className={styles.sidebar-user-avatar-wrapper}>
-              <div className={styles.sidebar-user-avatar}>
+          <div className={styles['sidebar-user']}>
+            <div className={styles['sidebar-user-avatar-wrapper']}>
+              <div className={styles['sidebar-user-avatar']}>
                 {user?.avatar_url ? (
                   <img src={`${BASE_URL}${user.avatar_url}`} alt={user.username} />
                 ) : (
@@ -273,24 +273,24 @@ function StudentLayout({ children }) {
                 <img 
                   src={`${BASE_URL}${frameImage}`}
                   alt="Frame"
-                  className={styles.sidebar-avatar-frame}
+                  className={styles['sidebar-avatar-frame']}
                 />
               )}
             </div>
-            <div className={styles.sidebar-user-info}>
-              <div className={`sidebar-user-name styled-username ${user?.username_style || 'username-none'}`}>
+            <div className={styles['sidebar-user-info']}>
+              <div className={`${styles['sidebar-user-name']} styled-username ${user?.username_style || 'username-none'}`}>
                 {user?.full_name || user?.username}
               </div>
-              <div className={styles.sidebar-user-role}>🪙 {user?.points || 0} баллов</div>
+              <div className={styles['sidebar-user-role']}>🪙 {user?.points || 0} баллов</div>
             </div>
           </div>
-          <button className={styles.sidebar-logout-btn} onClick={handleLogout} title="Выйти">
+          <button className={styles['sidebar-logout-btn']} onClick={handleLogout} title="Выйти">
             <AiOutlineLogout />
           </button>
         </div>
       </aside>
 
-      <main className={styles.student-main-content}>
+      <main className={styles['student-main-content']}>
         {children}
       </main>
 

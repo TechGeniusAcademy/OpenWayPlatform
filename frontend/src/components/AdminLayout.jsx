@@ -32,116 +32,116 @@ function AdminLayout({ children }) {
   };
 
   return (
-    <div className={styles.admin-layout}>
+    <div className={styles['admin-layout']}>
       {/* Мобильная шапка */}
-      <header className={styles.admin-mobile-header}>
-        <button className={styles.menu-toggle} onClick={toggleSidebar}>
+      <header className={styles['admin-mobile-header']}>
+        <button className={styles['menu-toggle']} onClick={toggleSidebar}>
           {sidebarOpen ? <AiOutlineClose /> : <AiOutlineMenu />}
         </button>
         <h1>Админ-панель</h1>
-        <div className={styles.mobile-user-info}>
+        <div className={styles['mobile-user-info']}>
           <span>{user?.username}</span>
         </div>
       </header>
 
       {/* Оверлей для закрытия сайдбара */}
-      {sidebarOpen && <div className={styles.admin-sidebar-overlay} onClick={closeSidebar}></div>}
+      {sidebarOpen && <div className={styles['admin-sidebar-overlay']} onClick={closeSidebar}></div>}
 
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className={styles.admin-sidebar-header}>
+        <div className={styles['admin-sidebar-header']}>
           <h2>Админ-панель</h2>
           <p>{user?.full_name || user?.username}</p>
         </div>
 
         <nav>
-          <ul className={styles.admin-sidebar-menu}>
+          <ul className={styles['admin-sidebar-menu']}>
             <li>
               <NavLink to="/admin" end onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><AiOutlineUser /></span>
-                <span className={styles.admin-menu-text}>Пользователи</span>
+                <span className={styles['admin-menu-icon']}><AiOutlineUser /></span>
+                <span className={styles['admin-menu-text']}>Пользователи</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/groups" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><HiUserGroup /></span>
-                <span className={styles.admin-menu-text}>Группы</span>
+                <span className={styles['admin-menu-icon']}><HiUserGroup /></span>
+                <span className={styles['admin-menu-text']}>Группы</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/leaderboard" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><FaTrophy /></span>
-                <span className={styles.admin-menu-text}>Топы</span>
+                <span className={styles['admin-menu-icon']}><FaTrophy /></span>
+                <span className={styles['admin-menu-text']}>Топы</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/chat" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><AiOutlineMessage /></span>
-                <span className={styles.admin-menu-text}>Чат</span>
+                <span className={styles['admin-menu-icon']}><AiOutlineMessage /></span>
+                <span className={styles['admin-menu-text']}>Чат</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/tests" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><FaRegNoteSticky /></span>
-                <span className={styles.admin-menu-text}>Тесты</span>
+                <span className={styles['admin-menu-icon']}><FaRegNoteSticky /></span>
+                <span className={styles['admin-menu-text']}>Тесты</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/homeworks" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><MdOutlineMapsHomeWork /></span>
-                <span className={styles.admin-menu-text}>Домашние задания</span>
+                <span className={styles['admin-menu-icon']}><MdOutlineMapsHomeWork /></span>
+                <span className={styles['admin-menu-text']}>Домашние задания</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/typing" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><BsKeyboard /></span>
-                <span className={styles.admin-menu-text}>Клавиатурный тренажер</span>
+                <span className={styles['admin-menu-icon']}><BsKeyboard /></span>
+                <span className={styles['admin-menu-text']}>Клавиатурный тренажер</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/game" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><FaQuestion /></span>
-                <span className={styles.admin-menu-text}>Вопросы-Ответы</span>
+                <span className={styles['admin-menu-icon']}><FaQuestion /></span>
+                <span className={styles['admin-menu-text']}>Вопросы-Ответы</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/games" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><IoGameControllerOutline /></span>
-                <span className={styles.admin-menu-text}>Игры</span>
+                <span className={styles['admin-menu-icon']}><IoGameControllerOutline /></span>
+                <span className={styles['admin-menu-text']}>Игры</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/shop" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><CiShop /></span>
-                <span className={styles.admin-menu-text}>Магазин косметики</span>
+                <span className={styles['admin-menu-icon']}><CiShop /></span>
+                <span className={styles['admin-menu-text']}>Магазин косметики</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/knowledge" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><LuBookOpenText /></span>
-                <span className={styles.admin-menu-text}>База знаний</span>
+                <span className={styles['admin-menu-icon']}><LuBookOpenText /></span>
+                <span className={styles['admin-menu-text']}>База знаний</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/updates" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><AiOutlineBell /></span>
-                <span className={styles.admin-menu-text}>Обновления</span>
+                <span className={styles['admin-menu-icon']}><AiOutlineBell /></span>
+                <span className={styles['admin-menu-text']}>Обновления</span>
               </NavLink>
             </li>
             <li>
               <NavLink to="/admin/submissions" onClick={closeSidebar}>
-                <span className={styles.admin-menu-icon}><AiOutlineSend /></span>
-                <span className={styles.admin-menu-text}>Проверка проектов</span>
+                <span className={styles['admin-menu-icon']}><AiOutlineSend /></span>
+                <span className={styles['admin-menu-text']}>Проверка проектов</span>
               </NavLink>
             </li>
           </ul>
         </nav>
 
-        <button className={styles.admin-logout-btn} onClick={handleLogout}>
+        <button className={styles['admin-logout-btn']} onClick={handleLogout}>
           Выйти
         </button>
       </aside>
 
-      <main className={styles.admin-main-content}>
+      <main className={styles['admin-main-content']}>
         {children}
       </main>
     </div>

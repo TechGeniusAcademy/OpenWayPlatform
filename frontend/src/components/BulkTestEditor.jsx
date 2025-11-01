@@ -124,20 +124,20 @@ function BulkTestEditor({ onImport, onClose }) {
   };
 
   return (
-    <div className={styles.bulk-test-editor}>
-      <div className={styles.bulk-editor-header}>
+    <div className={styles['bulk-test-editor']}>
+      <div className={styles['bulk-editor-header']}>
         <h3>Массовое создание теста</h3>
-        <button className={styles.bulk-btn-close} onClick={onClose}>✕</button>
+        <button className={styles['bulk-btn-close']} onClick={onClose}>✕</button>
       </div>
 
-      <div className={styles.bulk-editor-content}>
+      <div className={styles['bulk-editor-content']}>
         {!showPreview ? (
           <>
             {/* Настройки теста */}
-            <div className={styles.bulk-test-settings}>
+            <div className={styles['bulk-test-settings']}>
               <h4>Настройки теста</h4>
-              <div className={styles.bulk-settings-row}>
-                <div className={styles.bulk-form-group}>
+              <div className={styles['bulk-settings-row']}>
+                <div className={styles['bulk-form-group']}>
                   <label>Название теста *</label>
                   <input
                     type="text"
@@ -146,7 +146,7 @@ function BulkTestEditor({ onImport, onClose }) {
                     placeholder="Название теста"
                   />
                 </div>
-                <div className={styles.bulk-form-group}>
+                <div className={styles['bulk-form-group']}>
                   <label>Время (минут)</label>
                   <input
                     type="number"
@@ -157,7 +157,7 @@ function BulkTestEditor({ onImport, onClose }) {
                 </div>
               </div>
               
-              <div className={styles.bulk-form-group}>
+              <div className={styles['bulk-form-group']}>
                 <label>Описание</label>
                 <textarea
                   value={testSettings.description}
@@ -167,8 +167,8 @@ function BulkTestEditor({ onImport, onClose }) {
                 />
               </div>
 
-              <div className={styles.bulk-settings-row}>
-                <div className={styles.bulk-form-group}>
+              <div className={styles['bulk-settings-row']}>
+                <div className={styles['bulk-form-group']}>
                   <label>Баллы за правильный</label>
                   <input
                     type="number"
@@ -177,7 +177,7 @@ function BulkTestEditor({ onImport, onClose }) {
                     min="0"
                   />
                 </div>
-                <div className={styles.bulk-form-group}>
+                <div className={styles['bulk-form-group']}>
                   <label>Баллы за неправильный</label>
                   <input
                     type="number"
@@ -185,7 +185,7 @@ function BulkTestEditor({ onImport, onClose }) {
                     onChange={(e) => setTestSettings(prev => ({ ...prev, pointsWrong: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
-                <div className={styles.bulk-form-group}>
+                <div className={styles['bulk-form-group']}>
                   <label>
                     <input
                       type="checkbox"
@@ -199,9 +199,9 @@ function BulkTestEditor({ onImport, onClose }) {
             </div>
 
             {/* Инструкция по формату */}
-            <div className={styles.bulk-format-instruction}>
+            <div className={styles['bulk-format-instruction']}>
               <h4>Формат ввода вопросов</h4>
-              <div className={styles.bulk-instruction-content}>
+              <div className={styles['bulk-instruction-content']}>
                 <p>Используйте следующий формат:</p>
                 <pre>{`1. Текст вопроса?
    a) Вариант ответа 1
@@ -220,29 +220,29 @@ function BulkTestEditor({ onImport, onClose }) {
                   <li>Можно отмечать несколько правильных ответов</li>
                   <li>Пустая строка между вопросами</li>
                 </ul>
-                <button className={styles.bulk-btn-secondary} onClick={loadExample}>
+                <button className={styles['bulk-btn-secondary']} onClick={loadExample}>
                   Загрузить пример
                 </button>
               </div>
             </div>
 
             {/* Текстовое поле для ввода */}
-            <div className={styles.bulk-input}>
+            <div className={styles['bulk-input']}>
               <h4>Введите вопросы</h4>
               <textarea
                 value={bulkText}
                 onChange={(e) => setBulkText(e.target.value)}
                 placeholder="Вставьте или введите вопросы в указанном формате..."
                 rows="15"
-                className={styles.bulk-textarea}
+                className={styles['bulk-textarea']}
               />
             </div>
 
-            <div className={styles.bulk-actions}>
-              <button className={styles.bulk-btn-primary} onClick={handlePreview}>
+            <div className={styles['bulk-actions']}>
+              <button className={styles['bulk-btn-primary']} onClick={handlePreview}>
                 Предварительный просмотр
               </button>
-              <button className={styles.bulk-btn-secondary} onClick={onClose}>
+              <button className={styles['bulk-btn-secondary']} onClick={onClose}>
                 Отмена
               </button>
             </div>
@@ -250,20 +250,20 @@ function BulkTestEditor({ onImport, onClose }) {
         ) : (
           <>
             {/* Предварительный просмотр */}
-            <div className={styles.bulk-preview-section}>
+            <div className={styles['bulk-preview-section']}>
               <h4>Предварительный просмотр ({previewQuestions.length} вопросов)</h4>
               
-              <div className={styles.bulk-preview-questions}>
+              <div className={styles['bulk-preview-questions']}>
                 {previewQuestions.map((question, index) => (
-                  <div key={index} className={styles.bulk-preview-question}>
+                  <div key={index} className={styles['bulk-preview-question']}>
                     <h5>Вопрос {index + 1}</h5>
-                    <p className={styles.bulk-question-text}>{question.question_text}</p>
-                    <div className={styles.bulk-preview-options}>
+                    <p className={styles['bulk-question-text']}>{question.question_text}</p>
+                    <div className={styles['bulk-preview-options']}>
                       {question.options.map((option, optIndex) => (
                         <div key={optIndex} className={`bulk-preview-option ${option.is_correct ? 'bulk-correct' : ''}`}>
-                          <span className={styles.bulk-option-letter}>{String.fromCharCode(97 + optIndex)})</span>
-                          <span className={styles.bulk-option-text}>{option.option_text}</span>
-                          {option.is_correct && <span className={styles.bulk-correct-mark}>✓</span>}
+                          <span className={styles['bulk-option-letter']}>{String.fromCharCode(97 + optIndex)})</span>
+                          <span className={styles['bulk-option-text']}>{option.option_text}</span>
+                          {option.is_correct && <span className={styles['bulk-correct-mark']}>✓</span>}
                         </div>
                       ))}
                     </div>
@@ -271,11 +271,11 @@ function BulkTestEditor({ onImport, onClose }) {
                 ))}
               </div>
 
-              <div className={styles.bulk-preview-actions}>
-                <button className={styles.bulk-btn-success} onClick={handleImport}>
+              <div className={styles['bulk-preview-actions']}>
+                <button className={styles['bulk-btn-success']} onClick={handleImport}>
                   Создать тест
                 </button>
-                <button className={styles.bulk-btn-secondary} onClick={() => setShowPreview(false)}>
+                <button className={styles['bulk-btn-secondary']} onClick={() => setShowPreview(false)}>
                   Вернуться к редактированию
                 </button>
               </div>

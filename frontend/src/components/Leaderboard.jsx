@@ -42,7 +42,7 @@ const Leaderboard = () => {
   }
 
   return (
-    <div className={styles.leaderboard-container}>
+    <div className={styles['leaderboard-container']}>
       <h2>🏆 Рейтинги и Топы</h2>
 
       <div className={styles.tabs}>
@@ -61,43 +61,43 @@ const Leaderboard = () => {
       </div>
 
       {activeTab === 'students' && (
-        <div className={styles.leaderboard-section}>
-          <div className={styles.section-header}>
+        <div className={styles['leaderboard-section']}>
+          <div className={styles['section-header']}>
             <h3>Топ 20 учеников по баллам</h3>
           </div>
           
           {topStudents.length === 0 ? (
-            <p className={styles.no-data}>Нет данных о студентах</p>
+            <p className={styles['no-data']}>Нет данных о студентах</p>
           ) : (
-            <div className={styles.leaderboard-list}>
+            <div className={styles['leaderboard-list']}>
               {topStudents.map((student, index) => (
                 <div 
                   key={student.id} 
                   className={`leaderboard-item ${index < 3 ? 'top-three' : ''}`}
                 >
                   <div className={styles.rank}>
-                    <span className={styles.rank-number}>{getMedalIcon(index + 1)}</span>
+                    <span className={styles['rank-number']}>{getMedalIcon(index + 1)}</span>
                   </div>
-                  <div className={styles.student-avatar}>
+                  <div className={styles['student-avatar']}>
                     {student.avatar_url ? (
-                      <img src={`${BASE_URL}${student.avatar_url}`} alt="" className={styles.avatar-img} />
+                      <img src={`${BASE_URL}${student.avatar_url}`} alt="" className={styles['avatar-img']} />
                     ) : (
-                      <span className={styles.avatar-icon}>{(student.full_name || student.username)?.[0]}</span>
+                      <span className={styles['avatar-icon']}>{(student.full_name || student.username)?.[0]}</span>
                     )}
                   </div>
-                  <div className={styles.student-info}>
-                    <div className={styles.student-name}>{student.full_name || student.username}</div>
-                    <div className={styles.student-details}>
+                  <div className={styles['student-info']}>
+                    <div className={styles['student-name']}>{student.full_name || student.username}</div>
+                    <div className={styles['student-details']}>
                       {student.group_name ? (
-                        <span className={styles.group-badge}>{student.group_name}</span>
+                        <span className={styles['group-badge']}>{student.group_name}</span>
                       ) : (
-                        <span className={styles.no-group}>Без группы</span>
+                        <span className={styles['no-group']}>Без группы</span>
                       )}
                     </div>
                   </div>
                   <div className={styles.points}>
-                    <span className={styles.points-value}>{student.points}</span>
-                    <span className={styles.points-label}>баллов</span>
+                    <span className={styles['points-value']}>{student.points}</span>
+                    <span className={styles['points-label']}>баллов</span>
                   </div>
                 </div>
               ))}
@@ -107,26 +107,26 @@ const Leaderboard = () => {
       )}
 
       {activeTab === 'groups' && (
-        <div className={styles.leaderboard-section}>
-          <div className={styles.section-header}>
+        <div className={styles['leaderboard-section']}>
+          <div className={styles['section-header']}>
             <h3>Топ 10 групп по суммарным баллам</h3>
           </div>
           
           {topGroups.length === 0 ? (
-            <p className={styles.no-data}>Нет данных о группах</p>
+            <p className={styles['no-data']}>Нет данных о группах</p>
           ) : (
-            <div className={styles.leaderboard-list}>
+            <div className={styles['leaderboard-list']}>
               {topGroups.map((group, index) => (
                 <div 
                   key={group.id} 
                   className={`leaderboard-item group-item ${index < 3 ? 'top-three' : ''}`}
                 >
                   <div className={styles.rank}>
-                    <span className={styles.rank-number}>{getMedalIcon(index + 1)}</span>
+                    <span className={styles['rank-number']}>{getMedalIcon(index + 1)}</span>
                   </div>
-                  <div className={styles.group-info}>
-                    <div className={styles.group-name}>{group.name}</div>
-                    <div className={styles.group-stats}>
+                  <div className={styles['group-info']}>
+                    <div className={styles['group-name']}>{group.name}</div>
+                    <div className={styles['group-stats']}>
                       <span className={styles.stat}>
                         👨‍🎓 {group.student_count} {group.student_count === 1 ? 'студент' : 'студентов'}
                       </span>
@@ -136,8 +136,8 @@ const Leaderboard = () => {
                     </div>
                   </div>
                   <div className={styles.points}>
-                    <span className={styles.points-value}>{group.total_points}</span>
-                    <span className={styles.points-label}>всего баллов</span>
+                    <span className={styles['points-value']}>{group.total_points}</span>
+                    <span className={styles['points-label']}>всего баллов</span>
                   </div>
                 </div>
               ))}

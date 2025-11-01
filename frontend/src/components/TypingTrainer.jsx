@@ -290,13 +290,13 @@ function TypingTrainer() {
   };
 
   return (
-    <div className={styles.typing-trainer}>
-      <div className={styles.trainer-header}>
+    <div className={styles['typing-trainer']}>
+      <div className={styles['trainer-header']}>
         <h2>⌨️ Клавиатурный тренажер</h2>
         
         {!isActive && !showResults && (
-          <div className={styles.time-selector}>
-            <span className={styles.time-label}>Длительность теста:</span>
+          <div className={styles['time-selector']}>
+            <span className={styles['time-label']}>Длительность теста:</span>
             {TIME_OPTIONS.map(time => (
               <button
                 key={time}
@@ -312,28 +312,28 @@ function TypingTrainer() {
           </div>
         )}
         
-        <div className={styles.trainer-stats}>
+        <div className={styles['trainer-stats']}>
           <div className={styles.stat}>
-            <span className={styles.stat-label}>Осталось:</span>
+            <span className={styles['stat-label']}>Осталось:</span>
             <span className="stat-value time-remaining">{Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.stat-label}>Скорость:</span>
-            <span className={styles.stat-value}>{wpm} зн/мин</span>
+            <span className={styles['stat-label']}>Скорость:</span>
+            <span className={styles['stat-value']}>{wpm} зн/мин</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.stat-label}>Точность:</span>
-            <span className={styles.stat-value}>{accuracy}%</span>
+            <span className={styles['stat-label']}>Точность:</span>
+            <span className={styles['stat-value']}>{accuracy}%</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.stat-label}>Ошибки:</span>
-            <span className={styles.stat-value}>{errors}</span>
+            <span className={styles['stat-label']}>Ошибки:</span>
+            <span className={styles['stat-value']}>{errors}</span>
           </div>
         </div>
       </div>
 
-      <div className={styles.text-display}>
-        <div className={styles.text-content}>
+      <div className={styles['text-display']}>
+        <div className={styles['text-content']}>
           {(() => {
             // Получаем текст для отображения (текущие слова)
             const displayWords = currentWords.slice(0, Math.min(currentWordIndex + WORDS_AHEAD, currentWords.length));
@@ -367,7 +367,7 @@ function TypingTrainer() {
         </div>
       </div>
 
-      <div className={styles.input-section}>
+      <div className={styles['input-section']}>
         <textarea
           ref={inputRef}
           value={typedText}
@@ -381,14 +381,14 @@ function TypingTrainer() {
           }}
           placeholder="Начните печатать здесь..."
           disabled={timeRemaining <= 0 || showResults}
-          className={styles.typing-input}
+          className={styles['typing-input']}
           rows={4}
         />
       </div>
 
       <div className={styles.keyboard}>
         {keyboardLayout.map((row, rowIndex) => (
-          <div key={rowIndex} className={styles.keyboard-row}>
+          <div key={rowIndex} className={styles['keyboard-row']}>
             {row.map((key) => (
               <div
                 key={key}
@@ -402,7 +402,7 @@ function TypingTrainer() {
         ))}
       </div>
 
-      <div className={styles.hands-guide}>
+      <div className={styles['hands-guide']}>
         <div className="hand left-hand">
           <div className="finger thumb" data-finger="thumb-left">L</div>
           <div className="finger index" data-finger="index-left">F</div>
@@ -420,36 +420,36 @@ function TypingTrainer() {
       </div>
 
       {showResults && (
-        <div className={styles.results-modal}>
-          <div className={styles.modal-content}>
+        <div className={styles['results-modal']}>
+          <div className={styles['modal-content']}>
             <h3>🎉 Тест завершен!</h3>
-            <div className={styles.results-grid}>
-              <div className={styles.result-item}>
-                <span className={styles.result-label}>Время:</span>
-                <span className={styles.result-value}>{Math.floor(finalTimeSpent / 60)}:{(finalTimeSpent % 60).toString().padStart(2, '0')}</span>
+            <div className={styles['results-grid']}>
+              <div className={styles['result-item']}>
+                <span className={styles['result-label']}>Время:</span>
+                <span className={styles['result-value']}>{Math.floor(finalTimeSpent / 60)}:{(finalTimeSpent % 60).toString().padStart(2, '0')}</span>
               </div>
-              <div className={styles.result-item}>
-                <span className={styles.result-label}>Скорость:</span>
-                <span className={styles.result-value}>{wpm} символов/мин</span>
+              <div className={styles['result-item']}>
+                <span className={styles['result-label']}>Скорость:</span>
+                <span className={styles['result-value']}>{wpm} символов/мин</span>
               </div>
-              <div className={styles.result-item}>
-                <span className={styles.result-label}>Точность:</span>
-                <span className={styles.result-value}>{accuracy.toFixed(2)}%</span>
+              <div className={styles['result-item']}>
+                <span className={styles['result-label']}>Точность:</span>
+                <span className={styles['result-value']}>{accuracy.toFixed(2)}%</span>
               </div>
-              <div className={styles.result-item}>
-                <span className={styles.result-label}>Ошибки:</span>
-                <span className={styles.result-value}>{errors}</span>
+              <div className={styles['result-item']}>
+                <span className={styles['result-label']}>Ошибки:</span>
+                <span className={styles['result-value']}>{errors}</span>
               </div>
-              <div className={styles.result-item}>
-                <span className={styles.result-label}>Символов:</span>
-                <span className={styles.result-value}>{typedText.length}</span>
+              <div className={styles['result-item']}>
+                <span className={styles['result-label']}>Символов:</span>
+                <span className={styles['result-value']}>{typedText.length}</span>
               </div>
             </div>
-            <div className={styles.results-actions}>
-              <button onClick={resetTest} className={styles.btn-primary}>
+            <div className={styles['results-actions']}>
+              <button onClick={resetTest} className={styles['btn-primary']}>
                 Новый тест
               </button>
-              <button onClick={() => setShowResults(false)} className={styles.btn-secondary}>
+              <button onClick={() => setShowResults(false)} className={styles['btn-secondary']}>
                 Закрыть
               </button>
             </div>
@@ -457,13 +457,13 @@ function TypingTrainer() {
         </div>
       )}
 
-      <div className={styles.trainer-controls}>
-        <button onClick={resetTest} className={styles.btn-secondary}>
+      <div className={styles['trainer-controls']}>
+        <button onClick={resetTest} className={styles['btn-secondary']}>
           Заного
         </button>
-        <div className={styles.progress-bar}>
+        <div className={styles['progress-bar']}>
           <div 
-            className={styles.progress-fill} 
+            className={styles['progress-fill']} 
             style={{ width: `${((gameDuration - timeRemaining) / gameDuration) * 100}%` }}
           ></div>
         </div>

@@ -309,7 +309,7 @@ function FloatingChat() {
       {/* Мини-чат */}
       <div className={`floating-chat-container ${isOpen ? 'open' : ''}`}>
         {/* Сайдбар с чатами */}
-        <div className={styles.floating-chat-sidebar}>
+        <div className={styles['floating-chat-sidebar']}>
           {availableChats.map((chat) => (
             <div
               key={chat.id}
@@ -317,14 +317,14 @@ function FloatingChat() {
               onClick={() => handleChatSelect(chat)}
               title={chat.name}
             >
-              <div className={styles.chat-user-avatar-wrapper}>
-                <div className={styles.chat-user-avatar}>
+              <div className={styles['chat-user-avatar-wrapper']}>
+                <div className={styles['chat-user-avatar']}>
                   {chat.isGroup ? (
-                    <HiUserGroup className={styles.group-icon} />
+                    <HiUserGroup className={styles['group-icon']} />
                   ) : chat.avatar_url ? (
                     <img src={`${BASE_URL}${chat.avatar_url}`} alt="" />
                   ) : (
-                    <div className={styles.avatar-placeholder}>
+                    <div className={styles['avatar-placeholder']}>
                       {(chat.name || 'U').charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -333,7 +333,7 @@ function FloatingChat() {
                   <img 
                     src={`${BASE_URL}${frames[chat.avatar_frame]}`}
                     alt="Frame"
-                    className={styles.chat-user-frame}
+                    className={styles['chat-user-frame']}
                   />
                 )}
               </div>
@@ -342,22 +342,22 @@ function FloatingChat() {
         </div>
 
         {/* Основная область чата */}
-        <div className={styles.floating-chat-main}>
-          <div className={styles.floating-chat-header}>
-            <div className={styles.chat-header-title}>
+        <div className={styles['floating-chat-main']}>
+          <div className={styles['floating-chat-header']}>
+            <div className={styles['chat-header-title']}>
               <AiOutlineMessage />
               <span>{selectedChat?.name || 'Чат'}</span>
             </div>
-            <div className={styles.chat-header-actions}>
+            <div className={styles['chat-header-actions']}>
               <button 
-                className={styles.expand-btn} 
+                className={styles['expand-btn']} 
                 onClick={openFullChat}
                 title="Открыть полный чат"
               >
                 ↗
               </button>
               <button 
-                className={styles.close-chat-btn} 
+                className={styles['close-chat-btn']} 
                 onClick={toggleChat}
               >
                 <AiOutlineClose />
@@ -365,15 +365,15 @@ function FloatingChat() {
             </div>
           </div>
 
-        <div className={styles.floating-chat-messages}>
+        <div className={styles['floating-chat-messages']}>
           {loading ? (
-            <div className={styles.chat-loading}>
-              <div className={styles.spinner-small}></div>
+            <div className={styles['chat-loading']}>
+              <div className={styles['spinner-small']}></div>
               <p>Загрузка...</p>
             </div>
           ) : messages.length === 0 ? (
-            <div className={styles.chat-empty}>
-              <AiOutlineMessage className={styles.empty-icon} />
+            <div className={styles['chat-empty']}>
+              <AiOutlineMessage className={styles['empty-icon']} />
               <p>Нет сообщений</p>
             </div>
           ) : (
@@ -392,12 +392,12 @@ function FloatingChat() {
                     key={msg.id} 
                     className={`mini-message ${isOwn ? 'own' : ''}`}
                   >
-                    <div className={styles.message-avatar-wrapper}>
-                      <div className={styles.message-avatar}>
+                    <div className={styles['message-avatar-wrapper']}>
+                      <div className={styles['message-avatar']}>
                         {avatarUrl ? (
                           <img src={`${BASE_URL}${avatarUrl}`} alt="" />
                         ) : (
-                          <div className={styles.avatar-placeholder}>
+                          <div className={styles['avatar-placeholder']}>
                             {(fullName || username || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
@@ -406,13 +406,13 @@ function FloatingChat() {
                         <img 
                           src={`${BASE_URL}${frames[avatarFrame]}`}
                           alt="Frame"
-                          className={styles.message-avatar-frame}
+                          className={styles['message-avatar-frame']}
                         />
                       )}
                     </div>
-                    <div className={styles.message-content}>
-                      <div className={styles.message-author}>{fullName || username}</div>
-                      <div className={styles.message-text}>{msg.content}</div>
+                    <div className={styles['message-content']}>
+                      <div className={styles['message-author']}>{fullName || username}</div>
+                      <div className={styles['message-text']}>{msg.content}</div>
                     </div>
                   </div>
                 );
@@ -422,7 +422,7 @@ function FloatingChat() {
           )}
         </div>
 
-        <form className={styles.floating-chat-input} onSubmit={handleSendMessage}>
+        <form className={styles['floating-chat-input']} onSubmit={handleSendMessage}>
           <input
             type="text"
             value={newMessage}
@@ -433,7 +433,7 @@ function FloatingChat() {
           <button 
             type="submit" 
             disabled={!newMessage.trim()}
-            className={styles.send-btn-mini}
+            className={styles['send-btn-mini']}
           >
             <AiOutlineSend />
           </button>
@@ -453,7 +453,7 @@ function FloatingChat() {
           <>
             <AiOutlineMessage />
             {unreadCount > 0 && (
-              <span className={styles.floating-badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
+              <span className={styles['floating-badge']}>{unreadCount > 99 ? '99+' : unreadCount}</span>
             )}
           </>
         )}

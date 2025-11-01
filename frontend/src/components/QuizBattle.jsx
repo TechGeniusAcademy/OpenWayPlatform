@@ -367,21 +367,21 @@ function QuizBattle() {
   // MENU VIEW
   if (view === 'menu') {
     return (
-      <div className={styles.quiz-battle-container}>
-        <div className={styles.quiz-battle-header}>
+      <div className={styles['quiz-battle-container']}>
+        <div className={styles['quiz-battle-header']}>
           <h1><MdOutlineQuiz /> Битва Знаний</h1>
           <p>Сражайся с другими учениками в викторине на скорость!</p>
           {!canPlay && (
-            <div className={styles.daily-limit-warning}>
+            <div className={styles['daily-limit-warning']}>
               ⚠️ Вы уже играли сегодня. Следующая игра доступна через {hoursUntilNextGame} часов.
             </div>
           )}
         </div>
 
-        <div className={styles.quiz-battle-actions}>
+        <div className={styles['quiz-battle-actions']}>
           <button 
             onClick={() => setShowCreateModal(true)} 
-            className={styles.create-battle-btn}
+            className={styles['create-battle-btn']}
             disabled={!canPlay}
             title={!canPlay ? `Доступно через ${hoursUntilNextGame} часов` : ''}
           >
@@ -392,24 +392,24 @@ function QuizBattle() {
               const code = prompt('Введите код комнаты:');
               if (code) joinBattle(code.toUpperCase());
             }} 
-            className={styles.join-battle-btn}
+            className={styles['join-battle-btn']}
           >
             🔗 Присоединиться по коду
           </button>
-          <button onClick={fetchActiveBattles} className={styles.refresh-btn}>
+          <button onClick={fetchActiveBattles} className={styles['refresh-btn']}>
             🔄 Обновить список
           </button>
         </div>
 
-        <div className={styles.active-battles}>
+        <div className={styles['active-battles']}>
           <h2>Активные битвы</h2>
           {activeBattles.length === 0 ? (
-            <p className={styles.no-battles}>Нет активных битв. Создай свою!</p>
+            <p className={styles['no-battles']}>Нет активных битв. Создай свою!</p>
           ) : (
-            <div className={styles.battles-grid}>
+            <div className={styles['battles-grid']}>
               {activeBattles.map(battle => (
-                <div key={battle.id} className={styles.battle-card}>
-                  <div className={styles.battle-info}>
+                <div key={battle.id} className={styles['battle-card']}>
+                  <div className={styles['battle-info']}>
                     <h3>Комната: {battle.room_code}</h3>
                     <p>Создатель: {battle.creator_name}</p>
                     <p>Категория: {battle.category_name || 'Все категории'}</p>
@@ -419,7 +419,7 @@ function QuizBattle() {
                     </span>
                   </div>
                   {battle.status === 'waiting' && (
-                    <button onClick={() => joinBattle(battle.room_code)} className={styles.join-btn}>
+                    <button onClick={() => joinBattle(battle.room_code)} className={styles['join-btn']}>
                       Присоединиться
                     </button>
                   )}
@@ -431,10 +431,10 @@ function QuizBattle() {
 
         {/* Модальное окно выбора категории */}
         {showCreateModal && (
-          <div className={styles.modal-overlay} onClick={() => setShowCreateModal(false)}>
-            <div className={styles.modal-content} onClick={(e) => e.stopPropagation()}>
+          <div className={styles['modal-overlay']} onClick={() => setShowCreateModal(false)}>
+            <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
               <h2>Выберите категорию вопросов</h2>
-              <div className={styles.categories-list}>
+              <div className={styles['categories-list']}>
                 {categories.map(cat => (
                   <div 
                     key={cat.id} 
@@ -443,17 +443,17 @@ function QuizBattle() {
                   >
                     <h3>{cat.name}</h3>
                     <p>{cat.description}</p>
-                    <span className={styles.question-count}>{cat.question_count} вопросов</span>
+                    <span className={styles['question-count']}>{cat.question_count} вопросов</span>
                   </div>
                 ))}
               </div>
-              <div className={styles.modal-actions}>
-                <button onClick={() => setShowCreateModal(false)} className={styles.cancel-btn}>
+              <div className={styles['modal-actions']}>
+                <button onClick={() => setShowCreateModal(false)} className={styles['cancel-btn']}>
                   Отмена
                 </button>
                 <button 
                   onClick={createBattle} 
-                  className={styles.confirm-btn}
+                  className={styles['confirm-btn']}
                   disabled={!selectedCategory}
                 >
                   Создать битву
@@ -472,37 +472,37 @@ function QuizBattle() {
     const playerCount = currentBattle.players?.length || 0;
 
     return (
-      <div className={styles.quiz-battle-container}>
-        <div className={styles.lobby-header}>
+      <div className={styles['quiz-battle-container']}>
+        <div className={styles['lobby-header']}>
           <h1>🎮 Лобби</h1>
-          <div className={styles.room-code-display}>
+          <div className={styles['room-code-display']}>
             <span>Код комнаты:</span>
             <strong>{currentBattle.room_code}</strong>
           </div>
           {currentBattle.category_name && (
-            <div className={styles.category-display}>
+            <div className={styles['category-display']}>
               <span>Категория:</span>
               <strong>{currentBattle.category_name}</strong>
             </div>
           )}
-          <button onClick={leaveBattle} className={styles.leave-btn}>❌ Выйти</button>
+          <button onClick={leaveBattle} className={styles['leave-btn']}>❌ Выйти</button>
         </div>
 
-        <div className={styles.lobby-content}>
-          <div className={styles.players-list}>
+        <div className={styles['lobby-content']}>
+          <div className={styles['players-list']}>
             <h2>Игроки ({playerCount}/8)</h2>
-            <div className={styles.players-grid}>
+            <div className={styles['players-grid']}>
               {currentBattle.players?.map((player, idx) => (
-                <div key={player.user_id} className={styles.player-card}>
-                  <div className={styles.player-avatar}>
+                <div key={player.user_id} className={styles['player-card']}>
+                  <div className={styles['player-avatar']}>
                     {player.avatar_url ? (
                       <img src={`http://localhost:5000${player.avatar_url}`} alt="" />
                     ) : (
-                      <div className={styles.avatar-placeholder}>👤</div>
+                      <div className={styles['avatar-placeholder']}>👤</div>
                     )}
                   </div>
-                  <div className={styles.player-info}>
-                    <span className={styles.player-name}>
+                  <div className={styles['player-info']}>
+                    <span className={styles['player-name']}>
                       {player.username}
                       {player.user_id === currentBattle.creator_id && ' 👑'}
                     </span>
@@ -512,7 +512,7 @@ function QuizBattle() {
             </div>
           </div>
 
-          <div className={styles.lobby-instructions}>
+          <div className={styles['lobby-instructions']}>
             {isCreator ? (
               <>
                 <h3>Вы создатель!</h3>
@@ -520,7 +520,7 @@ function QuizBattle() {
                 <button 
                   onClick={startBattle} 
                   disabled={playerCount < 2}
-                  className={styles.start-battle-btn}
+                  className={styles['start-battle-btn']}
                 >
                   🚀 Начать Битву
                 </button>
@@ -529,7 +529,7 @@ function QuizBattle() {
               <>
                 <h3>Ожидание начала...</h3>
                 <p>Создатель {currentBattle.players?.find(p => p.user_id === currentBattle.creator_id)?.username} скоро начнёт игру!</p>
-                <div className={styles.waiting-animation}>⏳</div>
+                <div className={styles['waiting-animation']}>⏳</div>
               </>
             )}
           </div>
@@ -550,18 +550,18 @@ function QuizBattle() {
     const battleTimeDisplay = `${battleMinutes}:${battleSeconds.toString().padStart(2, '0')}`;
 
     return (
-      <div className={styles.quiz-battle-container}>
-        <div className={styles.battle-header}>
-          <div className={styles.battle-timer-display}>
+      <div className={styles['quiz-battle-container']}>
+        <div className={styles['battle-header']}>
+          <div className={styles['battle-timer-display']}>
             <span className={`battle-timer ${battleTimer <= 60 ? 'urgent' : ''}`}>
               ⏰ Осталось: {battleTimeDisplay}
             </span>
           </div>
-          <div className={styles.progress-bar}>
-            <div className={styles.progress-fill} style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }} />
-            <span className={styles.progress-text}>Вопрос {currentQuestionIndex + 1}/{questions.length}</span>
+          <div className={styles['progress-bar']}>
+            <div className={styles['progress-fill']} style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }} />
+            <span className={styles['progress-text']}>Вопрос {currentQuestionIndex + 1}/{questions.length}</span>
           </div>
-          <div className={styles.timer-display}>
+          <div className={styles['timer-display']}>
             <div className={`timer ${timer <= 10 ? 'urgent' : ''}`}>
               ⏱️ {timer}с
             </div>
@@ -572,24 +572,24 @@ function QuizBattle() {
           {currentBattle.players?.sort((a, b) => b.score - a.score).map((player, idx) => (
             <div key={player.user_id} className={`score-item ${player.user_id === user?.id ? 'me' : ''}`}>
               <span className={styles.rank}>#{idx + 1}</span>
-              <span className={styles.player-name}>{player.username}</span>
+              <span className={styles['player-name']}>{player.username}</span>
               <span className={styles.score}>{player.score} 🏆</span>
             </div>
           ))}
         </div>
 
-        <div className={styles.question-container}>
-          <h2 className={styles.question-text}>{currentQuestion?.question}</h2>
+        <div className={styles['question-container']}>
+          <h2 className={styles['question-text']}>{currentQuestion?.question}</h2>
           
           {waitingForOthers ? (
-            <div className={styles.waiting-message}>
+            <div className={styles['waiting-message']}>
               <div className={styles.spinner}></div>
               <h3>Вы ответили на все вопросы!</h3>
               <p>Ожидание других игроков...</p>
             </div>
           ) : (
             <>
-              <div className={styles.answers-grid}>
+              <div className={styles['answers-grid']}>
                 {['a', 'b', 'c', 'd'].map(option => {
                   const optionText = currentQuestion?.[`option_${option}`];
                   const isSelected = selectedAnswer === option;
@@ -609,8 +609,8 @@ function QuizBattle() {
                       disabled={isAnswering}
                       className={className}
                     >
-                      <span className={styles.option-letter}>{option.toUpperCase()}</span>
-                      <span className={styles.option-text}>{optionText}</span>
+                      <span className={styles['option-letter']}>{option.toUpperCase()}</span>
+                      <span className={styles['option-text']}>{optionText}</span>
                     </button>
                   );
                 })}
@@ -637,8 +637,8 @@ function QuizBattle() {
     const sortedPlayers = currentBattle.players?.sort((a, b) => b.score - a.score) || [];
 
     return (
-      <div className={styles.quiz-battle-container}>
-        <div className={styles.results-header}>
+      <div className={styles['quiz-battle-container']}>
+        <div className={styles['results-header']}>
           <h1>🏆 Результаты Битвы</h1>
         </div>
 
@@ -648,23 +648,23 @@ function QuizBattle() {
             return (
               <div key={player.user_id} className={`podium-place place-${idx + 1}`}>
                 <div className={styles.medal}>{medals[idx]}</div>
-                <div className={styles.player-avatar}>
+                <div className={styles['player-avatar']}>
                   {player.avatar_url ? (
                     <img src={`http://localhost:5000${player.avatar_url}`} alt="" />
                   ) : (
-                    <div className={styles.avatar-placeholder}>👤</div>
+                    <div className={styles['avatar-placeholder']}>👤</div>
                   )}
                 </div>
-                <div className={styles.player-name}>{player.username}</div>
-                <div className={styles.player-score}>{player.score} очков</div>
+                <div className={styles['player-name']}>{player.username}</div>
+                <div className={styles['player-score']}>{player.score} очков</div>
               </div>
             );
           })}
         </div>
 
-        <div className={styles.full-results}>
+        <div className={styles['full-results']}>
           <h2>Полная таблица</h2>
-          <div className={styles.results-table}>
+          <div className={styles['results-table']}>
             {sortedPlayers.map((player, idx) => (
               <div key={player.user_id} className={`result-row ${player.user_id === user?.id ? 'me' : ''}`}>
                 <span className={styles.position}>#{idx + 1}</span>
@@ -675,7 +675,7 @@ function QuizBattle() {
           </div>
         </div>
 
-        <button onClick={leaveBattle} className={styles.back-menu-btn}>
+        <button onClick={leaveBattle} className={styles['back-menu-btn']}>
           🏠 Вернуться в меню
         </button>
       </div>

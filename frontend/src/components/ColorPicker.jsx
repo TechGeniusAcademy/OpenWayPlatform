@@ -222,17 +222,17 @@ const ColorPicker = ({ color, onChange, onClose }) => {
   const currentColor = hslToHex(hue, saturation, lightness);
 
   return (
-    <div className={styles.color-picker-overlay}>
-      <div className={styles.color-picker} ref={pickerRef}>
+    <div className={styles['color-picker-overlay']}>
+      <div className={styles['color-picker']} ref={pickerRef}>
         {/* Заголовок */}
-        <div className={styles.color-picker-header}>
+        <div className={styles['color-picker-header']}>
           <span>Выбор цвета</span>
-          <button onClick={onClose} className={styles.color-picker-close}>×</button>
+          <button onClick={onClose} className={styles['color-picker-close']}>×</button>
         </div>
 
         {/* Основная палитра насыщенности и яркости */}
         <div 
-          className={styles.saturation-lightness-picker}
+          className={styles['saturation-lightness-picker']}
           ref={saturationRef}
           onMouseDown={handleSaturationMouseDown}
           style={{ 
@@ -240,7 +240,7 @@ const ColorPicker = ({ color, onChange, onClose }) => {
           }}
         >
           <div 
-            className={styles.saturation-cursor}
+            className={styles['saturation-cursor']}
             style={{
               left: `${saturation}%`,
               top: `${100 - lightness}%`
@@ -249,23 +249,23 @@ const ColorPicker = ({ color, onChange, onClose }) => {
         </div>
 
         {/* Ползунок Hue */}
-        <div className={styles.hue-slider-container}>
+        <div className={styles['hue-slider-container']}>
           <div 
-            className={styles.hue-slider}
+            className={styles['hue-slider']}
             ref={hueRef}
             onMouseDown={handleHueMouseDown}
           >
             <div 
-              className={styles.hue-cursor}
+              className={styles['hue-cursor']}
               style={{ left: `${(hue / 360) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Ползунок Alpha */}
-        <div className={styles.alpha-slider-container}>
+        <div className={styles['alpha-slider-container']}>
           <div 
-            className={styles.alpha-slider}
+            className={styles['alpha-slider']}
             ref={alphaRef}
             onMouseDown={handleAlphaMouseDown}
             style={{
@@ -273,21 +273,21 @@ const ColorPicker = ({ color, onChange, onClose }) => {
             }}
           >
             <div 
-              className={styles.alpha-cursor}
+              className={styles['alpha-cursor']}
               style={{ left: `${alpha}%` }}
             />
           </div>
-          <span className={styles.alpha-value}>{Math.round(alpha)}%</span>
+          <span className={styles['alpha-value']}>{Math.round(alpha)}%</span>
         </div>
 
         {/* Превью и HEX ввод */}
-        <div className={styles.color-input-section}>
-          <div className={styles.color-preview} style={{ background: currentColor }} />
-          <div className={styles.hex-input-container}>
-            <span className={styles.hex-label}>#</span>
+        <div className={styles['color-input-section']}>
+          <div className={styles['color-preview']} style={{ background: currentColor }} />
+          <div className={styles['hex-input-container']}>
+            <span className={styles['hex-label']}>#</span>
             <input 
               type="text"
-              className={styles.hex-input}
+              className={styles['hex-input']}
               value={hexInput}
               onChange={handleHexInputChange}
               maxLength={6}
@@ -297,13 +297,13 @@ const ColorPicker = ({ color, onChange, onClose }) => {
         </div>
 
         {/* Предустановленные цвета */}
-        <div className={styles.preset-colors}>
-          <div className={styles.preset-colors-label}>Быстрые цвета</div>
-          <div className={styles.preset-colors-grid}>
+        <div className={styles['preset-colors']}>
+          <div className={styles['preset-colors-label']}>Быстрые цвета</div>
+          <div className={styles['preset-colors-grid']}>
             {presetColors.map((presetColor, index) => (
               <button
                 key={index}
-                className={styles.preset-color}
+                className={styles['preset-color']}
                 style={{ background: presetColor }}
                 onClick={() => {
                   const hsl = hexToHSL(presetColor);
@@ -318,8 +318,8 @@ const ColorPicker = ({ color, onChange, onClose }) => {
         </div>
 
         {/* RGB значения */}
-        <div className={styles.rgb-values}>
-          <div className={styles.rgb-value}>
+        <div className={styles['rgb-values']}>
+          <div className={styles['rgb-value']}>
             <span>H</span>
             <input 
               type="number" 
@@ -329,7 +329,7 @@ const ColorPicker = ({ color, onChange, onClose }) => {
               max="360"
             />
           </div>
-          <div className={styles.rgb-value}>
+          <div className={styles['rgb-value']}>
             <span>S</span>
             <input 
               type="number" 
@@ -339,7 +339,7 @@ const ColorPicker = ({ color, onChange, onClose }) => {
               max="100"
             />
           </div>
-          <div className={styles.rgb-value}>
+          <div className={styles['rgb-value']}>
             <span>L</span>
             <input 
               type="number" 
