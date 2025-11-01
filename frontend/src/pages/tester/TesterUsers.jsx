@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import { BsPeople, BsSearch, BsEyeFill } from 'react-icons/bs';
-import './TesterUsers.css';
+import styles from './TesterUsers.module.css';
 
 function TesterUsers() {
   const [users, setUsers] = useState([]);
@@ -30,10 +30,10 @@ function TesterUsers() {
   );
 
   return (
-    <div className="tester-users">
-      <div className="users-header">
+    <div className={styles.tester-users}>
+      <div className={styles.users-header}>
         <h1><BsPeople /> Users Testing</h1>
-        <div className="search-box">
+        <div className={styles.search-box}>
           <BsSearch />
           <input
             type="text"
@@ -45,10 +45,10 @@ function TesterUsers() {
       </div>
 
       {loading ? (
-        <div className="loading">Загрузка...</div>
+        <div className={styles.loading}>Загрузка...</div>
       ) : (
-        <div className="users-table">
-          <div className="table-header">
+        <div className={styles.users-table}>
+          <div className={styles.table-header}>
             <span>ID</span>
             <span>Имя</span>
             <span>Email</span>
@@ -57,12 +57,12 @@ function TesterUsers() {
             <span>Регистрация</span>
           </div>
           {filteredUsers.map(user => (
-            <div key={user.id} className="table-row">
+            <div key={user.id} className={styles.table-row}>
               <span>#{user.id}</span>
               <span><strong>{user.full_name || user.username}</strong></span>
               <span>{user.email}</span>
               <span className={`role-badge ${user.role}`}>{user.role}</span>
-              <span className="points">{user.points || 0}</span>
+              <span className={styles.points}>{user.points || 0}</span>
               <span>{new Date(user.created_at).toLocaleDateString()}</span>
             </div>
           ))}

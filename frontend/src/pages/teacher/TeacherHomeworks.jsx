@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import QuillEditor from '../../components/QuillEditor';
-import './TeacherHomeworks.css';
+import styles from './TeacherHomeworks.module.css';
 
 function HomeworksManagement() {
   const [homeworks, setHomeworks] = useState([]);
@@ -199,13 +199,13 @@ function HomeworksManagement() {
   if (loading) return <div>Загрузка...</div>;
 
   return (
-    <div className="homeworks-management">
-      <div className="header">
+    <div className={styles.homeworks-management}>
+      <div className={styles.header}>
         <h2>Управление домашними заданиями</h2>
-        <button className="btn-primary" onClick={() => openForm()}>+ Создать задание</button>
+        <button className={styles.btn-primary} onClick={() => openForm()}>+ Создать задание</button>
       </div>
 
-      <div className="homeworks-list">
+      <div className={styles.homeworks-list}>
         {homeworks.length === 0 ? (
           <p>Нет созданных домашних заданий</p>
         ) : (
@@ -228,7 +228,7 @@ function HomeworksManagement() {
                   <td>{homework.deadline ? new Date(homework.deadline).toLocaleString('ru-RU') : '∞'}</td>
                   <td>{getStatusBadge(homework)}</td>
                   <td>{homework.assigned_groups_count}</td>
-                  <td className="actions">
+                  <td className={styles.actions}>
                     <button onClick={() => openForm(homework)} title="Редактировать">✏️</button>
                     <button onClick={() => openAssignModal(homework)} title="Назначить группам">📋</button>
                     <button onClick={() => openSubmissionsModal(homework)} title="Сдачи">📝</button>
@@ -249,11 +249,11 @@ function HomeworksManagement() {
 
       {/* Форма создания/редактирования */}
       {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+        <div className={styles.modal-overlay} onClick={() => setShowForm(false)}>
           <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <h3>{editingHomework ? 'Редактировать задание' : 'Создать задание'}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Название задания *</label>
                 <input
                   type="text"
@@ -263,7 +263,7 @@ function HomeworksManagement() {
                 />
               </div>
 
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Описание задания (Rich Text)</label>
                 <QuillEditor
                   value={description}
@@ -273,8 +273,8 @@ function HomeworksManagement() {
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
+              <div className={styles.form-row}>
+                <div className={styles.form-group}>
                   <label>Баллы за выполнение</label>
                   <input
                     type="number"
@@ -284,7 +284,7 @@ function HomeworksManagement() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Дедлайн</label>
                   <input
                     type="datetime-local"
@@ -294,8 +294,8 @@ function HomeworksManagement() {
                 </div>
               </div>
 
-              <div className="form-actions">
-                <button type="submit" className="btn-primary">Сохранить</button>
+              <div className={styles.form-actions}>
+                <button type="submit" className={styles.btn-primary}>Сохранить</button>
                 <button type="button" onClick={() => setShowForm(false)}>Отмена</button>
               </div>
             </form>
@@ -305,16 +305,16 @@ function HomeworksManagement() {
 
       {/* Модальное окно назначения */}
       {showAssignModal && selectedHomework && (
-        <div className="modal-overlay" onClick={() => setShowAssignModal(false)}>
+        <div className={styles.modal-overlay} onClick={() => setShowAssignModal(false)}>
           <div className="modal-content small" onClick={(e) => e.stopPropagation()}>
             <h3>Назначение: {selectedHomework.title}</h3>
             
             <h4>Назначить группе:</h4>
-            <div className="assign-groups">
+            <div className={styles.assign-groups}>
               {groups.map(group => {
                 const isAssigned = selectedHomework.assignments?.some(a => a.group_id === group.id);
                 return (
-                  <div key={group.id} className="group-item">
+                  <div key={group.id} className={styles.group-item}>
                     <span>{group.name}</span>
                     {isAssigned ? (
                       <button onClick={() => handleUnassign(group.id)}>Отменить</button>
@@ -333,20 +333,20 @@ function HomeworksManagement() {
 
       {/* Модальное окно сдач */}
       {showSubmissionsModal && selectedHomework && (
-        <div className="modal-overlay" onClick={() => setShowSubmissionsModal(false)}>
+        <div className={styles.modal-overlay} onClick={() => setShowSubmissionsModal(false)}>
           <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <h3>Сдачи: {selectedHomework.title}</h3>
             
             {submissions.length === 0 ? (
               <p>Пока никто не сдал это задание</p>
             ) : (
-              <div className="submissions-list">
+              <div className={styles.submissions-list}>
                 {submissions.map(submission => (
-                  <div key={submission.id} className="submission-card">
-                    <div className="submission-header">
+                  <div key={submission.id} className={styles.submission-card}>
+                    <div className={styles.submission-header}>
                       <div>
                         <strong>{submission.full_name}</strong>
-                        <span className="submission-date">
+                        <span className={styles.submission-date}>
                           {new Date(submission.submitted_at).toLocaleString('ru-RU')}
                         </span>
                       </div>
@@ -356,10 +356,10 @@ function HomeworksManagement() {
                       </span>
                     </div>
 
-                    <div className="submission-text" dangerouslySetInnerHTML={{ __html: submission.submission_text }} />
+                    <div className={styles.submission-text} dangerouslySetInnerHTML={{ __html: submission.submission_text }} />
 
                     {submission.status !== 'pending' && (
-                      <div className="check-info">
+                      <div className={styles.check-info}>
                         <p><strong>Проверил:</strong> {submission.checker_name}</p>
                         {submission.reason && <p><strong>Причина:</strong> {submission.reason}</p>}
                         <p><strong>Баллы:</strong> {submission.points_earned}</p>
@@ -367,7 +367,7 @@ function HomeworksManagement() {
                     )}
 
                     {submission.status === 'pending' && (
-                      <div className="check-actions">
+                      <div className={styles.check-actions}>
                         <input
                           type="number"
                           placeholder="Баллы"
@@ -381,7 +381,7 @@ function HomeworksManagement() {
                           id={`reason-${submission.id}`}
                         />
                         <button
-                          className="btn-accept"
+                          className={styles.btn-accept}
                           onClick={() => {
                             const pts = document.getElementById(`points-${submission.id}`).value;
                             const rsn = document.getElementById(`reason-${submission.id}`).value;
@@ -391,7 +391,7 @@ function HomeworksManagement() {
                           ✅ Принять
                         </button>
                         <button
-                          className="btn-reject"
+                          className={styles.btn-reject}
                           onClick={() => {
                             const rsn = document.getElementById(`reason-${submission.id}`).value;
                             handleCheckSubmission(submission.id, 'rejected', rsn, 0);

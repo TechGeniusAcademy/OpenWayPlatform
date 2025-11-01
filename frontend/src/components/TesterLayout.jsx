@@ -11,7 +11,7 @@ import {
   BsActivity,
   BsBoxArrowRight
 } from 'react-icons/bs';
-import './TesterLayout.css';
+import styles from './TesterLayout.module.css';
 
 function TesterLayout() {
   const { logout } = useAuth();
@@ -28,13 +28,13 @@ function TesterLayout() {
   };
 
   return (
-    <div className="tester-layout">
-      <aside className="tester-sidebar">
-        <div className="sidebar-header">
+    <div className={styles.tester-layout}>
+      <aside className={styles.tester-sidebar}>
+        <div className={styles.sidebar-header}>
           <h2>🧪 Tester Panel</h2>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className={styles.sidebar-nav}>
           <Link 
             to="/tester" 
             className={`nav-item ${isActive('/tester') && location.pathname === '/tester' ? 'active' : ''}`}
@@ -100,15 +100,15 @@ function TesterLayout() {
           </Link>
         </nav>
 
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="logout-btn">
+        <div className={styles.sidebar-footer}>
+          <button onClick={handleLogout} className={styles.logout-btn}>
             <BsBoxArrowRight />
             <span>Выйти</span>
           </button>
         </div>
       </aside>
 
-      <main className="tester-content">
+      <main className={styles.tester-content}>
         <Outlet />
       </main>
     </div>

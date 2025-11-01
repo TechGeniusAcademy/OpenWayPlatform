@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaClone, FaDownload, FaFileAlt, FaCheck, FaTimes, FaClipboardList } from 'react-icons/fa';
 import { MdSettings } from 'react-icons/md';
 import api from '../../utils/api';
-import './StudentTechnicalSpecs.css';
+import styles from './StudentTechnicalSpecs.module.css';
 
 function StudentTechnicalSpecs() {
   const [specs, setSpecs] = useState([]);
@@ -213,9 +213,9 @@ ${spec.additional_info || 'Не указано'}
 
   if (loading) {
     return (
-      <div className="technical-specs-page">
-        <div className="loading-container">
-          <div className="spinner"></div>
+      <div className={styles.technical-specs-page}>
+        <div className={styles.loading-container}>
+          <div className={styles.spinner}></div>
           <p>Загрузка...</p>
         </div>
       </div>
@@ -223,46 +223,46 @@ ${spec.additional_info || 'Не указано'}
   }
 
   return (
-    <div className="technical-specs-page">
-      <div className="technical-specs-header">
-        <div className="header-left">
+    <div className={styles.technical-specs-page}>
+      <div className={styles.technical-specs-header}>
+        <div className={styles.header-left}>
           <h1><FaClipboardList /> Технические задания</h1>
           <p>Создавайте и управляйте своими ТЗ</p>
         </div>
-        <button className="create-spec-btn" onClick={handleCreateNew}>
+        <button className={styles.create-spec-btn} onClick={handleCreateNew}>
           <FaPlus /> Создать новое ТЗ
         </button>
       </div>
 
-      <div className="technical-specs-content">
+      <div className={styles.technical-specs-content}>
         {/* Левая панель - Список ТЗ */}
-        <div className="specs-list-panel">
-          <div className="specs-list-header">
+        <div className={styles.specs-list-panel}>
+          <div className={styles.specs-list-header}>
             <h3>Мои ТЗ ({specs.length})</h3>
           </div>
           
           {specs.length === 0 ? (
-            <div className="empty-state">
+            <div className={styles.empty-state}>
               <FaFileAlt />
               <p>У вас пока нет ТЗ</p>
               <small>Создайте первое техническое задание</small>
             </div>
           ) : (
-            <div className="specs-list">
+            <div className={styles.specs-list}>
               {specs.map((spec) => (
                 <div 
                   key={spec.id} 
                   className={`spec-card ${selectedSpec?.id === spec.id && isCreating ? 'active' : ''}`}
                   onClick={() => handleEdit(spec)}
                 >
-                  <div className="spec-card-header">
+                  <div className={styles.spec-card-header}>
                     <h4>{spec.title}</h4>
-                    <span className="spec-type">{getProjectTypeName(spec.project_type)}</span>
+                    <span className={styles.spec-type}>{getProjectTypeName(spec.project_type)}</span>
                   </div>
-                  <div className="spec-card-meta">
+                  <div className={styles.spec-card-meta}>
                     <small>Создано: {new Date(spec.created_at).toLocaleDateString('ru-RU')}</small>
                   </div>
-                  <div className="spec-card-actions">
+                  <div className={styles.spec-card-actions}>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleDuplicate(spec); }}
                       title="Дублировать"
@@ -277,7 +277,7 @@ ${spec.additional_info || 'Не указано'}
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleDelete(spec.id); }}
-                      className="delete-btn"
+                      className={styles.delete-btn}
                       title="Удалить"
                     >
                       <FaTrash />
@@ -290,27 +290,27 @@ ${spec.additional_info || 'Не указано'}
         </div>
 
         {/* Правая панель - Форма редактирования */}
-        <div className="spec-editor-panel">
+        <div className={styles.spec-editor-panel}>
           {!isCreating ? (
-            <div className="empty-editor">
+            <div className={styles.empty-editor}>
               <FaFileAlt />
               <h3>Выберите ТЗ или создайте новое</h3>
               <p>Выберите техническое задание из списка слева для редактирования</p>
             </div>
           ) : (
-            <div className="spec-form">
-              <div className="spec-form-header">
+            <div className={styles.spec-form}>
+              <div className={styles.spec-form-header}>
                 <h2>{selectedSpec ? 'Редактирование ТЗ' : 'Создание нового ТЗ'}</h2>
-                <div className="form-actions">
+                <div className={styles.form-actions}>
                   <button 
-                    className="save-btn" 
+                    className={styles.save-btn} 
                     onClick={handleSave}
                     disabled={saving}
                   >
                     <FaCheck /> {saving ? 'Сохранение...' : 'Сохранить'}
                   </button>
                   <button 
-                    className="cancel-btn" 
+                    className={styles.cancel-btn} 
                     onClick={() => setIsCreating(false)}
                   >
                     <FaTimes /> Отмена
@@ -318,10 +318,10 @@ ${spec.additional_info || 'Не указано'}
                 </div>
               </div>
 
-              <div className="spec-form-body">
-                <div className="form-group">
+              <div className={styles.spec-form-body}>
+                <div className={styles.form-group}>
                   <label>
-                    Название проекта <span className="required">*</span>
+                    Название проекта <span className={styles.required}>*</span>
                   </label>
                   <input
                     type="text"
@@ -331,7 +331,7 @@ ${spec.additional_info || 'Не указано'}
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Тип проекта</label>
                   <select
                     value={formData.project_type}
@@ -345,7 +345,7 @@ ${spec.additional_info || 'Не указано'}
                   </select>
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Описание проекта</label>
                   <textarea
                     rows="4"
@@ -355,7 +355,7 @@ ${spec.additional_info || 'Не указано'}
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Цели и задачи</label>
                   <textarea
                     rows="4"
@@ -365,7 +365,7 @@ ${spec.additional_info || 'Не указано'}
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Целевая аудитория</label>
                   <textarea
                     rows="3"
@@ -375,7 +375,7 @@ ${spec.additional_info || 'Не указано'}
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Функциональные требования</label>
                   <textarea
                     rows="6"
@@ -385,7 +385,7 @@ ${spec.additional_info || 'Не указано'}
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Технические требования</label>
                   <textarea
                     rows="5"
@@ -395,7 +395,7 @@ ${spec.additional_info || 'Не указано'}
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Требования к дизайну</label>
                   <textarea
                     rows="4"
@@ -405,8 +405,8 @@ ${spec.additional_info || 'Не указано'}
                   />
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
+                <div className={styles.form-row}>
+                  <div className={styles.form-group}>
                     <label>Срок выполнения</label>
                     <input
                       type="date"
@@ -415,7 +415,7 @@ ${spec.additional_info || 'Не указано'}
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.form-group}>
                     <label>Бюджет</label>
                     <input
                       type="text"
@@ -426,7 +426,7 @@ ${spec.additional_info || 'Не указано'}
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Дополнительная информация</label>
                   <textarea
                     rows="4"

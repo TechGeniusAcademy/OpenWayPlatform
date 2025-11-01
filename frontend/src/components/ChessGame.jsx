@@ -3,7 +3,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { FaTrophy, FaHandshake, FaExclamationTriangle, FaCircle, FaChess, FaRedo, FaHistory, FaBrain } from 'react-icons/fa';
 import { GiChessKing } from 'react-icons/gi';
-import './ChessGame.css';
+import styles from './ChessGame.module.css';
 
 function ChessGame() {
   const [game, setGame] = useState(new Chess());
@@ -175,14 +175,14 @@ function ChessGame() {
   };
 
   return (
-    <div className="chess-game">
-      <div className="chess-game-header">
+    <div className={styles.chess-game}>
+      <div className={styles.chess-game-header}>
         <h2><GiChessKing /> Шахматы</h2>
-        <div className="chess-controls">
+        <div className={styles.chess-controls}>
           <select 
             value={difficulty} 
             onChange={(e) => setDifficulty(e.target.value)}
-            className="chess-select"
+            className={styles.chess-select}
           >
             <option value="easy">● Лёгкий</option>
             <option value="medium">● Средний</option>
@@ -203,13 +203,13 @@ function ChessGame() {
         </div>
       </div>
 
-      <div className="chess-game-status">
+      <div className={styles.chess-game-status}>
         <h3>{gameStatus}</h3>
-        {isComputerTurn && <span className="thinking"><FaBrain /> Компьютер думает...</span>}
+        {isComputerTurn && <span className={styles.thinking}><FaBrain /> Компьютер думает...</span>}
       </div>
 
-      <div className="chess-game-container">
-        <div className="chess-board-wrapper">
+      <div className={styles.chess-game-container}>
+        <div className={styles.chess-board-wrapper}>
           <Chessboard
             position={position}
             onPieceDrop={onDrop}
@@ -223,16 +223,16 @@ function ChessGame() {
           />
         </div>
 
-        <div className="chess-sidebar">
-          <div className="move-history">
+        <div className={styles.chess-sidebar}>
+          <div className={styles.move-history}>
             <h4><FaHistory /> История ходов</h4>
-            <div className="moves-list">
+            <div className={styles.moves-list}>
               {moveHistory.length === 0 ? (
-                <p className="no-moves">Ходы появятся здесь</p>
+                <p className={styles.no-moves}>Ходы появятся здесь</p>
               ) : (
                 moveHistory.map((move, index) => (
-                  <div key={index} className="move-item">
-                    <span className="move-number">{Math.floor(index / 2) + 1}.</span>
+                  <div key={index} className={styles.move-item}>
+                    <span className={styles.move-number}>{Math.floor(index / 2) + 1}.</span>
                     <span className={`move-notation ${index % 2 === 0 ? 'white' : 'black'}`}>
                       {move}
                     </span>
@@ -242,20 +242,20 @@ function ChessGame() {
             </div>
           </div>
 
-          <div className="game-info">
+          <div className={styles.game-info}>
             <h4>ℹ️ Информация</h4>
-            <div className="info-item">
+            <div className={styles.info-item}>
               <span>Вы играете:</span>
               <strong><FaCircle /> {playerColor === 'white' ? 'Белыми' : 'Чёрными'}</strong>
             </div>
-            <div className="info-item">
+            <div className={styles.info-item}>
               <span>Сложность:</span>
               <strong>
                 {difficulty === 'easy' ? '● Лёгкий' : 
                  difficulty === 'medium' ? '● Средний' : '● Сложный'}
               </strong>
             </div>
-            <div className="info-item">
+            <div className={styles.info-item}>
               <span>Сделано ходов:</span>
               <strong>{moveHistory.length}</strong>
             </div>

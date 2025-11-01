@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import './Login.css';
+import styles from './Login.module.css';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -480,28 +480,28 @@ function Login() {
   };
 
   return (
-    <div className="login-container">
+    <div className={styles.login-container}>
       {/* Animated Background */}
-      <div className="background-container">
-        <div className="background-wrap">
-          <div className="background-pattern"></div>
+      <div className={styles.background-container}>
+        <div className={styles.background-wrap}>
+          <div className={styles.background-pattern}></div>
         </div>
       </div>
 
-      <div className="login-card">
-        <div className="login-header">
+      <div className={styles.login-card}>
+        <div className={styles.login-header}>
           <h1>Вход в систему</h1>
           <p>Введите ваши данные для входа</p>
         </div>
 
-        <form className="login-form" onSubmit={handleSubmit}>
-          {error && <div className="error-message">{error}</div>}
+        <form className={styles.login-form} onSubmit={handleSubmit}>
+          {error && <div className={styles.error-message}>{error}</div>}
           
-          <div className="form-group">
-            <label className="form-label">Email</label>
+          <div className={styles.form-group}>
+            <label className={styles.form-label}>Email</label>
             <input
               type="email"
-              className="form-input"
+              className={styles.form-input}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@mail.com"
@@ -509,11 +509,11 @@ function Login() {
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Пароль</label>
+          <div className={styles.form-group}>
+            <label className={styles.form-label}>Пароль</label>
             <input
               type="password"
-              className="form-input"
+              className={styles.form-input}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Введите пароль"
@@ -523,7 +523,7 @@ function Login() {
 
           <button 
             type="submit" 
-            className="login-btn"
+            className={styles.login-btn}
             disabled={loading}
           >
             {loading ? 'Вход...' : 'Войти'}
@@ -532,42 +532,42 @@ function Login() {
       </div>
 
       {/* Terminal Window */}
-      <div className="terminal-window" onClick={handleTerminalClick}>
-        <div className="terminal-header">
-          <div className="terminal-buttons">
+      <div className={styles.terminal-window} onClick={handleTerminalClick}>
+        <div className={styles.terminal-header}>
+          <div className={styles.terminal-buttons}>
             <div className="terminal-button close"></div>
             <div className="terminal-button minimize"></div>
             <div className="terminal-button maximize"></div>
           </div>
-          <div className="terminal-title">Terminal — bash — 80×24</div>
+          <div className={styles.terminal-title}>Terminal — bash — 80×24</div>
         </div>
         
-        <div className="terminal-content" ref={terminalRef}>
+        <div className={styles.terminal-content} ref={terminalRef}>
           {terminalLines.map((line, index) => (
-            <div key={index} className="terminal-line">
+            <div key={index} className={styles.terminal-line}>
               {line.type === 'command' && (
-                <span className="terminal-prompt">{line.content}</span>
+                <span className={styles.terminal-prompt}>{line.content}</span>
               )}
               {line.type === 'output' && (
-                <span className="terminal-output">{line.content}</span>
+                <span className={styles.terminal-output}>{line.content}</span>
               )}
               {line.type === 'error' && (
-                <span className="terminal-error">{line.content}</span>
+                <span className={styles.terminal-error}>{line.content}</span>
               )}
             </div>
           ))}
           
           {/* Current input line */}
-          <div className="terminal-line">
-            <span className="terminal-prompt">user@openway:{currentDirectory}$ </span>
-            <span className="terminal-command">{currentInput}</span>
-            <span className="terminal-cursor">█</span>
+          <div className={styles.terminal-line}>
+            <span className={styles.terminal-prompt}>user@openway:{currentDirectory}$ </span>
+            <span className={styles.terminal-command}>{currentInput}</span>
+            <span className={styles.terminal-cursor}>█</span>
           </div>
           
           {/* Hidden input for capturing keystrokes */}
           <input
             type="text"
-            className="terminal-input"
+            className={styles.terminal-input}
             value={currentInput}
             onChange={(e) => setCurrentInput(e.target.value)}
             onKeyPress={handleTerminalKeyPress}

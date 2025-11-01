@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './ReadOnlyWrapper.css';
+import styles from './ReadOnlyWrapper.module.css';
 
 /**
  * Wrapper компонент для read-only просмотра других интерфейсов
@@ -104,9 +104,9 @@ function ReadOnlyWrapper({ children, roleName, basePath }) {
   };
 
   return (
-    <div className="readonly-wrapper">
-      <div className="readonly-overlay-notice">
-        <span className="readonly-badge">🔒 Read-Only</span>
+    <div className={styles.readonly-wrapper}>
+      <div className={styles.readonly-overlay-notice}>
+        <span className={styles.readonly-badge}>🔒 Read-Only</span>
       </div>
       {children}
     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api, { BASE_URL } from '../../utils/api';
 import { BsSearch, BsEyeFill } from 'react-icons/bs';
-import './TeacherStudents.css';
+import styles from './TeacherStudents.module.css';
 
 function TeacherStudents() {
   const [students, setStudents] = useState([]);
@@ -38,14 +38,14 @@ function TeacherStudents() {
   };
 
   if (loading) {
-    return <div className="teacher-students-loading">Загрузка...</div>;
+    return <div className={styles.teacher-students-loading}>Загрузка...</div>;
   }
 
   return (
-    <div className="teacher-students">
-      <div className="students-header">
+    <div className={styles.teacher-students}>
+      <div className={styles.students-header}>
         <h1>Список учеников</h1>
-        <div className="search-box">
+        <div className={styles.search-box}>
           <BsSearch />
           <input
             type="text"
@@ -56,8 +56,8 @@ function TeacherStudents() {
         </div>
       </div>
 
-      <div className="students-table-container">
-        <table className="students-table">
+      <div className={styles.students-table-container}>
+        <table className={styles.students-table}>
           <thead>
             <tr>
               <th>Аватар</th>
@@ -84,10 +84,10 @@ function TeacherStudents() {
                       <img 
                         src={`${BASE_URL}${student.avatar_url}`} 
                         alt="" 
-                        className="student-avatar"
+                        className={styles.student-avatar}
                       />
                     ) : (
-                      <div className="avatar-placeholder">
+                      <div className={styles.avatar-placeholder}>
                         {(student.full_name || student.username).charAt(0).toUpperCase()}
                       </div>
                     )}
@@ -96,12 +96,12 @@ function TeacherStudents() {
                   <td>{student.username}</td>
                   <td>{student.email}</td>
                   <td>
-                    <span className="points-badge">{student.points || 0} 💎</span>
+                    <span className={styles.points-badge}>{student.points || 0} 💎</span>
                   </td>
                   <td>{new Date(student.created_at).toLocaleDateString('ru-RU')}</td>
                   <td>
                     <button 
-                      className="view-btn"
+                      className={styles.view-btn}
                       onClick={() => viewStudent(student)}
                       title="Просмотр"
                     >
@@ -117,43 +117,43 @@ function TeacherStudents() {
 
       {/* Модал просмотра */}
       {showModal && selectedStudent && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className={styles.modal-overlay} onClick={() => setShowModal(false)}>
+          <div className={styles.modal-content} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modal-header}>
               <h2>Информация об ученике</h2>
               <button onClick={() => setShowModal(false)}>✕</button>
             </div>
-            <div className="modal-body">
-              <div className="student-details">
+            <div className={styles.modal-body}>
+              <div className={styles.student-details}>
                 {selectedStudent.avatar_url ? (
                   <img 
                     src={`${BASE_URL}${selectedStudent.avatar_url}`} 
                     alt="" 
-                    className="detail-avatar"
+                    className={styles.detail-avatar}
                   />
                 ) : (
-                  <div className="detail-avatar-placeholder">
+                  <div className={styles.detail-avatar-placeholder}>
                     {(selectedStudent.full_name || selectedStudent.username).charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div className="detail-info">
-                  <div className="detail-row">
+                <div className={styles.detail-info}>
+                  <div className={styles.detail-row}>
                     <strong>ФИО:</strong>
                     <span>{selectedStudent.full_name || '-'}</span>
                   </div>
-                  <div className="detail-row">
+                  <div className={styles.detail-row}>
                     <strong>Логин:</strong>
                     <span>{selectedStudent.username}</span>
                   </div>
-                  <div className="detail-row">
+                  <div className={styles.detail-row}>
                     <strong>Email:</strong>
                     <span>{selectedStudent.email}</span>
                   </div>
-                  <div className="detail-row">
+                  <div className={styles.detail-row}>
                     <strong>Баллы:</strong>
-                    <span className="points-large">{selectedStudent.points || 0} 💎</span>
+                    <span className={styles.points-large}>{selectedStudent.points || 0} 💎</span>
                   </div>
-                  <div className="detail-row">
+                  <div className={styles.detail-row}>
                     <strong>Дата регистрации:</strong>
                     <span>{new Date(selectedStudent.created_at).toLocaleDateString('ru-RU')}</span>
                   </div>

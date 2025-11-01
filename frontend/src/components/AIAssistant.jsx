@@ -10,7 +10,7 @@ import {
 } from 'react-icons/ai';
 import { FaBook, FaWrench, FaCommentDots, FaFileCode, FaLightbulb } from 'react-icons/fa';
 import { MdBolt, MdStar, MdClose } from 'react-icons/md';
-import './AIAssistant.css';
+import styles from './AIAssistant.module.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -129,9 +129,9 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
     switch (action) {
       case 'explain':
         return (
-          <div className="ai-result">
+          <div className={styles.ai-result}>
             <h3><FaBook /> Объяснение кода:</h3>
-            <div className="ai-explanation">
+            <div className={styles.ai-explanation}>
               {data.explanation}
             </div>
           </div>
@@ -139,16 +139,16 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
 
       case 'fix':
         return (
-          <div className="ai-result">
+          <div className={styles.ai-result}>
             <h3><FaWrench /> Исправленный код:</h3>
-            <pre className="ai-code-block">
+            <pre className={styles.ai-code-block}>
               <code>{data.fixedCode}</code>
             </pre>
             <h4><FaLightbulb /> Объяснение:</h4>
-            <div className="ai-explanation">
+            <div className={styles.ai-explanation}>
               {data.explanation}
             </div>
-            <button className="ai-insert-btn" onClick={handleInsertCode}>
+            <button className={styles.ai-insert-btn} onClick={handleInsertCode}>
               Заменить код
             </button>
           </div>
@@ -156,16 +156,16 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
 
       case 'optimize':
         return (
-          <div className="ai-result">
+          <div className={styles.ai-result}>
             <h3><MdBolt /> Оптимизированный код:</h3>
-            <pre className="ai-code-block">
+            <pre className={styles.ai-code-block}>
               <code>{data.optimizedCode}</code>
             </pre>
             <h4><MdStar /> Улучшения:</h4>
-            <div className="ai-explanation">
+            <div className={styles.ai-explanation}>
               {data.improvements}
             </div>
-            <button className="ai-insert-btn" onClick={handleInsertCode}>
+            <button className={styles.ai-insert-btn} onClick={handleInsertCode}>
               Заменить код
             </button>
           </div>
@@ -173,12 +173,12 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
 
       case 'comments':
         return (
-          <div className="ai-result">
+          <div className={styles.ai-result}>
             <h3><FaCommentDots /> Код с комментариями:</h3>
-            <pre className="ai-code-block">
+            <pre className={styles.ai-code-block}>
               <code>{data.commentedCode}</code>
             </pre>
-            <button className="ai-insert-btn" onClick={handleInsertCode}>
+            <button className={styles.ai-insert-btn} onClick={handleInsertCode}>
               Заменить код
             </button>
           </div>
@@ -186,16 +186,16 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
 
       case 'generate':
         return (
-          <div className="ai-result">
+          <div className={styles.ai-result}>
             <h3><AiOutlineRobot /> Сгенерированный код:</h3>
-            <pre className="ai-code-block">
+            <pre className={styles.ai-code-block}>
               <code>{data.code}</code>
             </pre>
             <h4><FaFileCode /> Объяснение:</h4>
-            <div className="ai-explanation">
+            <div className={styles.ai-explanation}>
               {data.explanation}
             </div>
-            <button className="ai-insert-btn" onClick={handleInsertCode}>
+            <button className={styles.ai-insert-btn} onClick={handleInsertCode}>
               Вставить код
             </button>
           </div>
@@ -209,19 +209,19 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
   if (!isOpen) return null;
 
   return (
-    <div className="ai-assistant-overlay">
-      <div className="ai-assistant-panel">
-        <div className="ai-assistant-header">
-          <div className="ai-header-left">
-            <AiOutlineRobot className="ai-robot-icon" />
+    <div className={styles.ai-assistant-overlay}>
+      <div className={styles.ai-assistant-panel}>
+        <div className={styles.ai-assistant-header}>
+          <div className={styles.ai-header-left}>
+            <AiOutlineRobot className={styles.ai-robot-icon} />
             <h2>AI Ассистент</h2>
           </div>
-          <button className="ai-close-btn" onClick={onClose}>
+          <button className={styles.ai-close-btn} onClick={onClose}>
             <AiOutlineClose />
           </button>
         </div>
 
-        <div className="ai-assistant-tabs">
+        <div className={styles.ai-assistant-tabs}>
           <button
             className={`ai-tab ${activeTab === 'actions' ? 'active' : ''}`}
             onClick={() => setActiveTab('actions')}
@@ -236,11 +236,11 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
           </button>
         </div>
 
-        <div className="ai-assistant-content">
+        <div className={styles.ai-assistant-content}>
           {activeTab === 'actions' && (
-            <div className="ai-actions-grid">
+            <div className={styles.ai-actions-grid}>
               <button
-                className="ai-action-btn"
+                className={styles.ai-action-btn}
                 onClick={() => handleAction('explain')}
                 disabled={loading || !selectedCode}
               >
@@ -249,7 +249,7 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
               </button>
 
               <button
-                className="ai-action-btn"
+                className={styles.ai-action-btn}
                 onClick={() => handleAction('optimize')}
                 disabled={loading || !selectedCode}
               >
@@ -258,7 +258,7 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
               </button>
 
               <button
-                className="ai-action-btn"
+                className={styles.ai-action-btn}
                 onClick={() => handleAction('comments')}
                 disabled={loading || !selectedCode}
               >
@@ -267,7 +267,7 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
               </button>
 
               <button
-                className="ai-action-btn"
+                className={styles.ai-action-btn}
                 onClick={() => handleAction('fix')}
                 disabled={loading || !selectedCode}
               >
@@ -278,16 +278,16 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
           )}
 
           {activeTab === 'generate' && (
-            <div className="ai-generate-section">
+            <div className={styles.ai-generate-section}>
               <textarea
-                className="ai-prompt-input"
+                className={styles.ai-prompt-input}
                 placeholder="Опишите что нужно создать... Например: 'Создай функцию для сортировки массива объектов по полю name'"
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
                 rows={4}
               />
               <button
-                className="ai-generate-btn"
+                className={styles.ai-generate-btn}
                 onClick={() => handleAction('generate')}
                 disabled={loading || !customPrompt.trim()}
               >
@@ -298,14 +298,14 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
           )}
 
           {loading && (
-            <div className="ai-loading">
-              <div className="ai-spinner"></div>
+            <div className={styles.ai-loading}>
+              <div className={styles.ai-spinner}></div>
               <p>AI думает...</p>
             </div>
           )}
 
           {error && (
-            <div className="ai-error">
+            <div className={styles.ai-error}>
               <p><MdClose /> {error}</p>
             </div>
           )}
@@ -313,7 +313,7 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
           {renderResult()}
 
           {!selectedCode && !loading && !result && activeTab === 'actions' && (
-            <div className="ai-hint">
+            <div className={styles.ai-hint}>
               <p><FaLightbulb /> Выделите код в редакторе, чтобы использовать AI ассистента</p>
             </div>
           )}

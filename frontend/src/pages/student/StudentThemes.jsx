@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './StudentThemes.css';
+import styles from './StudentThemes.module.css';
 import { FaPlus, FaTrash, FaCheck, FaPalette, FaEye, FaBook } from 'react-icons/fa';
 
 function StudentThemes() {
@@ -153,28 +153,28 @@ function StudentThemes() {
   ];
 
   return (
-    <div className="student-themes">
-      <div className="student-themes-header">
+    <div className={styles.student-themes}>
+      <div className={styles.student-themes-header}>
         <div>
           <h1><FaPalette /> Темы редактора</h1>
           <p>Создайте свою уникальную цветовую схему для IDE</p>
         </div>
-        <button className="btn-create-theme" onClick={() => setShowCreateModal(true)}>
+        <button className={styles.btn-create-theme} onClick={() => setShowCreateModal(true)}>
           <FaPlus /> Создать тему
         </button>
       </div>
 
-      <div className="themes-section">
+      <div className={styles.themes-section}>
         <h2>Встроенные темы</h2>
-        <div className="themes-grid">
+        <div className={styles.themes-grid}>
           {predefinedThemes.map(theme => (
             <div 
               key={theme.id} 
               className={`theme-card ${activeTheme === theme.id ? 'active' : ''}`}
               onClick={() => applyTheme(theme.id)}
             >
-              <div className="theme-preview" style={{ background: theme.preview }}>
-                {activeTheme === theme.id && <FaCheck className="check-icon" />}
+              <div className={styles.theme-preview} style={{ background: theme.preview }}>
+                {activeTheme === theme.id && <FaCheck className={styles.check-icon} />}
               </div>
               <h3>{theme.name}</h3>
             </div>
@@ -183,28 +183,28 @@ function StudentThemes() {
       </div>
 
       {themes.length > 0 && (
-        <div className="themes-section">
+        <div className={styles.themes-section}>
           <h2>Мои темы</h2>
-          <div className="themes-grid">
+          <div className={styles.themes-grid}>
             {themes.map(theme => (
               <div 
                 key={theme.id} 
                 className={`theme-card custom ${activeTheme === theme.id ? 'active' : ''}`}
               >
                 <div 
-                  className="theme-preview" 
+                  className={styles.theme-preview} 
                   style={{ background: theme.colors['editor.background'] }}
                   onClick={() => applyTheme(theme.id)}
                 >
-                  {activeTheme === theme.id && <FaCheck className="check-icon" />}
+                  {activeTheme === theme.id && <FaCheck className={styles.check-icon} />}
                 </div>
                 <h3>{theme.name}</h3>
-                <div className="theme-actions">
-                  <button onClick={() => deleteTheme(theme.id)} className="btn-delete">
+                <div className={styles.theme-actions}>
+                  <button onClick={() => deleteTheme(theme.id)} className={styles.btn-delete}>
                     <FaTrash />
                   </button>
                 </div>
-                <div className="theme-meta">
+                <div className={styles.theme-meta}>
                   {new Date(theme.createdAt).toLocaleDateString()}
                 </div>
               </div>
@@ -214,17 +214,17 @@ function StudentThemes() {
       )}
 
       {showCreateModal && (
-        <div className="theme-modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="theme-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className={styles.theme-modal-overlay} onClick={() => setShowCreateModal(false)}>
+          <div className={styles.theme-modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modal-header}>
               <h2>Создать тему</h2>
               <button onClick={() => setShowCreateModal(false)}>×</button>
             </div>
             
-            <div className="modal-body">
-              <div className="theme-editor">
-                <div className="theme-settings">
-                  <div className="form-group">
+            <div className={styles.modal-body}>
+              <div className={styles.theme-editor}>
+                <div className={styles.theme-settings}>
+                  <div className={styles.form-group}>
                     <label>Название темы</label>
                     <input
                       type="text"
@@ -234,7 +234,7 @@ function StudentThemes() {
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.form-group}>
                     <label>Базовая тема</label>
                     <select 
                       value={newTheme.base}
@@ -247,11 +247,11 @@ function StudentThemes() {
                   </div>
 
                   <h3>Цвета редактора</h3>
-                  <div className="color-grid">
+                  <div className={styles.color-grid}>
                     {Object.entries(newTheme.colors).map(([key, value]) => (
-                      <div key={key} className="color-item">
+                      <div key={key} className={styles.color-item}>
                         <label>{key.replace('editor.', '').replace(/([A-Z])/g, ' $1')}</label>
-                        <div className="color-input-group">
+                        <div className={styles.color-input-group}>
                           <input
                             type="color"
                             value={value}
@@ -261,7 +261,7 @@ function StudentThemes() {
                             type="text"
                             value={value}
                             onChange={e => updateColor(key, e.target.value)}
-                            className="color-text"
+                            className={styles.color-text}
                           />
                         </div>
                       </div>
@@ -269,17 +269,17 @@ function StudentThemes() {
                   </div>
 
                   <h3>Подсветка синтаксиса</h3>
-                  <div className="token-colors">
+                  <div className={styles.token-colors}>
                     {newTheme.tokenColors.map((token, index) => (
-                      <div key={index} className="token-item">
+                      <div key={index} className={styles.token-item}>
                         <input
                           type="text"
                           value={token.scope}
                           onChange={e => updateTokenColor(index, 'scope', e.target.value)}
                           placeholder="comment, string, keyword..."
-                          className="scope-input"
+                          className={styles.scope-input}
                         />
-                        <div className="color-input-group">
+                        <div className={styles.color-input-group}>
                           <input
                             type="color"
                             value={token.foreground}
@@ -289,24 +289,24 @@ function StudentThemes() {
                             type="text"
                             value={token.foreground}
                             onChange={e => updateTokenColor(index, 'foreground', e.target.value)}
-                            className="color-text"
+                            className={styles.color-text}
                           />
                         </div>
-                        <button onClick={() => removeTokenColor(index)} className="btn-remove">
+                        <button onClick={() => removeTokenColor(index)} className={styles.btn-remove}>
                           <FaTrash />
                         </button>
                       </div>
                     ))}
-                    <button onClick={addTokenColor} className="btn-add-token">
+                    <button onClick={addTokenColor} className={styles.btn-add-token}>
                       <FaPlus /> Добавить правило
                     </button>
                   </div>
                 </div>
 
-                <div className="theme-preview-panel">
+                <div className={styles.theme-preview-panel}>
                   <h3><FaEye /> Предпросмотр</h3>
                   <div 
-                    className="code-preview"
+                    className={styles.code-preview}
                     style={{
                       background: newTheme.colors['editor.background'],
                       color: newTheme.colors['editor.foreground']
@@ -318,11 +318,11 @@ function StudentThemes() {
               </div>
             </div>
 
-            <div className="modal-footer">
-              <button onClick={() => setShowCreateModal(false)} className="btn-cancel">
+            <div className={styles.modal-footer}>
+              <button onClick={() => setShowCreateModal(false)} className={styles.btn-cancel}>
                 Отмена
               </button>
-              <button onClick={createTheme} className="btn-save">
+              <button onClick={createTheme} className={styles.btn-save}>
                 Создать тему
               </button>
             </div>
@@ -330,9 +330,9 @@ function StudentThemes() {
         </div>
       )}
 
-      <div className="themes-help">
+      <div className={styles.themes-help}>
         <h3><FaBook /> Справка по созданию тем</h3>
-        <div className="help-content">
+        <div className={styles.help-content}>
           <h4>Основные цвета редактора:</h4>
           <ul>
             <li><code>editor.background</code> - фон редактора</li>

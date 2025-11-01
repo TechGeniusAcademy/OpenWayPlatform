@@ -6,7 +6,7 @@ import { AiOutlineColumnWidth, AiOutlineColumnHeight, AiOutlineBgColors, AiFillF
 import { RiRulerLine, RiPaletteLine, RiLayoutGridLine } from 'react-icons/ri';
 import JSZip from 'jszip';
 import ColorPicker from './ColorPicker';
-import './DesignEditor.css';
+import styles from './DesignEditor.module.css';
 
 // Google Fonts список
 const GOOGLE_FONTS = [
@@ -4609,24 +4609,24 @@ const DesignEditor = () => {
   };
 
   return (
-    <div className="figma-editor">
+    <div className={styles.figma-editor}>
       {/* Верхняя панель как в Figma */}
-      <div className="figma-header">
-        <div className="figma-header-left">
-          <div className="figma-logo">
+      <div className={styles.figma-header}>
+        <div className={styles.figma-header-left}>
+          <div className={styles.figma-logo}>
             <span>OpenWay Design</span>
           </div>
           
-          <div className="figma-file-info">
-            <span className="file-name">{currentProject?.name || 'Untitled'}</span>
+          <div className={styles.figma-file-info}>
+            <span className={styles.file-name}>{currentProject?.name || 'Untitled'}</span>
             <span className={`file-status ${autoSaveStatus === 'saving' ? 'saving' : ''}`}>
               {autoSaveStatus === 'saving' ? '💾 Сохранение...' : '✓ Сохранено'}
             </span>
           </div>
         </div>
 
-        <div className="figma-header-center">
-          <div className="figma-tools">
+        <div className={styles.figma-header-center}>
+          <div className={styles.figma-tools}>
             <button 
               className={`figma-tool ${tool === 'select' ? 'active' : ''}`}
               onClick={() => setTool('select')}
@@ -4643,7 +4643,7 @@ const DesignEditor = () => {
               <FaBorderAll />
             </button>
             
-            <div className="tool-dropdown">
+            <div className={styles.tool-dropdown}>
               <button 
                 className={`figma-tool ${['rectangle', 'circle', 'triangle'].includes(tool) ? 'active' : ''}`}
                 onClick={() => setTool('rectangle')}
@@ -4651,7 +4651,7 @@ const DesignEditor = () => {
               >
                 <FaSquare />
               </button>
-              <div className="tool-dropdown-content">
+              <div className={styles.tool-dropdown-content}>
                 <button onClick={() => setTool('rectangle')}><FaSquare /> Прямоугольник</button>
                 <button onClick={() => setTool('circle')}><FaCircle /> Эллипс</button>
                 <button onClick={() => setTool('triangle')}><BsTriangle /> Треугольник</button>
@@ -4693,8 +4693,8 @@ const DesignEditor = () => {
           </div>
         </div>
 
-        <div className="figma-header-right">
-          <div className="view-controls">
+        <div className={styles.figma-header-right}>
+          <div className={styles.view-controls}>
             <button 
               className={`view-btn ${showGrid ? 'active' : ''}`}
               onClick={() => setShowGrid(!showGrid)}
@@ -4711,11 +4711,11 @@ const DesignEditor = () => {
               <FaRuler />
             </button>
             
-            <div className="zoom-controls">
+            <div className={styles.zoom-controls}>
               <button onClick={handleZoomOut} title="Уменьшить (Ctrl+-)">-</button>
               <input 
                 type="number" 
-                className="zoom-input"
+                className={styles.zoom-input}
                 value={Math.round(zoom * 100)}
                 onChange={(e) => {
                   const value = parseInt(e.target.value) || 100;
@@ -4725,45 +4725,45 @@ const DesignEditor = () => {
                 max="1000"
                 step="25"
               />
-              <span className="zoom-percent">%</span>
+              <span className={styles.zoom-percent}>%</span>
               <button onClick={handleZoomIn} title="Увеличить (Ctrl++)">+</button>
               <button onClick={() => setZoom(1)} title="100% (Ctrl+0)">
                 <FaExpand />
               </button>
-              <button onClick={zoomToFit} title="Вписать все (Ctrl+1)" className="zoom-fit">
+              <button onClick={zoomToFit} title="Вписать все (Ctrl+1)" className={styles.zoom-fit}>
                 <FaCompress />
               </button>
               {(selectedElement || selectedElements.length > 0) && (
-                <button onClick={zoomToSelection} title="К выделенному (Ctrl+2)" className="zoom-selection">
+                <button onClick={zoomToSelection} title="К выделенному (Ctrl+2)" className={styles.zoom-selection}>
                   <FaSearchPlus />
                 </button>
               )}
-              <span className="zoom-hint" title="СКМ - перемещение, Колесо - масштабирование, Alt - измерение расстояний">
+              <span className={styles.zoom-hint} title="СКМ - перемещение, Колесо - масштабирование, Alt - измерение расстояний">
                 🖱️ СКМ | ⌥ Alt
               </span>
             </div>
           </div>
 
-          <div className="figma-actions">
-            <button onClick={handleFileImport} className="import-btn" title="Импорт .sketch/.json/.svg или перетащите файл на холст">
+          <div className={styles.figma-actions}>
+            <button onClick={handleFileImport} className={styles.import-btn} title="Импорт .sketch/.json/.svg или перетащите файл на холст">
               <FaUpload />
             </button>
             
-            <button onClick={exportToSketch} className="sketch-export-btn" title="Экспорт в .sketch">
+            <button onClick={exportToSketch} className={styles.sketch-export-btn} title="Экспорт в .sketch">
               <AiFillFileText />
             </button>
             
-            <button onClick={() => saveProject()} className="save-btn" title="Сохранить">
+            <button onClick={() => saveProject()} className={styles.save-btn} title="Сохранить">
               <FaSave />
             </button>
             
-            <button onClick={downloadCanvas} className="export-btn" title="Экспорт JSON">
+            <button onClick={downloadCanvas} className={styles.export-btn} title="Экспорт JSON">
               <FaDownload />
             </button>
             
             <button 
               onClick={() => window.location.href = '/student'} 
-              className="close-btn"
+              className={styles.close-btn}
               title="Закрыть"
             >
               <FaTimes />
@@ -4773,7 +4773,7 @@ const DesignEditor = () => {
       </div>
 
       {/* Панель режимов */}
-      <div className="figma-mode-tabs">
+      <div className={styles.figma-mode-tabs}>
         <button 
           className={`mode-tab ${activePanel === 'design' ? 'active' : ''}`}
           onClick={() => setActivePanel('design')}
@@ -4795,11 +4795,11 @@ const DesignEditor = () => {
       </div>
 
       {/* Основная рабочая область */}
-      <div className="figma-workspace">
+      <div className={styles.figma-workspace}>
         {/* Левая боковая панель */}
         <div className={`figma-sidebar figma-sidebar-left ${showLayers ? 'open' : ''}`}>
           {/* Вкладки левой панели */}
-          <div className="sidebar-tabs">
+          <div className={styles.sidebar-tabs}>
             <button 
               className={`sidebar-tab ${showLayers ? 'active' : ''}`}
               onClick={() => setShowLayers(!showLayers)}
@@ -4816,10 +4816,10 @@ const DesignEditor = () => {
 
           {/* Слои */}
           {showLayers && (
-            <div className="figma-layers-panel">
-              <div className="layers-header">
+            <div className={styles.figma-layers-panel}>
+              <div className={styles.layers-header}>
                 <h4>Слои</h4>
-                <div className="layers-actions">
+                <div className={styles.layers-actions}>
                   <button onClick={() => setShowProjectManager(true)} title="Проекты">
                     <FaFolder />
                   </button>
@@ -4829,17 +4829,17 @@ const DesignEditor = () => {
                 </div>
               </div>
               
-              <div className="layers-list">
+              <div className={styles.layers-list}>
                 {elements.map((element, index) => (
                   <div 
                     key={element.id}
                     className={`figma-layer-item ${selectedElement?.id === element.id ? 'selected' : ''} ${!element.visible ? 'hidden' : ''}`}
                     onClick={() => setSelectedElement(element)}
                   >
-                    <div className="layer-main-content">
-                      <div className="layer-controls">
+                    <div className={styles.layer-main-content}>
+                      <div className={styles.layer-controls}>
                         <button 
-                          className="layer-control"
+                          className={styles.layer-control}
                           onClick={(e) => {
                             e.stopPropagation();
                             const newElements = elements.map(el => 
@@ -4851,7 +4851,7 @@ const DesignEditor = () => {
                           {element.visible ? <FaEye /> : <FaEyeSlash />}
                         </button>
                         <button 
-                          className="layer-control"
+                          className={styles.layer-control}
                           onClick={(e) => {
                             e.stopPropagation();
                             const newElements = elements.map(el => 
@@ -4864,7 +4864,7 @@ const DesignEditor = () => {
                         </button>
                       </div>
                       
-                      <div className="layer-icon">
+                      <div className={styles.layer-icon}>
                         {element.type === 'rectangle' && <FaSquare />}
                         {element.type === 'circle' && <FaCircle />}
                         {element.type === 'triangle' && <BsTriangle />}
@@ -4874,7 +4874,7 @@ const DesignEditor = () => {
                         {element.type === 'path' && <FaPen />}
                       </div>
                       
-                      <span className="layer-name">
+                      <span className={styles.layer-name}>
                         {element.type === 'path' ? 'Рисунок' : 
                          element.type === 'rectangle' ? 'Rectangle' :
                          element.type === 'circle' ? 'Ellipse' :
@@ -4889,7 +4889,7 @@ const DesignEditor = () => {
                 ))}
                 
                 {elements.length === 0 && (
-                  <div className="empty-layers">
+                  <div className={styles.empty-layers}>
                     <p>Нет элементов на холсте</p>
                     <p>Создайте фигуру или добавьте текст</p>
                   </div>
@@ -4900,18 +4900,18 @@ const DesignEditor = () => {
 
           {/* Ресурсы */}
           {showAssets && (
-            <div className="figma-assets-panel">
-              <div className="assets-header">
+            <div className={styles.figma-assets-panel}>
+              <div className={styles.assets-header}>
                 <h4>Ресурсы</h4>
               </div>
               
-              <div className="assets-section">
+              <div className={styles.assets-section}>
                 <h5>Цвета</h5>
-                <div className="color-grid">
+                <div className={styles.color-grid}>
                   {colorPalette.map((color, index) => (
                     <div 
                       key={index}
-                      className="color-swatch"
+                      className={styles.color-swatch}
                       style={{ backgroundColor: color }}
                       onClick={() => setFillColor(color)}
                       title={color}
@@ -4920,11 +4920,11 @@ const DesignEditor = () => {
                 </div>
               </div>
               
-              <div className="assets-section">
+              <div className={styles.assets-section}>
                 <h5>Компоненты</h5>
-                <div className="components-list">
+                <div className={styles.components-list}>
                   {components.length === 0 && (
-                    <p className="empty-text">Нет компонентов</p>
+                    <p className={styles.empty-text}>Нет компонентов</p>
                   )}
                 </div>
               </div>
@@ -4933,23 +4933,23 @@ const DesignEditor = () => {
         </div>
 
         {/* Основной холст */}
-        <div className="figma-canvas-area">
+        <div className={styles.figma-canvas-area}>
           {/* Линейки */}
           {showRulers && (
             <>
               <div className="ruler ruler-horizontal">
-                <div className="ruler-content">
+                <div className={styles.ruler-content}>
                   {Array.from({ length: Math.ceil(canvasSize.width / 50) }, (_, i) => (
-                    <div key={i} className="ruler-mark" style={{ left: i * 50 }}>
+                    <div key={i} className={styles.ruler-mark} style={{ left: i * 50 }}>
                       <span>{i * 50}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="ruler ruler-vertical">
-                <div className="ruler-content">
+                <div className={styles.ruler-content}>
                   {Array.from({ length: Math.ceil(canvasSize.height / 50) }, (_, i) => (
-                    <div key={i} className="ruler-mark" style={{ top: i * 50 }}>
+                    <div key={i} className={styles.ruler-mark} style={{ top: i * 50 }}>
                       <span>{i * 50}</span>
                     </div>
                   ))}
@@ -4961,17 +4961,17 @@ const DesignEditor = () => {
           <div className={`canvas-viewport ${isPanning ? 'panning' : ''}`}>
             {/* Индикатор панорамирования */}
             {isPanning && (
-              <div className="pan-indicator">
+              <div className={styles.pan-indicator}>
                 <FaArrowsAlt style={{ marginRight: '8px' }} />
                 Перемещение по карте... (Отпустите СКМ для завершения)
               </div>
             )}
             
-            <div className="canvas-wrapper">
+            <div className={styles.canvas-wrapper}>
               {/* Сетка */}
               {showGrid && (
                 <div 
-                  className="canvas-grid"
+                  className={styles.canvas-grid}
                   style={{
                     backgroundSize: `${gridSize}px ${gridSize}px`,
                     width: canvasSize.width,
@@ -4990,7 +4990,7 @@ const DesignEditor = () => {
                 onContextMenu={(e) => e.preventDefault()}
                 onDragOver={handleCanvasDragOver}
                 onDrop={handleCanvasDrop}
-                className="figma-canvas"
+                className={styles.figma-canvas}
                 data-tool={tool}
                 style={{
                   position: 'absolute',
@@ -5005,9 +5005,9 @@ const DesignEditor = () => {
 
               {/* Подсказка для пустого холста */}
               {elements.length === 0 && (
-                <div className="empty-canvas-hint">
-                  <div className="hint-content">
-                    <FaUpload className="hint-icon" />
+                <div className={styles.empty-canvas-hint}>
+                  <div className={styles.hint-content}>
+                    <FaUpload className={styles.hint-icon} />
                     <h3>Добро пожаловать в OpenWay Design!</h3>
                     <p>Начните создавать или импортируйте существующий дизайн:</p>
                     <ul>
@@ -5040,7 +5040,7 @@ const DesignEditor = () => {
 
         {/* Правая боковая панель */}
         <div className={`figma-sidebar figma-sidebar-right ${showProperties ? 'open' : ''}`}>
-          <div className="sidebar-tabs">
+          <div className={styles.sidebar-tabs}>
             <button 
               className={`sidebar-tab ${activePanel === 'design' ? 'active' : ''}`}
               onClick={() => setActivePanel('design')}
@@ -5063,13 +5063,13 @@ const DesignEditor = () => {
 
           {/* Панель дизайна */}
           {activePanel === 'design' && (
-            <div className="figma-design-panel">
+            <div className={styles.figma-design-panel}>
               {selectedElement ? (
-                <div className="element-properties">
-                  <div className="property-section">
-                    <div className="element-header">
+                <div className={styles.element-properties}>
+                  <div className={styles.property-section}>
+                    <div className={styles.element-header}>
                       <h4>{selectedElement.type.charAt(0).toUpperCase() + selectedElement.type.slice(1)}</h4>
-                      <div className="element-actions">
+                      <div className={styles.element-actions}>
                         <button 
                           onClick={toggleLock} 
                           title={selectedElement.locked ? "Разблокировать" : "Заблокировать"}
@@ -5095,9 +5095,9 @@ const DesignEditor = () => {
                     
                     {/* Выравнивание */}
                     {selectedElements.length > 1 && (
-                      <div className="property-group">
+                      <div className={styles.property-group}>
                         <label>Выравнивание</label>
-                        <div className="alignment-grid">
+                        <div className={styles.alignment-grid}>
                           <button onClick={() => alignElements('left')} title="По левому краю">⬅</button>
                           <button onClick={() => alignElements('center-h')} title="По центру горизонтально">↔</button>
                           <button onClick={() => alignElements('right')} title="По правому краю">➡</button>
@@ -5105,12 +5105,12 @@ const DesignEditor = () => {
                           <button onClick={() => alignElements('center-v')} title="По центру вертикально">↕</button>
                           <button onClick={() => alignElements('bottom')} title="По низу">⬇</button>
                         </div>
-                        <button onClick={groupElements} className="group-btn">
+                        <button onClick={groupElements} className={styles.group-btn}>
                           📦 Группировать (Ctrl+G)
                         </button>
                         
                         {/* Булевы операции */}
-                        <div className="boolean-operations">
+                        <div className={styles.boolean-operations}>
                           <label style={{fontSize: '11px', marginTop: '8px', display: 'block'}}>Булевы операции</label>
                           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginTop: '4px'}}>
                             <button onClick={booleanUnion} title="Объединение">
@@ -5131,9 +5131,9 @@ const DesignEditor = () => {
                     )}
                     
                     {/* Порядок слоев */}
-                    <div className="property-group">
+                    <div className={styles.property-group}>
                       <label>Порядок</label>
-                      <div className="layer-order-controls">
+                      <div className={styles.layer-order-controls}>
                         <button onClick={bringToFront} title="На передний план (Ctrl+])">
                           <MdTransform /> На передний план
                         </button>
@@ -5150,11 +5150,11 @@ const DesignEditor = () => {
                     </div>
                     
                     {/* Позиция и размеры */}
-                    <div className="property-group">
+                    <div className={styles.property-group}>
                       <label>Позиция и размер</label>
-                      <div className="input-group">
-                        <div className="input-pair">
-                          <div className="input-with-label">
+                      <div className={styles.input-group}>
+                        <div className={styles.input-pair}>
+                          <div className={styles.input-with-label}>
                             <span>X</span>
                             <input 
                               type="number" 
@@ -5162,7 +5162,7 @@ const DesignEditor = () => {
                               onChange={(e) => updateSelectedElement('x', parseInt(e.target.value))}
                             />
                           </div>
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Y</span>
                             <input 
                               type="number" 
@@ -5174,8 +5174,8 @@ const DesignEditor = () => {
                         
                         {(selectedElement.type === 'rectangle' || selectedElement.type === 'triangle' || selectedElement.type === 'diamond') && (
                           <>
-                            <div className="input-pair">
-                              <div className="input-with-label">
+                            <div className={styles.input-pair}>
+                              <div className={styles.input-with-label}>
                                 <span>W</span>
                                 <input 
                                   type="number" 
@@ -5183,7 +5183,7 @@ const DesignEditor = () => {
                                   onChange={(e) => updateSelectedElement('width', parseInt(e.target.value))}
                                 />
                               </div>
-                              <div className="input-with-label">
+                              <div className={styles.input-with-label}>
                                 <span>H</span>
                                 <input 
                                   type="number" 
@@ -5195,7 +5195,7 @@ const DesignEditor = () => {
                             
                             {/* Скругление углов только для прямоугольников */}
                             {selectedElement.type === 'rectangle' && (
-                              <div className="input-with-label">
+                              <div className={styles.input-with-label}>
                                 <span>Скругление</span>
                                 <input 
                                   type="number" 
@@ -5210,7 +5210,7 @@ const DesignEditor = () => {
                         )}
                         
                         {selectedElement.type === 'circle' && (
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Радиус</span>
                             <input 
                               type="number" 
@@ -5221,7 +5221,7 @@ const DesignEditor = () => {
                         )}
                         
                         {/* Поворот */}
-                        <div className="input-with-label">
+                        <div className={styles.input-with-label}>
                           <span>Поворот (°)</span>
                           <input 
                             type="number" 
@@ -5235,7 +5235,7 @@ const DesignEditor = () => {
                     </div>
                     
                     {/* Заливка */}
-                    <div className="property-group">
+                    <div className={styles.property-group}>
                       <label>
                         <input 
                           type="checkbox" 
@@ -5246,8 +5246,8 @@ const DesignEditor = () => {
                       </label>
                       
                       {selectedElement.gradient?.enabled ? (
-                        <div className="gradient-controls">
-                          <div className="input-with-label">
+                        <div className={styles.gradient-controls}>
+                          <div className={styles.input-with-label}>
                             <span>Тип</span>
                             <select 
                               value={selectedElement.gradient.type || 'linear'}
@@ -5259,7 +5259,7 @@ const DesignEditor = () => {
                           </div>
                           
                           {selectedElement.gradient.type === 'linear' && (
-                            <div className="input-with-label">
+                            <div className={styles.input-with-label}>
                               <span>Угол (°)</span>
                               <input 
                                 type="number" 
@@ -5271,12 +5271,12 @@ const DesignEditor = () => {
                             </div>
                           )}
                           
-                          <div className="gradient-colors">
+                          <div className={styles.gradient-colors}>
                             <span>Цвета</span>
                             {selectedElement.gradient.colors?.map((color, index) => (
-                              <div key={index} className="color-input">
+                              <div key={index} className={styles.color-input}>
                                 <button 
-                                  className="color-preview-button"
+                                  className={styles.color-preview-button}
                                   style={{ backgroundColor: color }}
                                   onClick={() => openColorPicker(index === 0 ? 'gradientColor1' : 'gradientColor2', color)}
                                   title="Выбрать цвет"
@@ -5287,10 +5287,10 @@ const DesignEditor = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="fill-controls">
-                          <div className="color-input">
+                        <div className={styles.fill-controls}>
+                          <div className={styles.color-input}>
                             <button 
-                              className="color-preview-button"
+                              className={styles.color-preview-button}
                               style={{ backgroundColor: selectedElement.fillColor }}
                               onClick={() => openColorPicker('fill', selectedElement.fillColor)}
                               title="Выбрать цвет заливки"
@@ -5300,8 +5300,8 @@ const DesignEditor = () => {
                         </div>
                       )}
                       
-                      <div className="fill-controls">
-                        <div className="opacity-control">
+                      <div className={styles.fill-controls}>
+                        <div className={styles.opacity-control}>
                           <span>Непрозрачность</span>
                           <input 
                             type="range" 
@@ -5315,7 +5315,7 @@ const DesignEditor = () => {
                         </div>
                         
                         {/* Режим наложения */}
-                        <div className="input-with-label">
+                        <div className={styles.input-with-label}>
                           <span>Режим наложения</span>
                           <select 
                             value={selectedElement.blendMode || 'normal'}
@@ -5339,9 +5339,9 @@ const DesignEditor = () => {
                     </div>
                     
                     {/* Размытие */}
-                    <div className="property-group">
+                    <div className={styles.property-group}>
                       <label>Размытие</label>
-                      <div className="input-with-label">
+                      <div className={styles.input-with-label}>
                         <span>Blur (px)</span>
                         <input 
                           type="number" 
@@ -5354,19 +5354,19 @@ const DesignEditor = () => {
                     </div>
                     
                     {/* Обводка */}
-                    <div className="property-group">
+                    <div className={styles.property-group}>
                       <label>Обводка</label>
-                      <div className="stroke-controls">
-                        <div className="color-input">
+                      <div className={styles.stroke-controls}>
+                        <div className={styles.color-input}>
                           <button 
-                            className="color-preview-button"
+                            className={styles.color-preview-button}
                             style={{ backgroundColor: selectedElement.strokeColor }}
                             onClick={() => openColorPicker('stroke', selectedElement.strokeColor)}
                             title="Выбрать цвет обводки"
                           />
                           <span>{selectedElement.strokeColor}</span>
                         </div>
-                        <div className="stroke-width">
+                        <div className={styles.stroke-width}>
                           <span>Толщина</span>
                           <input 
                             type="number" 
@@ -5376,7 +5376,7 @@ const DesignEditor = () => {
                             onChange={(e) => updateSelectedElement('strokeWidth', parseInt(e.target.value))}
                           />
                         </div>
-                        <div className="input-with-label">
+                        <div className={styles.input-with-label}>
                           <span>Позиция</span>
                           <select 
                             value={selectedElement.strokePosition || 'center'}
@@ -5391,7 +5391,7 @@ const DesignEditor = () => {
                     </div>
                     
                     {/* Тень */}
-                    <div className="property-group">
+                    <div className={styles.property-group}>
                       <label>
                         <input 
                           type="checkbox" 
@@ -5401,9 +5401,9 @@ const DesignEditor = () => {
                         Тень
                       </label>
                       {selectedElement.shadow?.enabled && (
-                        <div className="shadow-controls">
-                          <div className="input-pair">
-                            <div className="input-with-label">
+                        <div className={styles.shadow-controls}>
+                          <div className={styles.input-pair}>
+                            <div className={styles.input-with-label}>
                               <span>X</span>
                               <input 
                                 type="number" 
@@ -5411,7 +5411,7 @@ const DesignEditor = () => {
                                 onChange={(e) => updateSelectedElement('shadow', {...selectedElement.shadow, offsetX: parseInt(e.target.value)})}
                               />
                             </div>
-                            <div className="input-with-label">
+                            <div className={styles.input-with-label}>
                               <span>Y</span>
                               <input 
                                 type="number" 
@@ -5420,7 +5420,7 @@ const DesignEditor = () => {
                               />
                             </div>
                           </div>
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Размытие</span>
                             <input 
                               type="number" 
@@ -5429,10 +5429,10 @@ const DesignEditor = () => {
                               onChange={(e) => updateSelectedElement('shadow', {...selectedElement.shadow, blur: parseInt(e.target.value)})}
                             />
                           </div>
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Цвет тени</span>
                             <button 
-                              className="color-preview-button"
+                              className={styles.color-preview-button}
                               style={{ backgroundColor: selectedElement.shadow.color || '#000000' }}
                               onClick={() => openColorPicker('shadowColor', selectedElement.shadow.color || '#000000')}
                               title="Выбрать цвет тени"
@@ -5444,10 +5444,10 @@ const DesignEditor = () => {
                     
                     {/* Текстовые свойства */}
                     {selectedElement.type === 'text' && (
-                      <div className="property-group">
+                      <div className={styles.property-group}>
                         <label>Типографика</label>
-                        <div className="text-controls">
-                          <div className="input-with-label">
+                        <div className={styles.text-controls}>
+                          <div className={styles.input-with-label}>
                             <span>Шрифт</span>
                             <select 
                               value={selectedElement.fontFamily}
@@ -5461,7 +5461,7 @@ const DesignEditor = () => {
                               ))}
                             </select>
                           </div>
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Размер</span>
                             <input 
                               type="number" 
@@ -5473,7 +5473,7 @@ const DesignEditor = () => {
                           </div>
                           
                           {/* Стили текста */}
-                          <div className="text-style-buttons">
+                          <div className={styles.text-style-buttons}>
                             <button 
                               className={selectedElement.fontWeight === 'bold' ? 'active' : ''}
                               onClick={() => updateSelectedElement('fontWeight', selectedElement.fontWeight === 'bold' ? 'normal' : 'bold')}
@@ -5505,7 +5505,7 @@ const DesignEditor = () => {
                           </div>
                           
                           {/* Выравнивание текста */}
-                          <div className="text-align-buttons">
+                          <div className={styles.text-align-buttons}>
                             <button 
                               className={selectedElement.textAlign === 'left' ? 'active' : ''}
                               onClick={() => updateSelectedElement('textAlign', 'left')}
@@ -5530,8 +5530,8 @@ const DesignEditor = () => {
                           </div>
                           
                           {/* Межстрочный интервал и кернинг */}
-                          <div className="input-pair">
-                            <div className="input-with-label">
+                          <div className={styles.input-pair}>
+                            <div className={styles.input-with-label}>
                               <span>Интервал</span>
                               <input 
                                 type="number" 
@@ -5542,7 +5542,7 @@ const DesignEditor = () => {
                                 onChange={(e) => updateSelectedElement('lineHeight', parseFloat(e.target.value))}
                               />
                             </div>
-                            <div className="input-with-label">
+                            <div className={styles.input-with-label}>
                               <span>Кернинг</span>
                               <input 
                                 type="number" 
@@ -5555,7 +5555,7 @@ const DesignEditor = () => {
                             </div>
                           </div>
                           
-                          <div className="text-content">
+                          <div className={styles.text-content}>
                             <span>Текст</span>
                             <textarea
                               value={selectedElement.text}
@@ -5569,10 +5569,10 @@ const DesignEditor = () => {
                     
                     {/* Настройки изображений */}
                     {selectedElement.type === 'image' && (
-                      <div className="property-group">
+                      <div className={styles.property-group}>
                         <label>Коррекция изображения</label>
-                        <div className="image-adjustments">
-                          <div className="input-with-label">
+                        <div className={styles.image-adjustments}>
+                          <div className={styles.input-with-label}>
                             <span>Яркость</span>
                             <input 
                               type="range" 
@@ -5584,7 +5584,7 @@ const DesignEditor = () => {
                             <span>{selectedElement.brightness || 100}%</span>
                           </div>
                           
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Контраст</span>
                             <input 
                               type="range" 
@@ -5596,7 +5596,7 @@ const DesignEditor = () => {
                             <span>{selectedElement.contrast || 100}%</span>
                           </div>
                           
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Насыщенность</span>
                             <input 
                               type="range" 
@@ -5608,7 +5608,7 @@ const DesignEditor = () => {
                             <span>{selectedElement.saturation || 100}%</span>
                           </div>
                           
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Оттенки серого</span>
                             <input 
                               type="range" 
@@ -5620,7 +5620,7 @@ const DesignEditor = () => {
                             <span>{selectedElement.grayscale || 0}%</span>
                           </div>
                           
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Сепия</span>
                             <input 
                               type="range" 
@@ -5632,7 +5632,7 @@ const DesignEditor = () => {
                             <span>{selectedElement.sepia || 0}%</span>
                           </div>
                           
-                          <div className="input-with-label">
+                          <div className={styles.input-with-label}>
                             <span>Инверсия</span>
                             <input 
                               type="range" 
@@ -5663,8 +5663,8 @@ const DesignEditor = () => {
                   </div>
                 </div>
               ) : (
-                <div className="no-selection">
-                  <div className="no-selection-content">
+                <div className={styles.no-selection}>
+                  <div className={styles.no-selection-content}>
                     <FaMousePointer size={32} />
                     <h4>Ничего не выбрано</h4>
                     <p>Выберите элемент на холсте, чтобы изменить его свойства</p>
@@ -5676,8 +5676,8 @@ const DesignEditor = () => {
 
           {/* Панель прототипа */}
           {activePanel === 'prototype' && (
-            <div className="figma-prototype-panel">
-              <div className="prototype-content">
+            <div className={styles.figma-prototype-panel}>
+              <div className={styles.prototype-content}>
                 <h4>Прототип</h4>
                 <p>Настройки интерактивности и анимации будут добавлены в будущих версиях</p>
               </div>
@@ -5686,74 +5686,74 @@ const DesignEditor = () => {
 
           {/* Панель инспектора */}
           {activePanel === 'inspect' && (
-            <div className="figma-inspect-panel">
+            <div className={styles.figma-inspect-panel}>
               {selectedElement ? (
-                <div className="inspect-content">
+                <div className={styles.inspect-content}>
                   <h4>Код и свойства</h4>
                   
-                  <div className="inspect-section">
+                  <div className={styles.inspect-section}>
                     <h5>CSS свойства</h5>
-                    <div className="code-block">
+                    <div className={styles.code-block}>
                       <pre>{generateCSS(selectedElement)}</pre>
                     </div>
                   </div>
                   
-                  <div className="inspect-section">
+                  <div className={styles.inspect-section}>
                     <h5>Данные элемента</h5>
-                    <div className="data-table">
-                      <div className="data-row">
-                        <span className="data-key">Тип:</span>
-                        <span className="data-value">{selectedElement.type}</span>
+                    <div className={styles.data-table}>
+                      <div className={styles.data-row}>
+                        <span className={styles.data-key}>Тип:</span>
+                        <span className={styles.data-value}>{selectedElement.type}</span>
                       </div>
-                      <div className="data-row">
-                        <span className="data-key">ID:</span>
-                        <span className="data-value">{selectedElement.id.toString().slice(-8)}</span>
+                      <div className={styles.data-row}>
+                        <span className={styles.data-key}>ID:</span>
+                        <span className={styles.data-value}>{selectedElement.id.toString().slice(-8)}</span>
                       </div>
-                      <div className="data-row">
-                        <span className="data-key">Позиция:</span>
-                        <span className="data-value">{Math.round(selectedElement.x)}, {Math.round(selectedElement.y)}</span>
+                      <div className={styles.data-row}>
+                        <span className={styles.data-key}>Позиция:</span>
+                        <span className={styles.data-value}>{Math.round(selectedElement.x)}, {Math.round(selectedElement.y)}</span>
                       </div>
                       {selectedElement.width && (
-                        <div className="data-row">
-                          <span className="data-key">Размер:</span>
-                          <span className="data-value">{Math.round(selectedElement.width)} × {Math.round(selectedElement.height)}</span>
+                        <div className={styles.data-row}>
+                          <span className={styles.data-key}>Размер:</span>
+                          <span className={styles.data-value}>{Math.round(selectedElement.width)} × {Math.round(selectedElement.height)}</span>
                         </div>
                       )}
                       {selectedElement.radius && (
-                        <div className="data-row">
-                          <span className="data-key">Радиус:</span>
-                          <span className="data-value">{Math.round(selectedElement.radius)}px</span>
+                        <div className={styles.data-row}>
+                          <span className={styles.data-key}>Радиус:</span>
+                          <span className={styles.data-value}>{Math.round(selectedElement.radius)}px</span>
                         </div>
                       )}
-                      <div className="data-row">
-                        <span className="data-key">Заливка:</span>
-                        <span className="data-value">{selectedElement.fillColor}</span>
+                      <div className={styles.data-row}>
+                        <span className={styles.data-key}>Заливка:</span>
+                        <span className={styles.data-value}>{selectedElement.fillColor}</span>
                       </div>
-                      <div className="data-row">
-                        <span className="data-key">Обводка:</span>
-                        <span className="data-value">{selectedElement.strokeColor} ({selectedElement.strokeWidth}px)</span>
+                      <div className={styles.data-row}>
+                        <span className={styles.data-key}>Обводка:</span>
+                        <span className={styles.data-value}>{selectedElement.strokeColor} ({selectedElement.strokeWidth}px)</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="inspect-actions">
+                  <div className={styles.inspect-actions}>
                     <button 
                       onClick={() => copyToClipboard(generateCSS(selectedElement))}
-                      className="copy-css-btn"
+                      className={styles.copy-css-btn}
                     >
                       <FaCopy /> Копировать CSS
                     </button>
                     <button 
                       onClick={() => copyToClipboard(JSON.stringify(selectedElement, null, 2))}
-                      className="copy-data-btn"
+                      className={styles.copy-data-btn}
                     >
                       <FaCode /> Копировать данные
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="no-selection">
-                  <div className="no-selection-content">
+                <div className={styles.no-selection}>
+                  <div className={styles.no-selection-content}>
                     <FaCode size={32} />
                     <h4>Ничего не выбрано</h4>
                     <p>Выберите элемент для просмотра его кода и свойств</p>
@@ -5767,20 +5767,20 @@ const DesignEditor = () => {
 
       {/* Менеджер проектов */}
       {showProjectManager && (
-        <div className="project-manager-overlay">
-          <div className="project-manager">
-            <div className="project-manager-header">
+        <div className={styles.project-manager-overlay}>
+          <div className={styles.project-manager}>
+            <div className={styles.project-manager-header}>
               <h3>Менеджер проектов</h3>
-              <div className="project-manager-header-actions">
+              <div className={styles.project-manager-header-actions}>
                 <button 
-                  className="clear-all-btn"
+                  className={styles.clear-all-btn}
                   onClick={clearAllProjects}
                   title="Удалить все проекты и очистить кэш"
                 >
                   <FaTrash /> Очистить всё
                 </button>
                 <button 
-                  className="close-btn"
+                  className={styles.close-btn}
                   onClick={() => setShowProjectManager(false)}
                 >
                   <FaTimes />
@@ -5788,31 +5788,31 @@ const DesignEditor = () => {
               </div>
             </div>
             
-            <div className="project-manager-content">
-              <div className="projects-grid">
+            <div className={styles.project-manager-content}>
+              <div className={styles.projects-grid}>
                 {projects.map(project => (
-                  <div key={project.id} className="project-card">
-                    <div className="project-preview">
-                      <span className="project-elements-count">
+                  <div key={project.id} className={styles.project-card}>
+                    <div className={styles.project-preview}>
+                      <span className={styles.project-elements-count}>
                         {project.elements.length} элементов
                       </span>
                     </div>
                     
-                    <div className="project-info">
+                    <div className={styles.project-info}>
                       <h4>{project.name}</h4>
                       <p>{new Date(project.createdAt).toLocaleDateString()}</p>
                     </div>
                     
-                    <div className="project-actions">
+                    <div className={styles.project-actions}>
                       <button 
                         onClick={() => loadProject(project)}
-                        className="load-btn"
+                        className={styles.load-btn}
                       >
                         Открыть
                       </button>
                       <button 
                         onClick={() => deleteProject(project.id)}
-                        className="delete-btn"
+                        className={styles.delete-btn}
                       >
                         <FaTrash />
                       </button>
@@ -5821,7 +5821,7 @@ const DesignEditor = () => {
                 ))}
                 
                 <div className="project-card new-project">
-                  <div className="new-project-content">
+                  <div className={styles.new-project-content}>
                     <FaPlus />
                     <span>Новый проект</span>
                   </div>
@@ -5876,16 +5876,16 @@ const DesignEditor = () => {
 
       {/* Диалог импорта */}
       {isImporting && (
-        <div className="modal-overlay">
-          <div className="import-dialog">
-            <div className="dialog-header">
+        <div className={styles.modal-overlay}>
+          <div className={styles.import-dialog}>
+            <div className={styles.dialog-header}>
               <h3>Импорт файла</h3>
             </div>
-            <div className="dialog-content">
-              <div className="import-progress">
-                <div className="progress-bar">
+            <div className={styles.dialog-content}>
+              <div className={styles.import-progress}>
+                <div className={styles.progress-bar}>
                   <div 
-                    className="progress-fill" 
+                    className={styles.progress-fill} 
                     style={{ width: `${importProgress}%` }}
                   ></div>
                 </div>

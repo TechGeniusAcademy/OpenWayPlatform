@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import './AdminSubmissions.css';
+import styles from './AdminSubmissions.module.css';
 
 export default function AdminSubmissions() {
   const [submissions, setSubmissions] = useState([]);
@@ -123,14 +123,14 @@ export default function AdminSubmissions() {
   };
 
   if (loading) {
-    return <div className="admin-submissions-loading">Загрузка...</div>;
+    return <div className={styles.admin-submissions-loading}>Загрузка...</div>;
   }
 
   return (
-    <div className="admin-submissions-container">
-      <div className="submissions-header">
+    <div className={styles.admin-submissions-container}>
+      <div className={styles.submissions-header}>
         <h1>Проверка проектов</h1>
-        <div className="filter-tabs">
+        <div className={styles.filter-tabs}>
           <button 
             className={filterStatus === 'all' ? 'active' : ''}
             onClick={() => setFilterStatus('all')}
@@ -152,16 +152,16 @@ export default function AdminSubmissions() {
         </div>
       </div>
 
-      <div className="submissions-list">
+      <div className={styles.submissions-list}>
         {filteredSubmissions.length === 0 ? (
-          <div className="no-submissions">Нет submissions для отображения</div>
+          <div className={styles.no-submissions}>Нет submissions для отображения</div>
         ) : (
           filteredSubmissions.map(submission => (
-            <div key={submission.id} className="submission-card">
-              <div className="submission-info">
+            <div key={submission.id} className={styles.submission-card}>
+              <div className={styles.submission-info}>
                 <h3>{submission.project_name}</h3>
-                <p className="student-name">Студент: {submission.username}</p>
-                <p className="submission-meta">
+                <p className={styles.student-name}>Студент: {submission.username}</p>
+                <p className={styles.submission-meta}>
                   {submission.type === 'homework' && submission.homework_title && (
                     <span>ДЗ: {submission.homework_title} • </span>
                   )}
@@ -170,7 +170,7 @@ export default function AdminSubmissions() {
                 {getStatusBadge(submission.status)}
               </div>
               <button 
-                className="btn-view"
+                className={styles.btn-view}
                 onClick={() => viewSubmission(submission)}
               >
                 Просмотреть
@@ -181,47 +181,47 @@ export default function AdminSubmissions() {
       </div>
 
       {selectedSubmission && (
-        <div className="submission-viewer-overlay" onClick={closeViewer}>
-          <div className="submission-viewer" onClick={(e) => e.stopPropagation()}>
-            <div className="viewer-header">
+        <div className={styles.submission-viewer-overlay} onClick={closeViewer}>
+          <div className={styles.submission-viewer} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.viewer-header}>
               <div>
                 <h2>{selectedSubmission.project_name}</h2>
                 <p>Студент: {selectedSubmission.username}</p>
               </div>
-              <button className="btn-close" onClick={closeViewer}>×</button>
+              <button className={styles.btn-close} onClick={closeViewer}>×</button>
             </div>
 
-            <div className="viewer-content">
-              <div className="preview-section">
+            <div className={styles.viewer-content}>
+              <div className={styles.preview-section}>
                 <h3>Превью проекта</h3>
                 <iframe
-                  className="project-preview"
+                  className={styles.project-preview}
                   srcDoc={getPreviewHTML(selectedSubmission.project_data)}
                   title="Project Preview"
                   sandbox="allow-scripts"
                 />
               </div>
 
-              <div className="review-section">
+              <div className={styles.review-section}>
                 <h3>Оценка</h3>
                 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Статус:</label>
-                  <div className="status-buttons">
+                  <div className={styles.status-buttons}>
                     <button 
-                      className="btn-approve"
+                      className={styles.btn-approve}
                       onClick={() => updateStatus('approved')}
                     >
                       <FaCheckCircle /> Принять
                     </button>
                     <button 
-                      className="btn-reject"
+                      className={styles.btn-reject}
                       onClick={() => updateStatus('rejected')}
                     >
                       <FaTimesCircle /> Отклонить
                     </button>
                     <button 
-                      className="btn-review"
+                      className={styles.btn-review}
                       onClick={() => updateStatus('reviewed')}
                     >
                       Проверено
@@ -229,7 +229,7 @@ export default function AdminSubmissions() {
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Оценка (баллы):</label>
                   <input
                     type="number"
@@ -241,7 +241,7 @@ export default function AdminSubmissions() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Комментарий:</label>
                   <textarea
                     value={feedback}
@@ -252,7 +252,7 @@ export default function AdminSubmissions() {
                 </div>
 
                 {selectedSubmission.feedback && (
-                  <div className="previous-feedback">
+                  <div className={styles.previous-feedback}>
                     <h4>Предыдущий отзыв:</h4>
                     <p>{selectedSubmission.feedback}</p>
                     {selectedSubmission.grade && (

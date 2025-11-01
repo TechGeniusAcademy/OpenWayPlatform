@@ -15,7 +15,7 @@ import {
   BsBoxArrowRight,
   BsFolderCheck
 } from 'react-icons/bs';
-import './TeacherLayout.css';
+import styles from './TeacherLayout.module.css';
 
 function TeacherLayout() {
   const { user, logout } = useAuth();
@@ -44,37 +44,37 @@ function TeacherLayout() {
   ];
 
   return (
-    <div className="teacher-layout">
-      <aside className="teacher-sidebar">
-        <div className="sidebar-header">
+    <div className={styles.teacher-layout}>
+      <aside className={styles.teacher-sidebar}>
+        <div className={styles.sidebar-header}>
           <h2>👨‍🏫 Учитель</h2>
-          <div className="user-info">
+          <div className={styles.user-info}>
             <p>{user?.full_name || user?.username}</p>
-            <span className="role-badge">Преподаватель</span>
+            <span className={styles.role-badge}>Преподаватель</span>
           </div>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className={styles.sidebar-nav}>
           {menuItems.map(item => (
             <button
               key={item.path}
               className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
               onClick={() => navigate(item.path)}
             >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-              {item.badge > 0 && <span className="nav-badge">{item.badge}</span>}
+              <span className={styles.nav-icon}>{item.icon}</span>
+              <span className={styles.nav-label}>{item.label}</span>
+              {item.badge > 0 && <span className={styles.nav-badge}>{item.badge}</span>}
             </button>
           ))}
         </nav>
 
-        <button className="logout-btn" onClick={handleLogout}>
+        <button className={styles.logout-btn} onClick={handleLogout}>
           <BsBoxArrowRight />
           <span>Выйти</span>
         </button>
       </aside>
 
-      <main className="teacher-content">
+      <main className={styles.teacher-content}>
         <Outlet />
       </main>
     </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api, { BASE_URL } from '../utils/api';
 import GameCards from './GameCards';
 import GameQuestions from './GameQuestions';
-import './GameManagement.css';
+import styles from './GameManagement.module.css';
 
 function GameManagement() {
   const [activeTab, setActiveTab] = useState('sessions'); // 'sessions', 'cards', 'questions'
@@ -381,8 +381,8 @@ function GameManagement() {
   };
 
   return (
-    <div className="game-management">
-      <div className="tabs">
+    <div className={styles.game-management}>
+      <div className={styles.tabs}>
         <button 
           className={activeTab === 'sessions' ? 'active' : ''} 
           onClick={() => setActiveTab('sessions')}
@@ -404,19 +404,19 @@ function GameManagement() {
       </div>
 
       {activeTab === 'sessions' && (
-        <div className="sessions-tab">
+        <div className={styles.sessions-tab}>
           <h2>   Игровые сессии</h2>
 
           <h3 style={{ marginTop: '30px', marginBottom: '20px', color: '#2c3e50', fontSize: '24px' }}>
             Выберите группу для создания игры:
           </h3>
-          <div className="mana-groups-grid">
+          <div className={styles.mana-groups-grid}>
             {groups.map(group => (
-              <div key={group.id} className="group-card">
+              <div key={group.id} className={styles.group-card}>
                 <h4>{group.name}</h4>
                 <p>👥 Студентов: {group.member_count || 0}</p>
                 <button 
-                  className="btn-primary" 
+                  className={styles.btn-primary} 
                   onClick={() => openCreateModal(group)}
                 >
                   Создать игру
@@ -428,7 +428,7 @@ function GameManagement() {
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: '#2c3e50', fontSize: '24px' }}>
             Активные и завершенные игры:
           </h3>
-          <div className="sessions-list">
+          <div className={styles.sessions-list}>
             <table>
               <thead>
                 <tr>
@@ -450,16 +450,16 @@ function GameManagement() {
                       </span>
                     </td>
                     <td>
-                      <span className="score">
+                      <span className={styles.score}>
                         А {session.team_a_score} : {session.team_b_score} Б
                       </span>
                     </td>
                     <td>{session.player_count}</td>
-                    <td className="actions">
+                    <td className={styles.actions}>
                       {session.status === 'preparing' && (
                         <button 
                           onClick={() => startGame(session.id)}
-                          className="btn-success"
+                          className={styles.btn-success}
                         >
                           ▶️ Старт
                         </button>
@@ -467,14 +467,14 @@ function GameManagement() {
                       {session.status === 'in_progress' && (
                         <button 
                           onClick={() => openGameControl(session.id)}
-                          className="btn-primary"
+                          className={styles.btn-primary}
                         >
                              Управление
                         </button>
                       )}
                       <button 
                         onClick={() => deleteSession(session.id)}
-                        className="btn-delete"
+                        className={styles.btn-delete}
                       >
                         🗑️
                       </button>
@@ -492,14 +492,14 @@ function GameManagement() {
 
       {/* Create Session Modal */}
       {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modal-overlay} onClick={() => setShowCreateModal(false)}>
+          <div className={styles.modal-content} onClick={(e) => e.stopPropagation()}>
             <h3>Создать игру для группы: {selectedGroup?.name}</h3>
             <p>Студентов в группе: {groupStudents.length}</p>
             
-            <div className="form-actions">
+            <div className={styles.form-actions}>
               <button onClick={() => setShowCreateModal(false)}>Отмена</button>
-              <button className="btn-primary" onClick={createSession}>
+              <button className={styles.btn-primary} onClick={createSession}>
                 Создать игру
               </button>
             </div>
@@ -509,12 +509,12 @@ function GameManagement() {
 
       {/* Players Selection Modal */}
       {showPlayersModal && (
-        <div className="modal-overlay" onClick={() => setShowPlayersModal(false)}>
+        <div className={styles.modal-overlay} onClick={() => setShowPlayersModal(false)}>
           <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <h3>Выберите игроков</h3>
             <p>Выбрано: {selectedPlayers.length} игроков</p>
             
-            <div className="players-list">
+            <div className={styles.players-list}>
               {groupStudents.map(student => (
                 <div 
                   key={student.id} 
@@ -522,15 +522,15 @@ function GameManagement() {
                   onClick={() => togglePlayerSelection(student.id)}
                 >
                   <span>{student.full_name || student.username}</span>
-                  {selectedPlayers.includes(student.id) && <span className="checkmark">✓</span>}
+                  {selectedPlayers.includes(student.id) && <span className={styles.checkmark}>✓</span>}
                 </div>
               ))}
             </div>
             
-            <div className="form-actions">
+            <div className={styles.form-actions}>
               <button onClick={() => setShowPlayersModal(false)}>Отмена</button>
               <button 
-                className="btn-primary" 
+                className={styles.btn-primary} 
                 onClick={assignTeams}
                 disabled={selectedPlayers.length < 2}
               >
@@ -545,22 +545,22 @@ function GameManagement() {
       {showGameModal && currentSession && (
         <div className="modal-overlay game-control-modal">
           <div className="modal-content extra-large" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setShowGameModal(false)}>✕</button>
+            <button className={styles.close-btn} onClick={() => setShowGameModal(false)}>✕</button>
             
-            <div className="game-header">
+            <div className={styles.game-header}>
               <h2>   Игра: {currentSession.group_name}</h2>
-              <div className="game-info">
-                <span className="score-display">
+              <div className={styles.game-info}>
+                <span className={styles.score-display}>
                   А Команда: {currentSession.team_a_score} | Команда: {currentSession.team_b_score} Б
                 </span>
               </div>
             </div>
 
-            <div className="current-team-display">
+            <div className={styles.current-team-display}>
               <h3>
                 Ход: {currentSession.current_team === 'team_a' ? 'А Команда' : 'Б Команда'}
                 {extraQuestionsCount > 0 && (
-                  <span className="extra-questions-badge">
+                  <span className={styles.extra-questions-badge}>
                     🎁 Дополнительные вопросы: {extraQuestionsCount}
                   </span>
                 )}
@@ -568,35 +568,35 @@ function GameManagement() {
             </div>
 
             {showCardAnimation && scrollingCards.length > 0 && (
-              <div className="slot-machine-overlay">
-                <div className="slot-machine-container">
-                  <div className="slot-window">
-                    <div className="slot-reel">
+              <div className={styles.slot-machine-overlay}>
+                <div className={styles.slot-machine-container}>
+                  <div className={styles.slot-window}>
+                    <div className={styles.slot-reel}>
                       {scrollingCards.map((card, index) => (
                         <div 
                           key={`${card.id}-${index}`} 
-                          className="slot-card"
+                          className={styles.slot-card}
                         >
-                          <div className="card-inner">
+                          <div className={styles.card-inner}>
                             {card.image_url ? (
                               <img src={`${BASE_URL}${card.image_url}`} alt={card.name} />
                             ) : (
-                              <div className="card-placeholder">🎴</div>
+                              <div className={styles.card-placeholder}>🎴</div>
                             )}
-                            <div className="card-name">{card.name}</div>
+                            <div className={styles.card-name}>{card.name}</div>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="slot-indicator-line"></div>
-                  <p className="slot-text">КРУТИМ</p>
+                  <div className={styles.slot-indicator-line}></div>
+                  <p className={styles.slot-text}>КРУТИМ</p>
                 </div>
               </div>
             )}
 
             {!currentRound && !drawnCard && !showCardAnimation && (
-              <div className="round-actions">
+              <div className={styles.round-actions}>
                 <button className="btn-large btn-primary" onClick={drawCard}>
                    Вытянуть карточку
                 </button>
@@ -604,16 +604,16 @@ function GameManagement() {
             )}
 
             {drawnCard && (
-              <div className="drawn-card-display">
+              <div className={styles.drawn-card-display}>
                 <div className={`card-large ${drawnCard.team}`}>
                   {drawnCard.image_url ? (
                     <img src={`${BASE_URL}${drawnCard.image_url}`} alt={drawnCard.name} />
                   ) : (
-                    <div className="card-placeholder">🎴</div>
+                    <div className={styles.card-placeholder}>🎴</div>
                   )}
                   <h3>{drawnCard.name}</h3>
                   <p>{drawnCard.description}</p>
-                  <div className="card-effect">
+                  <div className={styles.card-effect}>
                     Эффект: {drawnCard.effect_value > 0 ? '+' : ''}{drawnCard.effect_value}
                   </div>
                 </div>
@@ -621,29 +621,29 @@ function GameManagement() {
             )}
 
             {currentQuestion && (
-              <div className="question-display">
+              <div className={styles.question-display}>
                 <h3>❓ Вопрос:</h3>
-                <p className="question-text">{currentQuestion.question}</p>
+                <p className={styles.question-text}>{currentQuestion.question}</p>
                 
-                <div className="answer-controls">
-                  <button className="btn-success" onClick={answerCorrect}>
+                <div className={styles.answer-controls}>
+                  <button className={styles.btn-success} onClick={answerCorrect}>
                     ✅ Правильный ответ
                   </button>
-                  <button className="btn-danger" onClick={answerWrong}>
+                  <button className={styles.btn-danger} onClick={answerWrong}>
                     ❌ Неправильный ответ
                   </button>
                 </div>
               </div>
             )}
 
-            <div className="game-controls">
-              <button className="btn-danger" onClick={finishGame}>
+            <div className={styles.game-controls}>
+              <button className={styles.btn-danger} onClick={finishGame}>
                  Завершить игру
               </button>
             </div>
 
             {/* Teams Display */}
-            <div className="teams-display">
+            <div className={styles.teams-display}>
               <div className="team team-a">
                 <h4>А Команда</h4>
                 <ul>
@@ -676,17 +676,17 @@ function GameManagement() {
 
       {/* Notification Modal */}
       {notification.show && (
-        <div className="notification-overlay" onClick={closeNotification}>
+        <div className={styles.notification-overlay} onClick={closeNotification}>
           <div className={`notification-modal ${notification.type}`} onClick={(e) => e.stopPropagation()}>
-            <button className="notification-close" onClick={closeNotification}>✕</button>
-            <div className="notification-header">
+            <button className={styles.notification-close} onClick={closeNotification}>✕</button>
+            <div className={styles.notification-header}>
               <h3>{notification.title}</h3>
             </div>
-            <div className="notification-body">
+            <div className={styles.notification-body}>
               <p>{notification.message}</p>
             </div>
-            <div className="notification-footer">
-              <button className="btn-primary" onClick={closeNotification}>OK</button>
+            <div className={styles.notification-footer}>
+              <button className={styles.btn-primary} onClick={closeNotification}>OK</button>
             </div>
           </div>
         </div>

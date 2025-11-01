@@ -11,7 +11,7 @@ import {
   FaDatabase
 } from 'react-icons/fa';
 import { BiDotsVerticalRounded } from 'react-icons/bi';
-import './FileTree.css';
+import styles from './FileTree.module.css';
 
 const FileTree = ({ 
   files, 
@@ -55,7 +55,7 @@ const FileTree = ({
       case 'sql':
         return <FaDatabase className="file-icon sql-icon" />;
       default:
-        return <FaFile className="file-icon" />;
+        return <FaFile className={styles.file-icon} />;
     }
   };
 
@@ -159,7 +159,7 @@ const FileTree = ({
 
       if (item.type === 'folder') {
         return (
-          <div key={item.path} className="tree-item-wrapper">
+          <div key={item.path} className={styles.tree-item-wrapper}>
             <div
               className={`tree-item folder ${isExpanded ? 'expanded' : ''} ${isDragging ? 'dragging' : ''} ${isDropTarget ? 'drop-target' : ''}`}
               style={{ paddingLeft: `${level * 20 + 10}px` }}
@@ -172,10 +172,10 @@ const FileTree = ({
               onDrop={(e) => handleDrop(e, item)}
               onDragEnd={handleDragEnd}
             >
-              {isExpanded ? <FaFolderOpen className="folder-icon" /> : <FaFolder className="folder-icon" />}
-              <span className="item-name">{item.name}</span>
+              {isExpanded ? <FaFolderOpen className={styles.folder-icon} /> : <FaFolder className={styles.folder-icon} />}
+              <span className={styles.item-name}>{item.name}</span>
               <BiDotsVerticalRounded 
-                className="more-icon" 
+                className={styles.more-icon} 
                 onClick={(e) => {
                   e.stopPropagation();
                   handleContextMenu(e, item);
@@ -183,7 +183,7 @@ const FileTree = ({
               />
             </div>
             {isExpanded && item.children && (
-              <div className="folder-contents">
+              <div className={styles.folder-contents}>
                 {renderTree(item.children, level + 1)}
               </div>
             )}
@@ -202,9 +202,9 @@ const FileTree = ({
             onDragEnd={handleDragEnd}
           >
             {getFileIcon(item.name)}
-            <span className="item-name">{item.name}</span>
+            <span className={styles.item-name}>{item.name}</span>
             <BiDotsVerticalRounded 
-              className="more-icon" 
+              className={styles.more-icon} 
               onClick={(e) => {
                 e.stopPropagation();
                 handleContextMenu(e, item);
@@ -217,12 +217,12 @@ const FileTree = ({
   };
 
   return (
-    <div className="file-tree" onClick={closeContextMenu}>
+    <div className={styles.file-tree} onClick={closeContextMenu}>
       {renderTree(files)}
       
       {contextMenu && (
         <div
-          className="context-menu"
+          className={styles.context-menu}
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -234,7 +234,7 @@ const FileTree = ({
               <div onClick={() => handleAction('newFolder', contextMenu.item)}>
                 Новая папка
               </div>
-              <div className="separator"></div>
+              <div className={styles.separator}></div>
             </>
           )}
           <div onClick={() => handleAction('rename', contextMenu.item)}>

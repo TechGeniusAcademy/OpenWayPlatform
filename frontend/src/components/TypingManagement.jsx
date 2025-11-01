@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import './TypingManagement.css';
+import styles from './TypingManagement.module.css';
 
 const TypingManagement = () => {
   const [statistics, setStatistics] = useState(null);
@@ -65,9 +65,9 @@ const TypingManagement = () => {
 
   if (loading) {
     return (
-      <div className="typing-management">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+      <div className={styles.typing-management}>
+        <div className={styles.loading-spinner}>
+          <div className={styles.spinner}></div>
           <p>Загрузка статистики...</p>
         </div>
       </div>
@@ -76,8 +76,8 @@ const TypingManagement = () => {
 
   if (error) {
     return (
-      <div className="typing-management">
-        <div className="error-message">
+      <div className={styles.typing-management}>
+        <div className={styles.error-message}>
           <h3>Ошибка</h3>
           <p>{error}</p>
           <button onClick={fetchAllStatistics}>Повторить</button>
@@ -87,10 +87,10 @@ const TypingManagement = () => {
   }
 
   return (
-    <div className="typing-management">
-      <div className="typing-header">
+    <div className={styles.typing-management}>
+      <div className={styles.typing-header}>
         <h2>⌨️ Управление клавиатурным тренажером</h2>
-        <div className="filters">
+        <div className={styles.filters}>
           <select 
             value={filters.period} 
             onChange={(e) => setFilters({...filters, period: e.target.value})}
@@ -119,31 +119,31 @@ const TypingManagement = () => {
 
       {/* Общая статистика */}
       {statistics && (
-        <div className="overview-stats">
-          <div className="stat-card">
-            <div className="stat-icon">👥</div>
-            <div className="stat-content">
+        <div className={styles.overview-stats}>
+          <div className={styles.stat-card}>
+            <div className={styles.stat-icon}>👥</div>
+            <div className={styles.stat-content}>
               <h3>{statistics.totalUsers}</h3>
               <p>Активных пользователей</p>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">📊</div>
-            <div className="stat-content">
+          <div className={styles.stat-card}>
+            <div className={styles.stat-icon}>📊</div>
+            <div className={styles.stat-content}>
               <h3>{statistics.totalTests}</h3>
               <p>Всего тестов пройдено</p>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">⚡</div>
-            <div className="stat-content">
+          <div className={styles.stat-card}>
+            <div className={styles.stat-icon}>⚡</div>
+            <div className={styles.stat-content}>
               <h3>{statistics.averageWpm}</h3>
               <p>Средняя скорость (зн/мин)</p>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">🎯</div>
-            <div className="stat-content">
+          <div className={styles.stat-card}>
+            <div className={styles.stat-icon}>🎯</div>
+            <div className={styles.stat-content}>
               <h3>{statistics.averageAccuracy}%</h3>
               <p>Средняя точность</p>
             </div>
@@ -151,12 +151,12 @@ const TypingManagement = () => {
         </div>
       )}
 
-      <div className="stats-container">
+      <div className={styles.stats-container}>
         {/* Статистика по пользователям */}
-        <div className="users-stats">
+        <div className={styles.users-stats}>
           <h3>Статистика пользователей</h3>
-          <div className="users-table">
-            <div className="table-header">
+          <div className={styles.users-table}>
+            <div className={styles.table-header}>
               <span>Пользователь</span>
               <span>Скорость</span>
               <span>Точность</span>
@@ -167,24 +167,24 @@ const TypingManagement = () => {
             {userStats.map(user => {
               const proficiency = getProficiencyLevel(user.averageWpm);
               return (
-                <div key={user.id} className="table-row">
-                  <span className="user-info">
+                <div key={user.id} className={styles.table-row}>
+                  <span className={styles.user-info}>
                     <strong>{user.fullName || user.username || 'Пользователь'}</strong>
                     <small>{user.email || ''}</small>
                   </span>
-                  <span className="wpm">{user.averageWpm} зн/мин</span>
-                  <span className="accuracy">{user.averageAccuracy}%</span>
-                  <span className="tests-count">{user.testsCount}</span>
+                  <span className={styles.wpm}>{user.averageWpm} зн/мин</span>
+                  <span className={styles.accuracy}>{user.averageAccuracy}%</span>
+                  <span className={styles.tests-count}>{user.testsCount}</span>
                   <span 
-                    className="proficiency-level"
+                    className={styles.proficiency-level}
                     style={{ color: proficiency.color }}
                   >
                     {proficiency.level}
                   </span>
-                  <span className="actions">
+                  <span className={styles.actions}>
                     <button 
                       onClick={() => fetchUserHistory(user.id)}
-                      className="view-history-btn"
+                      className={styles.view-history-btn}
                     >
                       История
                     </button>
@@ -196,34 +196,34 @@ const TypingManagement = () => {
         </div>
 
         {/* Статистика по группам */}
-        <div className="groups-stats">
+        <div className={styles.groups-stats}>
           <h3>Статистика по группам</h3>
-          <div className="groups-grid">
+          <div className={styles.groups-grid}>
             {groupStats.map(group => (
-              <div key={group.id} className="group-card">
+              <div key={group.id} className={styles.group-card}>
                 <h4>{group.name}</h4>
-                <div className="group-metrics">
-                  <div className="metric">
-                    <span className="metric-label">Участники:</span>
-                    <span className="metric-value">{group.membersCount}</span>
+                <div className={styles.group-metrics}>
+                  <div className={styles.metric}>
+                    <span className={styles.metric-label}>Участники:</span>
+                    <span className={styles.metric-value}>{group.membersCount}</span>
                   </div>
-                  <div className="metric">
-                    <span className="metric-label">Средняя скорость:</span>
-                    <span className="metric-value">{group.averageWpm} зн/мин</span>
+                  <div className={styles.metric}>
+                    <span className={styles.metric-label}>Средняя скорость:</span>
+                    <span className={styles.metric-value}>{group.averageWpm} зн/мин</span>
                   </div>
-                  <div className="metric">
-                    <span className="metric-label">Средняя точность:</span>
-                    <span className="metric-value">{group.averageAccuracy}%</span>
+                  <div className={styles.metric}>
+                    <span className={styles.metric-label}>Средняя точность:</span>
+                    <span className={styles.metric-value}>{group.averageAccuracy}%</span>
                   </div>
-                  <div className="metric">
-                    <span className="metric-label">Всего тестов:</span>
-                    <span className="metric-value">{group.totalTests}</span>
+                  <div className={styles.metric}>
+                    <span className={styles.metric-label}>Всего тестов:</span>
+                    <span className={styles.metric-value}>{group.totalTests}</span>
                   </div>
                 </div>
-                <div className="group-progress">
-                  <div className="progress-bar">
+                <div className={styles.group-progress}>
+                  <div className={styles.progress-bar}>
                     <div 
-                      className="progress-fill"
+                      className={styles.progress-fill}
                       style={{ width: `${Math.min(group.averageWpm / 60 * 100, 100)}%` }}
                     ></div>
                   </div>
@@ -237,33 +237,33 @@ const TypingManagement = () => {
 
       {/* Модальное окно с историей пользователя */}
       {selectedUser && (
-        <div className="modal-overlay" onClick={() => setSelectedUser(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className={styles.modal-overlay} onClick={() => setSelectedUser(null)}>
+          <div className={styles.modal-content} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modal-header}>
               <h3>История тестирования</h3>
               <button 
-                className="close-btn"
+                className={styles.close-btn}
                 onClick={() => setSelectedUser(null)}
               >
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <div className="history-chart">
+            <div className={styles.modal-body}>
+              <div className={styles.history-chart}>
                 <h4>Прогресс скорости печати</h4>
-                <div className="chart-container">
+                <div className={styles.chart-container}>
                   {userHistory.length > 0 ? (
-                    <div className="simple-chart">
+                    <div className={styles.simple-chart}>
                       {userHistory.slice(-10).map((result, index) => (
-                        <div key={index} className="chart-bar">
+                        <div key={index} className={styles.chart-bar}>
                           <div 
-                            className="bar"
+                            className={styles.bar}
                             style={{ 
                               height: `${(result.wpm / 80) * 100}%`,
                               backgroundColor: result.accuracy >= 95 ? '#4CAF50' : result.accuracy >= 90 ? '#2196F3' : '#FF9800'
                             }}
                           ></div>
-                          <span className="bar-label">{result.wpm}</span>
+                          <span className={styles.bar-label}>{result.wpm}</span>
                         </div>
                       ))}
                     </div>
@@ -272,9 +272,9 @@ const TypingManagement = () => {
                   )}
                 </div>
               </div>
-              <div className="history-table">
+              <div className={styles.history-table}>
                 <h4>Последние результаты</h4>
-                <div className="table-header">
+                <div className={styles.table-header}>
                   <span>Дата</span>
                   <span>Скорость</span>
                   <span>Точность</span>
@@ -282,7 +282,7 @@ const TypingManagement = () => {
                   <span>Ошибки</span>
                 </div>
                 {userHistory.slice(0, 10).map((result, index) => (
-                  <div key={index} className="table-row">
+                  <div key={index} className={styles.table-row}>
                     <span>{new Date(result.created_at).toLocaleDateString()}</span>
                     <span>{result.wpm} зн/мин</span>
                     <span>{parseFloat(result.accuracy).toFixed(2)}%</span>

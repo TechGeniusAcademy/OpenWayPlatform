@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../utils/api';
-import './UpdatesManagement.css';
+import styles from './UpdatesManagement.module.css';
 import { AiOutlineEdit, AiOutlineDelete, AiOutlinePlus, AiOutlineClose, AiOutlineCheck, AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 
 const QuillEditor = ({ value, onChange, modules, placeholder }) => {
@@ -118,40 +118,40 @@ function UpdatesManagement() {
   };
 
   return (
-    <div className="updates-management">
-      <div className="page-header">
+    <div className={styles.updates-management}>
+      <div className={styles.page-header}>
         <h1>Управление обновлениями</h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           <AiOutlinePlus /> Добавить обновление
         </button>
       </div>
 
-      <div className="updates-list">
+      <div className={styles.updates-list}>
         {updates.length === 0 ? (
-          <div className="empty-state">
+          <div className={styles.empty-state}>
             <p>Обновления ещё не добавлены</p>
           </div>
         ) : (
           updates.map(update => (
-            <div key={update.id} className="update-card">
-              <div className="update-header">
-                <div className="update-version-badge">{update.version}</div>
-                <div className="update-status">
+            <div key={update.id} className={styles.update-card}>
+              <div className={styles.update-header}>
+                <div className={styles.update-version-badge}>{update.version}</div>
+                <div className={styles.update-status}>
                   {update.published ? (
-                    <span className="status-published"><AiOutlineEye /> Опубликовано</span>
+                    <span className={styles.status-published}><AiOutlineEye /> Опубликовано</span>
                   ) : (
-                    <span className="status-draft"><AiOutlineEyeInvisible /> Черновик</span>
+                    <span className={styles.status-draft}><AiOutlineEyeInvisible /> Черновик</span>
                   )}
                 </div>
               </div>
               <h3>{update.title}</h3>
-              {update.description && <p className="update-description">{update.description}</p>}
-              <div className="update-meta">
-                <span className="update-date">
+              {update.description && <p className={styles.update-description}>{update.description}</p>}
+              <div className={styles.update-meta}>
+                <span className={styles.update-date}>
                   {new Date(update.created_at).toLocaleDateString('ru-RU')}
                 </span>
               </div>
-              <div className="update-actions">
+              <div className={styles.update-actions}>
                 <button 
                   className="btn btn-edit" 
                   onClick={() => handleEdit(update)}
@@ -172,19 +172,19 @@ function UpdatesManagement() {
 
       {/* Модальное окно */}
       {showModal && (
-        <div className="update-modal-overlay" onClick={resetForm}>
-          <div className="update-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="update-modal-header">
+        <div className={styles.update-modal-overlay} onClick={resetForm}>
+          <div className={styles.update-modal-content} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.update-modal-header}>
               <h2>{editingUpdate ? 'Редактировать обновление' : 'Новое обновление'}</h2>
-              <button className="update-modal-close" onClick={resetForm}>
+              <button className={styles.update-modal-close} onClick={resetForm}>
                 <AiOutlineClose />
               </button>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="update-form-fields">
-                <div className="form-row">
-                  <div className="form-group">
+              <div className={styles.update-form-fields}>
+                <div className={styles.form-row}>
+                  <div className={styles.form-group}>
                     <label>Версия *</label>
                     <input
                       type="text"
@@ -195,8 +195,8 @@ function UpdatesManagement() {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label className="checkbox-label">
+                  <div className={styles.form-group}>
+                    <label className={styles.checkbox-label}>
                       <input
                         type="checkbox"
                         checked={formData.published}
@@ -207,7 +207,7 @@ function UpdatesManagement() {
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Заголовок *</label>
                   <input
                     type="text"
@@ -218,7 +218,7 @@ function UpdatesManagement() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Краткое описание</label>
                   <input
                     type="text"
@@ -230,7 +230,7 @@ function UpdatesManagement() {
 
                 <div className="form-group quill-group">
                   <label>Содержание обновления *</label>
-                  <div className="quill-wrapper">
+                  <div className={styles.quill-wrapper}>
                     <QuillEditor
                       value={formData.content}
                       onChange={(content) => setFormData({ ...formData, content })}
@@ -241,7 +241,7 @@ function UpdatesManagement() {
                 </div>
               </div>
 
-              <div className="update-modal-actions">
+              <div className={styles.update-modal-actions}>
                 <button type="button" className="btn btn-secondary" onClick={resetForm}>
                   Отмена
                 </button>

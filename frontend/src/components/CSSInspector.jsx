@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import './CSSInspector.css';
+import styles from './CSSInspector.module.css';
 
 function CSSInspector({ isActive, onToggle }) {
   const [hoveredElement, setHoveredElement] = useState(null);
@@ -122,7 +122,7 @@ function CSSInspector({ isActive, onToggle }) {
     <>
       {/* Highlight Box */}
       <div
-        className="css-inspector-highlight"
+        className={styles.css-inspector-highlight}
         style={{
           position: 'fixed',
           top: rect.top + 'px',
@@ -136,7 +136,7 @@ function CSSInspector({ isActive, onToggle }) {
 
       {/* Style Info Panel */}
       <div
-        className="css-inspector-panel"
+        className={styles.css-inspector-panel}
         style={{
           position: 'fixed',
           top: Math.min(position.y + 20, window.innerHeight - 400) + 'px',
@@ -144,70 +144,70 @@ function CSSInspector({ isActive, onToggle }) {
           zIndex: 1000000,
         }}
       >
-        <div className="inspector-header">
+        <div className={styles.inspector-header}>
           <strong>{hoveredElement.tagName.toLowerCase()}</strong>
           {hoveredElement.className && typeof hoveredElement.className === 'string' && (
-            <span className="inspector-class">.{hoveredElement.className.split(' ')[0]}</span>
+            <span className={styles.inspector-class}>.{hoveredElement.className.split(' ')[0]}</span>
           )}
           {hoveredElement.className && typeof hoveredElement.className === 'object' && hoveredElement.className.baseVal && (
-            <span className="inspector-class">.{hoveredElement.className.baseVal.split(' ')[0]}</span>
+            <span className={styles.inspector-class}>.{hoveredElement.className.baseVal.split(' ')[0]}</span>
           )}
         </div>
 
-        <div className="inspector-section">
-          <div className="inspector-label">📏 Размеры</div>
-          <div className="inspector-value">{elementStyles.width} × {elementStyles.height}</div>
+        <div className={styles.inspector-section}>
+          <div className={styles.inspector-label}>📏 Размеры</div>
+          <div className={styles.inspector-value}>{elementStyles.width} × {elementStyles.height}</div>
         </div>
 
         {(elementStyles.backgroundColor !== 'rgba(0, 0, 0, 0)' && elementStyles.backgroundColor !== 'transparent') && (
-          <div className="inspector-section">
-            <div className="inspector-label">🎨 Background</div>
-            <div className="inspector-value">
-              <span className="color-box" style={{ background: elementStyles.backgroundColor }}></span>
+          <div className={styles.inspector-section}>
+            <div className={styles.inspector-label}>🎨 Background</div>
+            <div className={styles.inspector-value}>
+              <span className={styles.color-box} style={{ background: elementStyles.backgroundColor }}></span>
               {elementStyles.backgroundColor}
             </div>
           </div>
         )}
 
         {elementStyles.color && (
-          <div className="inspector-section">
-            <div className="inspector-label">✏️ Color</div>
-            <div className="inspector-value">
-              <span className="color-box" style={{ background: elementStyles.color }}></span>
+          <div className={styles.inspector-section}>
+            <div className={styles.inspector-label}>✏️ Color</div>
+            <div className={styles.inspector-value}>
+              <span className={styles.color-box} style={{ background: elementStyles.color }}></span>
               {elementStyles.color}
             </div>
           </div>
         )}
 
-        <div className="inspector-section">
-          <div className="inspector-label">📦 Display</div>
-          <div className="inspector-value">{elementStyles.display}</div>
+        <div className={styles.inspector-section}>
+          <div className={styles.inspector-label}>📦 Display</div>
+          <div className={styles.inspector-value}>{elementStyles.display}</div>
         </div>
 
         {elementStyles.display === 'flex' && (
           <>
             {elementStyles.flexDirection && (
-              <div className="inspector-section">
-                <div className="inspector-label">➡️ Flex Direction</div>
-                <div className="inspector-value">{elementStyles.flexDirection}</div>
+              <div className={styles.inspector-section}>
+                <div className={styles.inspector-label}>➡️ Flex Direction</div>
+                <div className={styles.inspector-value}>{elementStyles.flexDirection}</div>
               </div>
             )}
             {elementStyles.justifyContent && (
-              <div className="inspector-section">
-                <div className="inspector-label">⬌ Justify Content</div>
-                <div className="inspector-value">{elementStyles.justifyContent}</div>
+              <div className={styles.inspector-section}>
+                <div className={styles.inspector-label}>⬌ Justify Content</div>
+                <div className={styles.inspector-value}>{elementStyles.justifyContent}</div>
               </div>
             )}
             {elementStyles.alignItems && (
-              <div className="inspector-section">
-                <div className="inspector-label">⬍ Align Items</div>
-                <div className="inspector-value">{elementStyles.alignItems}</div>
+              <div className={styles.inspector-section}>
+                <div className={styles.inspector-label}>⬍ Align Items</div>
+                <div className={styles.inspector-value}>{elementStyles.alignItems}</div>
               </div>
             )}
             {elementStyles.gap && (
-              <div className="inspector-section">
-                <div className="inspector-label">↔️ Gap</div>
-                <div className="inspector-value">{elementStyles.gap}</div>
+              <div className={styles.inspector-section}>
+                <div className={styles.inspector-label}>↔️ Gap</div>
+                <div className={styles.inspector-value}>{elementStyles.gap}</div>
               </div>
             )}
           </>
@@ -216,55 +216,55 @@ function CSSInspector({ isActive, onToggle }) {
         {elementStyles.display === 'grid' && (
           <>
             {elementStyles.gridTemplateColumns && (
-              <div className="inspector-section">
-                <div className="inspector-label">📊 Grid Columns</div>
-                <div className="inspector-value">{elementStyles.gridTemplateColumns}</div>
+              <div className={styles.inspector-section}>
+                <div className={styles.inspector-label}>📊 Grid Columns</div>
+                <div className={styles.inspector-value}>{elementStyles.gridTemplateColumns}</div>
               </div>
             )}
             {elementStyles.gridTemplateRows && (
-              <div className="inspector-section">
-                <div className="inspector-label">📊 Grid Rows</div>
-                <div className="inspector-value">{elementStyles.gridTemplateRows}</div>
+              <div className={styles.inspector-section}>
+                <div className={styles.inspector-label}>📊 Grid Rows</div>
+                <div className={styles.inspector-value}>{elementStyles.gridTemplateRows}</div>
               </div>
             )}
             {elementStyles.gridGap && (
-              <div className="inspector-section">
-                <div className="inspector-label">↔️ Grid Gap</div>
-                <div className="inspector-value">{elementStyles.gridGap}</div>
+              <div className={styles.inspector-section}>
+                <div className={styles.inspector-label}>↔️ Grid Gap</div>
+                <div className={styles.inspector-value}>{elementStyles.gridGap}</div>
               </div>
             )}
           </>
         )}
 
         {elementStyles.padding !== '0px' && (
-          <div className="inspector-section">
-            <div className="inspector-label">📦 Padding</div>
-            <div className="inspector-value">{elementStyles.padding}</div>
+          <div className={styles.inspector-section}>
+            <div className={styles.inspector-label}>📦 Padding</div>
+            <div className={styles.inspector-value}>{elementStyles.padding}</div>
           </div>
         )}
 
         {elementStyles.margin !== '0px' && (
-          <div className="inspector-section">
-            <div className="inspector-label">📦 Margin</div>
-            <div className="inspector-value">{elementStyles.margin}</div>
+          <div className={styles.inspector-section}>
+            <div className={styles.inspector-label}>📦 Margin</div>
+            <div className={styles.inspector-value}>{elementStyles.margin}</div>
           </div>
         )}
 
         {elementStyles.fontSize && (
-          <div className="inspector-section">
-            <div className="inspector-label">🔤 Font Size</div>
-            <div className="inspector-value">{elementStyles.fontSize}</div>
+          <div className={styles.inspector-section}>
+            <div className={styles.inspector-label}>🔤 Font Size</div>
+            <div className={styles.inspector-value}>{elementStyles.fontSize}</div>
           </div>
         )}
 
         {elementStyles.boxShadow && (
-          <div className="inspector-section">
-            <div className="inspector-label">🌟 Box Shadow</div>
-            <div className="inspector-value">{elementStyles.boxShadow}</div>
+          <div className={styles.inspector-section}>
+            <div className={styles.inspector-label}>🌟 Box Shadow</div>
+            <div className={styles.inspector-value}>{elementStyles.boxShadow}</div>
           </div>
         )}
 
-        <div className="inspector-footer">
+        <div className={styles.inspector-footer}>
           Press <kbd>Ctrl+Shift+I</kbd> to toggle
         </div>
       </div>

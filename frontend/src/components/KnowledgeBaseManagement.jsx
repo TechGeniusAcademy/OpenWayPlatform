@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../utils/api';
-import './KnowledgeBaseManagement.css';
+import styles from './KnowledgeBaseManagement.module.css';
 import './ArticleModal.css';
 import { 
   FaBook, FaLaptopCode, FaGlobe, FaDatabase, FaCalculator, 
@@ -351,16 +351,16 @@ function KnowledgeBaseManagement() {
 
   if (loading) {
     return (
-      <div className="kb-management-loading">
-        <div className="loader"></div>
+      <div className={styles.kb-management-loading}>
+        <div className={styles.loader}></div>
         <p>Загрузка...</p>
       </div>
     );
   }
 
   return (
-    <div className="kb-management">
-      <div className="kb-management-header">
+    <div className={styles.kb-management}>
+      <div className={styles.kb-management-header}>
         <h1><FaBook /> Управление Базой Знаний</h1>
         <p>Создавайте категории и статьи для учеников</p>
       </div>
@@ -370,7 +370,7 @@ function KnowledgeBaseManagement() {
       {success && <div className="alert alert-success">{success}</div>}
 
       {/* Табы */}
-      <div className="kb-tabs">
+      <div className={styles.kb-tabs}>
         <button
           className={`kb-tab ${activeTab === 'categories' ? 'active' : ''}`}
           onClick={() => setActiveTab('categories')}
@@ -393,8 +393,8 @@ function KnowledgeBaseManagement() {
 
       {/* Категории */}
       {activeTab === 'categories' && (
-        <div className="kb-section">
-          <div className="kb-section-header">
+        <div className={styles.kb-section}>
+          <div className={styles.kb-section-header}>
             <h2>Категории</h2>
             <button
               className="btn btn-primary"
@@ -407,21 +407,21 @@ function KnowledgeBaseManagement() {
             </button>
           </div>
 
-          <div className="categories-grid">
+          <div className={styles.categories-grid}>
             {categories.length === 0 ? (
-              <div className="empty-state">
+              <div className={styles.empty-state}>
                 <p>Нет категорий</p>
               </div>
             ) : (
               categories.map(category => (
-                <div key={category.id} className="category-card">
-                  <div className="category-icon">{renderIcon(category.icon)}</div>
+                <div key={category.id} className={styles.category-card}>
+                  <div className={styles.category-icon}>{renderIcon(category.icon)}</div>
                   <h3>{category.name}</h3>
                   <p>{category.description}</p>
-                  <div className="category-stats">
+                  <div className={styles.category-stats}>
                     <FaFileAlt /> {category.articles_count} статей
                   </div>
-                  <div className="category-actions">
+                  <div className={styles.category-actions}>
                     <button
                       className="btn btn-small btn-edit"
                       onClick={() => handleEditCategory(category)}
@@ -444,8 +444,8 @@ function KnowledgeBaseManagement() {
 
       {/* Подкатегории */}
       {activeTab === 'subcategories' && (
-        <div className="kb-section">
-          <div className="kb-section-header">
+        <div className={styles.kb-section}>
+          <div className={styles.kb-section-header}>
             <h2>Подкатегории</h2>
             <button
               className="btn btn-primary"
@@ -458,19 +458,19 @@ function KnowledgeBaseManagement() {
             </button>
           </div>
 
-          <div className="kb-categories-grid">
+          <div className={styles.kb-categories-grid}>
             {subcategories.map(subcategory => (
-              <div key={subcategory.id} className="kb-category-card">
-                <div className="kb-category-icon">{renderIcon(subcategory.icon)}</div>
-                <div className="kb-category-info">
+              <div key={subcategory.id} className={styles.kb-category-card}>
+                <div className={styles.kb-category-icon}>{renderIcon(subcategory.icon)}</div>
+                <div className={styles.kb-category-info}>
                   <h3>{subcategory.name}</h3>
-                  <p className="category-name"><FaFolder /> {subcategory.category_name}</p>
+                  <p className={styles.category-name}><FaFolder /> {subcategory.category_name}</p>
                   <p>{subcategory.description || 'Нет описания'}</p>
-                  <span className="kb-category-count">
+                  <span className={styles.kb-category-count}>
                     {subcategory.articles_count} {subcategory.articles_count === 1 ? 'статья' : 'статей'}
                   </span>
                 </div>
-                <div className="kb-category-actions">
+                <div className={styles.kb-category-actions}>
                   <button
                     className="btn btn-small btn-edit"
                     onClick={() => handleEditSubcategory(subcategory)}
@@ -492,8 +492,8 @@ function KnowledgeBaseManagement() {
 
       {/* Статьи */}
       {activeTab === 'articles' && (
-        <div className="kb-section">
-          <div className="kb-section-header">
+        <div className={styles.kb-section}>
+          <div className={styles.kb-section-header}>
             <h2>Статьи</h2>
             <button
               className="btn btn-primary"
@@ -506,9 +506,9 @@ function KnowledgeBaseManagement() {
             </button>
           </div>
 
-          <div className="articles-table">
+          <div className={styles.articles-table}>
             {articles.length === 0 ? (
-              <div className="empty-state">
+              <div className={styles.empty-state}>
                 <p>Нет статей</p>
               </div>
             ) : (
@@ -542,7 +542,7 @@ function KnowledgeBaseManagement() {
                       </td>
                       <td>{new Date(article.created_at).toLocaleDateString('ru-RU')}</td>
                       <td>
-                        <div className="action-buttons">
+                        <div className={styles.action-buttons}>
                           <button
                             className="btn btn-small btn-edit"
                             onClick={() => handleEditArticle(article)}
@@ -568,15 +568,15 @@ function KnowledgeBaseManagement() {
 
       {/* Модальное окно категории */}
       {showCategoryModal && (
-        <div className="modal-overlay" onClick={() => setShowCategoryModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className={styles.modal-overlay} onClick={() => setShowCategoryModal(false)}>
+          <div className={styles.modal-content} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modal-header}>
               <h2>{editingCategory ? 'Редактировать категорию' : 'Новая категория'}</h2>
-              <button className="modal-close" onClick={() => setShowCategoryModal(false)}>✕</button>
+              <button className={styles.modal-close} onClick={() => setShowCategoryModal(false)}>✕</button>
             </div>
             
             <form onSubmit={handleCategorySubmit}>
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Название *</label>
                 <input
                   type="text"
@@ -587,9 +587,9 @@ function KnowledgeBaseManagement() {
                 />
               </div>
 
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Иконка</label>
-                <div className="icon-selector">
+                <div className={styles.icon-selector}>
                   {iconOptions.map(iconObj => (
                     <button
                       key={iconObj.name}
@@ -603,7 +603,7 @@ function KnowledgeBaseManagement() {
                 </div>
               </div>
 
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Описание</label>
                 <textarea
                   value={categoryForm.description}
@@ -613,7 +613,7 @@ function KnowledgeBaseManagement() {
                 />
               </div>
 
-              <div className="modal-actions">
+              <div className={styles.modal-actions}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowCategoryModal(false)}>
                   Отмена
                 </button>
@@ -628,15 +628,15 @@ function KnowledgeBaseManagement() {
 
       {/* Модальное окно подкатегории */}
       {showSubcategoryModal && (
-        <div className="modal-overlay" onClick={() => setShowSubcategoryModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className={styles.modal-overlay} onClick={() => setShowSubcategoryModal(false)}>
+          <div className={styles.modal-content} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modal-header}>
               <h2>{editingSubcategory ? 'Редактировать подкатегорию' : 'Новая подкатегория'}</h2>
-              <button className="modal-close" onClick={() => setShowSubcategoryModal(false)}>✕</button>
+              <button className={styles.modal-close} onClick={() => setShowSubcategoryModal(false)}>✕</button>
             </div>
             
             <form onSubmit={handleSubcategorySubmit}>
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Название *</label>
                 <input
                   type="text"
@@ -647,7 +647,7 @@ function KnowledgeBaseManagement() {
                 />
               </div>
 
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Категория *</label>
                 <select
                   value={subcategoryForm.category_id}
@@ -663,9 +663,9 @@ function KnowledgeBaseManagement() {
                 </select>
               </div>
 
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Иконка</label>
-                <div className="icon-selector">
+                <div className={styles.icon-selector}>
                   {subIconOptions.map(iconObj => (
                     <button
                       key={iconObj.name}
@@ -679,7 +679,7 @@ function KnowledgeBaseManagement() {
                 </div>
               </div>
 
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Описание</label>
                 <textarea
                   value={subcategoryForm.description}
@@ -689,7 +689,7 @@ function KnowledgeBaseManagement() {
                 />
               </div>
 
-              <div className="form-group">
+              <div className={styles.form-group}>
                 <label>Порядок отображения</label>
                 <input
                   type="number"
@@ -700,7 +700,7 @@ function KnowledgeBaseManagement() {
                 />
               </div>
 
-              <div className="modal-actions">
+              <div className={styles.modal-actions}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowSubcategoryModal(false)}>
                   Отмена
                 </button>
@@ -715,17 +715,17 @@ function KnowledgeBaseManagement() {
 
       {/* Модальное окно статьи */}
       {showArticleModal && (
-        <div className="article-modal-overlay" onClick={() => setShowArticleModal(false)}>
-          <div className="article-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="article-modal-header">
+        <div className={styles.article-modal-overlay} onClick={() => setShowArticleModal(false)}>
+          <div className={styles.article-modal-content} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.article-modal-header}>
               <h2>{editingArticle ? 'Редактировать статью' : 'Новая статья'}</h2>
-              <button className="article-modal-close" onClick={() => setShowArticleModal(false)}>✕</button>
+              <button className={styles.article-modal-close} onClick={() => setShowArticleModal(false)}>✕</button>
             </div>
             
             <form onSubmit={handleArticleSubmit}>
-              <div className="article-form-fields-wrapper">
-                <div className="article-form-row">
-                  <div className="article-form-group">
+              <div className={styles.article-form-fields-wrapper}>
+                <div className={styles.article-form-row}>
+                  <div className={styles.article-form-group}>
                     <label>Название статьи *</label>
                     <input
                       type="text"
@@ -736,7 +736,7 @@ function KnowledgeBaseManagement() {
                     />
                   </div>
 
-                  <div className="article-form-group">
+                  <div className={styles.article-form-group}>
                     <label>Категория *</label>
                     <select
                       value={articleForm.category_id}
@@ -752,7 +752,7 @@ function KnowledgeBaseManagement() {
                     </select>
                   </div>
 
-                  <div className="article-form-group">
+                  <div className={styles.article-form-group}>
                     <label>Подкатегория</label>
                     <select
                       value={articleForm.subcategory_id}
@@ -771,7 +771,7 @@ function KnowledgeBaseManagement() {
                   </div>
                 </div>
 
-                <div className="article-form-group">
+                <div className={styles.article-form-group}>
                   <label>Краткое описание</label>
                   <input
                     type="text"
@@ -783,7 +783,7 @@ function KnowledgeBaseManagement() {
 
                 <div className="article-form-group article-quill-editor-group">
                   <label>Содержание статьи *</label>
-                  <div className="article-quill-editor-wrapper">
+                  <div className={styles.article-quill-editor-wrapper}>
                     <QuillEditor
                       value={articleForm.content}
                       onChange={(content) => setArticleForm({ ...articleForm, content })}
@@ -793,8 +793,8 @@ function KnowledgeBaseManagement() {
                   </div>
                 </div>
 
-                <div className="article-form-group">
-                  <label className="article-checkbox-label">
+                <div className={styles.article-form-group}>
+                  <label className={styles.article-checkbox-label}>
                     <input
                       type="checkbox"
                       checked={articleForm.published}
@@ -805,7 +805,7 @@ function KnowledgeBaseManagement() {
                 </div>
               </div>
 
-              <div className="article-modal-actions">
+              <div className={styles.article-modal-actions}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowArticleModal(false)}>
                   Отмена
                 </button>

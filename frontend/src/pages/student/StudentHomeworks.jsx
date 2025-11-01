@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import QuillEditor from '../../components/QuillEditor';
 import api from '../../utils/api';
 import { FaBook, FaCalendar, FaTrophy, FaTimes, FaEdit, FaPen, FaEye, FaInbox } from 'react-icons/fa';
-import './StudentHomeworks.css';
+import styles from './StudentHomeworks.module.css';
 
 function StudentHomeworks() {
   const [homeworks, setHomeworks] = useState([]);
@@ -123,68 +123,68 @@ function StudentHomeworks() {
   };
 
   return (
-    <div className="student-homeworks">
-      <div className="header">
+    <div className={styles.student-homeworks}>
+      <div className={styles.header}>
         <h2><FaBook /> Домашние задания</h2>
       </div>
 
-      <div className="homeworks-grid">
+      <div className={styles.homeworks-grid}>
         {homeworks.map((homework) => (
-          <div key={homework.id} className="homework-card">
-            <div className="card-header">
+          <div key={homework.id} className={styles.homework-card}>
+            <div className={styles.card-header}>
               <h3>{homework.title}</h3>
-              <div className="badges">
+              <div className={styles.badges}>
                 {getStatusBadge(homework.status)}
                 {getSubmissionStatusBadge(homework.submission_status)}
               </div>
             </div>
 
-            <div className="card-body">
+            <div className={styles.card-body}>
               <div 
-                className="homework-description" 
+                className={styles.homework-description} 
                 dangerouslySetInnerHTML={{ __html: homework.description }}
               />
               
-              <div className="homework-info">
-                <div className="info-item">
-                  <span className="label"><FaCalendar /> Дедлайн:</span>
-                  <span className="value">{formatDate(homework.deadline)}</span>
+              <div className={styles.homework-info}>
+                <div className={styles.info-item}>
+                  <span className={styles.label}><FaCalendar /> Дедлайн:</span>
+                  <span className={styles.value}>{formatDate(homework.deadline)}</span>
                 </div>
-                <div className="info-item">
-                  <span className="label">🪙 Баллы:</span>
-                  <span className="value">{homework.points}</span>
+                <div className={styles.info-item}>
+                  <span className={styles.label}>🪙 Баллы:</span>
+                  <span className={styles.value}>{homework.points}</span>
                 </div>
                 {homework.submission_status === 'accepted' && homework.points_earned !== null && (
                   <div className="info-item earned">
-                    <span className="label"><FaTrophy /> Получено баллов:</span>
-                    <span className="value">{homework.points_earned}</span>
+                    <span className={styles.label}><FaTrophy /> Получено баллов:</span>
+                    <span className={styles.value}>{homework.points_earned}</span>
                   </div>
                 )}
               </div>
 
               {homework.submission_status === 'rejected' && homework.reason && (
-                <div className="rejection-reason">
+                <div className={styles.rejection-reason}>
                   <strong><FaTimes /> Причина отклонения:</strong>
                   <p>{homework.reason}</p>
                 </div>
               )}
             </div>
 
-            <div className="card-footer">
+            <div className={styles.card-footer}>
               {homework.status === 'active' && (
                 <button 
-                  className="btn-submit"
+                  className={styles.btn-submit}
                   onClick={() => openSubmitModal(homework)}
                 >
                   {homework.submission_status ? <><FaEdit /> Изменить ответ</> : <><FaPen /> Сдать работу</>}
                 </button>
               )}
               {homework.status !== 'active' && !homework.submission_status && (
-                <span className="text-muted">Время сдачи истекло</span>
+                <span className={styles.text-muted}>Время сдачи истекло</span>
               )}
               {homework.submission_status && (
                 <button 
-                  className="btn-view"
+                  className={styles.btn-view}
                   onClick={() => openSubmitModal(homework)}
                 >
                   <FaEye /> Посмотреть ответ
@@ -196,39 +196,39 @@ function StudentHomeworks() {
       </div>
 
       {homeworks.length === 0 && (
-        <div className="empty-state">
+        <div className={styles.empty-state}>
           <p><FaInbox /> Пока нет домашних заданий</p>
         </div>
       )}
 
       {/* Submit Modal */}
       {showSubmitModal && (
-        <div className="modal-overlay" onClick={closeModal}>
+        <div className={styles.modal-overlay} onClick={closeModal}>
           <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <h3>{selectedHomework?.title}</h3>
             
-            <div className="homework-description-modal">
+            <div className={styles.homework-description-modal}>
               <h4>Задание:</h4>
               <div dangerouslySetInnerHTML={{ __html: selectedHomework?.description }} />
             </div>
 
             {userSubmission && (
-              <div className="submission-info">
+              <div className={styles.submission-info}>
                 <h4>Статус: {getSubmissionStatusBadge(userSubmission.status)}</h4>
                 {userSubmission.status === 'accepted' && (
-                  <p className="points-info"><FaTrophy /> Получено баллов: <strong>{userSubmission.points_earned}</strong></p>
+                  <p className={styles.points-info}><FaTrophy /> Получено баллов: <strong>{userSubmission.points_earned}</strong></p>
                 )}
                 {userSubmission.status === 'rejected' && userSubmission.reason && (
-                  <div className="rejection-info">
+                  <div className={styles.rejection-info}>
                     <strong><FaTimes /> Причина отклонения:</strong>
                     <p>{userSubmission.reason}</p>
                   </div>
                 )}
-                <p className="submitted-at">
+                <p className={styles.submitted-at}>
                   Отправлено: {formatDate(userSubmission.submitted_at)}
                 </p>
                 {userSubmission.checked_at && (
-                  <p className="checked-at">
+                  <p className={styles.checked-at}>
                     Проверено: {formatDate(userSubmission.checked_at)}
                   </p>
                 )}
@@ -237,7 +237,7 @@ function StudentHomeworks() {
 
             {selectedHomework?.status === 'active' ? (
               <>
-                <div className="form-group">
+                <div className={styles.form-group}>
                   <label>Ваш ответ:</label>
                   <QuillEditor
                     value={submissionText}
@@ -247,10 +247,10 @@ function StudentHomeworks() {
                   />
                 </div>
 
-                <div className="form-actions">
+                <div className={styles.form-actions}>
                   <button type="button" onClick={closeModal}>Отмена</button>
                   <button 
-                    className="btn-primary" 
+                    className={styles.btn-primary} 
                     onClick={handleSubmit}
                     disabled={loading || !submissionText.trim()}
                   >
@@ -260,11 +260,11 @@ function StudentHomeworks() {
               </>
             ) : (
               <>
-                <div className="submitted-answer">
+                <div className={styles.submitted-answer}>
                   <h4>Ваш ответ:</h4>
                   <div dangerouslySetInnerHTML={{ __html: submissionText }} />
                 </div>
-                <div className="form-actions">
+                <div className={styles.form-actions}>
                   <button type="button" onClick={closeModal}>Закрыть</button>
                 </div>
               </>

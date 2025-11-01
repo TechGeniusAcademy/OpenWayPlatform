@@ -5,7 +5,7 @@ import OnlineChess from '../../components/OnlineChess';
 import QuizBattle from '../../components/QuizBattle';
 import CrashGame from '../../components/CrashGame';
 import PokerGame from '../../components/PokerGame';
-import './Games.css';
+import styles from './Games.module.css';
 import { MdOutlineQuiz } from "react-icons/md";
 import { FaChess, FaRocket } from "react-icons/fa";
 import { GiPokerHand } from "react-icons/gi";
@@ -71,8 +71,8 @@ function Games() {
 
   if (selectedGame === 'crash') {
     return (
-      <div className="games-page">
-        <button onClick={handleBack} className="back-button">
+      <div className={styles.games-page}>
+        <button onClick={handleBack} className={styles.back-button}>
           ← Назад к играм
         </button>
         <CrashGame />
@@ -82,8 +82,8 @@ function Games() {
 
   if (selectedGame === 'poker') {
     return (
-      <div className="games-page">
-        <button onClick={handleBack} className="back-button">
+      <div className={styles.games-page}>
+        <button onClick={handleBack} className={styles.back-button}>
           ← Назад к играм
         </button>
         <PokerGame />
@@ -93,8 +93,8 @@ function Games() {
 
   if (selectedGame === 'quiz-battle') {
     return (
-      <div className="games-page">
-        <button onClick={handleBack} className="back-button">
+      <div className={styles.games-page}>
+        <button onClick={handleBack} className={styles.back-button}>
           ← Назад к играм
         </button>
         <QuizBattle />
@@ -104,8 +104,8 @@ function Games() {
 
   if (selectedGame === 'online-chess') {
     return (
-      <div className="games-page">
-        <button onClick={handleBack} className="back-button">
+      <div className={styles.games-page}>
+        <button onClick={handleBack} className={styles.back-button}>
           ← Назад к играм
         </button>
         <OnlineChess />
@@ -115,8 +115,8 @@ function Games() {
 
   if (selectedGame === 'chess') {
     return (
-      <div className="games-page">
-        <button onClick={handleBack} className="back-button">
+      <div className={styles.games-page}>
+        <button onClick={handleBack} className={styles.back-button}>
           ← Назад к играм
         </button>
         <ChessGame />
@@ -125,13 +125,13 @@ function Games() {
   }
 
   return (
-    <div className="games-page">
-      <div className="games-header">
+    <div className={styles.games-page}>
+      <div className={styles.games-header}>
         <h1>🎮 Игровая комната</h1>
         <p>Отдохни и развлекись между занятиями!</p>
       </div>
 
-      <div className="games-grid">
+      <div className={styles.games-grid}>
         {games.map(game => (
           <div
             key={game.id}
@@ -143,16 +143,16 @@ function Games() {
                 : 'linear-gradient(135deg, #95a5a615, #95a5a630)'
             }}
           >
-            <div className="game-icon">{game.icon}</div>
+            <div className={styles.game-icon}>{game.icon}</div>
             <h3>{game.title}</h3>
             <p>{game.description}</p>
             {!game.available && (
-              <div className="coming-soon">
+              <div className={styles.coming-soon}>
                 <span>🔜 Скоро</span>
               </div>
             )}
             {game.available && (
-              <button className="play-button">
+              <button className={styles.play-button}>
                 Играть →
               </button>
             )}
@@ -160,21 +160,21 @@ function Games() {
         ))}
       </div>
 
-      <div className="games-footer">
-        <div className="stats-info">
-          <div className="stat-card">
-            <div className="stat-icon">🎯</div>
-            <div className="stat-content">
+      <div className={styles.games-footer}>
+        <div className={styles.stats-info}>
+          <div className={styles.stat-card}>
+            <div className={styles.stat-icon}>🎯</div>
+            <div className={styles.stat-content}>
               <h4>Доступно игр</h4>
-              <p className="stat-value">{games.filter(g => g.available).length}</p>
+              <p className={styles.stat-value}>{games.filter(g => g.available).length}</p>
             </div>
           </div>
           
-          <div className="stat-card">
-            <div className="stat-icon">💡</div>
-            <div className="stat-content">
+          <div className={styles.stat-card}>
+            <div className={styles.stat-icon}>💡</div>
+            <div className={styles.stat-content}>
               <h4>Совет дня</h4>
-              <p className="stat-text">Делай перерывы каждый час для лучшей концентрации!</p>
+              <p className={styles.stat-text}>Делай перерывы каждый час для лучшей концентрации!</p>
             </div>
           </div>
         </div>

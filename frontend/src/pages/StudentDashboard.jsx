@@ -20,7 +20,7 @@ import StudentThemes from './student/StudentThemes';
 import Games from './student/Games';
 import DesignEditor from '../components/DesignEditor';
 import StudentTechnicalSpecs from './student/StudentTechnicalSpecs';
-import './StudentDashboard.css';
+import styles from './StudentDashboard.module.css';
 
 function StudentDashboard() {
   return (
