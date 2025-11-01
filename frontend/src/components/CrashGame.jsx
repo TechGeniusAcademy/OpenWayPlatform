@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
+import { FaRocket, FaBomb, FaCheckCircle, FaDollarSign } from 'react-icons/fa';
 import './CrashGame.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -327,7 +328,7 @@ function CrashGame() {
     return (
       <div className="crash-game">
         <div className="crash-header">
-          <h1>🚀 Crash Game</h1>
+          <h1><FaRocket /> Crash Game</h1>
         </div>
         <div style={{ padding: '40px', textAlign: 'center' }}>
           <p>Загрузка...</p>
@@ -339,7 +340,7 @@ function CrashGame() {
   return (
     <div className="crash-game">
       <div className="crash-header">
-        <h1>🚀 Crash Game</h1>
+        <h1><FaRocket /> Crash Game</h1>
         <div className="balance">Баланс: {balance} баллов</div>
       </div>
 
@@ -348,7 +349,7 @@ function CrashGame() {
           <div className="multiplier-display" style={{ color: getMultiplierColor() }}>
             {gameState === 'crashed' ? (
               <div className="crashed-text">
-                <div>💥 CRASHED!</div>
+                <div><FaBomb /> CRASHED!</div>
                 <div className="crash-point">{crashPoint}x</div>
               </div>
             ) : (
@@ -407,13 +408,13 @@ function CrashGame() {
 
           {currentBet && gameState === 'waiting' && (
             <div className="bet-placed">
-              ✅ Ставка {currentBet.bet_amount} баллов размещена
+              <FaCheckCircle /> Ставка {currentBet.bet_amount} баллов размещена
             </div>
           )}
 
           {cashedOut && (
             <div className="cashed-out">
-              💰 Вы вывели деньги!
+              <FaDollarSign /> Вы вывели деньги!
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api';
+import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import './AdminSubmissions.css';
 
 export default function AdminSubmissions() {
@@ -211,13 +212,13 @@ export default function AdminSubmissions() {
                       className="btn-approve"
                       onClick={() => updateStatus('approved')}
                     >
-                      ✓ Принять
+                      <FaCheckCircle /> Принять
                     </button>
                     <button 
                       className="btn-reject"
                       onClick={() => updateStatus('rejected')}
                     >
-                      ✗ Отклонить
+                      <FaTimesCircle /> Отклонить
                     </button>
                     <button 
                       className="btn-review"

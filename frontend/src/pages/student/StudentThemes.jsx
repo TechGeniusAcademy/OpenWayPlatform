@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './StudentThemes.css';
-import { FaPlus, FaTrash, FaCheck, FaPalette, FaEye } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaCheck, FaPalette, FaEye, FaBook } from 'react-icons/fa';
 
 function StudentThemes() {
   const [themes, setThemes] = useState([]);
@@ -156,7 +156,7 @@ function StudentThemes() {
     <div className="student-themes">
       <div className="student-themes-header">
         <div>
-          <h1>🎨 Темы редактора</h1>
+          <h1><FaPalette /> Темы редактора</h1>
           <p>Создайте свою уникальную цветовую схему для IDE</p>
         </div>
         <button className="btn-create-theme" onClick={() => setShowCreateModal(true)}>
@@ -331,7 +331,7 @@ function StudentThemes() {
       )}
 
       <div className="themes-help">
-        <h3>📖 Справка по созданию тем</h3>
+        <h3><FaBook /> Справка по созданию тем</h3>
         <div className="help-content">
           <h4>Основные цвета редактора:</h4>
           <ul>

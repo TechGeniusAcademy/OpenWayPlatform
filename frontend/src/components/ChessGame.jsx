@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
+import { FaTrophy, FaHandshake, FaExclamationTriangle, FaCircle, FaChess, FaRedo, FaHistory, FaBrain } from 'react-icons/fa';
+import { GiChessKing } from 'react-icons/gi';
 import './ChessGame.css';
 
 function ChessGame() {
@@ -26,13 +28,13 @@ function ChessGame() {
 
   const updateGameStatus = () => {
     if (game.isCheckmate()) {
-      setGameStatus(game.turn() === 'w' ? '🎉 Чёрные победили! Мат!' : '🎉 Белые победили! Мат!');
+      setGameStatus(game.turn() === 'w' ? 'Чёрные победили! Мат!' : 'Белые победили! Мат!');
     } else if (game.isDraw()) {
-      setGameStatus('🤝 Ничья!');
+      setGameStatus('Ничья!');
     } else if (game.isStalemate()) {
-      setGameStatus('🤝 Пат! Ничья!');
+      setGameStatus('Пат! Ничья!');
     } else if (game.isCheck()) {
-      setGameStatus(game.turn() === 'w' ? '⚠️ Белым шах!' : '⚠️ Чёрным шах!');
+      setGameStatus(game.turn() === 'w' ? 'Белым шах!' : 'Чёрным шах!');
     } else {
       setGameStatus(game.turn() === 'w' ? 'Ход белых' : 'Ход чёрных');
     }
@@ -175,20 +177,20 @@ function ChessGame() {
   return (
     <div className="chess-game">
       <div className="chess-game-header">
-        <h2>♟️ Шахматы</h2>
+        <h2><GiChessKing /> Шахматы</h2>
         <div className="chess-controls">
           <select 
             value={difficulty} 
             onChange={(e) => setDifficulty(e.target.value)}
             className="chess-select"
           >
-            <option value="easy">🟢 Лёгкий</option>
-            <option value="medium">🟡 Средний</option>
-            <option value="hard">🔴 Сложный</option>
+            <option value="easy">● Лёгкий</option>
+            <option value="medium">● Средний</option>
+            <option value="hard">● Сложный</option>
           </select>
           
           <button onClick={switchColor} className="chess-btn chess-btn-secondary">
-            {playerColor === 'white' ? '⚪ Играть за белых' : '⚫ Играть за чёрных'}
+            <FaCircle /> {playerColor === 'white' ? 'Играть за белых' : 'Играть за чёрных'}
           </button>
           
           <button onClick={undoMove} className="chess-btn chess-btn-secondary" disabled={moveHistory.length < 2}>
@@ -196,14 +198,14 @@ function ChessGame() {
           </button>
           
           <button onClick={resetGame} className="chess-btn chess-btn-primary">
-            🔄 Новая игра
+            <FaRedo /> Новая игра
           </button>
         </div>
       </div>
 
       <div className="chess-game-status">
         <h3>{gameStatus}</h3>
-        {isComputerTurn && <span className="thinking">🤔 Компьютер думает...</span>}
+        {isComputerTurn && <span className="thinking"><FaBrain /> Компьютер думает...</span>}
       </div>
 
       <div className="chess-game-container">
@@ -223,7 +225,7 @@ function ChessGame() {
 
         <div className="chess-sidebar">
           <div className="move-history">
-            <h4>📜 История ходов</h4>
+            <h4><FaHistory /> История ходов</h4>
             <div className="moves-list">
               {moveHistory.length === 0 ? (
                 <p className="no-moves">Ходы появятся здесь</p>
@@ -244,13 +246,13 @@ function ChessGame() {
             <h4>ℹ️ Информация</h4>
             <div className="info-item">
               <span>Вы играете:</span>
-              <strong>{playerColor === 'white' ? '⚪ Белыми' : '⚫ Чёрными'}</strong>
+              <strong><FaCircle /> {playerColor === 'white' ? 'Белыми' : 'Чёрными'}</strong>
             </div>
             <div className="info-item">
               <span>Сложность:</span>
               <strong>
-                {difficulty === 'easy' ? '🟢 Лёгкий' : 
-                 difficulty === 'medium' ? '🟡 Средний' : '🔴 Сложный'}
+                {difficulty === 'easy' ? '● Лёгкий' : 
+                 difficulty === 'medium' ? '● Средний' : '● Сложный'}
               </strong>
             </div>
             <div className="info-item">

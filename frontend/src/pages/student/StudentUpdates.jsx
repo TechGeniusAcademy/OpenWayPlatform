@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import "./StudentUpdates.css";
 import { AiOutlineCalendar, AiOutlineDown, AiOutlineUp } from "react-icons/ai";
+import { FaBullhorn } from "react-icons/fa";
 
 function StudentUpdates() {
   const [updates, setUpdates] = useState([]);
@@ -52,7 +53,7 @@ function StudentUpdates() {
 
       {updates.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">📢</div>
+          <div className="empty-state-icon"><FaBullhorn /></div>
           <h3>Нет обновлений</h3>
           <p>Обновления ещё не опубликованы</p>
         </div>

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { FaFileAlt, FaChartBar, FaClipboardList, FaCheckCircle, FaTimes } from 'react-icons/fa';
 import './StudentTests.css';
 
 function StudentTests() {
@@ -299,7 +300,7 @@ function StudentTests() {
       <div className="header">
         <h2>Мои тесты</h2>
         <button onClick={() => setShowHistory(!showHistory)}>
-          {showHistory ? '📝 Доступные тесты' : '📊 История прохождения'}
+          {showHistory ? <><FaFileAlt /> Доступные тесты</> : <><FaChartBar /> История прохождения</>}
         </button>
       </div>
 
@@ -319,7 +320,7 @@ function StudentTests() {
                   {test.description && <p>{test.description}</p>}
                   
                   <div className="test-info">
-                    <span>📋 {test.type === 'choice' ? 'Тест с вариантами' : 'Тест с кодом'}</span>
+                    <span><FaClipboardList /> {test.type === 'choice' ? 'Тест с вариантами' : 'Тест с кодом'}</span>
                     <span>⏱️ {test.time_limit || '∞'} мин</span>
                     <span>🪙 {test.points_correct} баллов</span>
                   </div>
@@ -369,9 +370,9 @@ function StudentTests() {
                     <td>{attempt.score}%</td>
                     <td>{attempt.points_earned > 0 ? '+' : ''}{attempt.points_earned}</td>
                     <td>
-                      {attempt.status === 'completed' ? '✅ Завершен' : 
+                      {attempt.status === 'completed' ? <><FaCheckCircle /> Завершен</> : 
                        attempt.status === 'in_progress' ? '⏳ В процессе' : 
-                       '❌ Истек'}
+                       <><FaTimes /> Истек</>}
                     </td>
                   </tr>
                 ))}

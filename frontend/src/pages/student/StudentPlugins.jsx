@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './StudentPlugins.css';
-import { FaPlus, FaTrash, FaToggleOn, FaToggleOff, FaCode } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaToggleOn, FaToggleOff, FaCode, FaPlug, FaBook } from 'react-icons/fa';
 
 function StudentPlugins() {
   const [plugins, setPlugins] = useState([]);
@@ -67,7 +67,7 @@ window.addEventListener('beforeunload', () => {
     <div className="student-plugins">
       <div className="student-plugins-header">
         <div>
-          <h1>🔌 Плагины редактора</h1>
+          <h1><FaPlug /> Плагины редактора</h1>
           <p>Расширьте возможности IDE с помощью собственных плагинов</p>
         </div>
         <button className="btn-add-plugin" onClick={() => setShowAddModal(true)}>
@@ -171,7 +171,7 @@ window.addEventListener('beforeunload', () => {
       )}
 
       <div className="plugins-help">
-        <h3>📖 Справка по созданию плагинов</h3>
+        <h3><FaBook /> Справка по созданию плагинов</h3>
         <div className="help-content">
           <p>Плагины имеют доступ к объектам <code>editor</code> и <code>monaco</code> (Monaco API).</p>
           <h4>Примеры:</h4>

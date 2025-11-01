@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaClone, FaDownload, FaFileAlt, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaClone, FaDownload, FaFileAlt, FaCheck, FaTimes, FaClipboardList } from 'react-icons/fa';
 import { MdSettings } from 'react-icons/md';
 import api from '../../utils/api';
 import './StudentTechnicalSpecs.css';
@@ -226,7 +226,7 @@ ${spec.additional_info || 'Не указано'}
     <div className="technical-specs-page">
       <div className="technical-specs-header">
         <div className="header-left">
-          <h1>📋 Технические задания</h1>
+          <h1><FaClipboardList /> Технические задания</h1>
           <p>Создавайте и управляйте своими ТЗ</p>
         </div>
         <button className="create-spec-btn" onClick={handleCreateNew}>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CSSInspector from './CSSInspector';
+import { FaPalette } from 'react-icons/fa';
 import { 
   BsSpeedometer2, 
   BsPerson,
@@ -37,7 +38,7 @@ function CSSEditorLayout() {
     <div className="css-editor-layout">
       <aside className="css-editor-sidebar">
         <div className="sidebar-header">
-          <h2>🎨 CSS Editor</h2>
+          <h2><FaPalette /> CSS Editor</h2>
           <button 
             className={`inspector-toggle ${inspectorActive ? 'active' : ''}`}
             onClick={toggleInspector}

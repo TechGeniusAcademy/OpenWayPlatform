@@ -4,6 +4,7 @@ import { useWebSocket } from '../context/WebSocketContext';
 import api, { BASE_URL } from '../utils/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { FaCommentAlt, FaCode } from 'react-icons/fa';
 import { 
   BsReply, 
   BsPinFill,
@@ -630,8 +631,8 @@ function AdminChat() {
 
             <div className="input-controls">
               <select value={messageType} onChange={(e) => setMessageType(e.target.value)}>
-                <option value="text">💬 Текст</option>
-                <option value="code">💻 Код</option>
+                <option value="text"><FaCommentAlt /> Текст</option>
+                <option value="code"><FaCode /> Код</option>
               </select>
 
               {messageType === 'code' && (

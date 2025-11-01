@@ -13,8 +13,14 @@ import {
   FaClock,
   FaPencilAlt,
   FaTrash,
-  FaPlus
+  FaPlus,
+  FaRocket,
+  FaDiceThree,
+  FaBomb,
+  FaCircle,
+  FaHandshake
 } from "react-icons/fa";
+import { MdCasino } from "react-icons/md";
 
 
 function GamesManagement() {
@@ -184,13 +190,13 @@ function GamesManagement() {
           className={`tab-btn ${activeTab === 'crash' ? 'active' : ''}`}
           onClick={() => setActiveTab('crash')}
         >
-          🚀 Crash Game
+          <FaRocket /> Crash Game
         </button>
         <button 
           className={`tab-btn ${activeTab === 'roulette' ? 'active' : ''}`}
           onClick={() => setActiveTab('roulette')}
         >
-          🎰 Рулетка
+          <MdCasino /> Рулетка
         </button>
         <button 
           className={`tab-btn ${activeTab === 'chess' ? 'active' : ''}`}
@@ -275,7 +281,7 @@ function GamesManagement() {
                       </td>
                       <td>
                         <span className="status-badge crashed">
-                          💥 Crashed
+                          <FaBomb /> Crashed
                         </span>
                       </td>
                       <td>{formatDate(game.started_at)}</td>
@@ -362,9 +368,9 @@ function GamesManagement() {
                       </td>
                       <td>
                         <span className={`color-badge ${game.winning_color}`}>
-                          {game.winning_color === 'red' && '🔴 Красное'}
-                          {game.winning_color === 'black' && '⚫ Черное'}
-                          {game.winning_color === 'green' && '🟢 Зеленое'}
+                          {game.winning_color === 'red' && <><FaCircle style={{color: 'red'}} /> Красное</>}
+                          {game.winning_color === 'black' && <><FaCircle style={{color: 'black'}} /> Черное</>}
+                          {game.winning_color === 'green' && <><FaCircle style={{color: 'green'}} /> Зеленое</>}
                         </span>
                       </td>
                       <td>{game.total_bets || 0}</td>
@@ -407,9 +413,9 @@ function GamesManagement() {
                       <td>{game.white_player_username}</td>
                       <td>{game.black_player_username}</td>
                       <td>
-                        {game.result === 'white' && '⚪ Победа белых'}
-                        {game.result === 'black' && '⚫ Победа черных'}
-                        {game.result === 'draw' && '🤝 Ничья'}
+                        {game.result === 'white' && <><FaCircle style={{color: 'white', stroke: '#333', strokeWidth: 20}} /> Победа белых</>}
+                        {game.result === 'black' && <><FaCircle style={{color: 'black'}} /> Победа черных</>}
+                        {game.result === 'draw' && <><FaHandshake /> Ничья</>}
                         {!game.result && '-'}
                       </td>
                       <td>{game.bet_amount || 0} <FaTrophy /></td>
@@ -570,9 +576,9 @@ function GamesManagement() {
                         <td>{q.category_name || 'Без категории'}</td>
                         <td>
                           <span className={`difficulty ${q.difficulty}`}>
-                            {q.difficulty === 'easy' && '🟢 Легко'}
-                            {q.difficulty === 'medium' && '🟡 Средне'}
-                            {q.difficulty === 'hard' && '🔴 Сложно'}
+                            {q.difficulty === 'easy' && '● Легко'}
+                            {q.difficulty === 'medium' && '● Средне'}
+                            {q.difficulty === 'hard' && '● Сложно'}
                           </span>
                         </td>
                         <td><strong>{q.correct_option?.toUpperCase()}</strong></td>
@@ -680,9 +686,9 @@ function GamesManagement() {
                     onChange={(e) => setQuestionForm({ ...questionForm, difficulty: e.target.value })}
                     required
                   >
-                    <option value="easy">🟢 Легко</option>
-                    <option value="medium">🟡 Средне</option>
-                    <option value="hard">🔴 Сложно</option>
+                    <option value="easy">● Легко</option>
+                    <option value="medium">● Средне</option>
+                    <option value="hard">● Сложно</option>
                   </select>
                 </div>
               </div>

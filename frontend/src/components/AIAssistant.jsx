@@ -8,6 +8,8 @@ import {
   AiOutlineBug,
   AiOutlineCode
 } from 'react-icons/ai';
+import { FaBook, FaWrench, FaCommentDots, FaFileCode, FaLightbulb } from 'react-icons/fa';
+import { MdBolt, MdStar, MdClose } from 'react-icons/md';
 import './AIAssistant.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -128,7 +130,7 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
       case 'explain':
         return (
           <div className="ai-result">
-            <h3>📚 Объяснение кода:</h3>
+            <h3><FaBook /> Объяснение кода:</h3>
             <div className="ai-explanation">
               {data.explanation}
             </div>
@@ -138,11 +140,11 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
       case 'fix':
         return (
           <div className="ai-result">
-            <h3>🔧 Исправленный код:</h3>
+            <h3><FaWrench /> Исправленный код:</h3>
             <pre className="ai-code-block">
               <code>{data.fixedCode}</code>
             </pre>
-            <h4>💡 Объяснение:</h4>
+            <h4><FaLightbulb /> Объяснение:</h4>
             <div className="ai-explanation">
               {data.explanation}
             </div>
@@ -155,11 +157,11 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
       case 'optimize':
         return (
           <div className="ai-result">
-            <h3>⚡ Оптимизированный код:</h3>
+            <h3><MdBolt /> Оптимизированный код:</h3>
             <pre className="ai-code-block">
               <code>{data.optimizedCode}</code>
             </pre>
-            <h4>✨ Улучшения:</h4>
+            <h4><MdStar /> Улучшения:</h4>
             <div className="ai-explanation">
               {data.improvements}
             </div>
@@ -172,7 +174,7 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
       case 'comments':
         return (
           <div className="ai-result">
-            <h3>💬 Код с комментариями:</h3>
+            <h3><FaCommentDots /> Код с комментариями:</h3>
             <pre className="ai-code-block">
               <code>{data.commentedCode}</code>
             </pre>
@@ -185,11 +187,11 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
       case 'generate':
         return (
           <div className="ai-result">
-            <h3>🤖 Сгенерированный код:</h3>
+            <h3><AiOutlineRobot /> Сгенерированный код:</h3>
             <pre className="ai-code-block">
               <code>{data.code}</code>
             </pre>
-            <h4>📝 Объяснение:</h4>
+            <h4><FaFileCode /> Объяснение:</h4>
             <div className="ai-explanation">
               {data.explanation}
             </div>
@@ -304,7 +306,7 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
 
           {error && (
             <div className="ai-error">
-              <p>❌ {error}</p>
+              <p><MdClose /> {error}</p>
             </div>
           )}
 
@@ -312,7 +314,7 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
 
           {!selectedCode && !loading && !result && activeTab === 'actions' && (
             <div className="ai-hint">
-              <p>💡 Выделите код в редакторе, чтобы использовать AI ассистента</p>
+              <p><FaLightbulb /> Выделите код в редакторе, чтобы использовать AI ассистента</p>
             </div>
           )}
         </div>

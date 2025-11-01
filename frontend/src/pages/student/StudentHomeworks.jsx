@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import QuillEditor from '../../components/QuillEditor';
 import api from '../../utils/api';
+import { FaBook, FaCalendar, FaTrophy, FaTimes, FaEdit, FaPen, FaEye, FaInbox } from 'react-icons/fa';
 import './StudentHomeworks.css';
 
 function StudentHomeworks() {
@@ -124,7 +125,7 @@ function StudentHomeworks() {
   return (
     <div className="student-homeworks">
       <div className="header">
-        <h2>📚 Домашние задания</h2>
+        <h2><FaBook /> Домашние задания</h2>
       </div>
 
       <div className="homeworks-grid">
@@ -146,7 +147,7 @@ function StudentHomeworks() {
               
               <div className="homework-info">
                 <div className="info-item">
-                  <span className="label">📅 Дедлайн:</span>
+                  <span className="label"><FaCalendar /> Дедлайн:</span>
                   <span className="value">{formatDate(homework.deadline)}</span>
                 </div>
                 <div className="info-item">
@@ -155,7 +156,7 @@ function StudentHomeworks() {
                 </div>
                 {homework.submission_status === 'accepted' && homework.points_earned !== null && (
                   <div className="info-item earned">
-                    <span className="label">🏆 Получено баллов:</span>
+                    <span className="label"><FaTrophy /> Получено баллов:</span>
                     <span className="value">{homework.points_earned}</span>
                   </div>
                 )}
@@ -163,7 +164,7 @@ function StudentHomeworks() {
 
               {homework.submission_status === 'rejected' && homework.reason && (
                 <div className="rejection-reason">
-                  <strong>❌ Причина отклонения:</strong>
+                  <strong><FaTimes /> Причина отклонения:</strong>
                   <p>{homework.reason}</p>
                 </div>
               )}
@@ -175,7 +176,7 @@ function StudentHomeworks() {
                   className="btn-submit"
                   onClick={() => openSubmitModal(homework)}
                 >
-                  {homework.submission_status ? '📝 Изменить ответ' : '✍️ Сдать работу'}
+                  {homework.submission_status ? <><FaEdit /> Изменить ответ</> : <><FaPen /> Сдать работу</>}
                 </button>
               )}
               {homework.status !== 'active' && !homework.submission_status && (
@@ -186,7 +187,7 @@ function StudentHomeworks() {
                   className="btn-view"
                   onClick={() => openSubmitModal(homework)}
                 >
-                  👁️ Посмотреть ответ
+                  <FaEye /> Посмотреть ответ
                 </button>
               )}
             </div>
@@ -196,7 +197,7 @@ function StudentHomeworks() {
 
       {homeworks.length === 0 && (
         <div className="empty-state">
-          <p>📭 Пока нет домашних заданий</p>
+          <p><FaInbox /> Пока нет домашних заданий</p>
         </div>
       )}
 
@@ -215,11 +216,11 @@ function StudentHomeworks() {
               <div className="submission-info">
                 <h4>Статус: {getSubmissionStatusBadge(userSubmission.status)}</h4>
                 {userSubmission.status === 'accepted' && (
-                  <p className="points-info">🏆 Получено баллов: <strong>{userSubmission.points_earned}</strong></p>
+                  <p className="points-info"><FaTrophy /> Получено баллов: <strong>{userSubmission.points_earned}</strong></p>
                 )}
                 {userSubmission.status === 'rejected' && userSubmission.reason && (
                   <div className="rejection-info">
-                    <strong>❌ Причина отклонения:</strong>
+                    <strong><FaTimes /> Причина отклонения:</strong>
                     <p>{userSubmission.reason}</p>
                   </div>
                 )}
