@@ -367,8 +367,9 @@
 }
 
 .figma-sidebar-left {
-  width: 0;
+  width: 40px; /* Показываем только вкладки */
   border-right: 1px solid #3C3C3C;
+  overflow: hidden;
 }
 
 .figma-sidebar-left.open {
@@ -392,9 +393,16 @@
   border-bottom: 1px solid #3C3C3C;
   display: flex;
   align-items: center;
-  padding: 0 12px;
+  padding: 0 4px;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.figma-sidebar-left:not(.open) .sidebar-tabs {
+  flex-direction: column;
+  height: auto;
+  padding: 8px 4px;
+  border-bottom: none;
 }
 
 .sidebar-tab {
@@ -411,6 +419,20 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+}
+
+.figma-sidebar-left:not(.open) .sidebar-tab {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  font-size: 0; /* Скрываем текст */
+}
+
+.figma-sidebar-left:not(.open) .sidebar-tab svg {
+  font-size: 16px;
+  margin: 0;
 }
 
 .sidebar-tab:hover {

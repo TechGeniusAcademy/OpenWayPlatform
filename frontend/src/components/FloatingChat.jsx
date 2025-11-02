@@ -307,13 +307,13 @@ function FloatingChat() {
   return (
     <>
       {/* Мини-чат */}
-      <div className={`floating-chat-container ${isOpen ? 'open' : ''}`}>
+      <div className={`${styles['floating-chat-container']} ${isOpen ? styles['open'] : ''}`}>
         {/* Сайдбар с чатами */}
         <div className={styles['floating-chat-sidebar']}>
           {availableChats.map((chat) => (
             <div
               key={chat.id}
-              className={`chat-user-item ${selectedChat?.id === chat.id ? 'active' : ''}`}
+              className={`${styles['chat-user-item']} ${selectedChat?.id === chat.id ? styles['active'] : ''}`}
               onClick={() => handleChatSelect(chat)}
               title={chat.name}
             >
@@ -390,7 +390,7 @@ function FloatingChat() {
                 return (
                   <div 
                     key={msg.id} 
-                    className={`mini-message ${isOwn ? 'own' : ''}`}
+                    className={`${styles['mini-message']} ${isOwn ? styles['own'] : ''}`}
                   >
                     <div className={styles['message-avatar-wrapper']}>
                       <div className={styles['message-avatar']}>
@@ -443,7 +443,7 @@ function FloatingChat() {
 
       {/* Плавающая кнопка */}
       <button 
-        className={`floating-chat-button ${isOpen ? 'active' : ''}`}
+        className={`${styles['floating-chat-button']} ${isOpen ? styles['active'] : ''}`}
         onClick={toggleChat}
         title="Открыть чат"
       >

@@ -3,7 +3,20 @@ import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import '../../styles/UsernameStyles.css';
 import styles from './StudentGroup.module.css';
-import { AiOutlineWallet, AiOutlineClose, AiOutlineTrophy, AiOutlineStar, AiOutlineSend } from 'react-icons/ai';
+import { 
+  AiOutlineWallet, 
+  AiOutlineClose, 
+  AiOutlineTrophy, 
+  AiOutlineStar, 
+  AiOutlineSend,
+  AiOutlineTeam,
+  AiOutlineFire,
+  AiOutlineLineChart,
+  AiOutlineCode,
+  AiOutlineCheckCircle,
+  AiOutlineCrown
+} from 'react-icons/ai';
+import { FaMedal, FaUsers } from 'react-icons/fa';
 
 function StudentGroup() {
   const { user, updateUser, checkAuth } = useAuth();
@@ -17,6 +30,12 @@ function StudentGroup() {
   const [transferMessage, setTransferMessage] = useState('');
   const [transfering, setTransfering] = useState(false);
   const [transferError, setTransferError] = useState('');
+  const [groupStats, setGroupStats] = useState({
+    totalPoints: 0,
+    totalProjects: 0,
+    completedTasks: 0,
+    averageLevel: 0
+  });
 
   useEffect(() => {
     loadGroupInfo();
@@ -47,11 +66,30 @@ function StudentGroup() {
     try {
       const response = await api.get(`/groups/${user.group_id}`);
       setGroupInfo(response.data.group);
+      calculateGroupStats(response.data.group);
     } catch (error) {
       console.error('Ошибка загрузки информации о группе:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateGroupStats = (group) => {
+    if (!group || !group.students || group.students.length === 0) {
+      return;
+    }
+
+    const totalPoints = group.students.reduce((sum, student) => sum + (student.points || 0), 0);
+    const totalProjects = group.students.length * 3; // Моковые данные
+    const completedTasks = group.students.length * 8; // Моковые данные
+    const averageLevel = Math.round(group.students.reduce((sum, student) => sum + (student.level || 1), 0) / group.students.length);
+
+    setGroupStats({
+      totalPoints,
+      totalProjects,
+      completedTasks,
+      averageLevel
+    });
   };
 
   const getFrameImage = (frameKey) => {
@@ -148,16 +186,111 @@ function StudentGroup() {
     );
   }
 
+  // Сортировка студентов по баллам
+  const sortedStudents = groupInfo?.students ? [...groupInfo.students].sort((a, b) => (b.points || 0) - (a.points || 0)) : [];
+  const topStudent = sortedStudents[0];
+
   return (
     <div className={styles['student-page']}>
       <div className={styles['page-header']}>
-        <h1>Моя группа: {groupInfo.name}</h1>
-        <p>Информация о вашей группе</p>
+        <div>
+          <h1>
+            <FaUsers /> Моя группа: {groupInfo.name}
+          </h1>
+          <p>Информация о вашей группе и участниках</p>
+        </div>
       </div>
+
+      {/* Статистика группы */}
+      <div className={styles['group-stats-section']}>
+        <h2 className={styles['section-title']}>
+          <AiOutlineLineChart /> Статистика группы
+        </h2>
+        <div className={styles['group-stats-grid']}>
+          <div className={styles['group-stat-card']}>
+            <div className={styles['group-stat-icon']} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+              <AiOutlineWallet />
+            </div>
+            <div className={styles['group-stat-content']}>
+              <div className={styles['group-stat-value']}>{groupStats.totalPoints}</div>
+              <div className={styles['group-stat-label']}>Всего баллов</div>
+            </div>
+          </div>
+
+          <div className={styles['group-stat-card']}>
+            <div className={styles['group-stat-icon']} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+              <AiOutlineCode />
+            </div>
+            <div className={styles['group-stat-content']}>
+              <div className={styles['group-stat-value']}>{groupStats.totalProjects}</div>
+              <div className={styles['group-stat-label']}>Проектов создано</div>
+            </div>
+          </div>
+
+          <div className={styles['group-stat-card']}>
+            <div className={styles['group-stat-icon']} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
+              <AiOutlineCheckCircle />
+            </div>
+            <div className={styles['group-stat-content']}>
+              <div className={styles['group-stat-value']}>{groupStats.completedTasks}</div>
+              <div className={styles['group-stat-label']}>Заданий выполнено</div>
+            </div>
+          </div>
+
+          <div className={styles['group-stat-card']}>
+            <div className={styles['group-stat-icon']} style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
+              <AiOutlineStar />
+            </div>
+            <div className={styles['group-stat-content']}>
+              <div className={styles['group-stat-value']}>{groupStats.averageLevel}</div>
+              <div className={styles['group-stat-label']}>Средний уровень</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Топ студент группы */}
+      {topStudent && (
+        <div className={styles['top-student-section']}>
+          <h2 className={styles['section-title']}>
+            <AiOutlineCrown /> Лидер группы
+          </h2>
+          <div className={styles['top-student-card']}>
+            <div className={styles['top-badge']}>
+              <FaMedal />
+              <span>#1</span>
+            </div>
+            <div className={styles['top-student-avatar-wrapper']}>
+              <div className={styles['top-student-avatar']}>
+                {topStudent.avatar_url ? (
+                  <img src={`${BASE_URL}${topStudent.avatar_url}`} alt={topStudent.username} />
+                ) : (
+                  (topStudent.full_name || topStudent.username).charAt(0).toUpperCase()
+                )}
+              </div>
+              {getFrameImage(topStudent.avatar_frame) && (
+                <img 
+                  src={getFrameImage(topStudent.avatar_frame)}
+                  alt="Frame"
+                  className={styles['top-student-frame']}
+                />
+              )}
+            </div>
+            <div className={styles['top-student-info']}>
+              <h3 className={`styled-username ${topStudent.username_style || 'username-none'}`}>
+                {topStudent.full_name || topStudent.username}
+              </h3>
+              <div className={styles['top-student-points']}>
+                <AiOutlineWallet /> {topStudent.points || 0} баллов
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={styles['group-info-card']}>
         <div className={styles['group-info-section']}>
-          <h3>Информация о группе</h3>
+          <h3><AiOutlineTeam /> Информация о группе</h3>
           <div className={styles['profile-info-grid']}>
             <div className={styles['info-row']}>
               <span className={styles['info-label']}>Название:</span>
@@ -184,9 +317,9 @@ function StudentGroup() {
 
         {groupInfo.students && groupInfo.students.length > 0 && (
           <div className={styles['group-info-section']}>
-            <h3>Студенты группы</h3>
+            <h3><FaUsers /> Студенты группы ({sortedStudents.length})</h3>
             <div className={styles['students-list']}>
-              {groupInfo.students.map((student) => {
+              {sortedStudents.map((student, index) => {
                 const frameImage = getFrameImage(student.avatar_frame);
                 const bannerImage = getBannerImage(student.profile_banner);
                 const defaultBanner = student.profile_banner === 'default' 
@@ -231,11 +364,25 @@ function StudentGroup() {
                     </div>
                     
                     <div className={styles['student-info']}>
-                      <strong className={`styled-username ${student.username_style || 'username-none'}`}>
-                        {student.full_name || student.username}
-                      </strong>
+                      <div className={styles['student-name-wrapper']}>
+                        {index < 3 && (
+                          <span className={styles['rank-badge']} style={{
+                            background: index === 0 ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' :
+                                       index === 1 ? 'linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)' :
+                                       'linear-gradient(135deg, #cd7f32 0%, #d4a574 100%)'
+                          }}>
+                            #{index + 1}
+                          </span>
+                        )}
+                        <strong className={`styled-username ${student.username_style || 'username-none'}`}>
+                          {student.full_name || student.username}
+                        </strong>
+                      </div>
                       <small>{student.email}</small>
-                      <div className={styles['student-points']}><AiOutlineWallet className={styles['points-inline']} /> {student.points || 0} баллов</div>
+                      <div className={styles['student-points']}>
+                        <AiOutlineWallet className={styles['points-inline']} /> 
+                        {student.points || 0} баллов
+                      </div>
                     </div>
                   </div>
                 );
@@ -348,7 +495,7 @@ function StudentGroup() {
                   <div className={styles['detail-row']}>
                     <span className={styles['detail-label']}>Статус:</span>
                     <span className={styles['detail-value']}>
-                      <span className={`status-badge ${selectedStudent.is_online ? 'online' : 'offline'}`}>
+                      <span className={`${styles['status-badge']} ${selectedStudent.is_online ? styles['online'] : styles['offline']}`}>
                         {selectedStudent.is_online ? 'Онлайн' : 'Офлайн'}
                       </span>
                     </span>

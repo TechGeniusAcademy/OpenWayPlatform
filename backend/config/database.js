@@ -656,6 +656,33 @@ export const initDatabase = async () => {
       );
     `);
 
+    // Таблица 29: Дизайн-проекты (design_projects)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS design_projects (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        elements JSONB DEFAULT '[]'::jsonb,
+        canvas_size JSONB DEFAULT '{"width": 1920, "height": 1080}'::jsonb,
+        thumbnail TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Добавление canvas_size в design_projects если его нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'design_projects' AND column_name = 'canvas_size'
+        ) THEN
+          ALTER TABLE design_projects ADD COLUMN canvas_size JSONB DEFAULT '{"width": 1920, "height": 1080}'::jsonb;
+        END IF;
+      END $$;
+    `);
+
     // Индексы для магазина и истории баллов
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_shop_items_type ON shop_items(item_type);
@@ -668,6 +695,8 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_submissions_user_id ON project_submissions(user_id);
       CREATE INDEX IF NOT EXISTS idx_submissions_status ON project_submissions(status);
       CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON project_submissions(submitted_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_design_projects_user_id ON design_projects(user_id);
+      CREATE INDEX IF NOT EXISTS idx_design_projects_updated_at ON design_projects(updated_at DESC);
     `);
 
     // Удаляем старые CSS-based предметы при инициализации

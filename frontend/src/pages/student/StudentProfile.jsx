@@ -2,7 +2,20 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import styles from './StudentProfile.module.css';
-import { AiOutlineWallet, AiOutlineHistory } from 'react-icons/ai';
+import { 
+  AiOutlineWallet, 
+  AiOutlineHistory,
+  AiOutlineTrophy,
+  AiOutlineFire,
+  AiOutlineRise,
+  AiOutlineCalendar,
+  AiOutlineCode,
+  AiOutlineCheckCircle,
+  AiOutlineStar,
+  AiOutlineThunderbolt,
+  AiOutlineLineChart
+} from 'react-icons/ai';
+import { FaMedal, FaCrown, FaGem } from 'react-icons/fa';
 import '../../styles/UsernameStyles.css';
 import PointsHistory from '../../components/PointsHistory';
 
@@ -15,11 +28,18 @@ function StudentProfile() {
   const [appliedFrame, setAppliedFrame] = useState(null);
   const [appliedBanner, setAppliedBanner] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [userStats, setUserStats] = useState({
+    completedTasks: 0,
+    totalProjects: 0,
+    streak: 0,
+    rank: 0
+  });
 
   useEffect(() => {
     fetchUserPoints();
     refreshUserData();
     fetchAppliedCosmetics();
+    fetchUserStats();
   }, []);
 
   useEffect(() => {
@@ -33,6 +53,17 @@ function StudentProfile() {
     } catch (error) {
       console.error('Ошибка получения баллов:', error);
     }
+  };
+
+  const fetchUserStats = async () => {
+    // В будущем это будет реальный API запрос
+    // Пока используем моковые данные
+    setUserStats({
+      completedTasks: 42,
+      totalProjects: 15,
+      streak: 7,
+      rank: 5
+    });
   };
 
   const refreshUserData = async () => {
@@ -130,6 +161,22 @@ function StudentProfile() {
     }
   };
 
+  const achievements = [
+    { icon: <FaCrown />, title: 'Первый проект', description: 'Создал первый проект', color: '#ffd700', earned: true },
+    { icon: <FaMedal />, title: 'Мастер кода', description: 'Написал 1000 строк кода', color: '#c0c0c0', earned: true },
+    { icon: <FaGem />, title: 'Неделя подряд', description: 'Учился 7 дней подряд', color: '#00bcd4', earned: true },
+    { icon: <AiOutlineStar />, title: 'Звезда группы', description: 'Стал первым в группе', color: '#ff6b6b', earned: false },
+    { icon: <AiOutlineTrophy />, title: 'Покоритель вершин', description: 'Завершил 50 заданий', color: '#4caf50', earned: false },
+    { icon: <AiOutlineThunderbolt />, title: 'Скоростник', description: 'Выполнил задание за 5 минут', color: '#ffeb3b', earned: false },
+  ];
+
+  const recentActivity = [
+    { type: 'project', title: 'Создал проект "ToDo App"', date: '2 часа назад', icon: <AiOutlineCode /> },
+    { type: 'achievement', title: 'Получил достижение "Мастер кода"', date: '5 часов назад', icon: <AiOutlineTrophy /> },
+    { type: 'points', title: 'Заработал 50 баллов', date: '1 день назад', icon: <AiOutlineWallet /> },
+    { type: 'task', title: 'Выполнил задание по JavaScript', date: '2 дня назад', icon: <AiOutlineCheckCircle /> },
+  ];
+
   return (
     <div className={styles['student-page']}>
       <div className={styles['page-header']}>
@@ -206,7 +253,7 @@ function StudentProfile() {
         <div className={styles['profile-info-grid']}>
           <div className={styles['info-row']}>
             <span className={styles['info-label']}>Имя пользователя:</span>
-            <span className={`info-value styled-username ${user?.username_style || 'username-none'}`}>
+            <span className={`${styles['info-value']} styled-username ${user?.username_style || 'username-none'}`}>
               {user?.username}
             </span>
           </div>
@@ -228,6 +275,103 @@ function StudentProfile() {
               {new Date(user?.created_at).toLocaleDateString('ru-RU')}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Статистика профиля */}
+      <div className={styles['stats-section']}>
+        <h2 className={styles['section-title']}>
+          <AiOutlineLineChart /> Моя статистика
+        </h2>
+        <div className={styles['stats-grid']}>
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+              <AiOutlineCheckCircle />
+            </div>
+            <div className={styles['stat-content']}>
+              <div className={styles['stat-value']}>{userStats.completedTasks}</div>
+              <div className={styles['stat-label']}>Выполнено заданий</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+              <AiOutlineCode />
+            </div>
+            <div className={styles['stat-content']}>
+              <div className={styles['stat-value']}>{userStats.totalProjects}</div>
+              <div className={styles['stat-label']}>Создано проектов</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
+              <AiOutlineFire />
+            </div>
+            <div className={styles['stat-content']}>
+              <div className={styles['stat-value']}>{userStats.streak}</div>
+              <div className={styles['stat-label']}>Дней подряд</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #ffd89b 0%, #19547b 100%)' }}>
+              <AiOutlineRise />
+            </div>
+            <div className={styles['stat-content']}>
+              <div className={styles['stat-value']}>#{userStats.rank}</div>
+              <div className={styles['stat-label']}>Место в рейтинге</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Достижения */}
+      <div className={styles['achievements-section']}>
+        <h2 className={styles['section-title']}>
+          <AiOutlineTrophy /> Достижения
+        </h2>
+        <div className={styles['achievements-grid']}>
+          {achievements.map((achievement, index) => (
+            <div 
+              key={index} 
+              className={`${styles['achievement-card']} ${achievement.earned ? styles['earned'] : styles['locked']}`}
+            >
+              <div 
+                className={styles['achievement-icon']} 
+                style={{ color: achievement.earned ? achievement.color : '#ccc' }}
+              >
+                {achievement.icon}
+              </div>
+              <div className={styles['achievement-content']}>
+                <h3 className={styles['achievement-title']}>{achievement.title}</h3>
+                <p className={styles['achievement-description']}>{achievement.description}</p>
+              </div>
+              {achievement.earned && (
+                <div className={styles['achievement-badge']}>✓</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Последняя активность */}
+      <div className={styles['activity-section']}>
+        <h2 className={styles['section-title']}>
+          <AiOutlineCalendar /> Последняя активность
+        </h2>
+        <div className={styles['activity-timeline']}>
+          {recentActivity.map((activity, index) => (
+            <div key={index} className={styles['activity-item']}>
+              <div className={styles['activity-icon-wrapper']}>
+                <div className={styles['activity-type-icon']}>{activity.icon}</div>
+              </div>
+              <div className={styles['activity-details']}>
+                <div className={styles['activity-title']}>{activity.title}</div>
+                <div className={styles['activity-date']}>{activity.date}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TODO List</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <main class="container" role="main">
+    <h1 class="title">TODO List</h1>
+
+    <section class="todo-input" aria-label="Добавить задачу">
+      <input id="newTodo" type="text" placeholder="Что нужно сделать?" aria-label="Новая задача" />
+      <button id="addBtn" aria-label="Добавить задачу">Добавить</button>
+    </section>
+
+    <section class="controls" aria-label="Фильтры задач">
+      <div class="filters" role="tablist" aria-label="Фильтры">
+        <button class="filter active" data-filter="all" role="tab" aria-selected="true">Все</button>
+        <button class="filter" data-filter="active" role="tab" aria-selected="false">Активные</button>
+        <button class="filter" data-filter="completed" role="tab" aria-selected="false">Выполненные</button>
+      </div>
+      <button id="clearCompleted" aria-label="Удалить все выполненные">Очистить выполненные</button>
+    </section>
+
+    <section class="todo-list-section" aria-label="Список задач">
+      <ul id="todoList" class="todo-list" role="list"></ul>
+      <div id="emptyState" class="empty">Пока нет задач — добавьте первую!</div>
+    </section>
+
+    <footer class="footer">
+      <span id="itemsLeft">0 задач</span>
+      <small> — сохранено в localStorage</small>
+    </footer>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+
+</html>

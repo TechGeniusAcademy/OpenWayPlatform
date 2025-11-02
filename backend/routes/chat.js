@@ -273,12 +273,62 @@ router.get('/:chatId/pinned', authenticate, async (req, res) => {
 });
 
 // Отправить текстовое сообщение
-router.post('/:chatId/messages', authenticate, async (req, res) => {
+router.post('/:chatId/messages', authenticate, upload.single('file'), async (req, res) => {
   try {
     const { chatId } = req.params;
     const { content, messageType, codeLanguage, replyTo } = req.body;
+    const file = req.file;
 
-    if (!content && messageType !== 'file') {
+    // Если есть файл, создаем сообщение с файлом
+    if (file) {
+      const filePath = `/uploads/chat-files/${file.filename}`;
+      const message = await Message.create({
+        chatId,
+        senderId: req.user.id,
+        content: file.originalname,
+        messageType: 'file',
+        filePath,
+        fileName: file.originalname,
+        fileSize: file.size
+      });
+
+      // Получаем полное сообщение
+      const pool = (await import('../config/database.js')).default;
+      const fullMessageResult = await pool.query(
+        `SELECT 
+          m.*,
+          u.username as sender_username,
+          u.full_name as sender_full_name,
+          u.avatar_url as sender_avatar_url,
+          u.avatar_frame as sender_avatar_frame,
+          u.username_style as sender_username_style,
+          u.message_color as sender_message_color
+         FROM messages m
+         INNER JOIN users u ON m.sender_id = u.id
+         WHERE m.id = $1`,
+        [message.id]
+      );
+
+      const fullMessage = fullMessageResult.rows[0];
+
+      // Отправляем через WebSocket
+      io.to(`chat-${chatId}`).emit('new-message', fullMessage);
+
+      // Уведомления участникам
+      const participantsResult = await pool.query(
+        'SELECT user_id FROM chat_participants WHERE chat_id = $1',
+        [chatId]
+      );
+
+      participantsResult.rows.forEach(participant => {
+        io.to(`user-${participant.user_id}`).emit('chat-message-notification', fullMessage);
+      });
+
+      return res.status(201).json({ message: fullMessage });
+    }
+
+    // Обычное текстовое сообщение
+    if (!content) {
       return res.status(400).json({ error: 'Содержимое сообщения обязательно' });
     }
 

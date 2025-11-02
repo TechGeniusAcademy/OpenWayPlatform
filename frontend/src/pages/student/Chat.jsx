@@ -5,7 +5,11 @@ import { useWebSocket } from '../../context/WebSocketContext';
 import api, { BASE_URL } from '../../utils/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { BsPeopleFill, BsPencil, BsTrash } from 'react-icons/bs';
+import { 
+  BsPeopleFill, BsPencil, BsTrash, BsSearch, BsPlus, BsX, 
+  BsReply, BsEmojiSmile, BsCheck2All, BsCheck, BsPaperclip,
+  BsImage, BsFileEarmarkText, BsDownload, BsThreeDots
+} from 'react-icons/bs';
 import './ChatClean.css';
 
 /**
@@ -32,6 +36,16 @@ function Chat() {
   const [loading, setLoading] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUser, setTypingUser] = useState(null);
+  
+  // Новые состояния
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
 
   // Refs
   const socketRef = useRef(null);
@@ -270,6 +284,94 @@ function Chat() {
   };
 
   // ============================================================
+  // NEW FEATURES
+  // ============================================================
+
+  // Поиск по чатам
+  const filteredChats = chats.filter(chat => {
+    const name = chat.type === 'group' 
+      ? chat.name 
+      : (chat.other_user?.full_name || chat.other_user?.username || '');
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // Загрузка файла
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Файл слишком большой (макс. 10MB)');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  // Отправка файла
+  const uploadFile = async () => {
+    if (!selectedFile || !activeChat) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('messageType', 'file');
+
+    try {
+      await api.post(`/chat/${activeChat.id}/messages`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setSelectedFile(null);
+    } catch (error) {
+      console.error('Ошибка загрузки файла:', error);
+      alert('Ошибка загрузки');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Редактирование сообщения
+  const editMessage = async (msgId, newContent) => {
+    try {
+      await api.put(`/chat/messages/${msgId}`, { content: newContent });
+      setMessages(prev => prev.map(m => 
+        m.id === msgId ? { ...m, content: newContent, edited: true } : m
+      ));
+      setEditingMessage(null);
+    } catch (error) {
+      console.error('Ошибка редактирования:', error);
+    }
+  };
+
+  // Ответ на сообщение
+  const replyToMessage = (msg) => {
+    setReplyingTo(msg);
+    document.querySelector('.message-input input')?.focus();
+  };
+
+  // Добавить эмодзи
+  const addEmoji = (emoji) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  // Контекстное меню
+  const showContextMenu = (e, msg) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      message: msg
+    });
+  };
+
+  // Закрыть контекстное меню при клике вне
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
+
+  // ============================================================
   // RENDER
   // ============================================================
 
@@ -281,36 +383,99 @@ function Chat() {
     <div className="chat-page">
       {/* SIDEBAR */}
       <div className="chat-sidebar">
-        <h2>Чаты</h2>
+        <div className="sidebar-header">
+          <h2>Чаты</h2>
+          <button 
+            className="btn-icon" 
+            onClick={() => setShowNewChatModal(true)}
+            title="Новый чат"
+          >
+            <BsPlus size={24} />
+          </button>
+        </div>
+
+        {/* Поиск */}
+        <div className="search-box">
+          <BsSearch />
+          <input
+            type="text"
+            placeholder="Поиск чатов..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')}>
+              <BsX size={20} />
+            </button>
+          )}
+        </div>
+
         <div className="chat-list">
-          {chats.map(chat => (
-            <div
-              key={chat.id}
-              className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
-              onClick={() => selectChat(chat)}
-            >
-              <div className="chat-info">
-                <div className="chat-name">
+          {filteredChats.length === 0 ? (
+            <div className="no-chats">
+              <p>Чаты не найдены</p>
+            </div>
+          ) : (
+            filteredChats.map(chat => (
+              <div
+                key={chat.id}
+                className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
+                onClick={() => selectChat(chat)}
+              >
+                {/* Аватар */}
+                <div className="chat-avatar">
                   {chat.type === 'group' ? (
-                    <><BsPeopleFill /> {chat.name}</>
+                    <div className="avatar-group">
+                      <BsPeopleFill size={20} />
+                    </div>
                   ) : (
-                    chat.other_user?.full_name || chat.other_user?.username
+                    <div 
+                      className="avatar-single"
+                      style={{
+                        backgroundImage: chat.other_user?.avatar_url 
+                          ? `url(${BASE_URL}${chat.other_user.avatar_url})` 
+                          : 'none',
+                        backgroundColor: chat.other_user?.avatar_url ? 'transparent' : '#1da1f2'
+                      }}
+                    >
+                      {!chat.other_user?.avatar_url && (
+                        (chat.other_user?.full_name?.[0] || chat.other_user?.username?.[0] || '?').toUpperCase()
+                      )}
+                    </div>
+                  )}
+                  {chat.type === 'private' && onlineUsers.has(chat.other_user?.id) && (
+                    <div className="online-dot"></div>
                   )}
                 </div>
-                <div className="chat-last-message">
-                  {chat.last_message?.content?.substring(0, 40) || 'Нет сообщений'}
+
+                <div className="chat-info">
+                  <div className="chat-name">
+                    {chat.type === 'group' 
+                      ? chat.name 
+                      : (chat.other_user?.full_name || chat.other_user?.username)
+                    }
+                  </div>
+                  <div className="chat-last-message">
+                    {chat.last_message?.content?.substring(0, 50) || 'Нет сообщений'}
+                  </div>
+                </div>
+                
+                <div className="chat-meta">
+                  {chat.last_message?.created_at && (
+                    <div className="chat-time">
+                      {new Date(chat.last_message.created_at).toLocaleDateString() === new Date().toLocaleDateString()
+                        ? new Date(chat.last_message.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
+                        : new Date(chat.last_message.created_at).toLocaleDateString('ru', { day: 'numeric', month: 'short' })
+                      }
+                    </div>
+                  )}
+                  {chat.unread_count > 0 && (
+                    <div className="unread-badge">{chat.unread_count}</div>
+                  )}
                 </div>
               </div>
-              
-              {chat.unread_count > 0 && (
-                <div className="unread-badge">{chat.unread_count}</div>
-              )}
-              
-              {chat.type === 'private' && onlineUsers.has(chat.other_user?.id) && (
-                <div className="online-indicator"></div>
-              )}
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -331,34 +496,177 @@ function Chat() {
               <div
                 key={msg.id}
                 className={`message ${msg.sender_id === user.id ? 'own' : 'other'}`}
+                onContextMenu={(e) => showContextMenu(e, msg)}
               >
-                <div className="message-content">
-                  {msg.message_type === 'code' ? (
-                    <SyntaxHighlighter language="javascript" style={vscDarkPlus}>
-                      {msg.content}
-                    </SyntaxHighlighter>
-                  ) : (
-                    <p>{msg.content}</p>
+                {/* Аватар для чужих сообщений */}
+                {msg.sender_id !== user.id && activeChat?.type === 'group' && (
+                  <div 
+                    className="message-avatar"
+                    style={{
+                      backgroundImage: msg.sender?.avatar_url 
+                        ? `url(${BASE_URL}${msg.sender.avatar_url})` 
+                        : 'none',
+                      backgroundColor: msg.sender?.avatar_url ? 'transparent' : '#657786'
+                    }}
+                  >
+                    {!msg.sender?.avatar_url && (msg.sender?.full_name?.[0] || '?').toUpperCase()}
+                  </div>
+                )}
+
+                <div className="message-bubble">
+                  {/* Имя отправителя в группе */}
+                  {msg.sender_id !== user.id && activeChat?.type === 'group' && (
+                    <div className="message-sender-name">
+                      {msg.sender?.full_name || msg.sender?.username}
+                    </div>
                   )}
-                </div>
-                
-                <div className="message-meta">
-                  <span>{new Date(msg.created_at).toLocaleTimeString()}</span>
+
+                  {/* Цитата */}
+                  {msg.reply_to && (
+                    <div className="message-reply">
+                      <div className="reply-line"></div>
+                      <div className="reply-content">
+                        <div className="reply-author">{msg.reply_to.sender?.full_name}</div>
+                        <div className="reply-text">{msg.reply_to.content?.substring(0, 50)}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="message-content">
+                    {msg.message_type === 'code' ? (
+                      <SyntaxHighlighter language="javascript" style={vscDarkPlus}>
+                        {msg.content}
+                      </SyntaxHighlighter>
+                    ) : msg.message_type === 'file' ? (
+                      <div className="message-file">
+                        {msg.file_path?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                          <img src={`${BASE_URL}${msg.file_path}`} alt="File" />
+                        ) : (
+                          <a href={`${BASE_URL}${msg.file_path}`} download className="file-link">
+                            <BsFileEarmarkText size={24} />
+                            <span>{msg.file_name || 'Файл'}</span>
+                            <BsDownload size={16} />
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <p>{msg.content}</p>
+                    )}
+                  </div>
                   
-                  {msg.sender_id === user.id && (
-                    <>
-                      <button onClick={() => deleteMessage(msg.id)}>
-                        <BsTrash />
-                      </button>
-                    </>
-                  )}
+                  <div className="message-meta">
+                    <span>{new Date(msg.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}</span>
+                    {msg.edited && <span className="edited-label">(изменено)</span>}
+                    {msg.sender_id === user.id && (
+                      msg.is_read ? <BsCheck2All className="read-status" /> : <BsCheck className="read-status" />
+                    )}
+                  </div>
+
+                  {/* Быстрые действия */}
+                  <div className="message-actions">
+                    <button onClick={() => replyToMessage(msg)} title="Ответить">
+                      <BsReply />
+                    </button>
+                    {msg.sender_id === user.id && (
+                      <>
+                        <button onClick={() => setEditingMessage(msg)} title="Редактировать">
+                          <BsPencil />
+                        </button>
+                        <button onClick={() => deleteMessage(msg.id)} title="Удалить">
+                          <BsTrash />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
 
-          <form className="message-input" onSubmit={sendMessage}>
+          {/* Панель редактирования/ответа */}
+          {(replyingTo || editingMessage || selectedFile) && (
+            <div className="action-panel">
+              {replyingTo && (
+                <div className="reply-preview">
+                  <BsReply />
+                  <div className="reply-info">
+                    <strong>Ответ для {replyingTo.sender?.full_name}</strong>
+                    <p>{replyingTo.content?.substring(0, 50)}</p>
+                  </div>
+                  <button onClick={() => setReplyingTo(null)}>
+                    <BsX size={20} />
+                  </button>
+                </div>
+              )}
+              {editingMessage && (
+                <div className="edit-preview">
+                  <BsPencil />
+                  <div className="edit-info">
+                    <strong>Редактирование сообщения</strong>
+                    <p>{editingMessage.content?.substring(0, 50)}</p>
+                  </div>
+                  <button onClick={() => setEditingMessage(null)}>
+                    <BsX size={20} />
+                  </button>
+                </div>
+              )}
+              {selectedFile && (
+                <div className="file-preview">
+                  <BsPaperclip />
+                  <div className="file-info">
+                    <strong>{selectedFile.name}</strong>
+                    <p>{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  <button onClick={() => setSelectedFile(null)}>
+                    <BsX size={20} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <form className="message-input" onSubmit={editingMessage ? (e) => {
+            e.preventDefault();
+            editMessage(editingMessage.id, newMessage);
+            setNewMessage('');
+          } : sendMessage}>
+            {/* Кнопка файла */}
+            <label className="btn-file" title="Прикрепить файл">
+              <BsPaperclip size={20} />
+              <input
+                type="file"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+            </label>
+
+            {/* Кнопка эмодзи */}
+            <button 
+              type="button"
+              className="btn-emoji"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              title="Эмодзи"
+            >
+              <BsEmojiSmile size={20} />
+            </button>
+
+            {/* Панель эмодзи */}
+            {showEmojiPicker && (
+              <div className="emoji-picker">
+                {['😊', '😂', '❤️', '👍', '🎉', '🔥', '👏', '🙏', '💯', '✨', '🚀', '💪', '😎', '🤔', '😍'].map(emoji => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => addEmoji(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Выбор типа */}
             <select value={messageType} onChange={e => setMessageType(e.target.value)}>
               <option value="text">💬 Текст</option>
               <option value="code">💻 Код</option>
@@ -368,16 +676,84 @@ function Chat() {
               type="text"
               value={newMessage}
               onChange={handleTyping}
-              placeholder="Введите сообщение..."
+              placeholder={editingMessage ? "Редактирование..." : "Введите сообщение..."}
               autoFocus
             />
             
-            <button type="submit">Отправить</button>
+            {selectedFile ? (
+              <button 
+                type="button" 
+                onClick={uploadFile}
+                disabled={uploading}
+              >
+                {uploading ? 'Загрузка...' : 'Отправить файл'}
+              </button>
+            ) : (
+              <button type="submit" disabled={!newMessage.trim()}>
+                {editingMessage ? 'Сохранить' : 'Отправить'}
+              </button>
+            )}
           </form>
         </div>
       ) : (
         <div className="chat-empty">
+          <BsPeopleFill size={64} style={{ opacity: 0.3 }} />
           <p>Выберите чат для начала общения</p>
+          <button onClick={() => setShowNewChatModal(true)} className="btn-primary">
+            <BsPlus size={20} />
+            Создать новый чат
+          </button>
+        </div>
+      )}
+
+      {/* Контекстное меню */}
+      {contextMenu && (
+        <div 
+          className="context-menu"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <button onClick={() => {
+            replyToMessage(contextMenu.message);
+            setContextMenu(null);
+          }}>
+            <BsReply /> Ответить
+          </button>
+          {contextMenu.message.sender_id === user.id && (
+            <>
+              <button onClick={() => {
+                setEditingMessage(contextMenu.message);
+                setNewMessage(contextMenu.message.content);
+                setContextMenu(null);
+              }}>
+                <BsPencil /> Редактировать
+              </button>
+              <button onClick={() => {
+                deleteMessage(contextMenu.message.id);
+                setContextMenu(null);
+              }}>
+                <BsTrash /> Удалить
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Модальное окно создания чата */}
+      {showNewChatModal && (
+        <div className="modal-overlay" onClick={() => setShowNewChatModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Новый чат</h3>
+              <button onClick={() => setShowNewChatModal(false)}>
+                <BsX size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ textAlign: 'center', color: '#657786' }}>
+                Функция создания новых чатов будет добавлена в следующей версии
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

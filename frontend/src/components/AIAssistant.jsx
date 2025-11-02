@@ -223,13 +223,13 @@ function AIAssistant({ isOpen, onClose, selectedCode, language, onInsertCode }) 
 
         <div className={styles['ai-assistant-tabs']}>
           <button
-            className={`ai-tab ${activeTab === 'actions' ? 'active' : ''}`}
+            className={`${styles['ai-tab']} ${activeTab === 'actions' ? styles['active'] : ''}`}
             onClick={() => setActiveTab('actions')}
           >
             Действия
           </button>
           <button
-            className={`ai-tab ${activeTab === 'generate' ? 'active' : ''}`}
+            className={`${styles['ai-tab']} ${activeTab === 'generate' ? styles['active'] : ''}`}
             onClick={() => setActiveTab('generate')}
           >
             Генерация

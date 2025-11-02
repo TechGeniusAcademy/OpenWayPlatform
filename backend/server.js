@@ -30,6 +30,7 @@ import quizBattleRoutes from './routes/quiz-battle.js';
 import crashRoutes from './routes/crash.js';
 import rouletteRoutes from './routes/roulette.js';
 import technicalSpecsRoutes from './routes/technical-specs.js';
+import designProjectsRoutes from './routes/design-projects.js';
 
 dotenv.config();
 
@@ -97,6 +98,7 @@ app.use('/api/quiz-battle', quizBattleRoutes);
 app.use('/api/crash', crashRoutes);
 app.use('/api/roulette', rouletteRoutes);
 app.use('/api/technical-specs', technicalSpecsRoutes);
+app.use('/api/design-projects', designProjectsRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

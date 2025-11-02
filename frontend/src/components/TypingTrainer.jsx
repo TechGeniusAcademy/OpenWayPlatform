@@ -51,6 +51,46 @@ function TypingTrainer() {
   const inputRef = useRef(null);
   const intervalRef = useRef(null);
   const statsRef = useRef({ typedText: '', typedStatus: [], errors: 0 }); // Для актуальных данных
+  const audioContextRef = useRef(null);
+
+  // Инициализация Audio Context для звуков клавиатуры
+  useEffect(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  // Функция для воспроизведения звука клавиши
+  const playKeySound = (isError = false) => {
+    if (!audioContextRef.current) return;
+
+    const audioContext = audioContextRef.current;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Разные звуки для правильных и неправильных клавиш
+    if (isError) {
+      oscillator.frequency.value = 200; // Низкий звук для ошибки
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    } else {
+      oscillator.frequency.value = 800; // Высокий приятный клик для правильной клавиши
+      gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+    }
+
+    oscillator.type = 'sine';
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + (isError ? 0.1 : 0.05));
+  };
 
   // Английская QWERTY раскладка
   const keyboardLayout = [
@@ -174,6 +214,14 @@ function TypingTrainer() {
     // Разрешаем вводить до конца ожидаемого текста
     if (value.length > expectedText.length) return;
 
+    // Проверяем последний введенный символ для звука
+    if (value.length > typedText.length) {
+      const lastTypedChar = value[value.length - 1];
+      const expectedChar = expectedText[value.length - 1];
+      const isCorrect = lastTypedChar === expectedChar;
+      playKeySound(!isCorrect);
+    }
+
     // Обновляем типизированный текст
     setTypedText(value);
 
@@ -269,14 +317,14 @@ function TypingTrainer() {
   };
 
   const getKeyClass = (key) => {
-    let classes = 'key';
+    let classes = '';
     
     if (key === ' ') {
-      classes += ' spacebar';
+      classes += ` ${styles.spacebar}`;
     }
     
     if (currentChar && key.toLowerCase() === currentChar.toLowerCase()) {
-      classes += ' next-key';
+      classes += ` ${styles['next-key']}`;
     }
     
     return classes;
@@ -284,7 +332,8 @@ function TypingTrainer() {
 
   const getFingerClass = (key) => {
     if (currentChar && key.toLowerCase() === currentChar.toLowerCase()) {
-      return fingerMapping[key.toLowerCase()] || '';
+      const finger = fingerMapping[key.toLowerCase()];
+      return finger ? styles[finger] : '';
     }
     return '';
   };
@@ -292,15 +341,13 @@ function TypingTrainer() {
   return (
     <div className={styles['typing-trainer']}>
       <div className={styles['trainer-header']}>
-        <h2>⌨️ Клавиатурный тренажер</h2>
-        
         {!isActive && !showResults && (
           <div className={styles['time-selector']}>
             <span className={styles['time-label']}>Длительность теста:</span>
             {TIME_OPTIONS.map(time => (
               <button
                 key={time}
-                className={`time-option ${gameDuration === time ? 'active' : ''}`}
+                className={`${styles['time-option']} ${gameDuration === time ? styles['active'] : ''}`}
                 onClick={() => {
                   setGameDuration(time);
                   setTimeRemaining(time);
@@ -315,7 +362,7 @@ function TypingTrainer() {
         <div className={styles['trainer-stats']}>
           <div className={styles.stat}>
             <span className={styles['stat-label']}>Осталось:</span>
-            <span className="stat-value time-remaining">{Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</span>
+            <span className={`${styles['stat-value']} ${styles['time-remaining']}`}>{Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</span>
           </div>
           <div className={styles.stat}>
             <span className={styles['stat-label']}>Скорость:</span>
@@ -340,21 +387,21 @@ function TypingTrainer() {
             const targetText = displayWords.join(' ');
             
             return targetText.split('').map((char, index) => {
-              let className = 'char';
+              let className = styles.char;
               
               if (index < typedText.length) {
                 // Уже введенные символы
                 if (index < typedStatus.length) {
-                  className += ` ${typedStatus[index]}`;
+                  className += ` ${styles[typedStatus[index]]}`;
                 } else {
-                  className += ' correct';
+                  className += ` ${styles.correct}`;
                 }
               } else if (index === typedText.length) {
                 // Текущий символ для ввода
-                className += ' current';
+                className += ` ${styles.current}`;
               } else {
                 // Будущие символы
-                className += ' pending';
+                className += ` ${styles.pending}`;
               }
               
               return (
@@ -392,7 +439,7 @@ function TypingTrainer() {
             {row.map((key) => (
               <div
                 key={key}
-                className={`${getKeyClass(key)} ${getFingerClass(key)}`}
+                className={`${styles.key} ${getKeyClass(key)} ${getFingerClass(key)}`}
                 data-key={key}
               >
                 {key === ' ' ? 'Пробел' : key}
@@ -403,19 +450,19 @@ function TypingTrainer() {
       </div>
 
       <div className={styles['hands-guide']}>
-        <div className="hand left-hand">
-          <div className="finger thumb" data-finger="thumb-left">L</div>
-          <div className="finger index" data-finger="index-left">F</div>
-          <div className="finger middle" data-finger="middle-left">D</div>
-          <div className="finger ring" data-finger="ring-left">S</div>
-          <div className="finger pinky" data-finger="pinky-left">A</div>
+        <div className={`${styles.hand} ${styles['left-hand']}`}>
+          <div className={`${styles.finger} ${styles.thumb}`} data-finger="thumb-left">L</div>
+          <div className={`${styles.finger} ${styles.index}`} data-finger="index-left">F</div>
+          <div className={`${styles.finger} ${styles.middle}`} data-finger="middle-left">D</div>
+          <div className={`${styles.finger} ${styles.ring}`} data-finger="ring-left">S</div>
+          <div className={`${styles.finger} ${styles.pinky}`} data-finger="pinky-left">A</div>
         </div>
-        <div className="hand right-hand">
-          <div className="finger pinky" data-finger="pinky-right">;</div>
-          <div className="finger ring" data-finger="ring-right">L</div>
-          <div className="finger middle" data-finger="middle-right">K</div>
-          <div className="finger index" data-finger="index-right">J</div>
-          <div className="finger thumb" data-finger="thumb-right">⎵</div>
+        <div className={`${styles.hand} ${styles['right-hand']}`}>
+          <div className={`${styles.finger} ${styles.pinky}`} data-finger="pinky-right">;</div>
+          <div className={`${styles.finger} ${styles.ring}`} data-finger="ring-right">L</div>
+          <div className={`${styles.finger} ${styles.middle}`} data-finger="middle-right">K</div>
+          <div className={`${styles.finger} ${styles.index}`} data-finger="index-right">J</div>
+          <div className={`${styles.finger} ${styles.thumb}`} data-finger="thumb-right">⎵</div>
         </div>
       </div>
 

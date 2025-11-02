@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { FaFileAlt, FaChartBar, FaClipboardList, FaCheckCircle, FaTimes } from 'react-icons/fa';
+import { FaFileAlt, FaChartBar, FaClipboardList, FaCheckCircle, FaTimes, FaTrophy, FaExclamationTriangle } from 'react-icons/fa';
+import { AiOutlineClockCircle, AiOutlineLoading3Quarters } from 'react-icons/ai';
 import styles from './StudentTests.module.css';
 
 function StudentTests() {
@@ -14,6 +15,7 @@ function StudentTests() {
   const [attempt, setAttempt] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showResult, setShowResult] = useState(false);
@@ -149,6 +151,13 @@ function StudentTests() {
 
   const handleNext = async () => {
     const currentQuestion = activeTest.questions[currentQuestionIndex];
+    
+    // Проверяем, есть ли ответ на текущий вопрос
+    const currentAnswer = answers[currentQuestion.id];
+    if (!currentAnswer || (currentQuestion.question_type === 'coding' && !currentAnswer.code)) {
+      return;
+    }
+
     await saveAnswer(currentQuestion.id);
 
     if (currentQuestionIndex < activeTest.questions.length - 1) {
@@ -168,8 +177,20 @@ function StudentTests() {
     }
   };
 
-  const handleComplete = async () => {
-    if (!confirm('Вы уверены, что хотите завершить тест?')) return;
+  const handleComplete = () => {
+    const currentQuestion = activeTest.questions[currentQuestionIndex];
+    
+    // Проверяем, есть ли ответ на текущий вопрос
+    const currentAnswer = answers[currentQuestion.id];
+    if (!currentAnswer || (currentQuestion.question_type === 'coding' && !currentAnswer.code)) {
+      return;
+    }
+
+    setShowConfirmModal(true);
+  };
+
+  const confirmComplete = async () => {
+    setShowConfirmModal(false);
 
     try {
       // Сохраняем последний ответ
@@ -204,6 +225,28 @@ function StudentTests() {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  // Обработчик нажатия Enter для перехода к следующему вопросу
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'Enter' && activeTest && attempt && !showConfirmModal) {
+        const currentQuestion = activeTest.questions[currentQuestionIndex];
+        const currentAnswer = answers[currentQuestion.id];
+        const hasAnswer = currentAnswer && (currentQuestion.question_type !== 'coding' || currentAnswer.code);
+        
+        if (hasAnswer) {
+          if (currentQuestionIndex < activeTest.questions.length - 1) {
+            handleNext();
+          } else {
+            handleComplete();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [activeTest, attempt, currentQuestionIndex, answers, showConfirmModal]);
+
   if (loading) return <div className={styles.loading}>Загрузка...</div>;
 
   // Экран прохождения теста
@@ -212,12 +255,44 @@ function StudentTests() {
     const progress = ((currentQuestionIndex + 1) / activeTest.questions.length) * 100;
 
     return (
-      <div className={styles['test-taking']}>
-        <div className={styles['test-header']}>
-          <h2>{activeTest.title}</h2>
+      <>
+        {/* Модальное окно подтверждения */}
+        {showConfirmModal && (
+          <div className={styles['modal-overlay']} onClick={() => setShowConfirmModal(false)}>
+            <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
+              <div className={styles['modal-header']}>
+                <div className={styles['modal-icon']}>
+                  <FaExclamationTriangle />
+                </div>
+                <h3>Завершить тест?</h3>
+              </div>
+              <div className={styles['modal-body']}>
+                <p>Вы уверены, что хотите завершить тест? После завершения вы не сможете изменить свои ответы.</p>
+              </div>
+              <div className={styles['modal-buttons']}>
+                <button 
+                  className={styles['modal-btn-cancel']} 
+                  onClick={() => setShowConfirmModal(false)}
+                >
+                  Отмена
+                </button>
+                <button 
+                  className={styles['modal-btn-confirm']} 
+                  onClick={confirmComplete}
+                >
+                  Завершить
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className={styles['test-taking']}>
+          <div className={styles['test-header']}>
+            <h2>{activeTest.title}</h2>
           {timeLeft !== null && (
-            <div className={`timer ${timeLeft < 60 ? 'warning' : ''}`}>
-              ⏱️ {formatTime(timeLeft)}
+            <div className={`${styles['timer']} ${timeLeft < 60 ? styles['warning'] : ''}`}>
+              <AiOutlineClockCircle /> {formatTime(timeLeft)}
             </div>
           )}
         </div>
@@ -231,9 +306,9 @@ function StudentTests() {
           <p className={styles['question-text']}>{currentQuestion.question_text}</p>
 
           {currentQuestion.question_type === 'choice' ? (
-            <div className={styles.options}>
+            <div className={styles['options']}>
               {currentQuestion.options.map(option => (
-                <label key={option.id} className={styles.option}>
+                <label key={option.id} className={styles['option']}>
                   <input
                     type="radio"
                     name={`question-${currentQuestion.id}`}
@@ -259,17 +334,41 @@ function StudentTests() {
 
           <div className={styles['navigation-buttons']}>
             {activeTest.can_retry && currentQuestionIndex > 0 && (
-              <button onClick={handlePrevious}>← Назад</button>
+              <button className={styles['btn-secondary']} onClick={handlePrevious}>← Назад</button>
             )}
             
-            {currentQuestionIndex < activeTest.questions.length - 1 ? (
-              <button className={styles['btn-primary']} onClick={handleNext}>Далее →</button>
-            ) : (
-              <button className={styles['btn-complete']} onClick={handleComplete}>Завершить тест</button>
-            )}
+            {(() => {
+              const currentAnswer = answers[currentQuestion.id];
+              const hasAnswer = currentAnswer && (currentQuestion.question_type !== 'coding' || currentAnswer.code);
+              
+              return currentQuestionIndex < activeTest.questions.length - 1 ? (
+                <div className={styles['btn-with-hint']}>
+                  <button 
+                    className={hasAnswer ? styles['btn-primary'] : styles['btn-disabled']} 
+                    onClick={handleNext}
+                    disabled={!hasAnswer}
+                  >
+                    Далее →
+                  </button>
+                  {hasAnswer && <span className={styles['keyboard-hint']}>Enter</span>}
+                </div>
+              ) : (
+                <div className={styles['btn-with-hint']}>
+                  <button 
+                    className={hasAnswer ? styles['btn-complete'] : styles['btn-disabled']} 
+                    onClick={handleComplete}
+                    disabled={!hasAnswer}
+                  >
+                    Завершить тест
+                  </button>
+                  {hasAnswer && <span className={styles['keyboard-hint']}>Enter</span>}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
+      </>
     );
   }
 
@@ -295,6 +394,16 @@ function StudentTests() {
   }
 
   // Главный экран с списком тестов
+  const completedTests = history.filter(h => h.status === 'completed');
+  const averageScore = completedTests.length > 0 
+    ? Math.round(completedTests.reduce((sum, h) => sum + h.score, 0) / completedTests.length)
+    : 0;
+  const totalPoints = completedTests.reduce((sum, h) => sum + h.points_earned, 0);
+  const availableTests = tests.filter(test => {
+    const completed = history.filter(h => h.test_id === test.id && h.status === 'completed');
+    return test.can_retry || completed.length === 0;
+  });
+
   return (
     <div className={styles['student-tests']}>
       <div className={styles.header}>
@@ -304,6 +413,50 @@ function StudentTests() {
         </button>
       </div>
 
+      {!showHistory && (
+        <div className={styles['test-stats']}>
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']}>
+              <FaCheckCircle />
+            </div>
+            <div className={styles['stat-content']}>
+              <div className={styles['stat-value']}>{completedTests.length}</div>
+              <div className={styles['stat-label']}>Пройдено тестов</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']}>
+              <FaChartBar />
+            </div>
+            <div className={styles['stat-content']}>
+              <div className={styles['stat-value']}>{averageScore}%</div>
+              <div className={styles['stat-label']}>Средний балл</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']}>
+              <FaTrophy />
+            </div>
+            <div className={styles['stat-content']}>
+              <div className={styles['stat-value']}>{totalPoints}</div>
+              <div className={styles['stat-label']}>Получено баллов</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']}>
+              <FaFileAlt />
+            </div>
+            <div className={styles['stat-content']}>
+              <div className={styles['stat-value']}>{availableTests.length}</div>
+              <div className={styles['stat-label']}>Доступно тестов</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!showHistory ? (
         <div className={styles['tests-grid']}>
           {tests.length === 0 ? (
@@ -312,17 +465,34 @@ function StudentTests() {
             tests.map(test => {
               const completedAttempts = history.filter(h => h.test_id === test.id && h.status === 'completed');
               const canTake = test.can_retry || completedAttempts.length === 0;
-              const lastAttempt = completedAttempts[completedAttempts.length - 1];
+              // Берем последнюю попытку по дате
+              const lastAttempt = completedAttempts.length > 0 
+                ? completedAttempts.sort((a, b) => new Date(b.started_at) - new Date(a.started_at))[0]
+                : null;
+
+              // Определяем сложность теста по баллам
+              const difficulty = test.points_correct >= 100 ? 'hard' : 
+                               test.points_correct >= 50 ? 'medium' : 'easy';
+              const difficultyLabels = {
+                easy: 'Легкий',
+                medium: 'Средний',
+                hard: 'Сложный'
+              };
 
               return (
                 <div key={test.id} className={styles['test-card']}>
-                  <h3>{test.title}</h3>
+                  <div className={styles['test-card-header']}>
+                    <h3>{test.title}</h3>
+                    <span className={`${styles['difficulty-badge']} ${styles[`difficulty-${difficulty}`]}`}>
+                      {difficultyLabels[difficulty]}
+                    </span>
+                  </div>
                   {test.description && <p>{test.description}</p>}
                   
                   <div className={styles['test-info']}>
                     <span><FaClipboardList /> {test.type === 'choice' ? 'Тест с вариантами' : 'Тест с кодом'}</span>
-                    <span>⏱️ {test.time_limit || '∞'} мин</span>
-                    <span>🪙 {test.points_correct} баллов</span>
+                    <span><AiOutlineClockCircle /> {test.time_limit || '∞'} мин</span>
+                    <span><FaTrophy /> {test.points_correct} баллов</span>
                   </div>
 
                   {lastAttempt && (
@@ -332,7 +502,7 @@ function StudentTests() {
                   )}
 
                   <button
-                    className={canTake ? 'btn-primary' : 'btn-disabled'}
+                    className={canTake ? styles['btn-primary'] : styles['btn-disabled']}
                     onClick={() => canTake && startTest(test)}
                     disabled={!canTake}
                   >
@@ -371,7 +541,7 @@ function StudentTests() {
                     <td>{attempt.points_earned > 0 ? '+' : ''}{attempt.points_earned}</td>
                     <td>
                       {attempt.status === 'completed' ? <><FaCheckCircle /> Завершен</> : 
-                       attempt.status === 'in_progress' ? '⏳ В процессе' : 
+                       attempt.status === 'in_progress' ? <><AiOutlineLoading3Quarters /> В процессе</> : 
                        <><FaTimes /> Истек</>}
                     </td>
                   </tr>

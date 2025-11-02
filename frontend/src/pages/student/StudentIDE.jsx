@@ -4,7 +4,7 @@ import Editor from '@monaco-editor/react';
 import FileTree from '../../components/FileTree';
 import AIAssistant from '../../components/AIAssistant';
 import styles from './StudentIDE.module.css';
-import { FaPlay, FaPlus, FaFolderPlus, FaSave, FaArrowLeft, FaBars, FaTimes } from 'react-icons/fa';
+import { FaPlay, FaPlus, FaFolderPlus, FaArrowLeft, FaBars, FaTimes } from 'react-icons/fa';
 import { AiOutlineClose, AiOutlineRobot } from 'react-icons/ai';
 import { emmetHTML, emmetCSS, emmetJSX } from 'emmet-monaco-es';
 import { getProject, updateProject } from '../../services/projectService';
@@ -37,14 +37,18 @@ function StudentIDE() {
   const [previewHeight, setPreviewHeight] = useState(window.innerHeight / 2);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState('vs-dark');
+  const [currentTheme, setCurrentTheme] = useState(() => {
+    return localStorage.getItem('studentIDE_activeTheme') || 'vs-dark';
+  });
   const [unsavedFiles, setUnsavedFiles] = useState(new Set()); // Отслеживание несохранённых файлов
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [selectedCode, setSelectedCode] = useState('');
+  const [lastSaveTime, setLastSaveTime] = useState(null); // Время последнего сохранения
   const editorRef = useRef(null);
   const previewRef = useRef(null);
   const resizerRef = useRef(null);
   const monacoRef = useRef(null);
+  const autoSaveTimerRef = useRef(null);
 
   // Загрузка проекта с сервера при монтировании
   useEffect(() => {
@@ -72,16 +76,352 @@ function StudentIDE() {
     return () => window.removeEventListener('themeChanged', handleThemeChange);
   }, []);
 
+  // Применяем тему когда редактор готов или тема меняется
+  useEffect(() => {
+    if (monacoRef.current && editorRef.current && currentTheme) {
+      applyCustomTheme(currentTheme);
+    }
+  }, [currentTheme, monacoRef.current, editorRef.current]);
+
   // Применение пользовательской темы
   const applyCustomTheme = (themeId) => {
-    if (!monacoRef.current || !editorRef.current) return;
+    if (!monacoRef.current || !editorRef.current) {
+      return;
+    }
 
-    // Проверяем, это встроенная тема или пользовательская
-    const builtInThemes = ['vs-dark', 'vs-light', 'hc-black'];
+    // Базовые встроенные темы Monaco
+    const monacoBuiltInThemes = ['vs-dark', 'vs-light', 'hc-black'];
     
-    if (builtInThemes.includes(themeId)) {
+    if (monacoBuiltInThemes.includes(themeId)) {
       editorRef.current.updateOptions({ theme: themeId });
       return;
+    }
+
+    // Определения предустановленных тем
+    const predefinedThemeDefinitions = {
+      'monokai': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '75715e' },
+          { token: 'string', foreground: 'e6db74' },
+          { token: 'keyword', foreground: 'f92672' },
+          { token: 'number', foreground: 'ae81ff' },
+          { token: 'function', foreground: 'a6e22e' },
+          { token: 'variable', foreground: 'f8f8f2' },
+        ],
+        colors: {
+          'editor.background': '#272822',
+          'editor.foreground': '#f8f8f2',
+          'editor.lineHighlightBackground': '#3e3d32',
+          'editor.selectionBackground': '#49483e',
+        }
+      },
+      'dracula': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '6272a4' },
+          { token: 'string', foreground: 'f1fa8c' },
+          { token: 'keyword', foreground: 'ff79c6' },
+          { token: 'number', foreground: 'bd93f9' },
+          { token: 'function', foreground: '50fa7b' },
+          { token: 'variable', foreground: 'f8f8f2' },
+        ],
+        colors: {
+          'editor.background': '#282a36',
+          'editor.foreground': '#f8f8f2',
+          'editor.lineHighlightBackground': '#44475a',
+          'editor.selectionBackground': '#44475a',
+        }
+      },
+      'github-dark': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '8b949e' },
+          { token: 'string', foreground: 'a5d6ff' },
+          { token: 'keyword', foreground: 'ff7b72' },
+          { token: 'number', foreground: '79c0ff' },
+          { token: 'function', foreground: 'd2a8ff' },
+          { token: 'variable', foreground: 'c9d1d9' },
+        ],
+        colors: {
+          'editor.background': '#0d1117',
+          'editor.foreground': '#c9d1d9',
+          'editor.lineHighlightBackground': '#161b22',
+          'editor.selectionBackground': '#264f78',
+        }
+      },
+      'github-light': {
+        base: 'vs-light',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '6e7781' },
+          { token: 'string', foreground: '0a3069' },
+          { token: 'keyword', foreground: 'cf222e' },
+          { token: 'number', foreground: '0550ae' },
+          { token: 'function', foreground: '8250df' },
+          { token: 'variable', foreground: '24292f' },
+        ],
+        colors: {
+          'editor.background': '#ffffff',
+          'editor.foreground': '#24292f',
+          'editor.lineHighlightBackground': '#f6f8fa',
+          'editor.selectionBackground': '#add6ff',
+        }
+      },
+      'one-dark': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '5c6370' },
+          { token: 'string', foreground: '98c379' },
+          { token: 'keyword', foreground: 'c678dd' },
+          { token: 'number', foreground: 'd19a66' },
+          { token: 'function', foreground: '61afef' },
+          { token: 'variable', foreground: 'abb2bf' },
+        ],
+        colors: {
+          'editor.background': '#282c34',
+          'editor.foreground': '#abb2bf',
+          'editor.lineHighlightBackground': '#2c313c',
+          'editor.selectionBackground': '#3e4451',
+        }
+      },
+      'nord': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '616e88' },
+          { token: 'string', foreground: 'a3be8c' },
+          { token: 'keyword', foreground: '81a1c1' },
+          { token: 'number', foreground: 'b48ead' },
+          { token: 'function', foreground: '88c0d0' },
+          { token: 'variable', foreground: 'd8dee9' },
+        ],
+        colors: {
+          'editor.background': '#2e3440',
+          'editor.foreground': '#d8dee9',
+          'editor.lineHighlightBackground': '#3b4252',
+          'editor.selectionBackground': '#434c5e',
+        }
+      },
+      'solarized-dark': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '586e75' },
+          { token: 'string', foreground: '2aa198' },
+          { token: 'keyword', foreground: '859900' },
+          { token: 'number', foreground: 'd33682' },
+          { token: 'function', foreground: '268bd2' },
+          { token: 'variable', foreground: '839496' },
+        ],
+        colors: {
+          'editor.background': '#002b36',
+          'editor.foreground': '#839496',
+          'editor.lineHighlightBackground': '#073642',
+          'editor.selectionBackground': '#073642',
+        }
+      },
+      'solarized-light': {
+        base: 'vs-light',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '93a1a1' },
+          { token: 'string', foreground: '2aa198' },
+          { token: 'keyword', foreground: '859900' },
+          { token: 'number', foreground: 'd33682' },
+          { token: 'function', foreground: '268bd2' },
+          { token: 'variable', foreground: '657b83' },
+        ],
+        colors: {
+          'editor.background': '#fdf6e3',
+          'editor.foreground': '#657b83',
+          'editor.lineHighlightBackground': '#eee8d5',
+          'editor.selectionBackground': '#eee8d5',
+        }
+      },
+      'night-owl': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '637777' },
+          { token: 'string', foreground: 'ecc48d' },
+          { token: 'keyword', foreground: 'c792ea' },
+          { token: 'number', foreground: 'f78c6c' },
+          { token: 'function', foreground: '82aaff' },
+          { token: 'variable', foreground: 'd6deeb' },
+        ],
+        colors: {
+          'editor.background': '#011627',
+          'editor.foreground': '#d6deeb',
+          'editor.lineHighlightBackground': '#010e1a',
+          'editor.selectionBackground': '#1d3b53',
+        }
+      },
+      'ayu-dark': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '5c6773' },
+          { token: 'string', foreground: 'aad94c' },
+          { token: 'keyword', foreground: 'ff8f40' },
+          { token: 'number', foreground: 'ffcc66' },
+          { token: 'function', foreground: 'ffb454' },
+          { token: 'variable', foreground: 'b3b1ad' },
+        ],
+        colors: {
+          'editor.background': '#0a0e14',
+          'editor.foreground': '#b3b1ad',
+          'editor.lineHighlightBackground': '#131721',
+          'editor.selectionBackground': '#253340',
+        }
+      },
+      'cobalt2': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '0088ff' },
+          { token: 'string', foreground: '3ad900' },
+          { token: 'keyword', foreground: 'ff9d00' },
+          { token: 'number', foreground: 'ff628c' },
+          { token: 'function', foreground: 'ffc600' },
+          { token: 'variable', foreground: 'ffffff' },
+        ],
+        colors: {
+          'editor.background': '#193549',
+          'editor.foreground': '#ffffff',
+          'editor.lineHighlightBackground': '#1f4662',
+          'editor.selectionBackground': '#0050a4',
+        }
+      },
+      'synthwave': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '848bbd' },
+          { token: 'string', foreground: '72f1b8' },
+          { token: 'keyword', foreground: 'ff7edb' },
+          { token: 'number', foreground: 'f97e72' },
+          { token: 'function', foreground: 'fede5d' },
+          { token: 'variable', foreground: 'f0eff1' },
+        ],
+        colors: {
+          'editor.background': '#262335',
+          'editor.foreground': '#f0eff1',
+          'editor.lineHighlightBackground': '#2a2139',
+          'editor.selectionBackground': '#463465',
+        }
+      },
+      'tokyo-night': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '565f89' },
+          { token: 'string', foreground: '9ece6a' },
+          { token: 'keyword', foreground: 'bb9af7' },
+          { token: 'number', foreground: 'ff9e64' },
+          { token: 'function', foreground: '7aa2f7' },
+          { token: 'variable', foreground: 'c0caf5' },
+        ],
+        colors: {
+          'editor.background': '#1a1b26',
+          'editor.foreground': '#c0caf5',
+          'editor.lineHighlightBackground': '#24283b',
+          'editor.selectionBackground': '#364a82',
+        }
+      },
+      'material': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '546e7a' },
+          { token: 'string', foreground: 'c3e88d' },
+          { token: 'keyword', foreground: 'c792ea' },
+          { token: 'number', foreground: 'f78c6c' },
+          { token: 'function', foreground: '82aaff' },
+          { token: 'variable', foreground: 'eeffff' },
+        ],
+        colors: {
+          'editor.background': '#263238',
+          'editor.foreground': '#eeffff',
+          'editor.lineHighlightBackground': '#2c3b41',
+          'editor.selectionBackground': '#546e7a',
+        }
+      },
+      'gruvbox-dark': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '928374' },
+          { token: 'string', foreground: 'fabd2f' },
+          { token: 'keyword', foreground: 'fb4934' },
+          { token: 'number', foreground: 'd3869b' },
+          { token: 'function', foreground: 'b8bb26' },
+          { token: 'variable', foreground: 'ebdbb2' },
+        ],
+        colors: {
+          'editor.background': '#282828',
+          'editor.foreground': '#ebdbb2',
+          'editor.lineHighlightBackground': '#3c3836',
+          'editor.selectionBackground': '#504945',
+        }
+      },
+      'palenight': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '676e95' },
+          { token: 'string', foreground: 'c3e88d' },
+          { token: 'keyword', foreground: 'c792ea' },
+          { token: 'number', foreground: 'f78c6c' },
+          { token: 'function', foreground: '82aaff' },
+          { token: 'variable', foreground: 'bfc7d5' },
+        ],
+        colors: {
+          'editor.background': '#292d3e',
+          'editor.foreground': '#bfc7d5',
+          'editor.lineHighlightBackground': '#32374d',
+          'editor.selectionBackground': '#717cb4',
+        }
+      },
+      'oceanic': {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '65737e' },
+          { token: 'string', foreground: '99c794' },
+          { token: 'keyword', foreground: 'c594c5' },
+          { token: 'number', foreground: 'f99157' },
+          { token: 'function', foreground: '6699cc' },
+          { token: 'variable', foreground: 'cdd3de' },
+        ],
+        colors: {
+          'editor.background': '#1b2b34',
+          'editor.foreground': '#cdd3de',
+          'editor.lineHighlightBackground': '#233645',
+          'editor.selectionBackground': '#4f5b66',
+        }
+      },
+    };
+
+    // Проверяем предустановленные темы
+    if (predefinedThemeDefinitions[themeId]) {
+      try {
+        // Проверяем, не была ли тема уже определена
+        try {
+          monacoRef.current.editor.setTheme(themeId);
+        } catch {
+          // Если тема не найдена, определяем её
+          monacoRef.current.editor.defineTheme(themeId, predefinedThemeDefinitions[themeId]);
+        }
+        editorRef.current.updateOptions({ theme: themeId });
+        return;
+      } catch (error) {
+        console.error('Error applying predefined theme:', error);
+      }
     }
 
     // Загружаем пользовательскую тему
@@ -89,19 +429,25 @@ function StudentIDE() {
     const customTheme = themes.find(t => t.id === themeId);
     
     if (customTheme) {
-      // Определяем тему в Monaco
-      monacoRef.current.editor.defineTheme(themeId, {
-        base: customTheme.base,
-        inherit: true,
-        rules: customTheme.tokenColors.map(token => ({
-          token: token.scope,
-          foreground: token.foreground.replace('#', '')
-        })),
-        colors: customTheme.colors
-      });
+      try {
+        // Определяем тему в Monaco
+        monacoRef.current.editor.defineTheme(themeId, {
+          base: customTheme.base,
+          inherit: true,
+          rules: customTheme.tokenColors.map(token => ({
+            token: token.scope,
+            foreground: token.foreground.replace('#', '')
+          })),
+          colors: customTheme.colors
+        });
 
-      // Применяем тему
-      editorRef.current.updateOptions({ theme: themeId });
+        // Применяем тему
+        editorRef.current.updateOptions({ theme: themeId });
+      } catch (error) {
+        console.error('Error applying custom theme:', error);
+        // Если не получилось, возвращаемся к базовой теме
+        editorRef.current.updateOptions({ theme: customTheme.base || 'vs-dark' });
+      }
     }
   };
 
@@ -186,10 +532,48 @@ function StudentIDE() {
     try {
       await updateProject(projectId, { fileSystem });
       console.log('✓ Автосохранение на сервер');
+      setLastSaveTime(new Date());
     } catch (error) {
       console.error('⚠ Ошибка автосохранения:', error);
     }
   };
+
+  // Моментальное автосохранение при изменении файлов
+  useEffect(() => {
+    if (unsavedFiles.size === 0) return;
+
+    // Дебаунс для автосохранения - сохраняем через 0.5 секунды после последнего изменения
+    autoSaveTimerRef.current = setTimeout(() => {
+      if (activeTab && editorRef.current && unsavedFiles.has(activeTab)) {
+        const content = editorRef.current.getValue();
+        
+        // Обновляем содержимое в файловой системе
+        const updatedFS = updateFileContent(fileSystem, activeTab, content);
+        setFileSystem(updatedFS);
+        
+        // Обновляем содержимое в активной вкладке
+        setOpenTabs(openTabs.map(tab => 
+          tab.path === activeTab ? { ...tab, content } : tab
+        ));
+        
+        // Убираем файл из списка несохранённых
+        setUnsavedFiles(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(activeTab);
+          return newSet;
+        });
+        
+        console.log('💾 Автосохранение:', activeTab);
+        setLastSaveTime(new Date());
+      }
+    }, 500); // 0.5 секунды после последнего изменения
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [unsavedFiles, activeTab, fileSystem, openTabs]);
 
   // Обработка изменения размера панели предпросмотра
   useEffect(() => {
@@ -298,36 +682,6 @@ function StudentIDE() {
     setOpenTabs(newTabs);
     if (activeTab === path) {
       setActiveTab(newTabs.length > 0 ? newTabs[newTabs.length - 1].path : null);
-    }
-  };
-
-  // Сохранить текущий файл
-  const saveFile = async () => {
-    if (activeTab && editorRef.current) {
-      const content = editorRef.current.getValue();
-      
-      // Обновить содержимое в файловой системе
-      const updatedFS = updateFileContent(fileSystem, activeTab, content);
-      setFileSystem(updatedFS);
-      
-      // Обновить содержимое ТОЛЬКО в активной вкладке
-      setOpenTabs(openTabs.map(tab => 
-        tab.path === activeTab ? { ...tab, content } : tab
-      ));
-      
-      // Убираем файл из списка несохранённых
-      setUnsavedFiles(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(activeTab);
-        return newSet;
-      });
-      
-      // Сохраняем на сервер немедленно
-      try {
-        await updateProject(projectId, { fileSystem: updatedFS });
-      } catch (error) {
-        console.error('Ошибка синхронизации с сервером:', error);
-      }
     }
   };
 
@@ -697,7 +1051,14 @@ function StudentIDE() {
           >
             <FaArrowLeft />
           </button>
-          <h1>{project?.name || 'Онлайн IDE'}</h1>
+          <h1>
+            {project?.name || 'Онлайн IDE'}
+            {unsavedFiles.size > 0 && (
+              <span className={styles['unsaved-count']} title={`Несохранённых файлов: ${unsavedFiles.size}`}>
+                ● {unsavedFiles.size}
+              </span>
+            )}
+          </h1>
           {project?.description && <span className={styles['project-description-header']}>• {project.description}</span>}
         </div>
         <div className={styles['student-ide-header-actions']}>
@@ -708,9 +1069,16 @@ function StudentIDE() {
           >
             {sidebarCollapsed ? <FaBars /> : <FaTimes />}
           </button>
-          <button className={styles['student-ide-btn-secondary']} onClick={saveFile} disabled={!activeTab}>
-            <FaSave /> Сохранить (Ctrl+S)
-          </button>
+          {lastSaveTime && (
+            <span className={styles['autosave-indicator']} title="Все изменения сохраняются автоматически">
+              ✓ Сохранено {lastSaveTime.toLocaleTimeString()}
+            </span>
+          )}
+          {unsavedFiles.size > 0 && !lastSaveTime && (
+            <span className={styles['saving-indicator']} title="Сохранение изменений...">
+              ⏳ Сохранение...
+            </span>
+          )}
           <button 
             className={styles['student-ide-btn-ai']} 
             onClick={() => {
@@ -787,7 +1155,7 @@ function StudentIDE() {
                 return (
                   <div
                     key={tab.path}
-                    className={`student-ide-tab ${activeTab === tab.path ? 'active' : ''} ${isUnsaved ? 'unsaved' : ''}`}
+                    className={`${styles['student-ide-tab']} ${activeTab === tab.path ? styles['active'] : ''} ${isUnsaved ? styles['unsaved'] : ''}`}
                     onClick={() => setActiveTab(tab.path)}
                   >
                     <span>{tab.name}</span>
@@ -913,12 +1281,6 @@ function StudentIDE() {
                       console.warn(`Не удалось переопределить команду: ${action.id}`);
                     }
                   });
-                  
-                  // Ctrl+S для сохранения
-                  editor.addCommand(
-                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-                    saveFile
-                  );
                   
                   // Поддержка плагинов через глобальный объект
                   window.monacoEditor = editor;

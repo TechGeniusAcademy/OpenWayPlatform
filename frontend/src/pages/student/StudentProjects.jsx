@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudentProjects.module.css';
-import { AiOutlinePlus, AiOutlineCode, AiOutlineDelete, AiOutlineSend } from 'react-icons/ai';
+import { AiOutlinePlus, AiOutlineCode, AiOutlineDelete, AiOutlineSend, AiOutlineProject, AiOutlineHtml5, AiOutlineCheckCircle, AiOutlineCloseCircle, AiOutlineWarning } from 'react-icons/ai';
 import { VscFiles } from 'react-icons/vsc';
+import { FaJs, FaPython, FaReact } from 'react-icons/fa';
 import { getAllProjects, createProject, deleteProject } from '../../services/projectService';
 import api from '../../utils/api';
 
@@ -17,6 +18,14 @@ function StudentProjects() {
   const [homeworks, setHomeworks] = useState([]);
   const [selectedHomework, setSelectedHomework] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Новые состояния для модальных окон
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationContent, setNotificationContent] = useState({ type: 'success', message: '' });
+  const [newProjectData, setNewProjectData] = useState({ name: '', description: '', language: 'html' });
 
   // Загрузка проектов с сервера
   useEffect(() => {
@@ -47,25 +56,36 @@ function StudentProjects() {
     }
   };
 
+  const openCreateModal = () => {
+    setNewProjectData({ name: '', description: '', language: 'html' });
+    setShowCreateModal(true);
+  };
+
   const createNewProject = async () => {
-    const name = prompt('Введите название проекта:');
-    if (!name || !name.trim()) return;
-    
-    const description = prompt('Введите описание проекта (необязательно):');
+    if (!newProjectData.name.trim()) {
+      showNotification('error', 'Пожалуйста, введите название проекта');
+      return;
+    }
     
     try {
       const newProject = await createProject({
-        name: name.trim(),
-        description: description?.trim() || '',
-        language: 'html'
+        name: newProjectData.name.trim(),
+        description: newProjectData.description.trim(),
+        language: newProjectData.language
       });
       
       // Добавляем проект в список и открываем IDE
       setProjects(prev => [newProject, ...prev]);
-      navigate(`/student/ide/${newProject.id}`, { state: { project: newProject } });
+      setShowCreateModal(false);
+      showNotification('success', 'Проект успешно создан!');
+      
+      // Переход в IDE через небольшую задержку
+      setTimeout(() => {
+        navigate(`/student/ide/${newProject.id}`, { state: { project: newProject } });
+      }, 1000);
     } catch (err) {
       console.error('Failed to create project:', err);
-      alert('Ошибка при создании проекта');
+      showNotification('error', 'Ошибка при создании проекта');
     }
   };
 
@@ -73,29 +93,31 @@ function StudentProjects() {
     navigate(`/student/ide/${project.id}`, { state: { project } });
   };
 
-  const handleDeleteProject = async (projectId, e) => {
+  const openDeleteModal = (project, e) => {
     e.stopPropagation();
     
-    console.log('Deleting project with ID:', projectId);
-    
-    if (!projectId) {
-      alert('Ошибка: ID проекта не определен');
+    if (!project.id && !project._id) {
+      showNotification('error', 'Ошибка: ID проекта не определен');
       return;
     }
     
-    if (!confirm('Вы уверены, что хотите удалить этот проект? Все файлы будут безвозвратно удалены.')) {
-      return;
-    }
+    setProjectToDelete(project);
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteProject = async () => {
+    const projectId = projectToDelete.id || projectToDelete._id;
+    
     try {
       await deleteProject(projectId);
       setProjects(prev => prev.filter(p => (p.id || p._id) !== projectId));
       // Очищаем также localStorage для этого проекта
       localStorage.removeItem(`studentIDE_project_${projectId}`);
-      alert('Проект успешно удален');
+      setShowDeleteModal(false);
+      showNotification('success', 'Проект успешно удален');
     } catch (err) {
       console.error('Failed to delete project:', err);
-      alert('Ошибка при удалении проекта: ' + (err.response?.data?.message || err.message));
+      showNotification('error', 'Ошибка при удалении проекта: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -107,9 +129,19 @@ function StudentProjects() {
     setSelectedHomework(null);
   };
 
+  const showNotification = (type, message) => {
+    setNotificationContent({ type, message });
+    setShowNotificationModal(true);
+    
+    // Автоматически закрываем уведомление через 3 секунды
+    setTimeout(() => {
+      setShowNotificationModal(false);
+    }, 3000);
+  };
+
   const handleSubmitProject = async () => {
     if (submissionType === 'homework' && !selectedHomework) {
-      alert('Выберите домашнее задание');
+      showNotification('error', 'Выберите домашнее задание');
       return;
     }
 
@@ -123,15 +155,28 @@ function StudentProjects() {
       };
 
       await api.post('/submissions', submissionData);
-      alert('Проект успешно отправлен на проверку!');
       setShowSubmitModal(false);
+      showNotification('success', 'Проект успешно отправлен на проверку!');
     } catch (err) {
       console.error('Failed to submit project:', err);
-      alert('Ошибка при отправке проекта: ' + (err.response?.data?.message || err.message));
+      showNotification('error', 'Ошибка при отправке проекта: ' + (err.response?.data?.message || err.message));
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Вычисление статистики проектов
+  const getStats = () => {
+    const totalProjects = projects.length;
+    const htmlProjects = projects.filter(p => p.language?.toLowerCase() === 'html').length;
+    const jsProjects = projects.filter(p => p.language?.toLowerCase() === 'javascript' || p.language?.toLowerCase() === 'js').length;
+    const pythonProjects = projects.filter(p => p.language?.toLowerCase() === 'python').length;
+    const totalFiles = projects.reduce((sum, p) => sum + (p.files_count || p.filesCount || 0), 0);
+
+    return { totalProjects, htmlProjects, jsProjects, pythonProjects, totalFiles };
+  };
+
+  const stats = getStats();
 
   return (
     <div className={styles['student-projects']}>
@@ -140,7 +185,7 @@ function StudentProjects() {
           <h1>Мои проекты</h1>
           <p>Управляйте своими проектами программирования</p>
         </div>
-        <button className={styles['create-project-btn']} onClick={createNewProject}>
+        <button className={styles['create-project-btn']} onClick={openCreateModal}>
           <AiOutlinePlus />
           Новый проект
         </button>
@@ -152,6 +197,60 @@ function StudentProjects() {
 
       {error && (
         <div className={styles['error-message']}>{error}</div>
+      )}
+
+      {!loading && !error && projects.length > 0 && (
+        <div className={styles['stats-section']}>
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+              <AiOutlineProject />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{stats.totalProjects}</div>
+              <div className={styles['stat-label']}>Всего проектов</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+              <AiOutlineHtml5 />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{stats.htmlProjects}</div>
+              <div className={styles['stat-label']}>HTML проектов</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)' }}>
+              <FaJs />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{stats.jsProjects}</div>
+              <div className={styles['stat-label']}>JS проектов</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)' }}>
+              <FaPython />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{stats.pythonProjects}</div>
+              <div className={styles['stat-label']}>Python проектов</div>
+            </div>
+          </div>
+
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
+              <VscFiles />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{stats.totalFiles}</div>
+              <div className={styles['stat-label']}>Всего файлов</div>
+            </div>
+          </div>
+        </div>
       )}
 
       {!loading && !error && projects.length === 0 && (
@@ -174,10 +273,10 @@ function StudentProjects() {
                   <button className={styles['action-btn']} onClick={(e) => { e.stopPropagation(); openProject(project); }} title="Открыть в IDE">
                     <AiOutlineCode />
                   </button>
-                  <button className="action-btn submit" onClick={(e) => openSubmitModal(project, e)} title="Отправить на проверку">
+                  <button className={`${styles['action-btn']} ${styles['submit']}`} onClick={(e) => openSubmitModal(project, e)} title="Отправить на проверку">
                     <AiOutlineSend />
                   </button>
-                  <button className="action-btn delete" onClick={(e) => handleDeleteProject(project.id || project._id, e)} title="Удалить">
+                  <button className={`${styles['action-btn']} ${styles['delete']}`} onClick={(e) => openDeleteModal(project, e)} title="Удалить">
                     <AiOutlineDelete />
                   </button>
                 </div>
@@ -270,6 +369,116 @@ function StudentProjects() {
                 disabled={submitting || (submissionType === 'homework' && !selectedHomework)}
               >
                 {submitting ? 'Отправка...' : 'Отправить на проверку'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно создания проекта */}
+      {showCreateModal && (
+        <div className={styles['modal-overlay']} onClick={() => setShowCreateModal(false)}>
+          <div className={styles['modal-content']} onClick={e => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>Создать новый проект</h2>
+              <button onClick={() => setShowCreateModal(false)}>×</button>
+            </div>
+
+            <div className={styles['modal-body']}>
+              <div className={styles['form-group']}>
+                <label>Название проекта *</label>
+                <input
+                  type="text"
+                  placeholder="Введите название проекта"
+                  value={newProjectData.name}
+                  onChange={(e) => setNewProjectData(prev => ({ ...prev, name: e.target.value }))}
+                  autoFocus
+                />
+              </div>
+
+              <div className={styles['form-group']}>
+                <label>Описание проекта</label>
+                <textarea
+                  placeholder="Введите описание проекта (необязательно)"
+                  value={newProjectData.description}
+                  onChange={(e) => setNewProjectData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                />
+              </div>
+
+              <div className={styles['form-group']}>
+                <label>Язык программирования *</label>
+                <select
+                  value={newProjectData.language}
+                  onChange={(e) => setNewProjectData(prev => ({ ...prev, language: e.target.value }))}
+                >
+                  <option value="html">HTML/CSS/JS</option>
+                  <option value="javascript">JavaScript</option>
+                  <option value="python">Python</option>
+                  <option value="react">React</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={styles['modal-footer']}>
+              <button onClick={() => setShowCreateModal(false)} className={styles['btn-cancel']}>
+                Отмена
+              </button>
+              <button onClick={createNewProject} className={styles['btn-primary']}>
+                Создать проект
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно подтверждения удаления */}
+      {showDeleteModal && (
+        <div className={styles['modal-overlay']} onClick={() => setShowDeleteModal(false)}>
+          <div className={styles['modal-content']} onClick={e => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>Подтверждение удаления</h2>
+              <button onClick={() => setShowDeleteModal(false)}>×</button>
+            </div>
+
+            <div className={styles['modal-body']}>
+              <div className={styles['delete-warning']}>
+                <AiOutlineWarning />
+                <div>
+                  <h3>Вы уверены, что хотите удалить проект?</h3>
+                  <p><strong>{projectToDelete?.name}</strong></p>
+                  <p>Все файлы будут безвозвратно удалены. Это действие нельзя отменить.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles['modal-footer']}>
+              <button onClick={() => setShowDeleteModal(false)} className={styles['btn-cancel']}>
+                Отмена
+              </button>
+              <button onClick={confirmDeleteProject} className={styles['btn-danger']}>
+                Удалить проект
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно уведомлений */}
+      {showNotificationModal && (
+        <div className={styles['modal-overlay']} onClick={() => setShowNotificationModal(false)}>
+          <div className={styles['notification-modal']} onClick={e => e.stopPropagation()}>
+            <div className={`${styles['notification-content']} ${styles[notificationContent.type]}`}>
+              <div className={styles['notification-icon']}>
+                {notificationContent.type === 'success' && <AiOutlineCheckCircle />}
+                {notificationContent.type === 'error' && <AiOutlineCloseCircle />}
+              </div>
+              <div className={styles['notification-text']}>
+                <h3>{notificationContent.type === 'success' ? 'Успешно!' : 'Ошибка!'}</h3>
+                <p>{notificationContent.message}</p>
+              </div>
+              <button onClick={() => setShowNotificationModal(false)} className={styles['notification-close']}>
+                ×
               </button>
             </div>
           </div>

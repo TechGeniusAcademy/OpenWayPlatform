@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import styles from './StudentPlugins.module.css';
-import { FaPlus, FaTrash, FaToggleOn, FaToggleOff, FaCode, FaPlug, FaBook } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaToggleOn, FaToggleOff, FaCode, FaPlug, FaBook, FaCog, FaCheckCircle } from 'react-icons/fa';
+import { AiOutlineCheckCircle, AiOutlineCloseCircle, AiOutlineWarning } from 'react-icons/ai';
 
 function StudentPlugins() {
   const [plugins, setPlugins] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPlugin, setNewPlugin] = useState({ name: '', description: '', code: '', enabled: true });
+  
+  // Модальные окна
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [pluginToDelete, setPluginToDelete] = useState(null);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationContent, setNotificationContent] = useState({ type: '', message: '' });
 
   useEffect(() => {
     loadPlugins();
@@ -25,7 +32,7 @@ function StudentPlugins() {
 
   const addPlugin = () => {
     if (!newPlugin.name || !newPlugin.code) {
-      alert('Введите название и код плагина');
+      showNotification('error', 'Введите название и код плагина');
       return;
     }
 
@@ -38,19 +45,53 @@ function StudentPlugins() {
     savePlugins([...plugins, plugin]);
     setNewPlugin({ name: '', description: '', code: '', enabled: true });
     setShowAddModal(false);
+    showNotification('success', `Плагин "${plugin.name}" успешно создан!`);
   };
 
-  const deletePlugin = (id) => {
-    if (confirm('Удалить плагин?')) {
-      savePlugins(plugins.filter(p => p.id !== id));
+  // Открыть модальное окно удаления
+  const openDeleteModal = (plugin) => {
+    setPluginToDelete(plugin);
+    setShowDeleteModal(true);
+  };
+
+  // Подтвердить удаление
+  const confirmDeletePlugin = () => {
+    if (pluginToDelete) {
+      savePlugins(plugins.filter(p => p.id !== pluginToDelete.id));
+      setShowDeleteModal(false);
+      showNotification('success', `Плагин "${pluginToDelete.name}" удален`);
+      setPluginToDelete(null);
     }
   };
 
   const togglePlugin = (id) => {
+    const plugin = plugins.find(p => p.id === id);
     savePlugins(plugins.map(p => 
       p.id === id ? { ...p, enabled: !p.enabled } : p
     ));
+    
+    if (plugin) {
+      showNotification('success', plugin.enabled ? 'Плагин отключен' : 'Плагин включен');
+    }
   };
+
+  // Показать уведомление
+  const showNotification = (type, message) => {
+    setNotificationContent({ type, message });
+    setShowNotificationModal(true);
+    setTimeout(() => setShowNotificationModal(false), 3000);
+  };
+
+  // Рассчитать статистику
+  const getStats = () => {
+    const totalPlugins = plugins.length;
+    const enabledPlugins = plugins.filter(p => p.enabled).length;
+    const disabledPlugins = totalPlugins - enabledPlugins;
+    
+    return { totalPlugins, enabledPlugins, disabledPlugins };
+  };
+
+  const stats = getStats();
 
   const examplePlugin = `// Пример плагина: автосохранение каждые 5 секунд
 let autoSaveInterval = setInterval(() => {
@@ -66,7 +107,7 @@ window.addEventListener('beforeunload', () => {
   return (
     <div className={styles['student-plugins']}>
       <div className={styles['student-plugins-header']}>
-        <div>
+        <div className={styles['header-content']}>
           <h1><FaPlug /> Плагины редактора</h1>
           <p>Расширьте возможности IDE с помощью собственных плагинов</p>
         </div>
@@ -74,6 +115,41 @@ window.addEventListener('beforeunload', () => {
           <FaPlus /> Добавить плагин
         </button>
       </div>
+
+      {/* Статистика */}
+      {plugins.length > 0 && (
+        <div className={styles['plugins-stats']}>
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']}>
+              <FaPlug />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{stats.totalPlugins}</div>
+              <div className={styles['stat-label']}>Всего плагинов</div>
+            </div>
+          </div>
+          
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #27ae60 0%, #229954 100%)' }}>
+              <FaCheckCircle />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{stats.enabledPlugins}</div>
+              <div className={styles['stat-label']}>Активных</div>
+            </div>
+          </div>
+          
+          <div className={styles['stat-card']}>
+            <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)' }}>
+              <FaCog />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{stats.disabledPlugins}</div>
+              <div className={styles['stat-label']}>Отключено</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={styles['plugins-grid']}>
         {plugins.length === 0 ? (
@@ -85,18 +161,18 @@ window.addEventListener('beforeunload', () => {
           </div>
         ) : (
           plugins.map(plugin => (
-            <div key={plugin.id} className={`plugin-card ${plugin.enabled ? 'enabled' : 'disabled'}`}>
+            <div key={plugin.id} className={`${styles['plugin-card']} ${plugin.enabled ? styles['enabled'] : styles['disabled']}`}>
               <div className={styles['plugin-header']}>
                 <h3>{plugin.name}</h3>
                 <div className={styles['plugin-actions']}>
                   <button 
                     onClick={() => togglePlugin(plugin.id)}
-                    className={plugin.enabled ? 'toggle-on' : 'toggle-off'}
+                    className={`${styles['toggle-btn']} ${plugin.enabled ? styles['toggle-on'] : styles['toggle-off']}`}
                     title={plugin.enabled ? 'Отключить' : 'Включить'}
                   >
                     {plugin.enabled ? <FaToggleOn /> : <FaToggleOff />}
                   </button>
-                  <button onClick={() => deletePlugin(plugin.id)} className={styles['btn-delete']} title="Удалить">
+                  <button onClick={() => openDeleteModal(plugin)} className={styles['btn-delete']} title="Удалить">
                     <FaTrash />
                   </button>
                 </div>
@@ -186,6 +262,48 @@ window.addEventListener('beforeunload', () => {
           </ul>
         </div>
       </div>
+
+      {/* Модальное окно подтверждения удаления */}
+      {showDeleteModal && pluginToDelete && (
+        <div className={styles['modal-overlay']} onClick={() => setShowDeleteModal(false)}>
+          <div className={styles['modal-content-delete']} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>Удалить плагин?</h2>
+              <button className={styles['modal-close']} onClick={() => setShowDeleteModal(false)}>×</button>
+            </div>
+            <div className={styles['modal-body']}>
+              <div className={styles['delete-warning']}>
+                <AiOutlineWarning className={styles['warning-icon']} />
+                <p>Вы уверены, что хотите удалить плагин <strong>"{pluginToDelete.name}"</strong>?</p>
+                <p className={styles['warning-text']}>Это действие нельзя отменить!</p>
+              </div>
+            </div>
+            <div className={styles['modal-footer']}>
+              <button className={styles['btn-cancel']} onClick={() => setShowDeleteModal(false)}>
+                Отмена
+              </button>
+              <button className={styles['btn-danger']} onClick={confirmDeletePlugin}>
+                <FaTrash />
+                Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно уведомлений */}
+      {showNotificationModal && (
+        <div className={styles['notification-modal']}>
+          <div className={`${styles['notification-content']} ${styles[notificationContent.type]}`}>
+            {notificationContent.type === 'success' ? (
+              <AiOutlineCheckCircle className={styles['notification-icon']} />
+            ) : (
+              <AiOutlineCloseCircle className={styles['notification-icon']} />
+            )}
+            <span>{notificationContent.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

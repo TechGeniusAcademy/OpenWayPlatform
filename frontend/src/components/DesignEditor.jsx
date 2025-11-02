@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FaSquare, FaCircle, FaPen, FaFont, FaImage, FaMousePointer, FaUndo, FaRedo, FaTrash, FaCopy, FaDownload, FaSave, FaFolder, FaPlus, FaEye, FaEyeSlash, FaLock, FaUnlock, FaBrush, FaEraser, FaPlay, FaStop, FaTimes, FaCode, FaRuler, FaExpand, FaCompress, FaSearch, FaArrowsAlt, FaBorderAll, FaUpload, FaShare, FaSearchPlus } from 'react-icons/fa';
+import { FaSquare, FaCircle, FaPen, FaFont, FaImage, FaMousePointer, FaUndo, FaRedo, FaTrash, FaCopy, FaClone, FaDownload, FaSave, FaFolder, FaPlus, FaEye, FaEyeSlash, FaLock, FaUnlock, FaBrush, FaEraser, FaPlay, FaStop, FaTimes, FaCode, FaRuler, FaExpand, FaCompress, FaSearch, FaArrowsAlt, FaBorderAll, FaUpload, FaShare, FaSearchPlus } from 'react-icons/fa';
 import { MdStar, MdGridOn, MdInvertColors, MdColorLens, MdTextFields, MdTransform } from 'react-icons/md';
 import { BsTriangle, BsDiamond, BsLayers, BsGrid3X3Gap, BsEyedropper, BsSliders } from 'react-icons/bs';
 import { AiOutlineColumnWidth, AiOutlineColumnHeight, AiOutlineBgColors, AiFillFileText } from 'react-icons/ai';
@@ -7,6 +7,14 @@ import { RiRulerLine, RiPaletteLine, RiLayoutGridLine } from 'react-icons/ri';
 import JSZip from 'jszip';
 import ColorPicker from './ColorPicker';
 import styles from './DesignEditor.module.css';
+import { 
+  getAllDesignProjects, 
+  createDesignProject, 
+  updateDesignProject, 
+  deleteDesignProject,
+  saveWorkspace,
+  loadWorkspace 
+} from '../services/designProjectService';
 
 // Google Fonts список
 const GOOGLE_FONTS = [
@@ -107,6 +115,9 @@ const DesignEditor = () => {
   const [hoveredElement, setHoveredElement] = useState(null);
   const [isAltPressed, setIsAltPressed] = useState(false);
   
+  // Буфер обмена
+  const [clipboard, setClipboard] = useState(null);
+  
   // Компоненты и стили
   const [components, setComponents] = useState([]);
   const [textStyles, setTextStyles] = useState([]);
@@ -120,6 +131,12 @@ const DesignEditor = () => {
   
   // Индикатор автосохранения
   const [autoSaveStatus, setAutoSaveStatus] = useState('saved'); // 'saved', 'saving'
+  
+  // Редактирование текста напрямую на холсте
+  const [editingTextId, setEditingTextId] = useState(null);
+  const [editingTextValue, setEditingTextValue] = useState('');
+  const [editingTextPosition, setEditingTextPosition] = useState({ x: 0, y: 0 });
+  const textInputRef = useRef(null);
 
   // Сохранение в историю
   const saveToHistory = useCallback(() => {
@@ -169,14 +186,29 @@ const DesignEditor = () => {
   };
 
   // Получить ручки изменения размера для элемента
+  // Вспомогательная функция для точного измерения размеров текста
+  const getTextDimensions = (element) => {
+    if (!canvasRef.current) return { width: 100, height: 20 };
+    const ctx = canvasRef.current.getContext('2d');
+    const fontWeight = element.fontWeight || 'normal';
+    const fontStyle = element.fontStyle || 'normal';
+    ctx.font = `${fontStyle} ${fontWeight} ${element.fontSize}px ${element.fontFamily}`;
+    const metrics = ctx.measureText(element.text);
+    return {
+      width: metrics.width,
+      height: element.fontSize * 1.3 // Высота с учетом line-height
+    };
+  };
+
   const getResizeHandles = (element) => {
     const handleSize = 8 / zoom;
     let width, height;
     
     // Для текста вычисляем размеры по-особому
     if (element.type === 'text') {
-      width = element.text.length * element.fontSize * 0.6;
-      height = element.fontSize * 1.3;
+      const textDims = getTextDimensions(element);
+      width = textDims.width;
+      height = textDims.height;
     } else {
       width = element.width || element.radius * 2 || 100;
       height = element.height || element.radius * 2 || 80;
@@ -203,8 +235,9 @@ const DesignEditor = () => {
     
     // Для текста вычисляем размеры по-особому
     if (element.type === 'text') {
-      width = element.text.length * element.fontSize * 0.6;
-      height = element.fontSize * 1.3;
+      const textDims = getTextDimensions(element);
+      width = textDims.width;
+      height = textDims.height;
     } else {
       width = element.width || element.radius * 2 || 100;
       height = element.height || element.radius * 2 || 80;
@@ -260,9 +293,9 @@ const DesignEditor = () => {
         return x >= element.x && x <= element.x + (element.width || 100) &&
                y >= element.y && y <= element.y + (element.height || 80);
       case 'text':
-        const textBoxHeight = element.fontSize * 1.3;
-        return x >= element.x && x <= element.x + (element.text.length * element.fontSize * 0.6) &&
-               y >= element.y && y <= element.y + textBoxHeight;
+        const textDims = getTextDimensions(element);
+        return x >= element.x && x <= element.x + textDims.width &&
+               y >= element.y && y <= element.y + textDims.height;
       case 'path':
         // Простая проверка для путей
         if (!element.points || element.points.length === 0) return false;
@@ -270,6 +303,10 @@ const DesignEditor = () => {
         return element.points.some(point => 
           Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2) <= brushRadius
         );
+      case 'group':
+        // Проверка попадания в область группы
+        return x >= element.x && x <= element.x + element.width &&
+               y >= element.y && y <= element.y + element.height;
       default:
         return false;
     }
@@ -405,110 +442,168 @@ const DesignEditor = () => {
     }
   };
 
-  // Сохранение и загрузка проектов
-  const saveProject = (name = null) => {
-    const projectName = name || prompt('Название проекта:') || `Проект ${projects.length + 1}`;
-    const project = {
-      id: Date.now(),
-      name: projectName,
-      elements: JSON.parse(JSON.stringify(elements)),
-      canvasSize,
-      createdAt: new Date().toISOString()
-    };
-    
-    const newProjects = [...projects, project];
-    setProjects(newProjects);
-    setCurrentProject(project);
-    localStorage.setItem('designEditorProjects', JSON.stringify(newProjects));
-    
-    // Также обновляем workspace
-    const workspace = {
-      elements,
-      canvasSize,
-      currentProject: project,
-      lastModified: new Date().toISOString()
-    };
-    localStorage.setItem('designEditorWorkspace', JSON.stringify(workspace));
-    
-    alert(`✅ Проект "${projectName}" сохранен!`);
+  // Сохранение и загрузка проектов (с синхронизацией на сервер)
+  const saveProject = async (name = null) => {
+    try {
+      const projectName = name || prompt('Название проекта:') || `Проект ${projects.length + 1}`;
+      
+      if (currentProject && currentProject.id) {
+        // Обновляем существующий проект
+        const updated = await updateDesignProject(currentProject.id, {
+          name: projectName,
+          elements,
+          canvasSize
+        });
+        
+        const updatedProjects = projects.map(p => p.id === updated.id ? updated : p);
+        setProjects(updatedProjects);
+        setCurrentProject(updated);
+        alert(`✅ Проект "${projectName}" обновлен!`);
+      } else {
+        // Создаем новый проект
+        const newProject = await createDesignProject({
+          name: projectName,
+          elements,
+          canvasSize
+        });
+        
+        const updatedProjects = [...projects, newProject];
+        setProjects(updatedProjects);
+        setCurrentProject(newProject);
+        alert(`✅ Проект "${projectName}" сохранен!`);
+      }
+      
+      // Также сохраняем workspace
+      await saveWorkspace({
+        elements,
+        canvasSize,
+        currentProjectId: currentProject?.id || null
+      });
+    } catch (error) {
+      console.error('Error saving project:', error);
+      alert('❌ Ошибка при сохранении проекта. Проверьте подключение к интернету.');
+    }
   };
 
   const loadProject = (project) => {
-    setElements(project.elements);
-    setCanvasSize(project.canvasSize);
+    setElements(project.elements || []);
+    setCanvasSize(project.canvasSize || { width: 1920, height: 1080 });
     setCurrentProject(project);
     setSelectedElement(null);
     setShowProjectManager(false);
     saveToHistory();
   };
 
-  const deleteProject = (projectId) => {
-    const newProjects = projects.filter(p => p.id !== projectId);
-    setProjects(newProjects);
-    localStorage.setItem('designEditorProjects', JSON.stringify(newProjects));
-  };
-
-  const clearAllProjects = () => {
-    if (confirm('Вы уверены, что хотите удалить ВСЕ проекты? Это действие нельзя отменить!')) {
-      setProjects([]);
-      setElements([]);
-      setCurrentProject(null);
-      setSelectedElement(null);
-      setSelectedElements([]);
-      localStorage.removeItem('designEditorProjects');
-      localStorage.removeItem('designEditorWorkspace');
-      alert('Все проекты удалены! Кэш очищен.');
+  const handleDeleteProject = async (projectId) => {
+    try {
+      await deleteDesignProject(projectId);
+      const updatedProjects = projects.filter(p => p.id !== projectId);
+      setProjects(updatedProjects);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('❌ Ошибка при удалении проекта.');
     }
   };
 
-  // Загрузка проектов при инициализации
-  useEffect(() => {
-    const savedProjects = localStorage.getItem('designEditorProjects');
-    const savedWorkspace = localStorage.getItem('designEditorWorkspace');
-    
-    // Загружаем последнее рабочее состояние
-    if (savedWorkspace) {
+  const clearAllProjects = async () => {
+    if (confirm('Вы уверены, что хотите удалить ВСЕ проекты? Это действие нельзя отменить!')) {
       try {
-        const workspace = JSON.parse(savedWorkspace);
-        setElements(workspace.elements || []);
-        setCanvasSize(workspace.canvasSize || { width: 1920, height: 1080 });
-        setCurrentProject(workspace.currentProject || null);
-        console.log('🔄 Восстановлено рабочее пространство');
-      } catch (error) {
-        console.error('Ошибка загрузки workspace:', error);
-        localStorage.removeItem('designEditorWorkspace');
-      }
-    } else if (savedProjects) {
-      // Если нет workspace, загружаем из старых проектов
-      try {
-        const parsedProjects = JSON.parse(savedProjects);
-        setProjects(parsedProjects);
+        // Удаляем все проекты
+        for (const project of projects) {
+          await deleteDesignProject(project.id);
+        }
         
-        // Автоматически загружаем последний проект (если есть)
-        if (parsedProjects.length > 0) {
-          const lastProject = parsedProjects[parsedProjects.length - 1];
+        setProjects([]);
+        setElements([]);
+        setCurrentProject(null);
+        setSelectedElement(null);
+        setSelectedElements([]);
+        alert('Все проекты удалены!');
+      } catch (error) {
+        console.error('Error clearing projects:', error);
+        alert('❌ Ошибка при удалении проектов.');
+      }
+    }
+  };
+
+  // Загрузка проектов при инициализации (с сервера)
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Загружаем все проекты
+        const allProjects = await getAllDesignProjects();
+        setProjects(allProjects);
+        
+        // Загружаем последнее рабочее состояние
+        const workspace = await loadWorkspace();
+        if (workspace) {
+          setElements(workspace.elements || []);
+          setCanvasSize(workspace.canvasSize || { width: 1920, height: 1080 });
+          
+          // Находим текущий проект
+          if (workspace.currentProjectId) {
+            const currentProj = allProjects.find(p => p.id === workspace.currentProjectId);
+            setCurrentProject(currentProj || null);
+          }
+          
+          console.log('🔄 Восстановлено рабочее пространство с сервера');
+        } else if (allProjects.length > 0) {
+          // Если нет workspace, загружаем последний проект
+          const lastProject = allProjects[allProjects.length - 1];
           setElements(lastProject.elements || []);
           setCanvasSize(lastProject.canvasSize || { width: 1920, height: 1080 });
           setCurrentProject(lastProject);
           console.log('🔄 Автоматически загружен последний проект:', lastProject.name);
         }
       } catch (error) {
-        console.error('Ошибка загрузки проектов из localStorage:', error);
-        // Очищаем поврежденные данные
-        localStorage.removeItem('designEditorProjects');
+        console.error('Ошибка загрузки проектов с сервера:', error);
+        // Можно попробовать загрузить из localStorage как fallback
+        const savedProjects = localStorage.getItem('designEditorProjects');
+        const savedWorkspace = localStorage.getItem('designEditorWorkspace');
+        
+        if (savedWorkspace) {
+          try {
+            const workspace = JSON.parse(savedWorkspace);
+            setElements(workspace.elements || []);
+            setCanvasSize(workspace.canvasSize || { width: 1920, height: 1080 });
+            setCurrentProject(workspace.currentProject || null);
+            console.log('🔄 Восстановлено рабочее пространство из localStorage (fallback)');
+          } catch (err) {
+            console.error('Ошибка fallback загрузки:', err);
+          }
+        }
+        
+        if (savedProjects) {
+          try {
+            const parsedProjects = JSON.parse(savedProjects);
+            setProjects(parsedProjects);
+          } catch (err) {
+            console.error('Ошибка загрузки списка проектов:', err);
+          }
+        }
       }
-    }
+    };
     
-    // Загружаем список проектов
-    if (savedProjects) {
-      try {
-        const parsedProjects = JSON.parse(savedProjects);
-        setProjects(parsedProjects);
-      } catch (error) {
-        console.error('Ошибка загрузки списка проектов:', error);
-      }
-    }
+    loadData();
   }, []);
+
+  // Автосохранение workspace каждые 30 секунд
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        await saveWorkspace({
+          elements,
+          canvasSize,
+          currentProjectId: currentProject?.id || null
+        });
+        console.log('💾 Workspace автоматически сохранен');
+      } catch (error) {
+        console.error('Ошибка автосохранения workspace:', error);
+      }
+    }, 30000); // 30 секунд
+
+    return () => clearInterval(interval);
+  }, [elements, canvasSize, currentProject]);
 
   // Обработчики drag-and-drop для файлов
   const handleCanvasDragOver = (e) => {
@@ -564,6 +659,67 @@ const DesignEditor = () => {
     return () => clearTimeout(saveTimeout);
   }, [elements, canvasSize, currentProject]);
 
+  // Обработчик двойного клика для редактирования текста
+  const handleDoubleClick = (e) => {
+    const position = getMousePosition(e);
+    const element = getElementAtPosition(position.x, position.y);
+    
+    if (element && element.type === 'text' && !element.locked) {
+      // Начинаем редактирование текста
+      setEditingTextId(element.id);
+      setEditingTextValue(element.text);
+      
+      // Вычисляем позицию для input с учетом масштаба и панорамирования
+      const rect = canvasRef.current.getBoundingClientRect();
+      const scaledX = (element.x * zoom) + panOffsetRef.current.x + rect.left;
+      const scaledY = (element.y * zoom) + panOffsetRef.current.y + rect.top;
+      
+      setEditingTextPosition({
+        x: scaledX,
+        y: scaledY,
+        width: (element.width || 200) * zoom,
+        fontSize: (element.fontSize || 16) * zoom,
+        fontFamily: element.fontFamily || 'Roboto',
+        fontWeight: element.fontWeight || 'normal',
+        fontStyle: element.fontStyle || 'normal',
+        textAlign: element.textAlign || 'left',
+        color: element.fillColor || '#000000'
+      });
+      
+      // Фокусируем input после следующего рендера
+      setTimeout(() => {
+        if (textInputRef.current) {
+          textInputRef.current.focus();
+          textInputRef.current.select();
+        }
+      }, 0);
+    }
+  };
+  
+  // Завершение редактирования текста
+  const finishTextEditing = () => {
+    if (editingTextId) {
+      if (editingTextValue.trim()) {
+        // Обновляем текст элемента
+        const newElements = elements.map(el =>
+          el.id === editingTextId
+            ? { ...el, text: editingTextValue }
+            : el
+        );
+        setElements(newElements);
+        saveToHistory();
+      } else {
+        // Если текст пустой, удаляем элемент
+        const newElements = elements.filter(el => el.id !== editingTextId);
+        setElements(newElements);
+        setSelectedElement(null);
+        setSelectedElements([]);
+      }
+    }
+    setEditingTextId(null);
+    setEditingTextValue('');
+  };
+
   // Обработчики событий мыши
   const handleMouseDown = (e) => {
     if (e.button === 1 || (e.button === 0 && e.ctrlKey) || (e.button === 0 && e.shiftKey && tool === 'select')) { // СКМ, Ctrl+ЛКМ или Shift+ЛКМ для панорамирования
@@ -607,7 +763,8 @@ const DesignEditor = () => {
             elementX: selectedElement.x,
             elementY: selectedElement.y,
             elementWidth: selectedElement.width || selectedElement.radius * 2 || 100,
-            elementHeight: selectedElement.height || selectedElement.radius * 2 || 80
+            elementHeight: selectedElement.height || selectedElement.radius * 2 || 80,
+            elementFontSize: selectedElement.fontSize // Сохраняем исходный размер шрифта для текста
           });
           setIsDrawing(true);
           return;
@@ -673,6 +830,37 @@ const DesignEditor = () => {
       const newElement = createElement(tool, position.x, position.y);
       setElements([...elements, newElement]);
       setSelectedElement(newElement);
+      
+      // Если создается текстовый элемент, сразу открываем редактор
+      if (tool === 'text') {
+        setEditingTextId(newElement.id);
+        setEditingTextValue(newElement.text);
+        
+        // Вычисляем позицию для input с учетом масштаба и панорамирования
+        const rect = canvasRef.current.getBoundingClientRect();
+        const scaledX = (newElement.x * zoom) + panOffsetRef.current.x + rect.left;
+        const scaledY = (newElement.y * zoom) + panOffsetRef.current.y + rect.top;
+        
+        setEditingTextPosition({
+          x: scaledX,
+          y: scaledY,
+          width: 200 * zoom,
+          fontSize: (newElement.fontSize || 16) * zoom,
+          fontFamily: newElement.fontFamily || 'Roboto',
+          fontWeight: newElement.fontWeight || 'normal',
+          fontStyle: newElement.fontStyle || 'normal',
+          textAlign: newElement.textAlign || 'left',
+          color: newElement.fillColor || '#000000'
+        });
+        
+        // Фокусируем input после следующего рендера
+        setTimeout(() => {
+          if (textInputRef.current) {
+            textInputRef.current.focus();
+            textInputRef.current.select();
+          }
+        }, 0);
+      }
     }
   };
 
@@ -682,8 +870,17 @@ const DesignEditor = () => {
     
     const measurements = [];
     
-    const el1Width = element1.width || element1.radius * 2 || 100;
-    const el1Height = element1.height || element1.radius * 2 || 80;
+    // Вычисляем размеры element1
+    let el1Width, el1Height;
+    if (element1.type === 'text') {
+      const textDims = getTextDimensions(element1);
+      el1Width = textDims.width;
+      el1Height = textDims.height;
+    } else {
+      el1Width = element1.width || element1.radius * 2 || 100;
+      el1Height = element1.height || element1.radius * 2 || 80;
+    }
+    
     const el1Left = element1.x;
     const el1Right = element1.x + el1Width;
     const el1Top = element1.y;
@@ -691,8 +888,17 @@ const DesignEditor = () => {
     const el1CenterX = element1.x + el1Width / 2;
     const el1CenterY = element1.y + el1Height / 2;
     
-    const el2Width = element2.width || element2.radius * 2 || 100;
-    const el2Height = element2.height || element2.radius * 2 || 80;
+    // Вычисляем размеры element2
+    let el2Width, el2Height;
+    if (element2.type === 'text') {
+      const textDims = getTextDimensions(element2);
+      el2Width = textDims.width;
+      el2Height = textDims.height;
+    } else {
+      el2Width = element2.width || element2.radius * 2 || 100;
+      el2Height = element2.height || element2.radius * 2 || 80;
+    }
+    
     const el2Left = element2.x;
     const el2Right = element2.x + el2Width;
     const el2Top = element2.y;
@@ -997,6 +1203,33 @@ const DesignEditor = () => {
             if (el.type === 'circle') {
               const radius = Math.max(newWidth, newHeight) / 2;
               return { ...el, x: newX, y: newY, radius };
+            } else if (el.type === 'group') {
+              // Обновляем группу и её дочерние элементы
+              let updatedGroup = { ...el, x: newX, y: newY, width: newWidth, height: newHeight };
+              updatedGroup = updateGroupChildrenResize(
+                updatedGroup,
+                resizeStart.elementX,
+                resizeStart.elementY,
+                resizeStart.elementWidth,
+                resizeStart.elementHeight,
+                newX,
+                newY,
+                newWidth,
+                newHeight
+              );
+              return updatedGroup;
+            } else if (el.type === 'text') {
+              // Для текста масштабируем fontSize
+              const scale = Math.max(newWidth / resizeStart.elementWidth, newHeight / resizeStart.elementHeight);
+              const newFontSize = (resizeStart.elementFontSize || 16) * scale;
+              return { 
+                ...el, 
+                x: newX, 
+                y: newY, 
+                width: newWidth, 
+                height: newHeight,
+                fontSize: Math.max(8, Math.min(200, newFontSize)) // Ограничиваем размер шрифта от 8 до 200
+              };
             } else {
               return { ...el, x: newX, y: newY, width: newWidth, height: newHeight };
             }
@@ -1005,14 +1238,39 @@ const DesignEditor = () => {
         });
         
         setElements(newElements);
-        setSelectedElement({
+        
+        let updatedSelectedElement = {
           ...selectedElement,
           x: newX,
           y: newY,
           width: newWidth,
           height: newHeight,
           ...(selectedElement.type === 'circle' ? { radius: Math.max(newWidth, newHeight) / 2 } : {})
-        });
+        };
+        
+        // Обновляем fontSize для текста
+        if (selectedElement.type === 'text') {
+          const scale = Math.max(newWidth / resizeStart.elementWidth, newHeight / resizeStart.elementHeight);
+          const newFontSize = (resizeStart.elementFontSize || 16) * scale;
+          updatedSelectedElement.fontSize = Math.max(8, Math.min(200, newFontSize));
+        }
+        
+        // Обновляем дочерние элементы в selectedElement для группы
+        if (selectedElement.type === 'group') {
+          updatedSelectedElement = updateGroupChildrenResize(
+            updatedSelectedElement,
+            resizeStart.elementX,
+            resizeStart.elementY,
+            resizeStart.elementWidth,
+            resizeStart.elementHeight,
+            newX,
+            newY,
+            newWidth,
+            newHeight
+          );
+        }
+        
+        setSelectedElement(updatedSelectedElement);
         drawCanvas();
       } else if (selectionBox) {
         // Обновляем рамку выделения
@@ -1033,7 +1291,16 @@ const DesignEditor = () => {
             // Находим исходный элемент из изначального состояния
             const originalEl = selectedElements.find(sel => sel.id === el.id);
             if (originalEl) {
-              return { ...el, x: originalEl.x + deltaX, y: originalEl.y + deltaY };
+              const newX = originalEl.x + deltaX;
+              const newY = originalEl.y + deltaY;
+              let updatedEl = { ...el, x: newX, y: newY };
+              
+              // Если это группа, обновляем позиции дочерних элементов
+              if (el.type === 'group') {
+                updatedEl = updateGroupChildrenPosition(updatedEl, originalEl.x, originalEl.y, newX, newY);
+              }
+              
+              return updatedEl;
             }
           }
           return el;
@@ -1051,17 +1318,34 @@ const DesignEditor = () => {
         newX = snapX;
         newY = snapY;
         
-        const newElements = elements.map(el => 
-          el.id === selectedElement.id 
-            ? { ...el, x: newX, y: newY }
-            : el
-        );
+        const newElements = elements.map(el => {
+          if (el.id === selectedElement.id) {
+            let updatedEl = { ...el, x: newX, y: newY };
+            
+            // Если это группа, обновляем позиции дочерних элементов
+            if (el.type === 'group') {
+              updatedEl = updateGroupChildrenPosition(updatedEl, selectedElement.x, selectedElement.y, newX, newY);
+            }
+            
+            return updatedEl;
+          }
+          return el;
+        });
+        
         setElements(newElements);
-        setSelectedElement({ 
+        
+        let updatedSelectedElement = { 
           ...selectedElement, 
           x: newX, 
           y: newY 
-        });
+        };
+        
+        // Обновляем дочерние элементы в selectedElement
+        if (selectedElement.type === 'group') {
+          updatedSelectedElement = updateGroupChildrenPosition(updatedSelectedElement, selectedElement.x, selectedElement.y, newX, newY);
+        }
+        
+        setSelectedElement(updatedSelectedElement);
       }
     } else if (tool === 'rectangle' && selectedElement) {
       // Изменение размера прямоугольника
@@ -1167,7 +1451,11 @@ const DesignEditor = () => {
     }
 
     if (isDrawing) {
-      saveToHistory();
+      // Не сохраняем в историю если сейчас редактируется текст
+      // (сохранение произойдет при завершении редактирования)
+      if (!editingTextId) {
+        saveToHistory();
+      }
     }
     
     // Обновляем selectedElements с новыми координатами после перемещения
@@ -1510,6 +1798,93 @@ const DesignEditor = () => {
             }
           }
           break;
+          
+        case 'group':
+          // Отрисовка группы - рисуем все дочерние элементы
+          if (element.children && element.children.length > 0) {
+            ctx.save();
+            
+            // Применяем трансформации группы
+            if (element.rotation && element.rotation !== 0) {
+              const centerX = element.x + element.width / 2;
+              const centerY = element.y + element.height / 2;
+              ctx.translate(centerX, centerY);
+              ctx.rotate((element.rotation * Math.PI) / 180);
+              ctx.translate(-centerX, -centerY);
+            }
+            
+            // Отрисовываем каждый дочерний элемент
+            element.children.forEach(child => {
+              ctx.save();
+              
+              // Настройка стилей для дочернего элемента
+              ctx.fillStyle = child.fillColor;
+              ctx.strokeStyle = child.strokeColor;
+              ctx.lineWidth = child.strokeWidth;
+              ctx.globalAlpha = (child.opacity || 1) * (element.opacity || 1);
+              
+              // Отрисовка в зависимости от типа
+              switch (child.type) {
+                case 'rectangle':
+                  const radius = child.borderRadius || 0;
+                  if (radius > 0) {
+                    const x = child.x;
+                    const y = child.y;
+                    const width = child.width;
+                    const height = child.height;
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + width - radius, y);
+                    ctx.arcTo(x + width, y, x + width, y + radius, radius);
+                    ctx.lineTo(x + width, y + height - radius);
+                    ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+                    ctx.lineTo(x + radius, y + height);
+                    ctx.arcTo(x, y + height, x, y + height - radius, radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.arcTo(x, y, x + radius, y, radius);
+                    ctx.closePath();
+                  } else {
+                    ctx.beginPath();
+                    ctx.rect(child.x, child.y, child.width, child.height);
+                  }
+                  ctx.fill();
+                  ctx.stroke();
+                  break;
+                  
+                case 'circle':
+                  ctx.beginPath();
+                  ctx.arc(child.x + child.radius, child.y + child.radius, child.radius, 0, 2 * Math.PI);
+                  ctx.fill();
+                  ctx.stroke();
+                  break;
+                  
+                case 'triangle':
+                  ctx.beginPath();
+                  ctx.moveTo(child.x + child.width / 2, child.y);
+                  ctx.lineTo(child.x + child.width, child.y + child.height);
+                  ctx.lineTo(child.x, child.y + child.height);
+                  ctx.closePath();
+                  ctx.fill();
+                  ctx.stroke();
+                  break;
+                  
+                case 'text':
+                  ctx.font = `${child.fontStyle || 'normal'} ${child.fontWeight || 'normal'} ${child.fontSize}px ${child.fontFamily}`;
+                  ctx.fillStyle = child.fillColor;
+                  ctx.textAlign = child.textAlign || 'left';
+                  ctx.textBaseline = 'top';
+                  ctx.fillText(child.text, child.x, child.y);
+                  break;
+                  
+                // Добавьте другие типы по необходимости
+              }
+              
+              ctx.restore();
+            });
+            
+            ctx.restore();
+          }
+          break;
       }
       
       // Выделение выбранного элемента
@@ -1535,9 +1910,8 @@ const DesignEditor = () => {
             ctx.strokeRect(element.x - 2, element.y - 2, width + 4, height + 4);
             break;
           case 'text':
-            const textWidth = element.text.length * element.fontSize * 0.6;
-            const textBoxHeight = element.fontSize * 1.3;
-            ctx.strokeRect(element.x - 2, element.y - 2, textWidth + 4, textBoxHeight + 4);
+            const textDimensions = getTextDimensions(element);
+            ctx.strokeRect(element.x - 2, element.y - 2, textDimensions.width + 4, textDimensions.height + 4);
             break;
           case 'path':
             if (element.points && element.points.length > 0) {
@@ -1551,6 +1925,10 @@ const DesignEditor = () => {
           case 'image':
             ctx.strokeRect(element.x - 2, element.y - 2, element.width + 4, element.height + 4);
             break;
+          case 'group':
+            // Выделение группы - рисуем рамку вокруг всей группы
+            ctx.strokeRect(element.x - 2, element.y - 2, element.width + 4, element.height + 4);
+            break;
         }
       }
       
@@ -1560,8 +1938,15 @@ const DesignEditor = () => {
         ctx.lineWidth = 2 / zoom;
         ctx.setLineDash([5, 5]);
         
-        const width = element.width || element.radius * 2 || 100;
-        const height = element.height || element.radius * 2 || 80;
+        let width, height;
+        if (element.type === 'text') {
+          const textDims = getTextDimensions(element);
+          width = textDims.width;
+          height = textDims.height;
+        } else {
+          width = element.width || element.radius * 2 || 100;
+          height = element.height || element.radius * 2 || 80;
+        }
         ctx.strokeRect(element.x - 2, element.y - 2, width + 4, height + 4);
       }
       
@@ -1742,8 +2127,15 @@ const DesignEditor = () => {
     
     // Подсветка наведенного элемента при зажатом Alt
     if (hoveredElement && isAltPressed && selectedElement) {
-      const width = hoveredElement.width || hoveredElement.radius * 2 || 100;
-      const height = hoveredElement.height || hoveredElement.radius * 2 || 80;
+      let width, height;
+      if (hoveredElement.type === 'text') {
+        const textDims = getTextDimensions(hoveredElement);
+        width = textDims.width;
+        height = textDims.height;
+      } else {
+        width = hoveredElement.width || hoveredElement.radius * 2 || 100;
+        height = hoveredElement.height || hoveredElement.radius * 2 || 80;
+      }
       
       ctx.strokeStyle = '#FF6B6B';
       ctx.lineWidth = 2 / zoom;
@@ -1787,6 +2179,22 @@ const DesignEditor = () => {
       if (e.ctrlKey || e.metaKey) {
         // Копирование: Ctrl+C (с, KeyC)
         if (key === 'c' || key === 'с' || code === 'KeyC') {
+          if (selectedElement || selectedElements.length > 0) {
+            e.preventDefault();
+            copySelected();
+          }
+          return;
+        }
+        
+        // Вставка: Ctrl+V (м, KeyV)
+        if (key === 'v' || key === 'м' || code === 'KeyV') {
+          e.preventDefault();
+          pasteSelected();
+          return;
+        }
+        
+        // Дублирование: Ctrl+D (в, KeyD)
+        if (key === 'd' || key === 'в' || code === 'KeyD') {
           if (selectedElement || selectedElements.length > 0) {
             e.preventDefault();
             duplicateSelected();
@@ -2071,22 +2479,35 @@ const DesignEditor = () => {
     const maxX = Math.max(...selectedElements.map(el => el.x + (el.width || el.radius * 2 || 100)));
     const maxY = Math.max(...selectedElements.map(el => el.y + (el.height || el.radius * 2 || 80)));
     
+    const groupWidth = maxX - minX;
+    const groupHeight = maxY - minY;
+    
+    // Сохраняем сами элементы в группе, а не только ID
+    const childrenCopy = selectedElements.map(el => ({...el}));
+    
     const group = {
       id: Date.now(),
       type: 'group',
       x: minX,
       y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
-      children: selectedElements.map(el => el.id),
+      width: groupWidth,
+      height: groupHeight,
+      children: childrenCopy, // Копируем элементы
+      originalChildren: childrenCopy.map(el => ({...el})), // Сохраняем исходное состояние
+      originalGroupX: minX,
+      originalGroupY: minY,
+      originalGroupWidth: groupWidth,
+      originalGroupHeight: groupHeight,
       visible: true,
       locked: false,
       fillColor: 'transparent',
       strokeColor: 'transparent',
       strokeWidth: 0,
-      opacity: 1
+      opacity: 1,
+      rotation: 0
     };
     
+    // Удаляем сгруппированные элементы и добавляем группу
     const newElements = [...elements.filter(el => !selectedElements.find(sel => sel.id === el.id)), group];
     setElements(newElements);
     setSelectedElement(group);
@@ -2098,11 +2519,100 @@ const DesignEditor = () => {
   const ungroupElements = () => {
     if (!selectedElement || selectedElement.type !== 'group') return;
     
-    const newElements = elements.filter(el => el.id !== selectedElement.id);
+    // Возвращаем дочерние элементы обратно в основной массив
+    const childElements = selectedElement.children || [];
+    const newElements = [
+      ...elements.filter(el => el.id !== selectedElement.id),
+      ...childElements
+    ];
+    
     setElements(newElements);
     setSelectedElement(null);
     setSelectedElements([]);
     saveToHistory();
+  };
+
+  // Обновление позиций дочерних элементов группы при перемещении
+  const updateGroupChildrenPosition = (group, oldX, oldY, newX, newY) => {
+    if (!group.children || group.children.length === 0) return group;
+    
+    const deltaX = newX - oldX;
+    const deltaY = newY - oldY;
+    
+    const updatedChildren = group.children.map(child => ({
+      ...child,
+      x: child.x + deltaX,
+      y: child.y + deltaY
+    }));
+    
+    return { ...group, children: updatedChildren };
+  };
+
+  // Обновление размеров и позиций дочерних элементов группы при изменении размера
+  const updateGroupChildrenResize = (group, oldX, oldY, oldWidth, oldHeight, newX, newY, newWidth, newHeight) => {
+    if (!group.children || group.children.length === 0) return group;
+    
+    // Используем исходные данные для правильного масштабирования
+    const originalChildren = group.originalChildren || group.children;
+    const originalGroupX = group.originalGroupX !== undefined ? group.originalGroupX : oldX;
+    const originalGroupY = group.originalGroupY !== undefined ? group.originalGroupY : oldY;
+    const originalGroupWidth = group.originalGroupWidth !== undefined ? group.originalGroupWidth : oldWidth;
+    const originalGroupHeight = group.originalGroupHeight !== undefined ? group.originalGroupHeight : oldHeight;
+    
+    // Сохраняем исходные параметры группы при первом resize
+    if (!group.originalChildren) {
+      return {
+        ...group,
+        originalChildren: group.children.map(child => ({...child})),
+        originalGroupX,
+        originalGroupY,
+        originalGroupWidth,
+        originalGroupHeight
+      };
+    }
+    
+    const scaleX = newWidth / originalGroupWidth;
+    const scaleY = newHeight / originalGroupHeight;
+    
+    const updatedChildren = originalChildren.map(originalChild => {
+      // Относительные позиции от исходной позиции группы
+      const relativeX = originalChild.x - originalGroupX;
+      const relativeY = originalChild.y - originalGroupY;
+      
+      // Новые позиции с учетом масштабирования
+      const newChildX = newX + (relativeX * scaleX);
+      const newChildY = newY + (relativeY * scaleY);
+      
+      // Новые размеры элемента
+      let updates = {
+        ...originalChild,
+        x: newChildX,
+        y: newChildY
+      };
+      
+      if (originalChild.type === 'circle') {
+        const originalRadius = originalChild.radius || 50;
+        updates.radius = originalRadius * Math.max(scaleX, scaleY);
+      } else if (originalChild.type === 'text') {
+        const originalFontSize = originalChild.fontSize || 16;
+        updates.fontSize = originalFontSize * Math.max(scaleX, scaleY);
+      } else if (originalChild.width && originalChild.height) {
+        updates.width = originalChild.width * scaleX;
+        updates.height = originalChild.height * scaleY;
+      }
+      
+      return updates;
+    });
+    
+    return {
+      ...group,
+      children: updatedChildren,
+      originalChildren: group.originalChildren,
+      originalGroupX,
+      originalGroupY,
+      originalGroupWidth,
+      originalGroupHeight
+    };
   };
 
   // Выравнивание элементов
@@ -2234,6 +2744,40 @@ const DesignEditor = () => {
       setSelectedElement(newElement);
       saveToHistory();
     }
+  };
+
+  // Копирование выбранных элементов в буфер обмена
+  const copySelected = () => {
+    if (selectedElements.length > 0) {
+      setClipboard(selectedElements.map(el => ({ ...el })));
+    } else if (selectedElement) {
+      setClipboard([{ ...selectedElement }]);
+    }
+  };
+
+  // Вставка элементов из буфера обмена
+  const pasteSelected = () => {
+    if (!clipboard || clipboard.length === 0) return;
+    
+    const newElements = clipboard.map(el => ({
+      ...el,
+      id: Date.now() + Math.random(),
+      x: el.x + 20,
+      y: el.y + 20,
+      locked: false
+    }));
+    
+    setElements([...elements, ...newElements]);
+    
+    if (newElements.length === 1) {
+      setSelectedElement(newElements[0]);
+      setSelectedElements([]);
+    } else {
+      setSelectedElements(newElements);
+      setSelectedElement(null);
+    }
+    
+    saveToHistory();
   };
 
   // Блокировка/разблокировка элемента
@@ -4619,7 +5163,7 @@ const DesignEditor = () => {
           
           <div className={styles['figma-file-info']}>
             <span className={styles['file-name']}>{currentProject?.name || 'Untitled'}</span>
-            <span className={`file-status ${autoSaveStatus === 'saving' ? 'saving' : ''}`}>
+            <span className={`${styles['file-status']} ${autoSaveStatus === 'saving' ? styles['saving'] : ''}`}>
               {autoSaveStatus === 'saving' ? '💾 Сохранение...' : '✓ Сохранено'}
             </span>
           </div>
@@ -4628,7 +5172,7 @@ const DesignEditor = () => {
         <div className={styles['figma-header-center']}>
           <div className={styles['figma-tools']}>
             <button 
-              className={`figma-tool ${tool === 'select' ? 'active' : ''}`}
+              className={`${styles['figma-tool']} ${tool === 'select' ? styles['active'] : ''}`}
               onClick={() => setTool('select')}
               title="Выбрать (V)"
             >
@@ -4636,7 +5180,7 @@ const DesignEditor = () => {
             </button>
             
             <button 
-              className={`figma-tool ${tool === 'frame' ? 'active' : ''}`}
+              className={`${styles['figma-tool']} ${tool === 'frame' ? styles['active'] : ''}`}
               onClick={() => setTool('frame')}
               title="Фрейм (F)"
             >
@@ -4645,7 +5189,7 @@ const DesignEditor = () => {
             
             <div className={styles['tool-dropdown']}>
               <button 
-                className={`figma-tool ${['rectangle', 'circle', 'triangle'].includes(tool) ? 'active' : ''}`}
+                className={`${styles['figma-tool']} ${['rectangle', 'circle', 'triangle'].includes(tool) ? styles['active'] : ''}`}
                 onClick={() => setTool('rectangle')}
                 title="Фигуры (R)"
               >
@@ -4661,7 +5205,7 @@ const DesignEditor = () => {
             </div>
             
             <button 
-              className={`figma-tool ${tool === 'pen' ? 'active' : ''}`}
+              className={`${styles['figma-tool']} ${tool === 'pen' ? styles['active'] : ''}`}
               onClick={() => setTool('pen')}
               title="Перо (P)"
             >
@@ -4669,7 +5213,7 @@ const DesignEditor = () => {
             </button>
             
             <button 
-              className={`figma-tool ${tool === 'text' ? 'active' : ''}`}
+              className={`${styles['figma-tool']} ${tool === 'text' ? styles['active'] : ''}`}
               onClick={() => setTool('text')}
               title="Текст (T)"
             >
@@ -4677,7 +5221,7 @@ const DesignEditor = () => {
             </button>
             
             <button 
-              className={`figma-tool ${tool === 'image' ? 'active' : ''}`}
+              className={`${styles['figma-tool']} ${tool === 'image' ? styles['active'] : ''}`}
               onClick={openImagePicker}
               title="Изображение"
             >
@@ -4696,7 +5240,7 @@ const DesignEditor = () => {
         <div className={styles['figma-header-right']}>
           <div className={styles['view-controls']}>
             <button 
-              className={`view-btn ${showGrid ? 'active' : ''}`}
+              className={`${styles['view-btn']} ${showGrid ? styles['active'] : ''}`}
               onClick={() => setShowGrid(!showGrid)}
               title="Сетка"
             >
@@ -4704,7 +5248,7 @@ const DesignEditor = () => {
             </button>
             
             <button 
-              className={`view-btn ${showRulers ? 'active' : ''}`}
+              className={`${styles['view-btn']} ${showRulers ? styles['active'] : ''}`}
               onClick={() => setShowRulers(!showRulers)}
               title="Линейки"
             >
@@ -4775,19 +5319,19 @@ const DesignEditor = () => {
       {/* Панель режимов */}
       <div className={styles['figma-mode-tabs']}>
         <button 
-          className={`mode-tab ${activePanel === 'design' ? 'active' : ''}`}
+          className={`${styles['mode-tab']} ${activePanel === 'design' ? styles['active'] : ''}`}
           onClick={() => setActivePanel('design')}
         >
           Дизайн
         </button>
         <button 
-          className={`mode-tab ${activePanel === 'prototype' ? 'active' : ''}`}
+          className={`${styles['mode-tab']} ${activePanel === 'prototype' ? styles['active'] : ''}`}
           onClick={() => setActivePanel('prototype')}
         >
           Прототип
         </button>
         <button 
-          className={`mode-tab ${activePanel === 'inspect' ? 'active' : ''}`}
+          className={`${styles['mode-tab']} ${activePanel === 'inspect' ? styles['active'] : ''}`}
           onClick={() => setActivePanel('inspect')}
         >
           Инспектор
@@ -4797,18 +5341,24 @@ const DesignEditor = () => {
       {/* Основная рабочая область */}
       <div className={styles['figma-workspace']}>
         {/* Левая боковая панель */}
-        <div className={`figma-sidebar figma-sidebar-left ${showLayers ? 'open' : ''}`}>
-          {/* Вкладки левой панели */}
+        <div className={`${styles['figma-sidebar']} ${styles['figma-sidebar-left']} ${(showLayers || showAssets) ? styles['open'] : ''}`}>
+          {/* Вкладки левой панели - всегда видимы */}
           <div className={styles['sidebar-tabs']}>
             <button 
-              className={`sidebar-tab ${showLayers ? 'active' : ''}`}
-              onClick={() => setShowLayers(!showLayers)}
+              className={`${styles['sidebar-tab']} ${showLayers ? styles['active'] : ''}`}
+              onClick={() => {
+                setShowLayers(!showLayers);
+                if (!showLayers) setShowAssets(false);
+              }}
             >
               <BsLayers /> Слои
             </button>
             <button 
-              className={`sidebar-tab ${showAssets ? 'active' : ''}`}
-              onClick={() => setShowAssets(!showAssets)}
+              className={`${styles['sidebar-tab']} ${showAssets ? styles['active'] : ''}`}
+              onClick={() => {
+                setShowAssets(!showAssets);
+                if (!showAssets) setShowLayers(false);
+              }}
             >
               <FaFolder /> Ресурсы
             </button>
@@ -4833,7 +5383,7 @@ const DesignEditor = () => {
                 {elements.map((element, index) => (
                   <div 
                     key={element.id}
-                    className={`figma-layer-item ${selectedElement?.id === element.id ? 'selected' : ''} ${!element.visible ? 'hidden' : ''}`}
+                    className={`${styles['figma-layer-item']} ${selectedElement?.id === element.id ? styles['selected'] : ''} ${!element.visible ? styles['hidden'] : ''}`}
                     onClick={() => setSelectedElement(element)}
                   >
                     <div className={styles['layer-main-content']}>
@@ -4937,7 +5487,7 @@ const DesignEditor = () => {
           {/* Линейки */}
           {showRulers && (
             <>
-              <div className="ruler ruler-horizontal">
+              <div className={`${styles['ruler']} ${styles['ruler-horizontal']}`}>
                 <div className={styles['ruler-content']}>
                   {Array.from({ length: Math.ceil(canvasSize.width / 50) }, (_, i) => (
                     <div key={i} className={styles['ruler-mark']} style={{ left: i * 50 }}>
@@ -4946,7 +5496,7 @@ const DesignEditor = () => {
                   ))}
                 </div>
               </div>
-              <div className="ruler ruler-vertical">
+              <div className={`${styles['ruler']} ${styles['ruler-vertical']}`}>
                 <div className={styles['ruler-content']}>
                   {Array.from({ length: Math.ceil(canvasSize.height / 50) }, (_, i) => (
                     <div key={i} className={styles['ruler-mark']} style={{ top: i * 50 }}>
@@ -4958,7 +5508,7 @@ const DesignEditor = () => {
             </>
           )}
 
-          <div className={`canvas-viewport ${isPanning ? 'panning' : ''}`}>
+          <div className={`${styles['canvas-viewport']} ${isPanning ? styles['panning'] : ''}`}>
             {/* Индикатор панорамирования */}
             {isPanning && (
               <div className={styles['pan-indicator']}>
@@ -4987,6 +5537,7 @@ const DesignEditor = () => {
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onWheel={handleWheel}
+                onDoubleClick={handleDoubleClick}
                 onContextMenu={(e) => e.preventDefault()}
                 onDragOver={handleCanvasDragOver}
                 onDrop={handleCanvasDrop}
@@ -5026,7 +5577,7 @@ const DesignEditor = () => {
               {guides.map((guide, index) => (
                 <div 
                   key={index}
-                  className={`guide ${guide.type}`}
+                  className={`${styles['guide']} ${styles[guide.type]}`}
                   style={{
                     [guide.type === 'horizontal' ? 'top' : 'left']: guide.position,
                     [guide.type === 'horizontal' ? 'width' : 'height']: '100%',
@@ -5034,27 +5585,73 @@ const DesignEditor = () => {
                   }}
                 />
               ))}
+              
+              {/* Input для редактирования текста напрямую на холсте */}
+              {editingTextId && (
+                <input
+                  ref={textInputRef}
+                  type="text"
+                  value={editingTextValue}
+                  onChange={(e) => setEditingTextValue(e.target.value)}
+                  onBlur={finishTextEditing}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      finishTextEditing();
+                    } else if (e.key === 'Escape') {
+                      // При Escape удаляем элемент если он новый
+                      const element = elements.find(el => el.id === editingTextId);
+                      if (element && element.text === 'Текст') {
+                        setElements(elements.filter(el => el.id !== editingTextId));
+                        setSelectedElement(null);
+                      }
+                      setEditingTextId(null);
+                      setEditingTextValue('');
+                    }
+                  }}
+                  style={{
+                    position: 'fixed',
+                    left: `${editingTextPosition.x}px`,
+                    top: `${editingTextPosition.y}px`,
+                    width: `${editingTextPosition.width}px`,
+                    minWidth: '100px',
+                    fontSize: `${editingTextPosition.fontSize}px`,
+                    fontFamily: editingTextPosition.fontFamily,
+                    fontWeight: editingTextPosition.fontWeight,
+                    fontStyle: editingTextPosition.fontStyle,
+                    textAlign: editingTextPosition.textAlign,
+                    color: editingTextPosition.color,
+                    border: '2px solid #0D99FF',
+                    outline: 'none',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    padding: '4px 6px',
+                    borderRadius: '2px',
+                    zIndex: 10000,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
 
         {/* Правая боковая панель */}
-        <div className={`figma-sidebar figma-sidebar-right ${showProperties ? 'open' : ''}`}>
+        <div className={`${styles['figma-sidebar']} ${styles['figma-sidebar-right']} ${showProperties ? styles['open'] : ''}`}>
           <div className={styles['sidebar-tabs']}>
             <button 
-              className={`sidebar-tab ${activePanel === 'design' ? 'active' : ''}`}
+              className={`${styles['sidebar-tab']} ${activePanel === 'design' ? styles['active'] : ''}`}
               onClick={() => setActivePanel('design')}
             >
               <MdColorLens /> Дизайн
             </button>
             <button 
-              className={`sidebar-tab ${activePanel === 'prototype' ? 'active' : ''}`}
+              className={`${styles['sidebar-tab']} ${activePanel === 'prototype' ? styles['active'] : ''}`}
               onClick={() => setActivePanel('prototype')}
             >
               <FaPlay /> Прототип
             </button>
             <button 
-              className={`sidebar-tab ${activePanel === 'inspect' ? 'active' : ''}`}
+              className={`${styles['sidebar-tab']} ${activePanel === 'inspect' ? styles['active'] : ''}`}
               onClick={() => setActivePanel('inspect')}
             >
               <FaCode /> Инспектор
@@ -5064,28 +5661,35 @@ const DesignEditor = () => {
           {/* Панель дизайна */}
           {activePanel === 'design' && (
             <div className={styles['figma-design-panel']}>
-              {selectedElement ? (
+              {(selectedElement || selectedElements.length > 1) ? (
                 <div className={styles['element-properties']}>
                   <div className={styles['property-section']}>
                     <div className={styles['element-header']}>
-                      <h4>{selectedElement.type.charAt(0).toUpperCase() + selectedElement.type.slice(1)}</h4>
+                      <h4>{selectedElements.length > 1 ? `Выбрано элементов: ${selectedElements.length}` : selectedElement.type.charAt(0).toUpperCase() + selectedElement.type.slice(1)}</h4>
                       <div className={styles['element-actions']}>
-                        <button 
-                          onClick={toggleLock} 
-                          title={selectedElement.locked ? "Разблокировать" : "Заблокировать"}
-                          className={selectedElement.locked ? 'active' : ''}
-                        >
-                          {selectedElement.locked ? <FaLock /> : <FaUnlock />}
-                        </button>
-                        <button 
-                          onClick={toggleVisibility} 
-                          title={selectedElement.visible ? "Скрыть" : "Показать"}
-                          className={!selectedElement.visible ? 'active' : ''}
-                        >
-                          {selectedElement.visible ? <FaEye /> : <FaEyeSlash />}
-                        </button>
-                        <button onClick={duplicateSelected} title="Дублировать (Ctrl+C)">
+                        {selectedElement && (
+                          <>
+                            <button 
+                              onClick={toggleLock} 
+                              title={selectedElement.locked ? "Разблокировать" : "Заблокировать"}
+                              className={selectedElement.locked ? styles['active'] : ''}
+                            >
+                              {selectedElement.locked ? <FaLock /> : <FaUnlock />}
+                            </button>
+                            <button 
+                              onClick={toggleVisibility} 
+                              title={selectedElement.visible ? "Скрыть" : "Показать"}
+                              className={!selectedElement.visible ? styles['active'] : ''}
+                            >
+                              {selectedElement.visible ? <FaEye /> : <FaEyeSlash />}
+                            </button>
+                          </>
+                        )}
+                        <button onClick={copySelected} title="Копировать (Ctrl+C)">
                           <FaCopy />
+                        </button>
+                        <button onClick={duplicateSelected} title="Дублировать (Ctrl+D)">
+                          <FaClone />
                         </button>
                         <button onClick={deleteSelected} title="Удалить (Del)">
                           <FaTrash />
@@ -5130,28 +5734,30 @@ const DesignEditor = () => {
                       </div>
                     )}
                     
-                    {/* Порядок слоев */}
-                    <div className={styles['property-group']}>
-                      <label>Порядок</label>
-                      <div className={styles['layer-order-controls']}>
-                        <button onClick={bringToFront} title="На передний план (Ctrl+])">
-                          <MdTransform /> На передний план
-                        </button>
-                        <button onClick={bringForward} title="Вперед (Ctrl+Shift+])">
-                          ⬆ Вперед
-                        </button>
-                        <button onClick={sendBackward} title="Назад (Ctrl+Shift+[)">
-                          ⬇ Назад
-                        </button>
-                        <button onClick={sendToBack} title="На задний план (Ctrl+[)">
-                          <MdTransform style={{transform: 'rotate(180deg)'}} /> На задний план
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Позиция и размеры */}
-                    <div className={styles['property-group']}>
-                      <label>Позиция и размер</label>
+                    {selectedElement && (
+                      <>
+                        {/* Порядок слоев */}
+                        <div className={styles['property-group']}>
+                          <label>Порядок</label>
+                          <div className={styles['layer-order-controls']}>
+                            <button onClick={bringToFront} title="На передний план (Ctrl+])">
+                              <MdTransform /> На передний план
+                            </button>
+                            <button onClick={bringForward} title="Вперед (Ctrl+Shift+])">
+                              ⬆ Вперед
+                            </button>
+                            <button onClick={sendBackward} title="Назад (Ctrl+Shift+[)">
+                              ⬇ Назад
+                            </button>
+                            <button onClick={sendToBack} title="На задний план (Ctrl+[)">
+                              <MdTransform style={{transform: 'rotate(180deg)'}} /> На задний план
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {/* Позиция и размеры */}
+                        <div className={styles['property-group']}>
+                          <label>Позиция и размер</label>
                       <div className={styles['input-group']}>
                         <div className={styles['input-pair']}>
                           <div className={styles['input-with-label']}>
@@ -5475,28 +6081,28 @@ const DesignEditor = () => {
                           {/* Стили текста */}
                           <div className={styles['text-style-buttons']}>
                             <button 
-                              className={selectedElement.fontWeight === 'bold' ? 'active' : ''}
+                              className={selectedElement.fontWeight === 'bold' ? styles['active'] : ''}
                               onClick={() => updateSelectedElement('fontWeight', selectedElement.fontWeight === 'bold' ? 'normal' : 'bold')}
                               title="Жирный (Ctrl+B)"
                             >
                               <strong>B</strong>
                             </button>
                             <button 
-                              className={selectedElement.fontStyle === 'italic' ? 'active' : ''}
+                              className={selectedElement.fontStyle === 'italic' ? styles['active'] : ''}
                               onClick={() => updateSelectedElement('fontStyle', selectedElement.fontStyle === 'italic' ? 'normal' : 'italic')}
                               title="Курсив (Ctrl+I)"
                             >
                               <em>I</em>
                             </button>
                             <button 
-                              className={selectedElement.textDecoration === 'underline' ? 'active' : ''}
+                              className={selectedElement.textDecoration === 'underline' ? styles['active'] : ''}
                               onClick={() => updateSelectedElement('textDecoration', selectedElement.textDecoration === 'underline' ? 'none' : 'underline')}
                               title="Подчеркнутый (Ctrl+U)"
                             >
                               <u>U</u>
                             </button>
                             <button 
-                              className={selectedElement.textDecoration === 'line-through' ? 'active' : ''}
+                              className={selectedElement.textDecoration === 'line-through' ? styles['active'] : ''}
                               onClick={() => updateSelectedElement('textDecoration', selectedElement.textDecoration === 'line-through' ? 'none' : 'line-through')}
                               title="Зачеркнутый"
                             >
@@ -5507,21 +6113,21 @@ const DesignEditor = () => {
                           {/* Выравнивание текста */}
                           <div className={styles['text-align-buttons']}>
                             <button 
-                              className={selectedElement.textAlign === 'left' ? 'active' : ''}
+                              className={selectedElement.textAlign === 'left' ? styles['active'] : ''}
                               onClick={() => updateSelectedElement('textAlign', 'left')}
                               title="По левому краю"
                             >
                               ≡
                             </button>
                             <button 
-                              className={selectedElement.textAlign === 'center' ? 'active' : ''}
+                              className={selectedElement.textAlign === 'center' ? styles['active'] : ''}
                               onClick={() => updateSelectedElement('textAlign', 'center')}
                               title="По центру"
                             >
                               ≣
                             </button>
                             <button 
-                              className={selectedElement.textAlign === 'right' ? 'active' : ''}
+                              className={selectedElement.textAlign === 'right' ? styles['active'] : ''}
                               onClick={() => updateSelectedElement('textAlign', 'right')}
                               title="По правому краю"
                             >
@@ -5659,6 +6265,8 @@ const DesignEditor = () => {
                           </button>
                         </div>
                       </div>
+                    )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -5811,7 +6419,7 @@ const DesignEditor = () => {
                         Открыть
                       </button>
                       <button 
-                        onClick={() => deleteProject(project.id)}
+                        onClick={() => handleDeleteProject(project.id)}
                         className={styles['delete-btn']}
                       >
                         <FaTrash />
@@ -5820,7 +6428,7 @@ const DesignEditor = () => {
                   </div>
                 ))}
                 
-                <div className="project-card new-project">
+                <div className={`${styles['project-card']} ${styles['new-project']}`}>
                   <div className={styles['new-project-content']}>
                     <FaPlus />
                     <span>Новый проект</span>
