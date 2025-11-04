@@ -261,17 +261,29 @@ ${description}
  */
 export async function chatWithAI(message, history = []) {
   try {
+    // Валидация и очистка истории
+    const cleanHistory = Array.isArray(history) 
+      ? history
+          .filter(msg => msg && typeof msg === 'object' && msg.role && msg.content)
+          .map(msg => ({
+            role: msg.role === 'assistant' ? 'assistant' : 'user',
+            content: String(msg.content || '')
+          }))
+      : [];
+
     const messages = [
       {
         role: 'system',
         content: 'Ты опытный наставник по программированию. Помогаешь студентам понять концепции, решать проблемы и учиться программированию. Отвечаешь на русском языке, используешь простые объяснения и примеры.'
       },
-      ...history,
+      ...cleanHistory,
       {
         role: 'user',
         content: message
       }
     ];
+
+    console.log('Sending to Groq:', { messageCount: messages.length });
 
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
@@ -283,6 +295,20 @@ export async function chatWithAI(message, history = []) {
     return completion.choices[0]?.message?.content || 'Извините, не смог сформировать ответ';
   } catch (error) {
     console.error('Error in chat:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    
+    // Проверяем конкретные типы ошибок
+    if (error.message?.includes('API key')) {
+      throw new Error('Ошибка авторизации API. Проверьте ключ GROQ_API_KEY');
+    }
+    if (error.message?.includes('rate limit')) {
+      throw new Error('Превышен лимит запросов. Попробуйте позже');
+    }
+    
     throw new Error('Ошибка при общении с AI: ' + error.message);
   }
 }

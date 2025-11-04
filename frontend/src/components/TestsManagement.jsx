@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import { 
+  FiFileText, FiPlus, FiEdit2, FiTrash2, FiClock, 
+  FiCheckSquare, FiBarChart2, FiX, FiCheck, FiRefreshCw,
+  FiUpload
+} from 'react-icons/fi';
 import api from '../utils/api';
 import BulkTestEditor from './BulkTestEditor';
 import styles from './TestsManagement.module.css';
@@ -245,27 +250,50 @@ function TestsManagement() {
     }
   };
 
-  if (loading) return <div>Загрузка...</div>;
+  if (loading) return (
+    <div className={styles['loading-state']}>
+      <FiRefreshCw className={styles['loading-icon']} />
+      <p>Загрузка тестов...</p>
+    </div>
+  );
 
   return (
-    <div className={styles['tests-mgmt-container']}>
-      <div className={styles['tests-mgmt-header']}>
-        <h2>Управление тестами</h2>
-        <div className={styles['tests-mgmt-header-actions']}>
-          <button className={styles['tests-mgmt-btn-secondary']} onClick={() => setShowBulkEditor(true)}>
-            📝 Массовое создание
-          </button>
-          <button className={styles['tests-mgmt-btn-primary']} onClick={() => openForm()}>
-            + Создать тест
-          </button>
+    <div className={styles['page-container']}>
+      <div className={styles['page-header']}>
+        <div className={styles['header-content']}>
+          <div className={styles['header-left']}>
+            <div className={styles['header-icon']}>
+              <FiFileText />
+            </div>
+            <div>
+              <h1>Управление тестами</h1>
+              <p>Создание и назначение тестов для студентов</p>
+            </div>
+          </div>
+          <div className={styles['header-actions']}>
+            <button className={styles['btn-secondary']} onClick={() => setShowBulkEditor(true)}>
+              <FiUpload />
+              <span>Массовое создание</span>
+            </button>
+            <button className={styles['btn-primary']} onClick={() => openForm()}>
+              <FiPlus />
+              <span>Создать тест</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className={styles['tests-mgmt-list']}>
+      <div className={styles['tests-table-container']}>
         {tests.length === 0 ? (
-          <p>Нет созданных тестов</p>
+          <div className={styles['empty-state']}>
+            <div className={styles['empty-state-icon']}>
+              <FiFileText />
+            </div>
+            <h3>Нет созданных тестов</h3>
+            <p>Создайте первый тест, нажав кнопку выше</p>
+          </div>
         ) : (
-          <table className={styles['tests-mgmt-table']}>
+          <table className={styles['tests-table']}>
             <thead>
               <tr>
                 <th>Название</th>
@@ -280,17 +308,43 @@ function TestsManagement() {
             <tbody>
               {tests.map(test => (
                 <tr key={test.id}>
-                  <td>{test.title}</td>
+                  <td className={styles['test-title']}>{test.title}</td>
                   <td>{test.type === 'choice' ? 'С вариантами' : 'С кодом'}</td>
                   <td>{test.questions_count}</td>
                   <td>{test.points_correct} / {test.points_wrong}</td>
                   <td>{test.time_limit || '∞'} мин</td>
                   <td>{test.can_retry ? 'Да' : 'Нет'}</td>
                   <td>
-                    <button onClick={() => openForm(test)}>✏️</button>
-                    <button onClick={() => openAssignModal(test)}>📋</button>
-                    <button onClick={() => openHistoryModal(test)}>📊</button>
-                    <button onClick={() => handleDelete(test.id)}>🗑️</button>
+                    <div className={styles['action-buttons']}>
+                      <button 
+                        className={styles['btn-icon-edit']} 
+                        onClick={() => openForm(test)}
+                        title="Редактировать"
+                      >
+                        <FiEdit2 />
+                      </button>
+                      <button 
+                        className={styles['btn-icon-assign']} 
+                        onClick={() => openAssignModal(test)}
+                        title="Назначить"
+                      >
+                        <FiCheckSquare />
+                      </button>
+                      <button 
+                        className={styles['btn-icon-history']} 
+                        onClick={() => openHistoryModal(test)}
+                        title="История"
+                      >
+                        <FiBarChart2 />
+                      </button>
+                      <button 
+                        className={styles['btn-icon-delete']} 
+                        onClick={() => handleDelete(test.id)}
+                        title="Удалить"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -301,12 +355,17 @@ function TestsManagement() {
 
       {/* Форма создания/редактирования */}
       {showForm && (
-        <div className={styles['tests-mgmt-modal-overlay']} onClick={() => setShowForm(false)}>
-          <div className={styles['tests-mgmt-modal-content']} onClick={(e) => e.stopPropagation()}>
-            <h3>{editingTest ? 'Редактировать тест' : 'Создать тест'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className={styles['tests-mgmt-form-group']}>
-                <label>Название теста *</label>
+        <div className={styles['modal-overlay']} onClick={() => setShowForm(false)}>
+          <div className={`${styles.modal} ${styles['modal-large']}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>{editingTest ? 'Редактировать тест' : 'Создать тест'}</h2>
+              <button className={styles['close-btn']} onClick={() => setShowForm(false)}>
+                <FiX />
+              </button>
+            </div>
+            <form className={styles['modal-form']} onSubmit={handleSubmit}>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Название теста *</label>
                 <input
                   type="text"
                   value={title}
@@ -315,7 +374,7 @@ function TestsManagement() {
                 />
               </div>
 
-              <div className={styles['tests-mgmt-form-group']}>
+              <div className={styles['form-group']}>
                 <label>Описание</label>
                 <textarea
                   value={description}
@@ -324,8 +383,8 @@ function TestsManagement() {
                 />
               </div>
 
-              <div className={styles['tests-mgmt-form-row']}>
-                <div className={styles['tests-mgmt-form-group']}>
+              <div className={styles['form-row']}>
+                <div className={styles['form-group']}>
                   <label>Тип теста</label>
                   <select value={type} onChange={(e) => setType(e.target.value)} disabled={editingTest}>
                     <option value="choice">С вариантами ответа</option>
@@ -333,7 +392,7 @@ function TestsManagement() {
                   </select>
                 </div>
 
-                <div className={styles['tests-mgmt-form-group']}>
+                <div className={styles['form-group']}>
                   <label>Время (минут)</label>
                   <input
                     type="number"
@@ -344,8 +403,8 @@ function TestsManagement() {
                 </div>
               </div>
 
-              <div className={styles['tests-mgmt-form-row']}>
-                <div className={styles['tests-mgmt-form-group']}>
+              <div className={styles['form-row']}>
+                <div className={styles['form-group']}>
                   <label>Баллы за правильный</label>
                   <input
                     type="number"
@@ -354,7 +413,7 @@ function TestsManagement() {
                   />
                 </div>
 
-                <div className={styles['tests-mgmt-form-group']}>
+                <div className={styles['form-group']}>
                   <label>Баллы за неправильный</label>
                   <input
                     type="number"
@@ -363,7 +422,7 @@ function TestsManagement() {
                   />
                 </div>
 
-                <div className={styles['tests-mgmt-form-group']}>
+                <div className={styles['form-group']}>
                   <label>
                     <input
                       type="checkbox"
@@ -379,13 +438,20 @@ function TestsManagement() {
               <h4>Вопросы</h4>
               
               {questions.map((question, qIndex) => (
-                <div key={qIndex} className={styles['tests-mgmt-question-block']}>
-                  <div className={styles['tests-mgmt-question-header']}>
+                <div key={qIndex} className={styles['question-block']}>
+                  <div className={styles['question-header']}>
                     <h5>Вопрос {qIndex + 1}</h5>
-                    <button type="button" onClick={() => removeQuestion(qIndex)}>🗑️</button>
+                    <button 
+                      type="button" 
+                      className={styles['btn-icon-delete-small']}
+                      onClick={() => removeQuestion(qIndex)}
+                      title="Удалить вопрос"
+                    >
+                      <FiTrash2 />
+                    </button>
                   </div>
 
-                  <div className={styles['tests-mgmt-form-group']}>
+                  <div className={styles['form-group']}>
                     <label>Текст вопроса *</label>
                     <textarea
                       value={question.question_text}
@@ -396,10 +462,10 @@ function TestsManagement() {
                   </div>
 
                   {type === 'choice' ? (
-                    <div className={styles['tests-mgmt-options-block']}>
+                    <div className={styles['options-block']}>
                       <label>Варианты ответа:</label>
                       {question.options.map((option, oIndex) => (
-                        <div key={oIndex} className={styles['tests-mgmt-option-row']}>
+                        <div key={oIndex} className={styles['option-row']}>
                           <input
                             type="checkbox"
                             checked={option.is_correct}
@@ -412,14 +478,28 @@ function TestsManagement() {
                             onChange={(e) => updateOption(qIndex, oIndex, 'option_text', e.target.value)}
                             placeholder="Вариант ответа"
                           />
-                          <button type="button" onClick={() => removeOption(qIndex, oIndex)}>✖</button>
+                          <button 
+                            type="button" 
+                            className={styles['btn-remove-option']}
+                            onClick={() => removeOption(qIndex, oIndex)}
+                            title="Удалить вариант"
+                          >
+                            <FiX />
+                          </button>
                         </div>
                       ))}
-                      <button type="button" onClick={() => addOption(qIndex)}>+ Добавить вариант</button>
+                      <button 
+                        type="button" 
+                        className={styles['btn-add-option']}
+                        onClick={() => addOption(qIndex)}
+                      >
+                        <FiPlus />
+                        <span>Добавить вариант</span>
+                      </button>
                     </div>
                   ) : (
                     <>
-                      <div className={styles['tests-mgmt-form-group']}>
+                      <div className={styles['form-group']}>
                         <label>Язык программирования</label>
                         <select
                           value={question.code_language}
@@ -432,7 +512,7 @@ function TestsManagement() {
                         </select>
                       </div>
 
-                      <div className={styles['tests-mgmt-form-group']}>
+                      <div className={styles['form-group']}>
                         <label>Шаблон кода (то, что видит студент)</label>
                         <textarea
                           value={question.code_template}
@@ -442,7 +522,7 @@ function TestsManagement() {
                         />
                       </div>
 
-                      <div className={styles['tests-mgmt-form-group']}>
+                      <div className={styles['form-group']}>
                         <label>Правильное решение (для проверки)</label>
                         <textarea
                           value={question.code_solution}
@@ -456,11 +536,28 @@ function TestsManagement() {
                 </div>
               ))}
 
-              <button type="button" onClick={addQuestion}>+ Добавить вопрос</button>
+              <button 
+                type="button" 
+                className={styles['btn-add-question']}
+                onClick={addQuestion}
+              >
+                <FiPlus />
+                <span>Добавить вопрос</span>
+              </button>
 
-              <div className={styles['tests-mgmt-form-actions']}>
-                <button type="submit" className={styles['tests-mgmt-btn-primary']}>Сохранить тест</button>
-                <button type="button" onClick={() => setShowForm(false)}>Отмена</button>
+              <div className={styles['form-actions']}>
+                <button type="submit" className={styles['btn-primary']}>
+                  <FiCheck />
+                  <span>Сохранить тест</span>
+                </button>
+                <button 
+                  type="button" 
+                  className={styles['btn-secondary']}
+                  onClick={() => setShowForm(false)}
+                >
+                  <FiX />
+                  <span>Отмена</span>
+                </button>
               </div>
             </form>
           </div>
@@ -469,74 +566,131 @@ function TestsManagement() {
 
       {/* Модальное окно назначения */}
       {showAssignModal && selectedTest && (
-        <div className={styles['tests-mgmt-modal-overlay']} onClick={() => setShowAssignModal(false)}>
-          <div className="tests-mgmt-modal-content tests-mgmt-modal-small" onClick={(e) => e.stopPropagation()}>
-            <h3>Назначение теста: {selectedTest.title}</h3>
-            
-            <h4>Назначить группе:</h4>
-            <div className={styles['tests-mgmt-assign-groups']}>
-              {groups.map(group => {
-                const isAssigned = selectedTest.assignments?.some(a => a.group_id === group.id);
-                return (
-                  <div key={group.id} className={styles['tests-mgmt-group-item']}>
-                    <span>{group.name}</span>
-                    {isAssigned ? (
-                      <button onClick={() => handleUnassign(group.id)}>Отменить</button>
-                    ) : (
-                      <button onClick={() => handleAssign(group.id)}>Назначить</button>
-                    )}
-                  </div>
-                );
-              })}
+        <div className={styles['modal-overlay']} onClick={() => setShowAssignModal(false)}>
+          <div className={`${styles.modal} ${styles['modal-small']}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>Назначение теста: {selectedTest.title}</h2>
+              <button className={styles['close-btn']} onClick={() => setShowAssignModal(false)}>
+                <FiX />
+              </button>
             </div>
+            
+            <div className={styles['modal-body']}>
+              <h4>Назначить группе:</h4>
+              <div className={styles['assign-groups']}>
+                {groups.map(group => {
+                  const isAssigned = selectedTest.assignments?.some(a => a.group_id === group.id);
+                  return (
+                    <div key={group.id} className={styles['group-item']}>
+                      <span>{group.name}</span>
+                      {isAssigned ? (
+                        <button 
+                          className={styles['btn-unassign']}
+                          onClick={() => handleUnassign(group.id)}
+                        >
+                          <FiX />
+                          <span>Отменить</span>
+                        </button>
+                      ) : (
+                        <button 
+                          className={styles['btn-assign']}
+                          onClick={() => handleAssign(group.id)}
+                        >
+                          <FiCheckSquare />
+                          <span>Назначить</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
-            <button onClick={() => setShowAssignModal(false)}>Закрыть</button>
+              <div className={styles['modal-footer']}>
+                <button 
+                  className={styles['btn-secondary']}
+                  onClick={() => setShowAssignModal(false)}
+                >
+                  <span>Закрыть</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Модальное окно истории */}
       {showHistoryModal && selectedTest && (
-        <div className={styles['tests-mgmt-modal-overlay']} onClick={() => setShowHistoryModal(false)}>
-          <div className="tests-mgmt-modal-content tests-mgmt-modal-large" onClick={(e) => e.stopPropagation()}>
-            <h3>История прохождения: {selectedTest.title}</h3>
+        <div className={styles['modal-overlay']} onClick={() => setShowHistoryModal(false)}>
+          <div className={`${styles.modal} ${styles['modal-large']}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>История прохождения: {selectedTest.title}</h2>
+              <button className={styles['close-btn']} onClick={() => setShowHistoryModal(false)}>
+                <FiX />
+              </button>
+            </div>
             
-            {testHistory.length === 0 ? (
-              <p>Пока никто не проходил этот тест</p>
-            ) : (
-              <table className={styles['tests-mgmt-table']}>
-                <thead>
-                  <tr>
-                    <th>Студент</th>
-                    <th>Дата</th>
-                    <th>Результат</th>
-                    <th>Баллы</th>
-                    <th>Статус</th>
-                    <th>Действия</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {testHistory.map(attempt => (
-                    <tr key={attempt.id}>
-                      <td>{attempt.full_name}</td>
-                      <td>{new Date(attempt.started_at).toLocaleString('ru-RU')}</td>
-                      <td>{attempt.score}%</td>
-                      <td>{attempt.points_earned}</td>
-                      <td>
-                        {attempt.status === 'completed' ? '✅ Завершен' : 
-                         attempt.status === 'in_progress' ? '⏳ В процессе' : 
-                         '❌ Истек'}
-                      </td>
-                      <td>
-                        <button onClick={() => handleReassign(attempt.user_id)}>🔄 Переназначить</button>
-                      </td>
+            <div className={styles['modal-body']}>
+              {testHistory.length === 0 ? (
+                <div className={styles['empty-state']}>
+                  <div className={styles['empty-state-icon']}>
+                    <FiBarChart2 />
+                  </div>
+                  <p>Пока никто не проходил этот тест</p>
+                </div>
+              ) : (
+                <table className={styles['history-table']}>
+                  <thead>
+                    <tr>
+                      <th>Студент</th>
+                      <th>Дата</th>
+                      <th>Результат</th>
+                      <th>Баллы</th>
+                      <th>Статус</th>
+                      <th>Действия</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {testHistory.map(attempt => (
+                      <tr key={attempt.id}>
+                        <td>{attempt.full_name}</td>
+                        <td>{new Date(attempt.started_at).toLocaleString('ru-RU')}</td>
+                        <td>{attempt.score}%</td>
+                        <td>{attempt.points_earned}</td>
+                        <td>
+                          <span className={`${styles.badge} ${styles[`badge-${attempt.status}`]}`}>
+                            {attempt.status === 'completed' ? (
+                              <><FiCheck /> Завершен</>
+                            ) : attempt.status === 'in_progress' ? (
+                              <><FiClock /> В процессе</>
+                            ) : (
+                              <><FiX /> Истек</>
+                            )}
+                          </span>
+                        </td>
+                        <td>
+                          <button 
+                            className={styles['btn-icon-reassign']}
+                            onClick={() => handleReassign(attempt.user_id)}
+                            title="Переназначить тест"
+                          >
+                            <FiRefreshCw />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
-            <button onClick={() => setShowHistoryModal(false)}>Закрыть</button>
+              <div className={styles['modal-footer']}>
+                <button 
+                  className={styles['btn-secondary']}
+                  onClick={() => setShowHistoryModal(false)}
+                >
+                  <span>Закрыть</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -553,3 +707,4 @@ function TestsManagement() {
 }
 
 export default TestsManagement;
+

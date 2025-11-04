@@ -173,6 +173,7 @@
   white-space: nowrap;
   overflow: hidden;
   opacity: 0;
+  padding-right: 10px;
   transition: opacity 0.3s ease;
 }
 

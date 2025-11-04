@@ -157,13 +157,22 @@ router.post('/generate-code', authenticate, async (req, res) => {
  */
 router.post('/chat', authenticate, async (req, res) => {
   try {
-    const { message, history } = req.body;
+    const { message, history, code, language } = req.body;
 
     if (!message) {
-      return res.status(400).json({ message: 'Сообщение не предоставлено' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Сообщение не предоставлено' 
+      });
     }
 
-    const response = await aiService.chatWithAI(message, history || []);
+    // Добавляем контекст кода если есть
+    let contextMessage = message;
+    if (code) {
+      contextMessage = `Контекст:\n\`\`\`${language || 'javascript'}\n${code}\n\`\`\`\n\nВопрос: ${message}`;
+    }
+
+    const response = await aiService.chatWithAI(contextMessage, history || []);
 
     res.json({
       success: true,
@@ -171,10 +180,12 @@ router.post('/chat', authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in chat:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ 
       success: false,
       message: 'Ошибка при общении с AI',
-      error: error.message 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

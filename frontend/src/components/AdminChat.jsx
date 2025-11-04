@@ -21,7 +21,7 @@ import {
   BsPeopleFill,
   BsChatDots
 } from 'react-icons/bs';
-import './AdminChatClean.css';
+import styles from './AdminChat.module.css';
 
 /**
  * ЧИСТАЯ СИСТЕМА АДМИН-ЧАТА
@@ -427,10 +427,10 @@ function AdminChat() {
             onKeyPress={(e) => {
               if (e.key === 'Enter') handleEditMessage(msg.id, newMessage);
             }}
-            className="edit-input"
+            className={styles['edit-input']}
             autoFocus
           />
-          <div className="edit-actions">
+          <div className={styles['edit-actions']}>
             <button onClick={() => handleEditMessage(msg.id, newMessage)}><BsCheck /></button>
             <button onClick={() => { setEditingMessage(null); setNewMessage(''); }}><BsX /></button>
           </div>
@@ -441,39 +441,39 @@ function AdminChat() {
     return (
       <div key={msg.id} className={`message ${isOwn ? 'own' : 'other'} ${msg.is_pinned ? 'pinned' : ''}`}>
         {msg.is_pinned && (
-          <div className="pinned-indicator">
+          <div className={styles['pinned-indicator']}>
             <BsPinFill /> Закреплено
           </div>
         )}
         
         {msg.reply_to_id && (
-          <div className="message-reply">
+          <div className={styles['message-reply']}>
             <BsReply /> {msg.reply_to_content?.substring(0, 50)}...
           </div>
         )}
 
-        <div className="message-header">
-          <span className="sender">{msg.sender_full_name || msg.sender_username}</span>
-          <span className="time">
+        <div className={styles['message-header']}>
+          <span className={styles['sender']}>{msg.sender_full_name || msg.sender_username}</span>
+          <span className={styles['time']}>
             {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-            {msg.is_edited && <span className="edited"> (изм.)</span>}
+            {msg.is_edited && <span className={styles['edited']}> (изм.)</span>}
           </span>
         </div>
 
-        <div className="message-body">
+        <div className={styles['message-body']}>
           {msg.message_type === 'code' ? (
-            <div className="code-block">
-              <div className="code-lang">{msg.code_language}</div>
+            <div className={styles['code-block']}>
+              <div className={styles['code-lang']}>{msg.code_language}</div>
               <SyntaxHighlighter language={msg.code_language} style={vscDarkPlus}>
                 {msg.content}
               </SyntaxHighlighter>
             </div>
           ) : msg.message_type === 'file' ? (
-            <div className="file-block">
+            <div className={styles['file-block']}>
               <BsPaperclip />
-              <div className="file-info">
-                <div className="file-name">{msg.file_name}</div>
-                <div className="file-size">{(msg.file_size / 1024 / 1024).toFixed(2)} MB</div>
+              <div className={styles['file-info']}>
+                <div className={styles['file-name']}>{msg.file_name}</div>
+                <div className={styles['file-size']}>{(msg.file_size / 1024 / 1024).toFixed(2)} MB</div>
                 <a 
                   href={`${BASE_URL}/api/chat/files${msg.file_path}`} 
                   download={msg.file_name}
@@ -483,7 +483,7 @@ function AdminChat() {
                   Скачать
                 </a>
               </div>
-              {msg.content && <div className="file-caption">{msg.content}</div>}
+              {msg.content && <div className={styles['file-caption']}>{msg.content}</div>}
             </div>
           ) : (
             <p>{msg.content}</p>
@@ -491,16 +491,16 @@ function AdminChat() {
         </div>
 
         {msg.reactions && msg.reactions.length > 0 && (
-          <div className="reactions">
+          <div className={styles['reactions']}>
             {msg.reactions.map((r, i) => (
-              <span key={i} className="reaction" title={r.user_name}>
+              <span key={i} className={styles['reaction']} title={r.user_name}>
                 {r.emoji} {r.count > 1 && r.count}
               </span>
             ))}
           </div>
         )}
 
-        <div className="message-actions">
+        <div className={styles['message-actions']}>
           <button onClick={() => setReplyTo(msg)} title="Ответить"><BsReply /></button>
           <button onClick={() => togglePinMessage(msg.id)} title={msg.is_pinned ? 'Открепить' : 'Закрепить'}><BsPinFill /></button>
           <button onClick={() => handleReaction(msg.id, '👍')} title="Лайк"><BsHandThumbsUp /></button>
@@ -528,41 +528,41 @@ function AdminChat() {
   });
 
   if (loading) {
-    return <div className="admin-chat-loading">Загрузка...</div>;
+    return <div className={styles['admin-chat-loading']}>Загрузка...</div>;
   }
 
   return (
-    <div className="admin-chat">
+    <div className={styles['admin-chat']}>
       {/* SIDEBAR */}
-      <div className="chat-sidebar">
-        <div className="sidebar-header">
+      <div className={styles['chat-sidebar']}>
+        <div className={styles['sidebar-header']}>
           <h3>Все чаты</h3>
-          <button className="create-btn" onClick={() => setShowCreateChat(true)} title="Создать чат">
+          <button className={styles['create-btn']} onClick={() => setShowCreateChat(true)} title="Создать чат">
             <BsPlusCircle />
           </button>
         </div>
 
-        <div className="filters">
+        <div className={styles['filters']}>
           <button className={filterType === 'all' ? 'active' : ''} onClick={() => setFilterType('all')}>Все</button>
           <button className={filterType === 'private' ? 'active' : ''} onClick={() => setFilterType('private')}>Приватные</button>
           <button className={filterType === 'group' ? 'active' : ''} onClick={() => setFilterType('group')}>Групповые</button>
         </div>
 
-        <div className="chats-list">
+        <div className={styles['chats-list']}>
           {filteredChats.map(chat => (
             <div 
               key={chat.id} 
               className={`chat-item ${activeChat?.id === chat.id ? 'active' : ''}`}
               onClick={() => selectChat(chat)}
             >
-              <div className="chat-icon">
+              <div className={styles['chat-icon']}>
                 {chat.type === 'group' ? <BsPeopleFill /> : <BsChatDots />}
               </div>
-              <div className="chat-info">
-                <div className="chat-name">{chat.name || `Чат #${chat.id}`}</div>
-                <div className="chat-badge">{chat.type === 'group' ? 'Групповой' : 'Приватный'}</div>
+              <div className={styles['chat-info']}>
+                <div className={styles['chat-name']}>{chat.name || `Чат #${chat.id}`}</div>
+                <div className={styles['chat-badge']}>{chat.type === 'group' ? 'Групповой' : 'Приватный'}</div>
                 {chat.last_message && (
-                  <div className="last-msg">
+                  <div className={styles['last-msg']}>
                     {chat.last_message.message_type === 'file' ? <><BsPaperclip /> Файл</> : 
                      chat.last_message.message_type === 'code' ? <><BsCode /> Код</> : 
                      chat.last_message.content?.substring(0, 30)}
@@ -570,7 +570,7 @@ function AdminChat() {
                 )}
               </div>
               {chat.unread_count > 0 && (
-                <div className="unread">{chat.unread_count}</div>
+                <div className={styles['unread']}>{chat.unread_count}</div>
               )}
             </div>
           ))}
@@ -579,15 +579,15 @@ function AdminChat() {
 
       {/* MAIN */}
       {activeChat ? (
-        <div className="chat-main">
-          <div className="chat-header">
-            <div className="chat-title">
+        <div className={styles['chat-main']}>
+          <div className={styles['chat-header']}>
+            <div className={styles['chat-title']}>
               {activeChat.name || `Чат #${activeChat.id}`}
-              <span className="type-badge">
+              <span className={styles['type-badge']}>
                 {activeChat.type === 'group' ? <><BsPeopleFill /> Групповой</> : <><BsChatDots /> Приватный</>}
               </span>
             </div>
-            <div className="search-box">
+            <div className={styles['search-box']}>
               <BsSearch />
               <input
                 type="text"
@@ -598,12 +598,12 @@ function AdminChat() {
             </div>
           </div>
 
-          <div className="messages-container">
+          <div className={styles['messages-container']}>
             {pinnedMessages.length > 0 && (
-              <div className="pinned-section">
+              <div className={styles['pinned-section']}>
                 <h4><BsPinFill /> Закреплено</h4>
                 {pinnedMessages.map(m => (
-                  <div key={m.id} className="pinned-item">
+                  <div key={m.id} className={styles['pinned-item']}>
                     <strong>{m.sender_full_name}:</strong> {m.content?.substring(0, 50)}...
                   </div>
                 ))}
@@ -613,23 +613,23 @@ function AdminChat() {
             {filteredMessages.map(renderMessage)}
             
             {typingUser && (
-              <div className="typing">
-                <span>{typingUser}</span> печатает<span className="dots">...</span>
+              <div className={styles['typing']}>
+                <span>{typingUser}</span> печатает<span className={styles['dots']}>...</span>
               </div>
             )}
             
             <div ref={messagesEndRef} />
           </div>
 
-          <form className="message-input" onSubmit={sendMessage}>
+          <form className={styles['message-input']} onSubmit={sendMessage}>
             {replyTo && (
-              <div className="reply-preview">
+              <div className={styles['reply-preview']}>
                 <div><strong>Ответ на:</strong> {replyTo.content?.substring(0, 50)}...</div>
                 <button type="button" onClick={() => setReplyTo(null)}><BsX /></button>
               </div>
             )}
 
-            <div className="input-controls">
+            <div className={styles['input-controls']}>
               <select value={messageType} onChange={(e) => setMessageType(e.target.value)}>
                 <option value="text"><FaCommentAlt /> Текст</option>
                 <option value="code"><FaCode /> Код</option>
@@ -655,13 +655,13 @@ function AdminChat() {
             </div>
 
             {selectedFile && (
-              <div className="selected-file">
+              <div className={styles['selected-file']}>
                 <BsPaperclip /> {selectedFile.name}
                 <button type="button" onClick={() => setSelectedFile(null)}><BsX /></button>
               </div>
             )}
 
-            <div className="input-row">
+            <div className={styles['input-row']}>
               <textarea
                 value={newMessage}
                 onChange={handleTyping}
@@ -679,7 +679,7 @@ function AdminChat() {
           </form>
         </div>
       ) : (
-        <div className="chat-empty">
+        <div className={styles['chat-empty']}>
           <h3>Выберите чат</h3>
           <p>Управление всеми чатами в системе</p>
         </div>
@@ -687,31 +687,31 @@ function AdminChat() {
 
       {/* CREATE MODAL */}
       {showCreateChat && (
-        <div className="modal-overlay" onClick={() => setShowCreateChat(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className={styles['modal-overlay']} onClick={() => setShowCreateChat(false)}>
+          <div className={styles['modal']} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
               <h3>Создать приватный чат</h3>
               <button onClick={() => setShowCreateChat(false)}><BsX /></button>
             </div>
-            <div className="modal-body">
+            <div className={styles['modal-body']}>
               {allUsers.filter(u => u.id !== user.id).map(u => (
-                <div key={u.id} className="user-item" onClick={() => createPrivateChat(u.id)}>
-                  <div className="user-avatar">
+                <div key={u.id} className={styles['user-item']} onClick={() => createPrivateChat(u.id)}>
+                  <div className={styles['user-avatar']}>
                     {u.avatar_url ? (
                       <img src={`${BASE_URL}${u.avatar_url}`} alt="" />
                     ) : (
-                      <div className="avatar-placeholder">
+                      <div className={styles['avatar-placeholder']}>
                         {(u.full_name || u.username).charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
-                  <div className="user-info">
-                    <div className="user-name">{u.full_name || u.username}</div>
-                    <div className="user-role">
+                  <div className={styles['user-info']}>
+                    <div className={styles['user-name']}>{u.full_name || u.username}</div>
+                    <div className={styles['user-role']}>
                       {u.role === 'admin' ? 'Админ' : u.role === 'teacher' ? 'Учитель' : 'Студент'}
                     </div>
                   </div>
-                  {onlineUsers.has(u.id) && <div className="online-dot"></div>}
+                  {onlineUsers.has(u.id) && <div className={styles['online-dot']}></div>}
                 </div>
               ))}
             </div>
@@ -723,3 +723,4 @@ function AdminChat() {
 }
 
 export default AdminChat;
+

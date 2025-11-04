@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FiX, FiUpload, FiCheck, FiArrowLeft, FiFileText, FiCheckCircle } from 'react-icons/fi';
 import styles from './BulkTestEditor.module.css';
 
 function BulkTestEditor({ onImport, onClose }) {
@@ -124,32 +125,42 @@ function BulkTestEditor({ onImport, onClose }) {
   };
 
   return (
-    <div className={styles['bulk-test-editor']}>
-      <div className={styles['bulk-editor-header']}>
-        <h3>Массовое создание теста</h3>
-        <button className={styles['bulk-btn-close']} onClick={onClose}>✕</button>
-      </div>
+    <div className={styles['modal-overlay']} onClick={onClose}>
+      <div className={`${styles.modal} ${styles['modal-xlarge']}`} onClick={(e) => e.stopPropagation()}>
+        <div className={styles['modal-header']}>
+          <div className={styles['header-title']}>
+            <div className={styles['header-icon']}>
+              <FiUpload />
+            </div>
+            <h2>Массовое создание теста</h2>
+          </div>
+          <button className={styles['close-btn']} onClick={onClose}>
+            <FiX />
+          </button>
+        </div>
 
-      <div className={styles['bulk-editor-content']}>
+        <div className={styles['modal-body']}>
         {!showPreview ? (
           <>
             {/* Настройки теста */}
-            <div className={styles['bulk-test-settings']}>
-              <h4>Настройки теста</h4>
-              <div className={styles['bulk-settings-row']}>
-                <div className={styles['bulk-form-group']}>
-                  <label>Название теста *</label>
+            <div className={styles['settings-section']}>
+              <h3 className={styles['section-title']}>Настройки теста</h3>
+              <div className={styles['settings-grid']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Название теста *</label>
                   <input
                     type="text"
+                    className={styles['form-input']}
                     value={testSettings.title}
                     onChange={(e) => setTestSettings(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Название теста"
+                    placeholder="Введите название теста"
                   />
                 </div>
-                <div className={styles['bulk-form-group']}>
-                  <label>Время (минут)</label>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Время (минут)</label>
                   <input
                     type="number"
+                    className={styles['form-input']}
                     value={testSettings.timeLimit}
                     onChange={(e) => setTestSettings(prev => ({ ...prev, timeLimit: parseInt(e.target.value) || 0 }))}
                     min="0"
@@ -157,36 +168,39 @@ function BulkTestEditor({ onImport, onClose }) {
                 </div>
               </div>
               
-              <div className={styles['bulk-form-group']}>
-                <label>Описание</label>
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Описание</label>
                 <textarea
+                  className={styles['form-textarea']}
                   value={testSettings.description}
                   onChange={(e) => setTestSettings(prev => ({ ...prev, description: e.target.value }))}
                   rows="2"
-                  placeholder="Описание теста"
+                  placeholder="Введите описание теста"
                 />
               </div>
 
-              <div className={styles['bulk-settings-row']}>
-                <div className={styles['bulk-form-group']}>
-                  <label>Баллы за правильный</label>
+              <div className={styles['settings-grid']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Баллы за правильный</label>
                   <input
                     type="number"
+                    className={styles['form-input']}
                     value={testSettings.pointsCorrect}
                     onChange={(e) => setTestSettings(prev => ({ ...prev, pointsCorrect: parseInt(e.target.value) || 1 }))}
                     min="0"
                   />
                 </div>
-                <div className={styles['bulk-form-group']}>
-                  <label>Баллы за неправильный</label>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Баллы за неправильный</label>
                   <input
                     type="number"
+                    className={styles['form-input']}
                     value={testSettings.pointsWrong}
                     onChange={(e) => setTestSettings(prev => ({ ...prev, pointsWrong: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
-                <div className={styles['bulk-form-group']}>
-                  <label>
+                <div className={styles['form-group']}>
+                  <label className={styles['checkbox-label']}>
                     <input
                       type="checkbox"
                       checked={testSettings.canRetry}
@@ -199,11 +213,14 @@ function BulkTestEditor({ onImport, onClose }) {
             </div>
 
             {/* Инструкция по формату */}
-            <div className={styles['bulk-format-instruction']}>
-              <h4>Формат ввода вопросов</h4>
-              <div className={styles['bulk-instruction-content']}>
-                <p>Используйте следующий формат:</p>
-                <pre>{`1. Текст вопроса?
+            <div className={styles['instruction-section']}>
+              <h3 className={styles['section-title']}>
+                <FiFileText />
+                <span>Формат ввода вопросов</span>
+              </h3>
+              <div className={styles['instruction-content']}>
+                <p className={styles['instruction-text']}>Используйте следующий формат:</p>
+                <pre className={styles['code-block']}>{`1. Текст вопроса?
    a) Вариант ответа 1
    b) Правильный ответ [✓]
    c) Еще один вариант
@@ -212,23 +229,26 @@ function BulkTestEditor({ onImport, onClose }) {
 2. Следующий вопрос?
    a) Ответ 1
    b) Правильный ответ [✓]`}</pre>
-                <p><strong>Правила:</strong></p>
-                <ul>
-                  <li>Нумеруйте вопросы: 1., 2., 3...</li>
-                  <li>Варианты ответов: a), b), c), d)</li>
-                  <li>Отмечайте правильные ответы: [✓]</li>
-                  <li>Можно отмечать несколько правильных ответов</li>
-                  <li>Пустая строка между вопросами</li>
-                </ul>
-                <button className={styles['bulk-btn-secondary']} onClick={loadExample}>
-                  Загрузить пример
+                <div className={styles['rules-box']}>
+                  <p className={styles['rules-title']}><strong>Правила форматирования:</strong></p>
+                  <ul className={styles['rules-list']}>
+                    <li>Нумеруйте вопросы: 1., 2., 3...</li>
+                    <li>Варианты ответов: a), b), c), d)</li>
+                    <li>Отмечайте правильные ответы: [✓]</li>
+                    <li>Можно отмечать несколько правильных ответов</li>
+                    <li>Пустая строка между вопросами</li>
+                  </ul>
+                </div>
+                <button className={styles['btn-example']} onClick={loadExample}>
+                  <FiFileText />
+                  <span>Загрузить пример</span>
                 </button>
               </div>
             </div>
 
             {/* Текстовое поле для ввода */}
-            <div className={styles['bulk-input']}>
-              <h4>Введите вопросы</h4>
+            <div className={styles['input-section']}>
+              <h3 className={styles['section-title']}>Введите вопросы</h3>
               <textarea
                 value={bulkText}
                 onChange={(e) => setBulkText(e.target.value)}
@@ -238,32 +258,49 @@ function BulkTestEditor({ onImport, onClose }) {
               />
             </div>
 
-            <div className={styles['bulk-actions']}>
-              <button className={styles['bulk-btn-primary']} onClick={handlePreview}>
-                Предварительный просмотр
+            <div className={styles['modal-footer']}>
+              <button className={styles['btn-secondary']} onClick={onClose}>
+                <FiX />
+                <span>Отмена</span>
               </button>
-              <button className={styles['bulk-btn-secondary']} onClick={onClose}>
-                Отмена
+              <button className={styles['btn-primary']} onClick={handlePreview}>
+                <FiFileText />
+                <span>Предварительный просмотр</span>
               </button>
             </div>
           </>
         ) : (
           <>
             {/* Предварительный просмотр */}
-            <div className={styles['bulk-preview-section']}>
-              <h4>Предварительный просмотр ({previewQuestions.length} вопросов)</h4>
+            <div className={styles['preview-section']}>
+              <div className={styles['preview-header']}>
+                <h3 className={styles['section-title']}>
+                  <FiFileText />
+                  <span>Предварительный просмотр</span>
+                </h3>
+                <div className={styles['questions-count']}>
+                  {previewQuestions.length} {previewQuestions.length === 1 ? 'вопрос' : 'вопросов'}
+                </div>
+              </div>
               
-              <div className={styles['bulk-preview-questions']}>
+              <div className={styles['preview-questions']}>
                 {previewQuestions.map((question, index) => (
-                  <div key={index} className={styles['bulk-preview-question']}>
-                    <h5>Вопрос {index + 1}</h5>
-                    <p className={styles['bulk-question-text']}>{question.question_text}</p>
-                    <div className={styles['bulk-preview-options']}>
+                  <div key={index} className={styles['preview-question']}>
+                    <div className={styles['question-number']}>Вопрос {index + 1}</div>
+                    <p className={styles['question-text']}>{question.question_text}</p>
+                    <div className={styles['preview-options']}>
                       {question.options.map((option, optIndex) => (
-                        <div key={optIndex} className={`bulk-preview-option ${option.is_correct ? 'bulk-correct' : ''}`}>
-                          <span className={styles['bulk-option-letter']}>{String.fromCharCode(97 + optIndex)})</span>
-                          <span className={styles['bulk-option-text']}>{option.option_text}</span>
-                          {option.is_correct && <span className={styles['bulk-correct-mark']}>✓</span>}
+                        <div 
+                          key={optIndex} 
+                          className={`${styles['preview-option']} ${option.is_correct ? styles['option-correct'] : ''}`}
+                        >
+                          <span className={styles['option-letter']}>{String.fromCharCode(97 + optIndex)})</span>
+                          <span className={styles['option-text']}>{option.option_text}</span>
+                          {option.is_correct && (
+                            <span className={styles['correct-mark']}>
+                              <FiCheckCircle />
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -271,17 +308,20 @@ function BulkTestEditor({ onImport, onClose }) {
                 ))}
               </div>
 
-              <div className={styles['bulk-preview-actions']}>
-                <button className={styles['bulk-btn-success']} onClick={handleImport}>
-                  Создать тест
+              <div className={styles['modal-footer']}>
+                <button className={styles['btn-secondary']} onClick={() => setShowPreview(false)}>
+                  <FiArrowLeft />
+                  <span>Вернуться к редактированию</span>
                 </button>
-                <button className={styles['bulk-btn-secondary']} onClick={() => setShowPreview(false)}>
-                  Вернуться к редактированию
+                <button className={styles['btn-success']} onClick={handleImport}>
+                  <FiCheck />
+                  <span>Создать тест</span>
                 </button>
               </div>
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   );

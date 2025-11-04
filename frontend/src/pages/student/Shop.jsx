@@ -1,9 +1,23 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import styles from './Shop.module.css';
-import { AiOutlineShoppingCart, AiOutlineWallet, AiOutlineSearch, AiOutlinePicture, AiOutlineFontSize, AiOutlineReload, AiOutlineDollarCircle, AiOutlineCheck, AiOutlineCloseCircle } from 'react-icons/ai';
+import { 
+  AiOutlineShoppingCart, 
+  AiOutlineWallet, 
+  AiOutlineSearch, 
+  AiOutlinePicture, 
+  AiOutlineFontSize, 
+  AiOutlineReload, 
+  AiOutlineDollarCircle, 
+  AiOutlineCheck, 
+  AiOutlineCloseCircle,
+  AiOutlineStar,
+  AiOutlineFilter
+} from 'react-icons/ai';
 import { MdFormatColorText } from 'react-icons/md';
+import { IoSparkles } from 'react-icons/io5';
+import { HiLightningBolt } from 'react-icons/hi';
 import '../../styles/UsernameStyles.css';
 import '../../styles/MessageColors.css';
 
@@ -14,11 +28,10 @@ function Shop() {
   const [userPoints, setUserPoints] = useState(0);
   const [loading, setLoading] = useState(false);
   
-  // Фильтры и поиск
-  const [selectedType, setSelectedType] = useState('all'); // 'all', 'frame', 'banner', 'username', 'message_color'
+  const [selectedType, setSelectedType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [priceRange, setPriceRange] = useState('all'); // 'all', '0-100', '100-200', '200+'
-  const [sortBy, setSortBy] = useState('price-asc'); // 'price-asc', 'price-desc', 'name'
+  const [priceRange, setPriceRange] = useState('all');
+  const [sortBy, setSortBy] = useState('price-asc');
 
   useEffect(() => {
     fetchUserPoints();
@@ -66,10 +79,7 @@ function Shop() {
   };
 
   const handlePurchase = async (itemKey, price) => {
-    if (userPoints < price) {
-      return;
-    }
-
+    if (userPoints < price) return;
     setLoading(true);
     try {
       const response = await api.post('/shop/purchase', { itemKey });
@@ -86,8 +96,7 @@ function Shop() {
     setLoading(true);
     try {
       await api.post('/shop/apply-frame', { frameKey });
-      const updatedUser = { ...user, avatar_frame: frameKey };
-      updateUser(updatedUser);
+      updateUser({ ...user, avatar_frame: frameKey });
     } catch (error) {
       console.error('Ошибка применения рамки:', error);
     } finally {
@@ -99,8 +108,7 @@ function Shop() {
     setLoading(true);
     try {
       await api.post('/shop/apply-banner', { bannerKey });
-      const updatedUser = { ...user, profile_banner: bannerKey };
-      updateUser(updatedUser);
+      updateUser({ ...user, profile_banner: bannerKey });
     } catch (error) {
       console.error('Ошибка применения баннера:', error);
     } finally {
@@ -112,8 +120,7 @@ function Shop() {
     setLoading(true);
     try {
       await api.post('/shop/apply-username-style', { styleKey });
-      const updatedUser = { ...user, username_style: styleKey };
-      updateUser(updatedUser);
+      updateUser({ ...user, username_style: styleKey });
     } catch (error) {
       console.error('Ошибка применения стиля никнейма:', error);
     } finally {
@@ -125,8 +132,7 @@ function Shop() {
     setLoading(true);
     try {
       await api.post('/shop/apply-message-color', { colorKey });
-      const updatedUser = { ...user, message_color: colorKey };
-      updateUser(updatedUser);
+      updateUser({ ...user, message_color: colorKey });
     } catch (error) {
       console.error('Ошибка применения цвета сообщения:', error);
     } finally {
@@ -134,24 +140,17 @@ function Shop() {
     }
   };
 
-  // Фильтрация предметов
   const getFilteredItems = () => {
     let filtered = [...shopItems];
-
-    // Фильтр по типу
     if (selectedType !== 'all') {
       filtered = filtered.filter(item => item.item_type === selectedType);
     }
-
-    // Поиск
     if (searchQuery) {
       filtered = filtered.filter(item => 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-
-    // Фильтр по цене
     if (priceRange !== 'all') {
       if (priceRange === '0-100') {
         filtered = filtered.filter(item => item.price <= 100);
@@ -161,8 +160,6 @@ function Shop() {
         filtered = filtered.filter(item => item.price > 200);
       }
     }
-
-    // Сортировка
     if (sortBy === 'price-asc') {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-desc') {
@@ -170,169 +167,125 @@ function Shop() {
     } else if (sortBy === 'name') {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
-
     return filtered;
   };
 
   const filteredItems = getFilteredItems();
 
+  const categories = [
+    { value: 'all', label: 'Все предметы', icon: <AiOutlineStar />, count: shopItems.length },
+    { value: 'frame', label: 'Рамки', icon: <AiOutlinePicture />, count: shopItems.filter(i => i.item_type === 'frame').length },
+    { value: 'banner', label: 'Баннеры', icon: <AiOutlinePicture />, count: shopItems.filter(i => i.item_type === 'banner').length },
+    { value: 'username', label: 'Стили Никнейма', icon: <AiOutlineFontSize />, count: shopItems.filter(i => i.item_type === 'username').length },
+    { value: 'message_color', label: 'Цвета Текста', icon: <MdFormatColorText />, count: shopItems.filter(i => i.item_type === 'message_color').length }
+  ];
+
+  const priceRanges = [
+    { value: 'all', label: 'Любая цена' },
+    { value: '0-100', label: 'До 100' },
+    { value: '100-200', label: '100 - 200' },
+    { value: '200+', label: 'От 200' }
+  ];
+
   return (
-    <div className="student-page shop-page">
-      <div className={styles['shop-header']}>
-        <div className={styles['shop-header-left']}>
-          <h1><AiOutlineShoppingCart className={styles['header-icon']} /> Магазин косметики</h1>
-          <p>Персонализируйте свой профиль</p>
+    <div className={styles.shopPage}>
+      <div className={styles.shopHeader}>
+        <div className={styles.headerLeft}>
+          <h1>
+            <IoSparkles className={styles.headerIcon} /> 
+            Магазин косметики
+          </h1>
+          <p>Персонализируйте свой профиль уникальными предметами</p>
         </div>
-        <div className={styles['shop-header-right']}>
-          <div className={styles['user-points-badge']}>
-            <span className={styles['points-icon']}><AiOutlineWallet /></span>
-            <div className={styles['points-info']}>
-              <span className={styles['points-value']}>{userPoints}</span>
-              <span className={styles['points-label']}>Ваши баллы</span>
-            </div>
+        <div className={styles.pointsBadge}>
+          <AiOutlineWallet className={styles.walletIcon} />
+          <div className={styles.pointsInfo}>
+            <span className={styles.pointsValue}>{userPoints}</span>
+            <span className={styles.pointsLabel}>Ваши баллы</span>
           </div>
         </div>
       </div>
 
-      <div className={styles['shop-layout']}>
-        {/* Сайдбар с фильтрами */}
-        <aside className={styles['shop-sidebar']}>
-          <div className={styles['filter-section']}>
-            <h3><AiOutlineSearch className={styles['filter-icon']} /> Поиск</h3>
+      <div className={styles.shopLayout}>
+        <aside className={styles.sidebar}>
+          <div className={styles.sidebarHeader}>
+            <AiOutlineFilter className={styles.sidebarIcon} />
+            <h3>Фильтры</h3>
+          </div>
+
+          <div className={styles.filterSection}>
+            <label className={styles.filterLabel}>
+              <AiOutlineSearch className={styles.labelIcon} />
+              Поиск
+            </label>
             <input 
               type="text"
-              className={styles['search-input']}
+              className={styles.searchInput}
               placeholder="Найти предмет..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className={styles['filter-divider']}></div>
-
-          <div className={styles['filter-section']}>
-            <h3><AiOutlinePicture className={styles['filter-icon']} /> Категория</h3>
-            <div className={styles['filter-options']}>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="type"
-                  value="all"
-                  checked={selectedType === 'all'}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                />
-                <span>Все предметы</span>
-                <span className={styles['filter-count']}>{shopItems.length}</span>
-              </label>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="type"
-                  value="frame"
-                  checked={selectedType === 'frame'}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                />
-                <span><AiOutlinePicture className={styles['inline-icon']} /> Рамки</span>
-                <span className={styles['filter-count']}>
-                  {shopItems.filter(i => i.item_type === 'frame').length}
-                </span>
-              </label>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="type"
-                  value="banner"
-                  checked={selectedType === 'banner'}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                />
-                <span><AiOutlinePicture className={styles['inline-icon']} /> Баннеры</span>
-                <span className={styles['filter-count']}>
-                  {shopItems.filter(i => i.item_type === 'banner').length}
-                </span>
-              </label>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="type"
-                  value="username"
-                  checked={selectedType === 'username'}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                />
-                <span><AiOutlineFontSize className={styles['inline-icon']} /> Стили Никнейма</span>
-                <span className={styles['filter-count']}>
-                  {shopItems.filter(i => i.item_type === 'username').length}
-                </span>
-              </label>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="type"
-                  value="message_color"
-                  checked={selectedType === 'message_color'}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                />
-                <span><MdFormatColorText className={styles['inline-icon']} /> Цвета Текста</span>
-                <span className={styles['filter-count']}>
-                  {shopItems.filter(i => i.item_type === 'message_color').length}
-                </span>
-              </label>
+          <div className={styles.filterSection}>
+            <label className={styles.filterLabel}>
+              <AiOutlinePicture className={styles.labelIcon} />
+              Категория
+            </label>
+            <div className={styles.filterOptions}>
+              {categories.map(cat => (
+                <label 
+                  key={cat.value}
+                  className={`${styles.filterOption} ${selectedType === cat.value ? styles.active : ''}`}
+                >
+                  <input 
+                    type="radio" 
+                    name="type"
+                    value={cat.value}
+                    checked={selectedType === cat.value}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                  />
+                  <span className={styles.optionText}>
+                    {cat.icon}
+                    {cat.label}
+                  </span>
+                  <span className={styles.count}>{cat.count}</span>
+                </label>
+              ))}
             </div>
           </div>
 
-          <div className={styles['filter-divider']}></div>
-
-          <div className={styles['filter-section']}>
-            <h3><AiOutlineDollarCircle className={styles['filter-icon']} /> Цена</h3>
-            <div className={styles['filter-options']}>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="price"
-                  value="all"
-                  checked={priceRange === 'all'}
-                  onChange={(e) => setPriceRange(e.target.value)}
-                />
-                <span>Любая цена</span>
-              </label>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="price"
-                  value="0-100"
-                  checked={priceRange === '0-100'}
-                  onChange={(e) => setPriceRange(e.target.value)}
-                />
-                <span>До 100</span>
-              </label>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="price"
-                  value="100-200"
-                  checked={priceRange === '100-200'}
-                  onChange={(e) => setPriceRange(e.target.value)}
-                />
-                <span>100 - 200</span>
-              </label>
-              <label className={styles['filter-option']}>
-                <input 
-                  type="radio" 
-                  name="price"
-                  value="200+"
-                  checked={priceRange === '200+'}
-                  onChange={(e) => setPriceRange(e.target.value)}
-                />
-                <span>От 200</span>
-              </label>
+          <div className={styles.filterSection}>
+            <label className={styles.filterLabel}>
+              <AiOutlineDollarCircle className={styles.labelIcon} />
+              Цена
+            </label>
+            <div className={styles.filterOptions}>
+              {priceRanges.map(range => (
+                <label 
+                  key={range.value}
+                  className={`${styles.filterOption} ${priceRange === range.value ? styles.active : ''}`}
+                >
+                  <input 
+                    type="radio" 
+                    name="price"
+                    value={range.value}
+                    checked={priceRange === range.value}
+                    onChange={(e) => setPriceRange(e.target.value)}
+                  />
+                  <span className={styles.optionText}>{range.label}</span>
+                </label>
+              ))}
             </div>
           </div>
 
-          <div className={styles['filter-divider']}></div>
-
-          <div className={styles['filter-section']}>
-            <h3><AiOutlineReload className={styles['filter-icon']} /> Сортировка</h3>
+          <div className={styles.filterSection}>
+            <label className={styles.filterLabel}>
+              <AiOutlineReload className={styles.labelIcon} />
+              Сортировка
+            </label>
             <select 
-              className={styles['sort-select']}
+              className={styles.sortSelect}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -342,37 +295,33 @@ function Shop() {
             </select>
           </div>
 
-          <div className={styles['filter-divider']}></div>
-
-          <div className={styles['filter-section']}>
-              <button 
-              className={styles['reset-filters-btn']}
-              onClick={() => {
-                setSelectedType('all');
-                setSearchQuery('');
-                setPriceRange('all');
-                setSortBy('price-asc');
-              }}
-            >
-              <AiOutlineReload className={styles['btn-reset-icon']} /> Сбросить фильтры
-            </button>
-          </div>
+          <button 
+            className={styles.resetBtn}
+            onClick={() => {
+              setSelectedType('all');
+              setSearchQuery('');
+              setPriceRange('all');
+              setSortBy('price-asc');
+            }}
+          >
+            <AiOutlineReload />
+            Сбросить фильтры
+          </button>
         </aside>
 
-        {/* Основной контент с товарами */}
-        <main className={styles['shop-content']}>
-          <div className={styles['shop-toolbar']}>
-            <div className={styles['results-info']}>
+        <main className={styles.content}>
+          <div className={styles.toolbar}>
+            <div className={styles.resultsInfo}>
               Найдено предметов: <strong>{filteredItems.length}</strong>
             </div>
+            <HiLightningBolt className={styles.lightningIcon} />
           </div>
 
-          <div className={styles['shop-items-grid']}>
-            {/* Базовая рамка */}
+          <div className={styles.itemsGrid}>
             {(selectedType === 'all' || selectedType === 'frame') && !searchQuery && (
-              <div className={styles['shop-card']}>
-                <div className={`card-preview frame-none`}>
-                  <div className={styles['preview-avatar']}>
+              <div className={styles.itemCard}>
+                <div className={styles.cardPreview}>
+                  <div className={styles.previewAvatar}>
                     {user?.avatar_url ? (
                       <img src={`${BASE_URL}${user.avatar_url}`} alt="" />
                     ) : (
@@ -380,132 +329,124 @@ function Shop() {
                     )}
                   </div>
                 </div>
-                <div className={styles['card-body']}>
-                  <div className={styles['shop-card-header']}>
-                    <h3 className={styles['card-title']}>Без рамки</h3>
+                <div className={styles.cardBody}>
+                  <div className={styles.cardHeader}>
+                    <h3 className={styles.cardTitle}>Без рамки</h3>
                     {user?.avatar_frame === 'none' && (
-                      <span className="badge badge-active">✓ Активна</span>
+                      <span className={styles.badgeActive}>
+                        <AiOutlineCheck /> Активна
+                      </span>
                     )}
                   </div>
-                  <p className={styles['card-description']}>Базовая рамка без украшений</p>
-                  <div className={styles['card-footer']}>
-                    <span className={styles['card-price']}>
-                      <span className={styles['price-free']}>Бесплатно</span>
-                    </span>
+                  <p className={styles.cardDesc}>Базовая рамка без украшений</p>
+                  <div className={styles.cardFooter}>
+                    <span className={styles.priceFree}>Бесплатно</span>
                     <button 
-                      className={`card-btn ${user?.avatar_frame === 'none' ? 'btn-active' : 'btn-apply'}`}
+                      className={`${styles.btn} ${user?.avatar_frame === 'none' ? styles.btnActive : styles.btnApply}`}
                       onClick={() => handleApplyFrame('none')}
                       disabled={loading || user?.avatar_frame === 'none'}
                     >
-                      {user?.avatar_frame === 'none' ? '✓ Активна' : 'Применить'}
+                      {user?.avatar_frame === 'none' ? <><AiOutlineCheck /> Активна</> : 'Применить'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Базовый баннер */}
             {(selectedType === 'all' || selectedType === 'banner') && !searchQuery && (
-              <div className={styles['shop-card']}>
-                <div className="card-banner-preview banner-default"></div>
-                <div className={styles['card-body']}>
-                  <div className={styles['shop-card-header']}>
-                    <h3 className={styles['card-title']}>Базовый баннер</h3>
+              <div className={styles.itemCard}>
+                <div className={styles.bannerPreview}></div>
+                <div className={styles.cardBody}>
+                  <div className={styles.cardHeader}>
+                    <h3 className={styles.cardTitle}>Базовый баннер</h3>
                     {user?.profile_banner === 'default' && (
-                      <span className="badge badge-active">✓ Активен</span>
+                      <span className={styles.badgeActive}>
+                        <AiOutlineCheck /> Активен
+                      </span>
                     )}
                   </div>
-                  <p className={styles['card-description']}>Стандартный градиентный баннер</p>
-                  <div className={styles['card-footer']}>
-                    <span className={styles['card-price']}>
-                      <span className={styles['price-free']}>Бесплатно</span>
-                    </span>
+                  <p className={styles.cardDesc}>Стандартный градиентный баннер</p>
+                  <div className={styles.cardFooter}>
+                    <span className={styles.priceFree}>Бесплатно</span>
                     <button 
-                      className={`card-btn ${user?.profile_banner === 'default' ? 'btn-active' : 'btn-apply'}`}
+                      className={`${styles.btn} ${user?.profile_banner === 'default' ? styles.btnActive : styles.btnApply}`}
                       onClick={() => handleApplyBanner('default')}
                       disabled={loading || user?.profile_banner === 'default'}
                     >
-                      {user?.profile_banner === 'default' ? '✓ Активен' : 'Применить'}
+                      {user?.profile_banner === 'default' ? <><AiOutlineCheck /> Активен</> : 'Применить'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Базовый стиль никнейма */}
             {(selectedType === 'all' || selectedType === 'username') && !searchQuery && (
-              <div className={styles['shop-card']}>
-                <div className={styles['card-username-preview']}>
-                  <div className={styles['username-preview']}>
-                    <span className="styled-username username-none">
-                      {user?.username || 'Никнейм'}
-                    </span>
-                  </div>
+              <div className={styles.itemCard}>
+                <div className={styles.usernamePreview}>
+                  <span className="styled-username username-none">
+                    {user?.username || 'Никнейм'}
+                  </span>
                 </div>
-                <div className={styles['card-body']}>
-                  <div className={styles['shop-card-header']}>
-                    <h3 className={styles['card-title']}>Без стиля</h3>
+                <div className={styles.cardBody}>
+                  <div className={styles.cardHeader}>
+                    <h3 className={styles.cardTitle}>Без стиля</h3>
                     {user?.username_style === 'none' && (
-                      <span className="badge badge-active">✓ Активен</span>
+                      <span className={styles.badgeActive}>
+                        <AiOutlineCheck /> Активен
+                      </span>
                     )}
                   </div>
-                  <p className={styles['card-description']}>Обычный стиль без эффектов</p>
-                  <div className={styles['card-footer']}>
-                    <span className={styles['card-price']}>
-                      <span className={styles['price-free']}>Бесплатно</span>
-                    </span>
+                  <p className={styles.cardDesc}>Обычный стиль без эффектов</p>
+                  <div className={styles.cardFooter}>
+                    <span className={styles.priceFree}>Бесплатно</span>
                     <button 
-                      className={`card-btn ${user?.username_style === 'none' ? 'btn-active' : 'btn-apply'}`}
+                      className={`${styles.btn} ${user?.username_style === 'none' ? styles.btnActive : styles.btnApply}`}
                       onClick={() => handleApplyUsernameStyle('none')}
                       disabled={loading || user?.username_style === 'none'}
                     >
-                      {user?.username_style === 'none' ? '✓ Активен' : 'Применить'}
+                      {user?.username_style === 'none' ? <><AiOutlineCheck /> Активен</> : 'Применить'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Базовый цвет текста */}
             {(selectedType === 'all' || selectedType === 'message_color') && !searchQuery && (
-              <div className={styles['shop-card']}>
-                <div className={styles['card-message-preview']}>
-                  <div className={styles['message-preview']}>
-                    <span className={styles['message-none']}>
-                      Привет! Это пример сообщения
-                    </span>
+              <div className={styles.itemCard}>
+                <div className={styles.messagePreview}>
+                  <div className={styles.messageBox}>
+                    <span>Привет! Это пример сообщения</span>
                   </div>
                 </div>
-                <div className={styles['card-body']}>
-                  <div className={styles['shop-card-header']}>
-                    <h3 className={styles['card-title']}>Без цвета</h3>
+                <div className={styles.cardBody}>
+                  <div className={styles.cardHeader}>
+                    <h3 className={styles.cardTitle}>Без цвета</h3>
                     {user?.message_color === 'none' && (
-                      <span className="badge badge-active">✓ Активен</span>
+                      <span className={styles.badgeActive}>
+                        <AiOutlineCheck /> Активен
+                      </span>
                     )}
                   </div>
-                  <p className={styles['card-description']}>Обычный цвет текста</p>
-                  <div className={styles['card-footer']}>
-                    <span className={styles['card-price']}>
-                      <span className={styles['price-free']}>Бесплатно</span>
-                    </span>
+                  <p className={styles.cardDesc}>Обычный цвет текста</p>
+                  <div className={styles.cardFooter}>
+                    <span className={styles.priceFree}>Бесплатно</span>
                     <button 
-                      className={`card-btn ${user?.message_color === 'none' ? 'btn-active' : 'btn-apply'}`}
+                      className={`${styles.btn} ${user?.message_color === 'none' ? styles.btnActive : styles.btnApply}`}
                       onClick={() => handleApplyMessageColor('none')}
                       disabled={loading || user?.message_color === 'none'}
                     >
-                      {user?.message_color === 'none' ? '✓ Активен' : 'Применить'}
+                      {user?.message_color === 'none' ? <><AiOutlineCheck /> Активен</> : 'Применить'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Магазинные предметы */}
-            {filteredItems.map(item => (
-              <div key={item.id} className={styles['shop-card']}>
+            {filteredItems.map((item) => (
+              <div key={item.id} className={styles.itemCard}>
                 {item.item_type === 'frame' ? (
-                  <div className={styles['card-preview']}>
-                    <div className={styles['preview-avatar']}>
+                  <div className={styles.cardPreview}>
+                    <div className={styles.previewAvatar}>
                       {user?.avatar_url ? (
                         <img src={`${BASE_URL}${user.avatar_url}`} alt="" />
                       ) : (
@@ -516,33 +457,31 @@ function Shop() {
                       <img 
                         src={`${BASE_URL}${item.image_url}`} 
                         alt={item.name}
-                        className={styles['frame-overlay']}
+                        className={styles.frameOverlay}
                       />
                     )}
                   </div>
                 ) : item.item_type === 'banner' ? (
-                  <div className={styles['card-banner-preview']}>
+                  <div className={styles.bannerPreview}>
                     {item.image_url ? (
                       <img 
                         src={`${BASE_URL}${item.image_url}`} 
                         alt={item.name}
-                        className={styles['banner-image']}
+                        className={styles.bannerImage}
                       />
                     ) : (
-                      <div className={styles['no-image']}>Нет изображения</div>
+                      <div className={styles.noImage}>Нет изображения</div>
                     )}
                   </div>
                 ) : item.item_type === 'username' ? (
-                  <div className={styles['card-username-preview']}>
-                    <div className={styles['username-preview']}>
-                      <span className={`styled-username ${item.item_key}`}>
-                        {user?.username || 'Никнейм'}
-                      </span>
-                    </div>
+                  <div className={styles.usernamePreview}>
+                    <span className={`styled-username ${item.item_key}`}>
+                      {user?.username || 'Никнейм'}
+                    </span>
                   </div>
                 ) : item.item_type === 'message_color' ? (
-                  <div className={styles['card-message-preview']}>
-                    <div className={styles['message-preview']}>
+                  <div className={styles.messagePreview}>
+                    <div className={styles.messageBox}>
                       <span className={item.item_key}>
                         Привет! Это пример сообщения
                       </span>
@@ -550,34 +489,40 @@ function Shop() {
                   </div>
                 ) : null}
                 
-                <div className={styles['card-body']}>
-                  <div className={styles['shop-card-header']}>
-                    <h3 className={styles['card-title']}>{item.name}</h3>
-                    {purchases.includes(item.item_key) && (
-                      <span className="badge badge-owned">✓ Куплено</span>
-                    )}
-                    {((item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
-                      (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
-                      (item.item_type === 'username' && user?.username_style === item.item_key) ||
-                      (item.item_type === 'message_color' && user?.message_color === item.item_key)) && (
-                      <span className="badge badge-active">✓ Активно</span>
-                    )}
+                <div className={styles.cardBody}>
+                  <div className={styles.cardHeader}>
+                    <h3 className={styles.cardTitle}>{item.name}</h3>
+                    <div className={styles.badges}>
+                      {purchases.includes(item.item_key) && (
+                        <span className={styles.badgeOwned}>
+                          <AiOutlineCheck /> Куплено
+                        </span>
+                      )}
+                      {((item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
+                        (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
+                        (item.item_type === 'username' && user?.username_style === item.item_key) ||
+                        (item.item_type === 'message_color' && user?.message_color === item.item_key)) && (
+                        <span className={styles.badgeActive}>
+                          <AiOutlineCheck /> Активно
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <p className={styles['card-description']}>{item.description}</p>
-                  <div className={styles['card-footer']}>
-                    <span className={styles['card-price']}>
-                      <span className={styles['price-icon']}><AiOutlineDollarCircle /></span>
-                      <span className={styles['price-value']}>{item.price}</span>
+                  <p className={styles.cardDesc}>{item.description}</p>
+                  <div className={styles.cardFooter}>
+                    <span className={styles.price}>
+                      <AiOutlineDollarCircle className={styles.priceIcon} />
+                      {item.price}
                     </span>
                     {purchases.includes(item.item_key) ? (
                       <button 
-                        className={`card-btn ${
+                        className={`${styles.btn} ${
                           (item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
                           (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
                           (item.item_type === 'username' && user?.username_style === item.item_key) ||
                           (item.item_type === 'message_color' && user?.message_color === item.item_key)
-                            ? 'btn-active' 
-                            : 'btn-apply'
+                            ? styles.btnActive
+                            : styles.btnApply
                         }`}
                         onClick={() => 
                           item.item_type === 'frame' 
@@ -596,20 +541,24 @@ function Shop() {
                         }
                       >
                         {((item.item_type === 'frame' && user?.avatar_frame === item.item_key) ||
-                            (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
-                            (item.item_type === 'username' && user?.username_style === item.item_key) ||
-                            (item.item_type === 'message_color' && user?.message_color === item.item_key))
-                            ? <><AiOutlineCheck /> Активно</>
-                            : <>Применить</>
-                          }
+                          (item.item_type === 'banner' && user?.profile_banner === item.item_key) ||
+                          (item.item_type === 'username' && user?.username_style === item.item_key) ||
+                          (item.item_type === 'message_color' && user?.message_color === item.item_key))
+                          ? <><AiOutlineCheck /> Активно</>
+                          : 'Применить'
+                        }
                       </button>
                     ) : (
                       <button 
-                        className="card-btn btn-buy"
+                        className={`${styles.btn} ${styles.btnBuy}`}
                         onClick={() => handlePurchase(item.item_key, item.price)}
                         disabled={loading || userPoints < item.price}
                       >
-                          {userPoints < item.price ? <><AiOutlineCloseCircle /> Недостаточно</> : <><AiOutlineShoppingCart /> Купить</>}
+                        {userPoints < item.price ? (
+                          <><AiOutlineCloseCircle /> Недостаточно</>
+                        ) : (
+                          <><AiOutlineShoppingCart /> Купить</>
+                        )}
                       </button>
                     )}
                   </div>
@@ -619,8 +568,8 @@ function Shop() {
           </div>
 
           {filteredItems.length === 0 && (
-            <div className={styles['no-results']}>
-              <div className={styles['no-results-icon']}><AiOutlineSearch /></div>
+            <div className={styles.noResults}>
+              <AiOutlineSearch className={styles.noResultsIcon} />
               <h3>Ничего не найдено</h3>
               <p>Попробуйте изменить параметры поиска или фильтры</p>
             </div>

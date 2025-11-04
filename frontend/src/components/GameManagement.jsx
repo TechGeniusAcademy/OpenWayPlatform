@@ -3,6 +3,10 @@ import api, { BASE_URL } from '../utils/api';
 import GameCards from './GameCards';
 import GameQuestions from './GameQuestions';
 import styles from './GameManagement.module.css';
+import { 
+  FiPlay, FiUsers, FiGrid, FiHelpCircle, FiX, FiCheck,
+  FiAlertCircle, FiRefreshCw, FiTrash2, FiSettings, FiAward
+} from 'react-icons/fi';
 
 function GameManagement() {
   const [activeTab, setActiveTab] = useState('sessions'); // 'sessions', 'cards', 'questions'
@@ -108,7 +112,7 @@ function GameManagement() {
 
   const assignTeams = async () => {
     if (selectedPlayers.length < 2) {
-      showNotification('⚠️ Ошибка', 'Выберите минимум 2 игрока!', 'warning');
+      showNotification('Ошибка', 'Выберите минимум 2 игрока для формирования команд', 'warning');
       return;
     }
 
@@ -117,12 +121,12 @@ function GameManagement() {
         userIds: selectedPlayers
       });
       
-      showNotification('✅ Успешно', 'Команды сформированы!', 'success');
+      showNotification('Успешно', 'Команды успешно сформированы и игра готова к запуску', 'success');
       setShowPlayersModal(false);
       fetchSessionDetails(currentSession.id);
     } catch (error) {
       console.error('Ошибка распределения команд:', error);
-      showNotification('❌ Ошибка', 'Не удалось сформировать команды', 'error');
+      showNotification('Ошибка', 'Не удалось сформировать команды', 'error');
     }
   };
 
@@ -169,7 +173,7 @@ function GameManagement() {
       
       // Проверка наличия вопроса
       if (!question) {
-        showNotification('⚠️ Нет вопросов', 'В базе данных нет доступных вопросов. Пожалуйста, добавьте вопросы в разделе "Вопросы".', 'warning');
+        showNotification('Нет вопросов', 'В базе данных нет доступных вопросов. Пожалуйста, добавьте вопросы в разделе "Вопросы".', 'warning');
         return;
       }
       
@@ -210,7 +214,7 @@ function GameManagement() {
       console.error('Ошибка вытягивания карточки:', error);
       setShowCardAnimation(false);
       setScrollingCards([]);
-      showNotification('❌ Ошибка', 'Не удалось вытянуть карточку', 'error');
+      showNotification('Ошибка', 'Не удалось вытянуть карточку. Проверьте подключение к серверу', 'error');
     }
   };
 
@@ -218,7 +222,7 @@ function GameManagement() {
     try {
       // Проверка наличия вопроса
       if (!question) {
-        showNotification('⚠️ Ошибка', 'Не удалось загрузить вопрос. Проверьте, что в базе данных есть вопросы.', 'error');
+        showNotification('Ошибка', 'Не удалось загрузить вопрос. Проверьте, что в базе данных есть вопросы', 'error');
         return;
       }
 
@@ -235,7 +239,7 @@ function GameManagement() {
       setCurrentRound(response.data.round);
     } catch (error) {
       console.error('Ошибка создания раунда:', error);
-      showNotification('❌ Ошибка', 'Не удалось создать раунд', 'error');
+      showNotification('Ошибка', 'Не удалось создать раунд', 'error');
     }
   };
 
@@ -248,10 +252,10 @@ function GameManagement() {
     // Применяем эффект карточки
     if (drawnCard?.card_type === 'double_points') {
       points = 20;
-      notificationMessage = '🎉 Двойные очки! +20 баллов';
+      notificationMessage = 'Двойные очки! Команда получает +20 баллов';
     } else if (drawnCard?.card_type === 'steal_points') {
       points = 10;
-      notificationMessage = '🔥 Кража очков! +10 баллов вам, -5 противнику';
+      notificationMessage = 'Кража очков! +10 баллов команде, -5 противнику';
       // Отнимаем у другой команды
       const otherTeam = currentSession.current_team === 'team_a' ? 'team_b' : 'team_a';
       await api.post(`/game/sessions/${currentSession.id}/rounds`, {
@@ -260,25 +264,25 @@ function GameManagement() {
       });
     } else if (drawnCard?.card_type === 'time_bonus') {
       points = 10;
-      notificationMessage = '⏰ Бонус времени! +10 баллов и +30 секунд на следующий вопрос';
+      notificationMessage = 'Бонус времени! +10 баллов и дополнительное время на следующий вопрос';
     } else if (drawnCard?.card_type === 'minus_time') {
       points = 10;
-      notificationMessage = '⏱️ Правильно! +10 баллов, но -15 секунд на следующий вопрос';
+      notificationMessage = 'Правильный ответ! +10 баллов, но ограничение времени на следующий вопрос';
     } else if (drawnCard?.card_type === 'skip_turn') {
       points = 0;
-      notificationMessage = '⏭️ Пропуск хода! Ход пропущен, баллов нет';
+      notificationMessage = 'Пропуск хода! Ход переходит к противнику без начисления очков';
     } else if (drawnCard?.card_type === 'transfer_question') {
       points = 10;
-      notificationMessage = '🔄 Правильно! +10 баллов (вопрос не был передан)';
+      notificationMessage = 'Правильный ответ! +10 баллов (вопрос не был передан)';
     } else if (drawnCard?.card_type === 'extra_questions') {
       points = 10;
-      notificationMessage = '✅ Правильный ответ! +10 баллов';
+      notificationMessage = 'Правильный ответ! +10 баллов';
     } else {
-      notificationMessage = '✅ Правильный ответ! +10 баллов';
+      notificationMessage = 'Правильный ответ! Команда получает +10 баллов';
     }
     
     if (notificationMessage) {
-      showNotification('✅ Правильно!', notificationMessage, 'success');
+      showNotification('Правильный ответ', notificationMessage, 'success');
     }
     
     try {
@@ -290,14 +294,14 @@ function GameManagement() {
       await handleNextRound();
     } catch (error) {
       console.error('Ошибка ответа:', error);
-      showNotification('❌ Ошибка', 'Не удалось сохранить ответ', 'error');
+      showNotification('Ошибка', 'Не удалось сохранить ответ', 'error');
     }
   };
 
   const answerWrong = async () => {
     if (!currentRound) return;
     
-    showNotification('❌ Неправильно', 'Ответ неверный! -5 баллов', 'error');
+    showNotification('Неправильный ответ', 'Ответ неверный. Команда получает -5 баллов', 'error');
     
     try {
       await api.post(`/game/rounds/${currentRound.id}/answer-wrong`, {
@@ -308,7 +312,7 @@ function GameManagement() {
       await handleNextRound();
     } catch (error) {
       console.error('Ошибка ответа:', error);
-      showNotification('❌ Ошибка', 'Не удалось сохранить ответ', 'error');
+      showNotification('Ошибка', 'Не удалось сохранить ответ', 'error');
     }
   };
 
@@ -317,7 +321,7 @@ function GameManagement() {
     if (drawnCard?.card_type === 'extra_questions' && extraQuestionsCount === 0) {
       // Активируем режим дополнительных вопросов
       setExtraQuestionsCount(3);
-      showNotification('� Дополнительные вопросы!', 'Команде выпало 3 дополнительных вопроса подряд!', 'success');
+      showNotification('Дополнительные вопросы', 'Команде выпало 3 дополнительных вопроса подряд', 'success');
     }
     
     setDrawnCard(null);
@@ -331,7 +335,7 @@ function GameManagement() {
       await fetchSessionDetails(currentSession.id);
       
       if (extraQuestionsCount === 1) {
-        showNotification('✅ Бонус закончен', 'Дополнительные вопросы закончились. Ход переходит к другой команде.', 'info');
+        showNotification('Бонус завершен', 'Дополнительные вопросы закончились. Ход переходит к другой команде', 'info');
         // Теперь переключаем ход
         await api.post(`/game/sessions/${currentSession.id}/next-turn`);
         await fetchSessionDetails(currentSession.id);
@@ -352,11 +356,11 @@ function GameManagement() {
     try {
       const response = await api.post(`/game/sessions/${currentSession.id}/finish`);
       
-      const winnerText = response.data.winner === 'team_a' ? 'А Команда' : 
-                        response.data.winner === 'team_b' ? 'Б Команда' : 
-                        '🤝 Ничья';
+      const winnerText = response.data.winner === 'team_a' ? 'Команда А' : 
+                        response.data.winner === 'team_b' ? 'Команда Б' : 
+                        'Ничья';
       
-      showNotification('🏆 Игра завершена!', `Победитель: ${winnerText}`, 'success');
+      showNotification('Игра завершена', `Победитель: ${winnerText}`, 'success');
       
       setTimeout(() => {
         setShowGameModal(false);
@@ -365,7 +369,7 @@ function GameManagement() {
       }, 2000);
     } catch (error) {
       console.error('Ошибка завершения игры:', error);
-      showNotification('❌ Ошибка', 'Не удалось завершить игру', 'error');
+      showNotification('Ошибка', 'Не удалось завершить игру', 'error');
     }
   };
 
@@ -381,55 +385,75 @@ function GameManagement() {
   };
 
   return (
-    <div className={styles['game-management']}>
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderIcon}>
+          <FiPlay size={32} />
+        </div>
+        <div className={styles.pageHeaderContent}>
+          <h1 className={styles.pageTitle}>Управление Игрой</h1>
+          <p className={styles.pageDescription}>Создание и управление игровыми сессиями</p>
+        </div>
+      </div>
+
       <div className={styles.tabs}>
         <button 
-          className={activeTab === 'sessions' ? 'active' : ''} 
+          className={`${styles.tab} ${activeTab === 'sessions' ? styles.active : ''}`}
           onClick={() => setActiveTab('sessions')}
         >
-             Игры
+          <FiPlay size={18} />
+          Игры
         </button>
         <button 
-          className={activeTab === 'cards' ? 'active' : ''} 
+          className={`${styles.tab} ${activeTab === 'cards' ? styles.active : ''}`}
           onClick={() => setActiveTab('cards')}
         >
-           Карточки
+          <FiGrid size={18} />
+          Карточки
         </button>
         <button 
-          className={activeTab === 'questions' ? 'active' : ''} 
+          className={`${styles.tab} ${activeTab === 'questions' ? styles.active : ''}`}
           onClick={() => setActiveTab('questions')}
         >
-          ❓ Вопросы
+          <FiHelpCircle size={18} />
+          Вопросы
         </button>
       </div>
 
       {activeTab === 'sessions' && (
-        <div className={styles['sessions-tab']}>
-          <h2>   Игровые сессии</h2>
+        <div className={styles.sessionsTab}>
+          <h2 className={styles.sectionTitle}>
+            <FiPlay size={24} />
+            Игровые сессии
+          </h2>
 
-          <h3 style={{ marginTop: '30px', marginBottom: '20px', color: '#2c3e50', fontSize: '24px' }}>
+          <h3 className={styles.subsectionTitle}>
             Выберите группу для создания игры:
           </h3>
-          <div className={styles['mana-groups-grid']}>
+          <div className={styles.groupsGrid}>
             {groups.map(group => (
-              <div key={group.id} className={styles['group-card']}>
-                <h4>{group.name}</h4>
-                <p>👥 Студентов: {group.member_count || 0}</p>
+              <div key={group.id} className={styles.groupCard}>
+                <h4 className={styles.groupName}>{group.name}</h4>
+                <p className={styles.groupInfo}>
+                  <FiUsers size={16} />
+                  Студентов: {group.member_count || 0}
+                </p>
                 <button 
-                  className={styles['btn-primary']} 
+                  className={styles.btnCreate}
                   onClick={() => openCreateModal(group)}
                 >
+                  <FiPlay size={16} />
                   Создать игру
                 </button>
               </div>
             ))}
           </div>
 
-          <h3 style={{ marginTop: '40px', marginBottom: '20px', color: '#2c3e50', fontSize: '24px' }}>
+          <h3 className={styles.subsectionTitle}>
             Активные и завершенные игры:
           </h3>
-          <div className={styles['sessions-list']}>
-            <table>
+          <div className={styles.sessionsList}>
+            <table className={styles.table}>
               <thead>
                 <tr>
                   <th>Группа</th>
@@ -444,7 +468,7 @@ function GameManagement() {
                   <tr key={session.id}>
                     <td>{session.group_name}</td>
                     <td>
-                      <span className={`status-badge ${session.status}`}>
+                      <span className={`${styles.statusBadge} ${styles[session.status]}`}>
                         {session.status === 'preparing' ? 'Подготовка' :
                          session.status === 'in_progress' ? 'В процессе' : 'Завершена'}
                       </span>
@@ -454,29 +478,34 @@ function GameManagement() {
                         А {session.team_a_score} : {session.team_b_score} Б
                       </span>
                     </td>
-                    <td>{session.player_count}</td>
+                    <td>
+                      <FiUsers size={14} style={{ marginRight: '4px' }} />
+                      {session.player_count}
+                    </td>
                     <td className={styles.actions}>
                       {session.status === 'preparing' && (
                         <button 
                           onClick={() => startGame(session.id)}
-                          className={styles['btn-success']}
+                          className={styles.btnStart}
                         >
-                          ▶️ Старт
+                          <FiPlay size={16} />
+                          Старт
                         </button>
                       )}
                       {session.status === 'in_progress' && (
                         <button 
                           onClick={() => openGameControl(session.id)}
-                          className={styles['btn-primary']}
+                          className={styles.btnControl}
                         >
-                             Управление
+                          <FiSettings size={16} />
+                          Управление
                         </button>
                       )}
                       <button 
                         onClick={() => deleteSession(session.id)}
-                        className={styles['btn-delete']}
+                        className={styles.btnDelete}
                       >
-                        🗑️
+                        <FiTrash2 size={16} />
                       </button>
                     </td>
                   </tr>
@@ -492,14 +521,25 @@ function GameManagement() {
 
       {/* Create Session Modal */}
       {showCreateModal && (
-        <div className={styles['modal-overlay']} onClick={() => setShowCreateModal(false)}>
-          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
-            <h3>Создать игру для группы: {selectedGroup?.name}</h3>
-            <p>Студентов в группе: {groupStudents.length}</p>
+        <div className={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Создать игру для группы: {selectedGroup?.name}</h3>
+              <button className={styles.modalClose} onClick={() => setShowCreateModal(false)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <p className={styles.modalText}>
+              <FiUsers size={16} />
+              Студентов в группе: {groupStudents.length}
+            </p>
             
-            <div className={styles['form-actions']}>
-              <button onClick={() => setShowCreateModal(false)}>Отмена</button>
-              <button className={styles['btn-primary']} onClick={createSession}>
+            <div className={styles.modalActions}>
+              <button className={styles.btnCancel} onClick={() => setShowCreateModal(false)}>
+                Отмена
+              </button>
+              <button className={styles.btnConfirm} onClick={createSession}>
+                <FiPlay size={16} />
                 Создать игру
               </button>
             </div>
@@ -509,31 +549,46 @@ function GameManagement() {
 
       {/* Players Selection Modal */}
       {showPlayersModal && (
-        <div className={styles['modal-overlay']} onClick={() => setShowPlayersModal(false)}>
-          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-            <h3>Выберите игроков</h3>
-            <p>Выбрано: {selectedPlayers.length} игроков</p>
+        <div className={styles.modalOverlay} onClick={() => setShowPlayersModal(false)}>
+          <div className={`${styles.modalContent} ${styles.large}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Выберите игроков</h3>
+              <button className={styles.modalClose} onClick={() => setShowPlayersModal(false)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <p className={styles.modalText}>
+              <FiUsers size={16} />
+              Выбрано: {selectedPlayers.length} игроков
+            </p>
             
-            <div className={styles['players-list']}>
+            <div className={styles.playersList}>
               {groupStudents.map(student => (
                 <div 
                   key={student.id} 
-                  className={`player-item ${selectedPlayers.includes(student.id) ? 'selected' : ''}`}
+                  className={`${styles.playerItem} ${selectedPlayers.includes(student.id) ? styles.selected : ''}`}
                   onClick={() => togglePlayerSelection(student.id)}
                 >
                   <span>{student.full_name || student.username}</span>
-                  {selectedPlayers.includes(student.id) && <span className={styles.checkmark}>✓</span>}
+                  {selectedPlayers.includes(student.id) && (
+                    <span className={styles.checkmark}>
+                      <FiCheck size={18} />
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
             
-            <div className={styles['form-actions']}>
-              <button onClick={() => setShowPlayersModal(false)}>Отмена</button>
+            <div className={styles.modalActions}>
+              <button className={styles.btnCancel} onClick={() => setShowPlayersModal(false)}>
+                Отмена
+              </button>
               <button 
-                className={styles['btn-primary']} 
+                className={styles.btnConfirm}
                 onClick={assignTeams}
                 disabled={selectedPlayers.length < 2}
               >
+                <FiUsers size={16} />
                 Разделить на команды ({selectedPlayers.length} игроков)
               </button>
             </div>
@@ -543,77 +598,81 @@ function GameManagement() {
 
       {/* Game Control Modal */}
       {showGameModal && currentSession && (
-        <div className="modal-overlay game-control-modal">
-          <div className="modal-content extra-large" onClick={(e) => e.stopPropagation()}>
-            <button className={styles['close-btn']} onClick={() => setShowGameModal(false)}>✕</button>
+        <div className={styles.gameControlModal}>
+          <div className={styles.gameModalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.closeBtn} onClick={() => setShowGameModal(false)}>✕</button>
             
-            <div className={styles['game-header']}>
-              <h2>   Игра: {currentSession.group_name}</h2>
-              <div className={styles['game-info']}>
-                <span className={styles['score-display']}>
-                  А Команда: {currentSession.team_a_score} | Команда: {currentSession.team_b_score} Б
+            <div className={styles.gameHeader}>
+              <h2><FiPlay size={24} /> Игра: {currentSession.group_name}</h2>
+              <div className={styles.gameInfo}>
+                <span className={styles.scoreDisplay}>
+                  А Команда: {currentSession.team_a_score} | Команда Б: {currentSession.team_b_score}
                 </span>
               </div>
             </div>
 
-            <div className={styles['current-team-display']}>
+            <div className={styles.currentTeamDisplay}>
               <h3>
                 Ход: {currentSession.current_team === 'team_a' ? 'А Команда' : 'Б Команда'}
                 {extraQuestionsCount > 0 && (
-                  <span className={styles['extra-questions-badge']}>
-                    🎁 Дополнительные вопросы: {extraQuestionsCount}
+                  <span className={styles.extraQuestionsBadge}>
+                    <FiAward size={16} /> Дополнительные вопросы: {extraQuestionsCount}
                   </span>
                 )}
               </h3>
             </div>
 
             {showCardAnimation && scrollingCards.length > 0 && (
-              <div className={styles['slot-machine-overlay']}>
-                <div className={styles['slot-machine-container']}>
-                  <div className={styles['slot-window']}>
-                    <div className={styles['slot-reel']}>
+              <div className={styles.slotMachineOverlay}>
+                <div className={styles.slotMachineContainer}>
+                  <div className={styles.slotWindow}>
+                    <div className={styles.slotReel}>
                       {scrollingCards.map((card, index) => (
                         <div 
                           key={`${card.id}-${index}`} 
-                          className={styles['slot-card']}
+                          className={styles.slotCard}
                         >
-                          <div className={styles['card-inner']}>
+                          <div className={styles.cardInner}>
                             {card.image_url ? (
                               <img src={`${BASE_URL}${card.image_url}`} alt={card.name} />
                             ) : (
-                              <div className={styles['card-placeholder']}>🎴</div>
+                              <div className={styles.cardPlaceholder}>
+                                <FiGrid size={48} />
+                              </div>
                             )}
-                            <div className={styles['card-name']}>{card.name}</div>
+                            <div className={styles.cardName}>{card.name}</div>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className={styles['slot-indicator-line']}></div>
-                  <p className={styles['slot-text']}>КРУТИМ</p>
+                  <div className={styles.slotIndicatorLine}></div>
+                  <p className={styles.slotText}>КРУТИМ</p>
                 </div>
               </div>
             )}
 
             {!currentRound && !drawnCard && !showCardAnimation && (
-              <div className={styles['round-actions']}>
-                <button className="btn-large btn-primary" onClick={drawCard}>
-                   Вытянуть карточку
+              <div className={styles.roundActions}>
+                <button onClick={drawCard}>
+                  <FiRefreshCw size={20} /> Вытянуть карточку
                 </button>
               </div>
             )}
 
             {drawnCard && (
-              <div className={styles['drawn-card-display']}>
-                <div className={`card-large ${drawnCard.team}`}>
+              <div className={styles.drawnCardDisplay}>
+                <div className={styles.cardLarge}>
                   {drawnCard.image_url ? (
                     <img src={`${BASE_URL}${drawnCard.image_url}`} alt={drawnCard.name} />
                   ) : (
-                    <div className={styles['card-placeholder']}>🎴</div>
+                    <div className={styles.cardPlaceholder}>
+                      <FiGrid size={48} />
+                    </div>
                   )}
                   <h3>{drawnCard.name}</h3>
                   <p>{drawnCard.description}</p>
-                  <div className={styles['card-effect']}>
+                  <div className={styles.cardEffect}>
                     Эффект: {drawnCard.effect_value > 0 ? '+' : ''}{drawnCard.effect_value}
                   </div>
                 </div>
@@ -621,49 +680,57 @@ function GameManagement() {
             )}
 
             {currentQuestion && (
-              <div className={styles['question-display']}>
-                <h3>❓ Вопрос:</h3>
-                <p className={styles['question-text']}>{currentQuestion.question}</p>
+              <div className={styles.questionDisplay}>
+                <h3><FiHelpCircle size={20} /> Вопрос:</h3>
+                <p className={styles.questionText}>{currentQuestion.question}</p>
                 
-                <div className={styles['answer-controls']}>
-                  <button className={styles['btn-success']} onClick={answerCorrect}>
-                    ✅ Правильный ответ
+                <div className={styles.answerControls}>
+                  <button className={styles.btnSuccess} onClick={answerCorrect}>
+                    <FiCheck size={18} /> Правильный ответ
                   </button>
-                  <button className={styles['btn-danger']} onClick={answerWrong}>
-                    ❌ Неправильный ответ
+                  <button className={styles.btnDanger} onClick={answerWrong}>
+                    <FiX size={18} /> Неправильный ответ
                   </button>
                 </div>
               </div>
             )}
 
-            <div className={styles['game-controls']}>
-              <button className={styles['btn-danger']} onClick={finishGame}>
-                 Завершить игру
+            <div className={styles.gameControls}>
+              <button className={styles.btnDanger} onClick={finishGame}>
+                <FiX size={20} /> Завершить игру
               </button>
             </div>
 
             {/* Teams Display */}
-            <div className={styles['teams-display']}>
-              <div className="team team-a">
-                <h4>А Команда</h4>
+            <div className={styles.teamsDisplay}>
+              <div className={`${styles.team} ${styles.teamA}`}>
+                <h3>
+                  <span>А Команда</span>
+                  <span className={styles.score}>{currentSession.team_a_score}</span>
+                </h3>
                 <ul>
                   {currentSession.participants
                     ?.filter(p => p.team === 'team_a')
                     .map(p => (
                       <li key={p.id}>
+                        <FiUsers size={14} />
                         {p.full_name || p.username}
                       </li>
                     ))}
                 </ul>
               </div>
               
-              <div className="team team-b">
-                <h4>Б Команда</h4>
+              <div className={`${styles.team} ${styles.teamB}`}>
+                <h3>
+                  <span>Б Команда</span>
+                  <span className={styles.score}>{currentSession.team_b_score}</span>
+                </h3>
                 <ul>
                   {currentSession.participants
                     ?.filter(p => p.team === 'team_b')
                     .map(p => (
                       <li key={p.id}>
+                        <FiUsers size={14} />
                         {p.full_name || p.username}
                       </li>
                     ))}
@@ -676,17 +743,25 @@ function GameManagement() {
 
       {/* Notification Modal */}
       {notification.show && (
-        <div className={styles['notification-overlay']} onClick={closeNotification}>
-          <div className={`notification-modal ${notification.type}`} onClick={(e) => e.stopPropagation()}>
-            <button className={styles['notification-close']} onClick={closeNotification}>✕</button>
-            <div className={styles['notification-header']}>
+        <div className={styles.notificationOverlay} onClick={closeNotification}>
+          <div className={`${styles.notificationModal} ${styles[notification.type]}`} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.notificationClose} onClick={closeNotification}>
+              <FiX size={20} />
+            </button>
+            <div className={styles.notificationHeader}>
+              {notification.type === 'success' && <FiCheck size={32} />}
+              {notification.type === 'error' && <FiX size={32} />}
+              {notification.type === 'warning' && <FiAlertCircle size={32} />}
+              {notification.type === 'info' && <FiAlertCircle size={32} />}
               <h3>{notification.title}</h3>
             </div>
-            <div className={styles['notification-body']}>
+            <div className={styles.notificationBody}>
               <p>{notification.message}</p>
             </div>
-            <div className={styles['notification-footer']}>
-              <button className={styles['btn-primary']} onClick={closeNotification}>OK</button>
+            <div className={styles.notificationFooter}>
+              <button className={styles.btnPrimary} onClick={closeNotification}>
+                OK
+              </button>
             </div>
           </div>
         </div>

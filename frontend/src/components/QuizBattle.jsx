@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { io } from 'socket.io-client';
 import styles from './QuizBattle.module.css';
-import { MdOutlineQuiz } from "react-icons/md";
+import { 
+  FiAward, FiUsers, FiClock, FiRefreshCw, FiPlus, 
+  FiLink, FiX, FiCheck, FiAlertCircle, FiTrendingUp,
+  FiTarget, FiZap, FiUser
+} from 'react-icons/fi';
+import { BASE_URL } from '../utils/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
@@ -367,59 +372,76 @@ function QuizBattle() {
   // MENU VIEW
   if (view === 'menu') {
     return (
-      <div className={styles['quiz-battle-container']}>
-        <div className={styles['quiz-battle-header']}>
-          <h1><MdOutlineQuiz /> Битва Знаний</h1>
-          <p>Сражайся с другими учениками в викторине на скорость!</p>
-          {!canPlay && (
-            <div className={styles['daily-limit-warning']}>
-              ⚠️ Вы уже играли сегодня. Следующая игра доступна через {hoursUntilNextGame} часов.
-            </div>
-          )}
+      <div className={styles.container}>
+        <div className={styles.pageHeader}>
+          <div className={styles.pageHeaderIcon}>
+            <FiAward size={32} />
+          </div>
+          <div className={styles.pageHeaderContent}>
+            <h1 className={styles.pageTitle}>Битва Знаний</h1>
+            <p className={styles.pageDescription}>Сражайся с другими учениками в викторине на скорость!</p>
+          </div>
         </div>
 
-        <div className={styles['quiz-battle-actions']}>
+        {!canPlay && (
+          <div className={styles.alert}>
+            <FiAlertCircle size={20} />
+            <span>Вы уже играли сегодня. Следующая игра доступна через {hoursUntilNextGame} часов.</span>
+          </div>
+        )}
+
+        <div className={styles.actions}>
           <button 
             onClick={() => setShowCreateModal(true)} 
-            className={styles['create-battle-btn']}
+            className={styles.btnCreate}
             disabled={!canPlay}
             title={!canPlay ? `Доступно через ${hoursUntilNextGame} часов` : ''}
           >
-            ➕ Создать Битву
+            <FiPlus size={20} />
+            Создать Битву
           </button>
           <button 
             onClick={() => {
               const code = prompt('Введите код комнаты:');
               if (code) joinBattle(code.toUpperCase());
             }} 
-            className={styles['join-battle-btn']}
+            className={styles.btnJoin}
           >
-            🔗 Присоединиться по коду
+            <FiLink size={20} />
+            Присоединиться по коду
           </button>
-          <button onClick={fetchActiveBattles} className={styles['refresh-btn']}>
-            🔄 Обновить список
+          <button onClick={fetchActiveBattles} className={styles.btnRefresh}>
+            <FiRefreshCw size={20} />
+            Обновить список
           </button>
         </div>
 
-        <div className={styles['active-battles']}>
-          <h2>Активные битвы</h2>
+        <div className={styles.battlesSection}>
+          <h2 className={styles.sectionTitle}>Активные битвы</h2>
           {activeBattles.length === 0 ? (
-            <p className={styles['no-battles']}>Нет активных битв. Создай свою!</p>
+            <p className={styles.emptyMessage}>Нет активных битв. Создай свою!</p>
           ) : (
-            <div className={styles['battles-grid']}>
+            <div className={styles.battlesGrid}>
               {activeBattles.map(battle => (
-                <div key={battle.id} className={styles['battle-card']}>
-                  <div className={styles['battle-info']}>
-                    <h3>Комната: {battle.room_code}</h3>
-                    <p>Создатель: {battle.creator_name}</p>
-                    <p>Категория: {battle.category_name || 'Все категории'}</p>
-                    <p>Игроков: {battle.player_count}/8</p>
-                    <span className={`status-badge ${battle.status}`}>
-                      {battle.status === 'waiting' ? '⏳ Ожидание' : '🎮 Идёт игра'}
+                <div key={battle.id} className={styles.battleCard}>
+                  <div className={styles.battleInfo}>
+                    <h3 className={styles.battleRoom}>Комната: {battle.room_code}</h3>
+                    <p className={styles.battleCreator}>Создатель: {battle.creator_name}</p>
+                    <p className={styles.battleCategory}>Категория: {battle.category_name || 'Все категории'}</p>
+                    <p className={styles.battlePlayers}>
+                      <FiUsers size={16} />
+                      {battle.player_count}/8
+                    </p>
+                    <span className={`${styles.statusBadge} ${styles[battle.status]}`}>
+                      {battle.status === 'waiting' ? (
+                        <><FiClock size={14} /> Ожидание</>
+                      ) : (
+                        <><FiZap size={14} /> Идёт игра</>
+                      )}
                     </span>
                   </div>
                   {battle.status === 'waiting' && (
-                    <button onClick={() => joinBattle(battle.room_code)} className={styles['join-btn']}>
+                    <button onClick={() => joinBattle(battle.room_code)} className={styles.btnJoinBattle}>
                       Присоединиться
                     </button>
                   )}
@@ -429,31 +451,35 @@ function QuizBattle() {
           )}
         </div>
 
-        {/* Модальное окно выбора категории */}
         {showCreateModal && (
-          <div className={styles['modal-overlay']} onClick={() => setShowCreateModal(false)}>
-            <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
-              <h2>Выберите категорию вопросов</h2>
-              <div className={styles['categories-list']}>
+          <div className={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>Выберите категорию вопросов</h2>
+                <button className={styles.modalClose} onClick={() => setShowCreateModal(false)}>
+                  <FiX size={20} />
+                </button>
+              </div>
+              <div className={styles.categoriesList}>
                 {categories.map(cat => (
                   <div 
                     key={cat.id} 
-                    className={`category-option ${selectedCategory === cat.id ? 'selected' : ''}`}
+                    className={`${styles.categoryOption} ${selectedCategory === cat.id ? styles.selected : ''}`}
                     onClick={() => setSelectedCategory(cat.id)}
                   >
-                    <h3>{cat.name}</h3>
-                    <p>{cat.description}</p>
-                    <span className={styles['question-count']}>{cat.question_count} вопросов</span>
+                    <h3 className={styles.categoryName}>{cat.name}</h3>
+                    <p className={styles.categoryDescription}>{cat.description}</p>
+                    <span className={styles.questionCount}>{cat.question_count} вопросов</span>
                   </div>
                 ))}
               </div>
-              <div className={styles['modal-actions']}>
-                <button onClick={() => setShowCreateModal(false)} className={styles['cancel-btn']}>
+              <div className={styles.modalActions}>
+                <button onClick={() => setShowCreateModal(false)} className={styles.btnCancel}>
                   Отмена
                 </button>
                 <button 
                   onClick={createBattle} 
-                  className={styles['confirm-btn']}
+                  className={styles.btnConfirm}
                   disabled={!selectedCategory}
                 >
                   Создать битву
@@ -472,39 +498,54 @@ function QuizBattle() {
     const playerCount = currentBattle.players?.length || 0;
 
     return (
-      <div className={styles['quiz-battle-container']}>
-        <div className={styles['lobby-header']}>
-          <h1>🎮 Лобби</h1>
-          <div className={styles['room-code-display']}>
-            <span>Код комнаты:</span>
-            <strong>{currentBattle.room_code}</strong>
+      <div className={styles.container}>
+        <div className={styles.lobbyHeader}>
+          <div className={styles.lobbyTitle}>
+            <FiUsers size={28} />
+            <h1>Лобби</h1>
           </div>
-          {currentBattle.category_name && (
-            <div className={styles['category-display']}>
-              <span>Категория:</span>
-              <strong>{currentBattle.category_name}</strong>
+          <div className={styles.lobbyInfo}>
+            <div className={styles.roomCode}>
+              <span>Код комнаты:</span>
+              <strong>{currentBattle.room_code}</strong>
             </div>
-          )}
-          <button onClick={leaveBattle} className={styles['leave-btn']}>❌ Выйти</button>
+            {currentBattle.category_name && (
+              <div className={styles.categoryBadge}>
+                <FiTarget size={16} />
+                <span>{currentBattle.category_name}</span>
+              </div>
+            )}
+          </div>
+          <button onClick={leaveBattle} className={styles.btnLeave}>
+            <FiX size={20} />
+            Выйти
+          </button>
         </div>
 
-        <div className={styles['lobby-content']}>
-          <div className={styles['players-list']}>
-            <h2>Игроки ({playerCount}/8)</h2>
-            <div className={styles['players-grid']}>
+        <div className={styles.lobbyContent}>
+          <div className={styles.playersSection}>
+            <h2 className={styles.sectionTitle}>
+              <FiUsers size={20} />
+              Игроки ({playerCount}/8)
+            </h2>
+            <div className={styles.playersGrid}>
               {currentBattle.players?.map((player, idx) => (
-                <div key={player.user_id} className={styles['player-card']}>
-                  <div className={styles['player-avatar']}>
+                <div key={player.user_id} className={styles.playerCard}>
+                  <div className={styles.playerAvatar}>
                     {player.avatar_url ? (
-                      <img src={`http://localhost:5000${player.avatar_url}`} alt="" />
+                      <img src={`${BASE_URL}${player.avatar_url}`} alt="" />
                     ) : (
-                      <div className={styles['avatar-placeholder']}>👤</div>
+                      <div className={styles.avatarPlaceholder}>
+                        <FiUser size={32} />
+                      </div>
                     )}
                   </div>
-                  <div className={styles['player-info']}>
-                    <span className={styles['player-name']}>
+                  <div className={styles.playerInfo}>
+                    <span className={styles.playerName}>
                       {player.username}
-                      {player.user_id === currentBattle.creator_id && ' 👑'}
+                      {player.user_id === currentBattle.creator_id && (
+                        <FiAward className={styles.crownIcon} size={16} />
+                      )}
                     </span>
                   </div>
                 </div>
@@ -512,24 +553,29 @@ function QuizBattle() {
             </div>
           </div>
 
-          <div className={styles['lobby-instructions']}>
+          <div className={styles.lobbyInstructions}>
             {isCreator ? (
               <>
-                <h3>Вы создатель!</h3>
-                <p>Дождитесь минимум 2 игроков и нажмите кнопку старта</p>
+                <h3 className={styles.instructionTitle}>Вы создатель!</h3>
+                <p className={styles.instructionText}>Дождитесь минимум 2 игроков и нажмите кнопку старта</p>
                 <button 
                   onClick={startBattle} 
                   disabled={playerCount < 2}
-                  className={styles['start-battle-btn']}
+                  className={styles.btnStartBattle}
                 >
-                  🚀 Начать Битву
+                  <FiZap size={20} />
+                  Начать Битву
                 </button>
               </>
             ) : (
               <>
-                <h3>Ожидание начала...</h3>
-                <p>Создатель {currentBattle.players?.find(p => p.user_id === currentBattle.creator_id)?.username} скоро начнёт игру!</p>
-                <div className={styles['waiting-animation']}>⏳</div>
+                <h3 className={styles.instructionTitle}>Ожидание начала...</h3>
+                <p className={styles.instructionText}>
+                  Создатель {currentBattle.players?.find(p => p.user_id === currentBattle.creator_id)?.username} скоро начнёт игру!
+                </p>
+                <div className={styles.waitingAnimation}>
+                  <FiClock size={48} />
+                </div>
               </>
             )}
           </div>
@@ -550,56 +596,61 @@ function QuizBattle() {
     const battleTimeDisplay = `${battleMinutes}:${battleSeconds.toString().padStart(2, '0')}`;
 
     return (
-      <div className={styles['quiz-battle-container']}>
-        <div className={styles['battle-header']}>
-          <div className={styles['battle-timer-display']}>
-            <span className={`battle-timer ${battleTimer <= 60 ? 'urgent' : ''}`}>
-              ⏰ Осталось: {battleTimeDisplay}
+      <div className={styles.container}>
+        <div className={styles.battleHeader}>
+          <div className={styles.battleTimerDisplay}>
+            <span className={`${styles.battleTimer} ${battleTimer <= 60 ? styles.urgent : ''}`}>
+              <FiClock size={20} />
+              {battleTimeDisplay}
             </span>
           </div>
-          <div className={styles['progress-bar']}>
-            <div className={styles['progress-fill']} style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }} />
-            <span className={styles['progress-text']}>Вопрос {currentQuestionIndex + 1}/{questions.length}</span>
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }} />
+            <span className={styles.progressText}>Вопрос {currentQuestionIndex + 1}/{questions.length}</span>
           </div>
-          <div className={styles['timer-display']}>
-            <div className={`timer ${timer <= 10 ? 'urgent' : ''}`}>
-              ⏱️ {timer}с
+          <div className={styles.timerDisplay}>
+            <div className={`${styles.timer} ${timer <= 10 ? styles.urgent : ''}`}>
+              <FiTarget size={20} />
+              {timer}с
             </div>
           </div>
         </div>
 
         <div className={styles.scoreboard}>
           {currentBattle.players?.sort((a, b) => b.score - a.score).map((player, idx) => (
-            <div key={player.user_id} className={`score-item ${player.user_id === user?.id ? 'me' : ''}`}>
+            <div key={player.user_id} className={`${styles.scoreItem} ${player.user_id === user?.id ? styles.me : ''}`}>
               <span className={styles.rank}>#{idx + 1}</span>
-              <span className={styles['player-name']}>{player.username}</span>
-              <span className={styles.score}>{player.score} 🏆</span>
+              <span className={styles.playerName}>{player.username}</span>
+              <span className={styles.score}>
+                <FiTrendingUp size={16} />
+                {player.score}
+              </span>
             </div>
           ))}
         </div>
 
-        <div className={styles['question-container']}>
-          <h2 className={styles['question-text']}>{currentQuestion?.question}</h2>
+        <div className={styles.questionContainer}>
+          <h2 className={styles.questionText}>{currentQuestion?.question}</h2>
           
           {waitingForOthers ? (
-            <div className={styles['waiting-message']}>
+            <div className={styles.waitingMessage}>
               <div className={styles.spinner}></div>
-              <h3>Вы ответили на все вопросы!</h3>
-              <p>Ожидание других игроков...</p>
+              <h3 className={styles.waitingTitle}>Вы ответили на все вопросы!</h3>
+              <p className={styles.waitingText}>Ожидание других игроков...</p>
             </div>
           ) : (
             <>
-              <div className={styles['answers-grid']}>
+              <div className={styles.answersGrid}>
                 {['a', 'b', 'c', 'd'].map(option => {
                   const optionText = currentQuestion?.[`option_${option}`];
                   const isSelected = selectedAnswer === option;
                   const isCorrect = currentQuestion?.correct_option === option;
                   
-                  let className = 'answer-btn';
+                  let btnClass = styles.answerBtn;
                   if (isAnswering) {
-                    if (isSelected && isCorrect) className += ' correct';
-                    else if (isSelected && !isCorrect) className += ' wrong';
-                    else if (isCorrect) className += ' correct';
+                    if (isSelected && isCorrect) btnClass += ` ${styles.correct}`;
+                    else if (isSelected && !isCorrect) btnClass += ` ${styles.wrong}`;
+                    else if (isCorrect) btnClass += ` ${styles.correct}`;
                   }
 
                   return (
@@ -607,21 +658,27 @@ function QuizBattle() {
                       key={option}
                       onClick={() => !isAnswering && submitAnswer(option, timeSpent)}
                       disabled={isAnswering}
-                      className={className}
+                      className={btnClass}
                     >
-                      <span className={styles['option-letter']}>{option.toUpperCase()}</span>
-                      <span className={styles['option-text']}>{optionText}</span>
+                      <span className={styles.optionLetter}>{option.toUpperCase()}</span>
+                      <span className={styles.optionText}>{optionText}</span>
                     </button>
                   );
                 })}
               </div>
 
               {answeredQuestion && (
-                <div className={`answer-feedback ${answeredQuestion.isCorrect ? 'correct' : 'wrong'}`}>
+                <div className={`${styles.answerFeedback} ${answeredQuestion.isCorrect ? styles.correctFeedback : styles.wrongFeedback}`}>
                   {answeredQuestion.isCorrect ? (
-                    <>✅ Правильно! +{answeredQuestion.pointsEarned} очков</>
+                    <>
+                      <FiCheck size={20} />
+                      Правильно! +{answeredQuestion.pointsEarned} очков
+                    </>
                   ) : (
-                    <>❌ Неправильно!</>
+                    <>
+                      <FiX size={20} />
+                      Неправильно!
+                    </>
                   )}
                 </div>
               )}
@@ -635,48 +692,57 @@ function QuizBattle() {
   // RESULTS VIEW
   if (view === 'results') {
     const sortedPlayers = currentBattle.players?.sort((a, b) => b.score - a.score) || [];
+    const medalIcons = [
+      <FiAward size={48} className={styles.goldMedal} />,
+      <FiAward size={44} className={styles.silverMedal} />,
+      <FiAward size={40} className={styles.bronzeMedal} />
+    ];
 
     return (
-      <div className={styles['quiz-battle-container']}>
-        <div className={styles['results-header']}>
-          <h1>🏆 Результаты Битвы</h1>
+      <div className={styles.container}>
+        <div className={styles.resultsHeader}>
+          <FiAward size={32} />
+          <h1 className={styles.resultsTitle}>Результаты Битвы</h1>
         </div>
 
         <div className={styles.podium}>
-          {sortedPlayers.slice(0, 3).map((player, idx) => {
-            const medals = ['🥇', '🥈', '🥉'];
-            return (
-              <div key={player.user_id} className={`podium-place place-${idx + 1}`}>
-                <div className={styles.medal}>{medals[idx]}</div>
-                <div className={styles['player-avatar']}>
-                  {player.avatar_url ? (
-                    <img src={`http://localhost:5000${player.avatar_url}`} alt="" />
-                  ) : (
-                    <div className={styles['avatar-placeholder']}>👤</div>
-                  )}
-                </div>
-                <div className={styles['player-name']}>{player.username}</div>
-                <div className={styles['player-score']}>{player.score} очков</div>
+          {sortedPlayers.slice(0, 3).map((player, idx) => (
+            <div key={player.user_id} className={`${styles.podiumPlace} ${styles[`place${idx + 1}`]}`}>
+              <div className={styles.medal}>{medalIcons[idx]}</div>
+              <div className={styles.playerAvatar}>
+                {player.avatar_url ? (
+                  <img src={`${BASE_URL}${player.avatar_url}`} alt="" />
+                ) : (
+                  <div className={styles.avatarPlaceholder}>
+                    <FiUser size={32} />
+                  </div>
+                )}
               </div>
-            );
-          })}
+              <div className={styles.playerName}>{player.username}</div>
+              <div className={styles.playerScore}>{player.score} очков</div>
+            </div>
+          ))}
         </div>
 
-        <div className={styles['full-results']}>
-          <h2>Полная таблица</h2>
-          <div className={styles['results-table']}>
+        <div className={styles.fullResults}>
+          <h2 className={styles.sectionTitle}>Полная таблица</h2>
+          <div className={styles.resultsTable}>
             {sortedPlayers.map((player, idx) => (
-              <div key={player.user_id} className={`result-row ${player.user_id === user?.id ? 'me' : ''}`}>
+              <div key={player.user_id} className={`${styles.resultRow} ${player.user_id === user?.id ? styles.meRow : ''}`}>
                 <span className={styles.position}>#{idx + 1}</span>
-                <span className={styles.name}>{player.username}</span>
-                <span className={styles.score}>{player.score} 🏆</span>
+                <span className={styles.playerNameText}>{player.username}</span>
+                <span className={styles.scoreText}>
+                  <FiTrendingUp size={16} />
+                  {player.score}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        <button onClick={leaveBattle} className={styles['back-menu-btn']}>
-          🏠 Вернуться в меню
+        <button onClick={leaveBattle} className={styles.btnBackMenu}>
+          <FiAward size={20} />
+          Вернуться в меню
         </button>
       </div>
     );

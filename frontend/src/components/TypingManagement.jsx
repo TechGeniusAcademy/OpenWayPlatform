@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  FiUsers, FiActivity, FiTrendingUp, FiTarget, 
+  FiEdit2, FiX, FiRefreshCw, FiBarChart2, FiClock 
+} from 'react-icons/fi';
 import api from '../utils/api';
 import styles from './TypingManagement.module.css';
 
@@ -65,9 +69,9 @@ const TypingManagement = () => {
 
   if (loading) {
     return (
-      <div className={styles['typing-management']}>
-        <div className={styles['loading-spinner']}>
-          <div className={styles.spinner}></div>
+      <div className={styles['page-container']}>
+        <div className={styles['loading-state']}>
+          <FiRefreshCw className={styles['loading-icon']} />
           <p>Загрузка статистики...</p>
         </div>
       </div>
@@ -76,220 +80,310 @@ const TypingManagement = () => {
 
   if (error) {
     return (
-      <div className={styles['typing-management']}>
-        <div className={styles['error-message']}>
-          <h3>Ошибка</h3>
+      <div className={styles['page-container']}>
+        <div className={styles['error-state']}>
+          <h3>Ошибка загрузки</h3>
           <p>{error}</p>
-          <button onClick={fetchAllStatistics}>Повторить</button>
+          <button className={styles['btn-primary']} onClick={fetchAllStatistics}>
+            <FiRefreshCw />
+            <span>Повторить</span>
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={styles['typing-management']}>
-      <div className={styles['typing-header']}>
-        <h2>⌨️ Управление клавиатурным тренажером</h2>
-        <div className={styles.filters}>
-          <select 
-            value={filters.period} 
-            onChange={(e) => setFilters({...filters, period: e.target.value})}
-          >
-            <option value="week">За неделю</option>
-            <option value="month">За месяц</option>
-            <option value="all">За все время</option>
-          </select>
-          <select 
-            value={filters.sortBy} 
-            onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
-          >
-            <option value="wpm">По скорости</option>
-            <option value="accuracy">По точности</option>
-            <option value="testsCount">По количеству тестов</option>
-          </select>
-          <select 
-            value={filters.order} 
-            onChange={(e) => setFilters({...filters, order: e.target.value})}
-          >
-            <option value="desc">По убыванию</option>
-            <option value="asc">По возрастанию</option>
-          </select>
+    <div className={styles['page-container']}>
+      <div className={styles['page-header']}>
+        <div className={styles['header-content']}>
+          <div className={styles['header-left']}>
+            <div className={styles['header-icon']}>
+              <FiEdit2 />
+            </div>
+            <div>
+              <h1>Клавиатурный тренажёр</h1>
+              <p>Статистика и мониторинг прогресса учеников</p>
+            </div>
+          </div>
+          <div className={styles['header-filters']}>
+            <select 
+              className={styles['filter-select']}
+              value={filters.period} 
+              onChange={(e) => setFilters({...filters, period: e.target.value})}
+            >
+              <option value="week">За неделю</option>
+              <option value="month">За месяц</option>
+              <option value="all">За все время</option>
+            </select>
+            <select 
+              className={styles['filter-select']}
+              value={filters.sortBy} 
+              onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
+            >
+              <option value="wpm">По скорости</option>
+              <option value="accuracy">По точности</option>
+              <option value="testsCount">По количеству тестов</option>
+            </select>
+            <select 
+              className={styles['filter-select']}
+              value={filters.order} 
+              onChange={(e) => setFilters({...filters, order: e.target.value})}
+            >
+              <option value="desc">По убыванию</option>
+              <option value="asc">По возрастанию</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Общая статистика */}
       {statistics && (
-        <div className={styles['overview-stats']}>
+        <div className={styles['stats-grid']}>
           <div className={styles['stat-card']}>
-            <div className={styles['stat-icon']}>👥</div>
-            <div className={styles['stat-content']}>
-              <h3>{statistics.totalUsers}</h3>
-              <p>Активных пользователей</p>
+            <div className={styles['stat-icon-wrapper']}>
+              <FiUsers className={styles['stat-icon']} />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{statistics.totalUsers || 0}</div>
+              <div className={styles['stat-label']}>Активных пользователей</div>
             </div>
           </div>
           <div className={styles['stat-card']}>
-            <div className={styles['stat-icon']}>📊</div>
-            <div className={styles['stat-content']}>
-              <h3>{statistics.totalTests}</h3>
-              <p>Всего тестов пройдено</p>
+            <div className={styles['stat-icon-wrapper']}>
+              <FiBarChart2 className={styles['stat-icon']} />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{statistics.totalTests || 0}</div>
+              <div className={styles['stat-label']}>Всего тестов пройдено</div>
             </div>
           </div>
           <div className={styles['stat-card']}>
-            <div className={styles['stat-icon']}>⚡</div>
-            <div className={styles['stat-content']}>
-              <h3>{statistics.averageWpm}</h3>
-              <p>Средняя скорость (зн/мин)</p>
+            <div className={styles['stat-icon-wrapper']}>
+              <FiActivity className={styles['stat-icon']} />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{statistics.averageWpm ? parseFloat(statistics.averageWpm).toFixed(1) : '0.0'}</div>
+              <div className={styles['stat-label']}>Средняя скорость (зн/мин)</div>
             </div>
           </div>
           <div className={styles['stat-card']}>
-            <div className={styles['stat-icon']}>🎯</div>
-            <div className={styles['stat-content']}>
-              <h3>{statistics.averageAccuracy}%</h3>
-              <p>Средняя точность</p>
+            <div className={styles['stat-icon-wrapper']}>
+              <FiTarget className={styles['stat-icon']} />
+            </div>
+            <div className={styles['stat-info']}>
+              <div className={styles['stat-value']}>{statistics.averageAccuracy ? parseFloat(statistics.averageAccuracy).toFixed(1) : '0.0'}%</div>
+              <div className={styles['stat-label']}>Средняя точность</div>
             </div>
           </div>
         </div>
       )}
 
-      <div className={styles['stats-container']}>
+      <div className={styles['content-wrapper']}>
         {/* Статистика по пользователям */}
-        <div className={styles['users-stats']}>
-          <h3>Статистика пользователей</h3>
-          <div className={styles['users-table']}>
-            <div className={styles['table-header']}>
-              <span>Пользователь</span>
-              <span>Скорость</span>
-              <span>Точность</span>
-              <span>Тестов</span>
-              <span>Уровень</span>
-              <span>Действия</span>
-            </div>
-            {userStats.map(user => {
-              const proficiency = getProficiencyLevel(user.averageWpm);
-              return (
-                <div key={user.id} className={styles['table-row']}>
-                  <span className={styles['user-info']}>
-                    <strong>{user.fullName || user.username || 'Пользователь'}</strong>
-                    <small>{user.email || ''}</small>
-                  </span>
-                  <span className={styles.wpm}>{user.averageWpm} зн/мин</span>
-                  <span className={styles.accuracy}>{user.averageAccuracy}%</span>
-                  <span className={styles['tests-count']}>{user.testsCount}</span>
-                  <span 
-                    className={styles['proficiency-level']}
-                    style={{ color: proficiency.color }}
-                  >
-                    {proficiency.level}
-                  </span>
-                  <span className={styles.actions}>
-                    <button 
-                      onClick={() => fetchUserHistory(user.id)}
-                      className={styles['view-history-btn']}
-                    >
-                      История
-                    </button>
-                  </span>
-                </div>
-              );
-            })}
+        <div className={styles['section-card']}>
+          <div className={styles['section-header']}>
+            <h3>Статистика пользователей</h3>
           </div>
+          {userStats.length === 0 ? (
+            <div className={styles['empty-state']}>
+              <FiUsers className={styles['empty-icon']} />
+              <p>Нет данных о пользователях</p>
+            </div>
+          ) : (
+            <div className={styles['table-container']}>
+              <table className={styles['users-table']}>
+                <thead>
+                  <tr>
+                    <th>Пользователь</th>
+                    <th>Скорость</th>
+                    <th>Точность</th>
+                    <th>Тестов</th>
+                    <th>Уровень</th>
+                    <th>Действия</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userStats.map(user => {
+                    const proficiency = getProficiencyLevel(user.averageWpm || 0);
+                    return (
+                      <tr key={user.id}>
+                        <td>
+                          <div className={styles['user-cell']}>
+                            <strong>{user.fullName || user.username || 'Пользователь'}</strong>
+                            {user.email && <small>{user.email}</small>}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={styles['wpm-value']}>
+                            {user.averageWpm ? parseFloat(user.averageWpm).toFixed(1) : '0.0'} зн/мин
+                          </span>
+                        </td>
+                        <td>
+                          <span className={styles['accuracy-value']}>
+                            {user.averageAccuracy ? parseFloat(user.averageAccuracy).toFixed(1) : '0.0'}%
+                          </span>
+                        </td>
+                        <td>{user.testsCount || 0}</td>
+                        <td>
+                          <span 
+                            className={styles['level-badge']}
+                            style={{ 
+                              backgroundColor: proficiency.color + '20',
+                              color: proficiency.color 
+                            }}
+                          >
+                            {proficiency.level}
+                          </span>
+                        </td>
+                        <td>
+                          <button 
+                            onClick={() => fetchUserHistory(user.id)}
+                            className={styles['btn-view-history']}
+                          >
+                            <FiBarChart2 />
+                            <span>История</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Статистика по группам */}
-        <div className={styles['groups-stats']}>
-          <h3>Статистика по группам</h3>
-          <div className={styles['groups-grid']}>
-            {groupStats.map(group => (
-              <div key={group.id} className={styles['group-card']}>
-                <h4>{group.name}</h4>
-                <div className={styles['group-metrics']}>
-                  <div className={styles.metric}>
-                    <span className={styles['metric-label']}>Участники:</span>
-                    <span className={styles['metric-value']}>{group.membersCount}</span>
-                  </div>
-                  <div className={styles.metric}>
-                    <span className={styles['metric-label']}>Средняя скорость:</span>
-                    <span className={styles['metric-value']}>{group.averageWpm} зн/мин</span>
-                  </div>
-                  <div className={styles.metric}>
-                    <span className={styles['metric-label']}>Средняя точность:</span>
-                    <span className={styles['metric-value']}>{group.averageAccuracy}%</span>
-                  </div>
-                  <div className={styles.metric}>
-                    <span className={styles['metric-label']}>Всего тестов:</span>
-                    <span className={styles['metric-value']}>{group.totalTests}</span>
-                  </div>
-                </div>
-                <div className={styles['group-progress']}>
-                  <div className={styles['progress-bar']}>
-                    <div 
-                      className={styles['progress-fill']}
-                      style={{ width: `${Math.min(group.averageWpm / 60 * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                  <small>Прогресс к экспертному уровню (60 зн/мин)</small>
-                </div>
-              </div>
-            ))}
+        <div className={styles['section-card']}>
+          <div className={styles['section-header']}>
+            <h3>Статистика по группам</h3>
           </div>
+          {groupStats.length === 0 ? (
+            <div className={styles['empty-state']}>
+              <FiUsers className={styles['empty-icon']} />
+              <p>Нет данных о группах</p>
+            </div>
+          ) : (
+            <div className={styles['groups-grid']}>
+              {groupStats.map(group => (
+                <div key={group.id} className={styles['group-card']}>
+                  <div className={styles['group-header']}>
+                    <h4>{group.name}</h4>
+                  </div>
+                  <div className={styles['group-metrics']}>
+                    <div className={styles['metric-item']}>
+                      <span className={styles['metric-label']}>Участники</span>
+                      <span className={styles['metric-value']}>{group.membersCount || 0}</span>
+                    </div>
+                    <div className={styles['metric-item']}>
+                      <span className={styles['metric-label']}>Средняя скорость</span>
+                      <span className={styles['metric-value']}>{group.averageWpm ? parseFloat(group.averageWpm).toFixed(1) : '0.0'} зн/мин</span>
+                    </div>
+                    <div className={styles['metric-item']}>
+                      <span className={styles['metric-label']}>Средняя точность</span>
+                      <span className={styles['metric-value']}>{group.averageAccuracy ? parseFloat(group.averageAccuracy).toFixed(1) : '0.0'}%</span>
+                    </div>
+                    <div className={styles['metric-item']}>
+                      <span className={styles['metric-label']}>Всего тестов</span>
+                      <span className={styles['metric-value']}>{group.totalTests || 0}</span>
+                    </div>
+                  </div>
+                  <div className={styles['group-progress']}>
+                    <div className={styles['progress-label']}>
+                      <span>Прогресс к экспертному уровню</span>
+                      <span>{Math.min(Math.round((group.averageWpm || 0) / 60 * 100), 100)}%</span>
+                    </div>
+                    <div className={styles['progress-bar']}>
+                      <div 
+                        className={styles['progress-fill']}
+                        style={{ width: `${Math.min((group.averageWpm || 0) / 60 * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Модальное окно с историей пользователя */}
       {selectedUser && (
         <div className={styles['modal-overlay']} onClick={() => setSelectedUser(null)}>
-          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
+          <div className={styles['modal']} onClick={(e) => e.stopPropagation()}>
             <div className={styles['modal-header']}>
-              <h3>История тестирования</h3>
+              <h2>История тестирования</h2>
               <button 
                 className={styles['close-btn']}
                 onClick={() => setSelectedUser(null)}
               >
-                ×
+                <FiX />
               </button>
             </div>
             <div className={styles['modal-body']}>
-              <div className={styles['history-chart']}>
-                <h4>Прогресс скорости печати</h4>
-                <div className={styles['chart-container']}>
-                  {userHistory.length > 0 ? (
-                    <div className={styles['simple-chart']}>
-                      {userHistory.slice(-10).map((result, index) => (
-                        <div key={index} className={styles['chart-bar']}>
-                          <div 
-                            className={styles.bar}
-                            style={{ 
-                              height: `${(result.wpm / 80) * 100}%`,
-                              backgroundColor: result.accuracy >= 95 ? '#4CAF50' : result.accuracy >= 90 ? '#2196F3' : '#FF9800'
-                            }}
-                          ></div>
-                          <span className={styles['bar-label']}>{result.wpm}</span>
+              <div className={styles['chart-section']}>
+                <h4>Прогресс скорости печати (последние 10 тестов)</h4>
+                {userHistory.length > 0 ? (
+                  <div className={styles['chart-container']}>
+                    {userHistory.slice(-10).map((result, index) => (
+                      <div key={index} className={styles['chart-bar-wrapper']}>
+                        <div 
+                          className={styles['chart-bar']}
+                          style={{ 
+                            height: `${Math.min((result.wpm || 0) / 100 * 100, 100)}%`,
+                            backgroundColor: result.accuracy >= 95 ? '#10b981' : result.accuracy >= 90 ? '#3b82f6' : '#f59e0b'
+                          }}
+                        >
+                          <span className={styles['bar-value']}>{result.wpm ? parseFloat(result.wpm).toFixed(0) : '0'}</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p>Нет данных для отображения</p>
-                  )}
-                </div>
-              </div>
-              <div className={styles['history-table']}>
-                <h4>Последние результаты</h4>
-                <div className={styles['table-header']}>
-                  <span>Дата</span>
-                  <span>Скорость</span>
-                  <span>Точность</span>
-                  <span>Время</span>
-                  <span>Ошибки</span>
-                </div>
-                {userHistory.slice(0, 10).map((result, index) => (
-                  <div key={index} className={styles['table-row']}>
-                    <span>{new Date(result.created_at).toLocaleDateString()}</span>
-                    <span>{result.wpm} зн/мин</span>
-                    <span>{parseFloat(result.accuracy).toFixed(2)}%</span>
-                    <span>{formatDuration(result.time_seconds)}</span>
-                    <span>{result.errors || 0}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className={styles['empty-state']}>
+                    <FiBarChart2 className={styles['empty-icon']} />
+                    <p>Нет данных для отображения</p>
+                  </div>
+                )}
+              </div>
+              <div className={styles['history-section']}>
+                <h4>Последние результаты</h4>
+                {userHistory.length > 0 ? (
+                  <div className={styles['history-table-container']}>
+                    <table className={styles['history-table']}>
+                      <thead>
+                        <tr>
+                          <th>Дата</th>
+                          <th>Скорость</th>
+                          <th>Точность</th>
+                          <th>Время</th>
+                          <th>Ошибки</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userHistory.slice(0, 10).map((result, index) => (
+                          <tr key={index}>
+                            <td>{new Date(result.created_at).toLocaleDateString('ru-RU')}</td>
+                            <td>{result.wpm ? parseFloat(result.wpm).toFixed(1) : '0.0'} зн/мин</td>
+                            <td>{result.accuracy ? parseFloat(result.accuracy).toFixed(1) : '0.0'}%</td>
+                            <td>
+                              <span className={styles['time-cell']}>
+                                <FiClock />
+                                {formatDuration(result.time_seconds || 0)}
+                              </span>
+                            </td>
+                            <td>{result.errors || 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className={styles['empty-state']}>
+                    <p>Нет результатов</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

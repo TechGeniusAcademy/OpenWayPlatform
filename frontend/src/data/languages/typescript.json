@@ -1,0 +1,15 @@
+{
+  "name": "TypeScript",
+  "icon": "https://cdn-icons-png.flaticon.com/512/5968/5968566.png",
+  "color": "#3178c6",
+  "words": [
+    "interface", "type", "enum", "namespace", "module", "declare", "public", "private",
+    "protected", "readonly", "static", "abstract", "implements", "extends", "keyof",
+    "typeof", "as", "const", "let", "var", "function", "return", "if", "else", "for",
+    "while", "switch", "case", "break", "continue", "async", "await", "import", "export",
+    "default", "class", "constructor", "this", "super", "new", "void", "never", "any",
+    "unknown", "string", "number", "boolean", "object", "array", "tuple", "union",
+    "intersection", "generic", "Promise", "Partial", "Required", "Readonly", "Pick",
+    "Omit", "Record", "Exclude", "Extract", "NonNullable", "Parameters", "ReturnType"
+  ]
+}

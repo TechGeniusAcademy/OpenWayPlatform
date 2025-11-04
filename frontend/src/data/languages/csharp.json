@@ -1,0 +1,16 @@
+{
+  "name": "C#",
+  "icon": "https://cdn-icons-png.flaticon.com/512/74/74906.png",
+  "color": "#239120",
+  "words": [
+    "using", "namespace", "class", "interface", "struct", "enum", "delegate", "event",
+    "public", "private", "protected", "internal", "static", "readonly", "const", "abstract",
+    "virtual", "override", "sealed", "async", "await", "void", "int", "string", "bool",
+    "double", "float", "decimal", "char", "byte", "long", "short", "object", "dynamic",
+    "var", "new", "this", "base", "null", "true", "false", "if", "else", "for", "foreach",
+    "while", "do", "switch", "case", "break", "continue", "return", "try", "catch",
+    "finally", "throw", "lock", "using", "yield", "get", "set", "value", "add", "remove",
+    "List", "Dictionary", "Array", "IEnumerable", "ICollection", "LINQ", "Select", "Where",
+    "OrderBy", "GroupBy", "Join", "Contains", "Any", "All", "First", "Last", "Count"
+  ]
+}

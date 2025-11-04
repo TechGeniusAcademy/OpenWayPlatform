@@ -5,13 +5,14 @@ import api from '../utils/api';
 import styles from './KnowledgeBaseManagement.module.css';
 import './ArticleModal.css';
 import { 
-  FaBook, FaLaptopCode, FaGlobe, FaDatabase, FaCalculator, 
-  FaRandom, FaPalette, FaTools, FaChartBar, FaRocket,
-  FaLightbulb, FaBullseye, FaLock, FaMobileAlt, FaCog,
-  FaFileAlt, FaEdit, FaClipboard, FaThumbtack, FaMapMarkerAlt,
-  FaFont, FaBolt, FaBox, FaClock, FaWrench, FaSearch,
-  FaFolder, FaEye, FaCheckCircle, FaPencilAlt, FaTrash, FaPlus
-} from 'react-icons/fa';
+  FiBook, FiCode, FiGlobe, FiDatabase, FiTool,
+  FiZap, FiTrendingUp, FiGrid, FiLayers, FiPackage,
+  FiCpu, FiShield, FiSmartphone, FiSettings,
+  FiFileText, FiEdit2, FiClipboard, FiStar, FiMapPin,
+  FiType, FiMonitor, FiBox, FiClock, FiSearch,
+  FiFolder, FiEye, FiCheckCircle, FiTrash2, FiPlus,
+  FiRefreshCw, FiX, FiAlertCircle
+} from 'react-icons/fi';
 
 // Wrapper для ReactQuill чтобы избежать findDOMNode warning
 const QuillEditor = ({ value, onChange, modules, placeholder }) => {
@@ -45,14 +46,14 @@ function KnowledgeBaseManagement() {
   
   const [categoryForm, setCategoryForm] = useState({
     name: '',
-    icon: 'FaBook',
+    icon: 'FiBook',
     description: ''
   });
 
   const [subcategoryForm, setSubcategoryForm] = useState({
     name: '',
     category_id: '',
-    icon: 'FaFileAlt',
+    icon: 'FiFileText',
     description: '',
     order_index: 0
   });
@@ -71,40 +72,40 @@ function KnowledgeBaseManagement() {
 
   // Иконки для категорий
   const iconOptions = [
-    { icon: <FaBook />, name: 'FaBook' },
-    { icon: <FaLaptopCode />, name: 'FaLaptopCode' },
-    { icon: <FaGlobe />, name: 'FaGlobe' },
-    { icon: <FaDatabase />, name: 'FaDatabase' },
-    { icon: <FaCalculator />, name: 'FaCalculator' },
-    { icon: <FaRandom />, name: 'FaRandom' },
-    { icon: <FaPalette />, name: 'FaPalette' },
-    { icon: <FaTools />, name: 'FaTools' },
-    { icon: <FaChartBar />, name: 'FaChartBar' },
-    { icon: <FaRocket />, name: 'FaRocket' },
-    { icon: <FaLightbulb />, name: 'FaLightbulb' },
-    { icon: <FaBullseye />, name: 'FaBullseye' },
-    { icon: <FaLock />, name: 'FaLock' },
-    { icon: <FaMobileAlt />, name: 'FaMobileAlt' },
-    { icon: <FaCog />, name: 'FaCog' }
+    { icon: <FiBook />, name: 'FiBook' },
+    { icon: <FiCode />, name: 'FiCode' },
+    { icon: <FiGlobe />, name: 'FiGlobe' },
+    { icon: <FiDatabase />, name: 'FiDatabase' },
+    { icon: <FiTool />, name: 'FiTool' },
+    { icon: <FiZap />, name: 'FiZap' },
+    { icon: <FiTrendingUp />, name: 'FiTrendingUp' },
+    { icon: <FiGrid />, name: 'FiGrid' },
+    { icon: <FiLayers />, name: 'FiLayers' },
+    { icon: <FiPackage />, name: 'FiPackage' },
+    { icon: <FiCpu />, name: 'FiCpu' },
+    { icon: <FiShield />, name: 'FiShield' },
+    { icon: <FiSmartphone />, name: 'FiSmartphone' },
+    { icon: <FiMonitor />, name: 'FiMonitor' },
+    { icon: <FiSettings />, name: 'FiSettings' }
   ];
   
   // Иконки для подкатегорий
   const subIconOptions = [
-    { icon: <FaFileAlt />, name: 'FaFileAlt' },
-    { icon: <FaEdit />, name: 'FaEdit' },
-    { icon: <FaClipboard />, name: 'FaClipboard' },
-    { icon: <FaThumbtack />, name: 'FaThumbtack' },
-    { icon: <FaMapMarkerAlt />, name: 'FaMapMarkerAlt' },
-    { icon: <FaFont />, name: 'FaFont' },
-    { icon: <FaBolt />, name: 'FaBolt' },
-    { icon: <FaBox />, name: 'FaBox' },
-    { icon: <FaClock />, name: 'FaClock' },
-    { icon: <FaBullseye />, name: 'FaBullseye' },
-    { icon: <FaWrench />, name: 'FaWrench' },
-    { icon: <FaCog />, name: 'FaCog' },
-    { icon: <FaTools />, name: 'FaTools' },
-    { icon: <FaLightbulb />, name: 'FaLightbulb' },
-    { icon: <FaSearch />, name: 'FaSearch' }
+    { icon: <FiFileText />, name: 'FiFileText' },
+    { icon: <FiEdit2 />, name: 'FiEdit2' },
+    { icon: <FiClipboard />, name: 'FiClipboard' },
+    { icon: <FiStar />, name: 'FiStar' },
+    { icon: <FiMapPin />, name: 'FiMapPin' },
+    { icon: <FiType />, name: 'FiType' },
+    { icon: <FiZap />, name: 'FiZap' },
+    { icon: <FiBox />, name: 'FiBox' },
+    { icon: <FiClock />, name: 'FiClock' },
+    { icon: <FiGrid />, name: 'FiGrid' },
+    { icon: <FiTool />, name: 'FiTool' },
+    { icon: <FiSettings />, name: 'FiSettings' },
+    { icon: <FiLayers />, name: 'FiLayers' },
+    { icon: <FiCpu />, name: 'FiCpu' },
+    { icon: <FiSearch />, name: 'FiSearch' }
   ];
 
   useEffect(() => {
@@ -180,7 +181,7 @@ function KnowledgeBaseManagement() {
 
   const resetCategoryForm = () => {
     setEditingCategory(null);
-    setCategoryForm({ name: '', icon: 'FaBook', description: '' });
+    setCategoryForm({ name: '', icon: 'FiBook', description: '' });
   };
 
   // Подкатегории
@@ -236,7 +237,7 @@ function KnowledgeBaseManagement() {
 
   const resetSubcategoryForm = () => {
     setEditingSubcategory(null);
-    setSubcategoryForm({ name: '', category_id: '', icon: 'FaFileAlt', description: '', order_index: 0 });
+    setSubcategoryForm({ name: '', category_id: '', icon: 'FiFileText', description: '', order_index: 0 });
   };
 
   // Статьи
@@ -319,200 +320,255 @@ function KnowledgeBaseManagement() {
   // Функция для рендеринга иконки по имени
   const renderIcon = (iconName) => {
     const iconMap = {
-      FaBook: <FaBook />,
-      FaLaptopCode: <FaLaptopCode />,
-      FaGlobe: <FaGlobe />,
-      FaDatabase: <FaDatabase />,
-      FaCalculator: <FaCalculator />,
-      FaRandom: <FaRandom />,
-      FaPalette: <FaPalette />,
-      FaTools: <FaTools />,
-      FaChartBar: <FaChartBar />,
-      FaRocket: <FaRocket />,
-      FaLightbulb: <FaLightbulb />,
-      FaBullseye: <FaBullseye />,
-      FaLock: <FaLock />,
-      FaMobileAlt: <FaMobileAlt />,
-      FaCog: <FaCog />,
-      FaFileAlt: <FaFileAlt />,
-      FaEdit: <FaEdit />,
-      FaClipboard: <FaClipboard />,
-      FaThumbtack: <FaThumbtack />,
-      FaMapMarkerAlt: <FaMapMarkerAlt />,
-      FaFont: <FaFont />,
-      FaBolt: <FaBolt />,
-      FaBox: <FaBox />,
-      FaClock: <FaClock />,
-      FaWrench: <FaWrench />,
-      FaSearch: <FaSearch />
+      FiBook: <FiBook />,
+      FiCode: <FiCode />,
+      FiGlobe: <FiGlobe />,
+      FiDatabase: <FiDatabase />,
+      FiTool: <FiTool />,
+      FiZap: <FiZap />,
+      FiTrendingUp: <FiTrendingUp />,
+      FiGrid: <FiGrid />,
+      FiLayers: <FiLayers />,
+      FiPackage: <FiPackage />,
+      FiCpu: <FiCpu />,
+      FiShield: <FiShield />,
+      FiSmartphone: <FiSmartphone />,
+      FiMonitor: <FiMonitor />,
+      FiSettings: <FiSettings />,
+      FiFileText: <FiFileText />,
+      FiEdit2: <FiEdit2 />,
+      FiClipboard: <FiClipboard />,
+      FiStar: <FiStar />,
+      FiMapPin: <FiMapPin />,
+      FiType: <FiType />,
+      FiBox: <FiBox />,
+      FiClock: <FiClock />,
+      FiSearch: <FiSearch />
     };
-    return iconMap[iconName] || <FaBook />;
+    return iconMap[iconName] || <FiBook />;
   };
 
   if (loading) {
     return (
-      <div className={styles['kb-management-loading']}>
-        <div className={styles.loader}></div>
-        <p>Загрузка...</p>
+      <div className={styles['loading-state']}>
+        <FiRefreshCw className={styles['loading-icon']} />
+        <p>Загрузка базы знаний...</p>
       </div>
     );
   }
 
   return (
-    <div className={styles['kb-management']}>
-      <div className={styles['kb-management-header']}>
-        <h1><FaBook /> Управление Базой Знаний</h1>
-        <p>Создавайте категории и статьи для учеников</p>
+    <div className={styles['page-container']}>
+      <div className={styles['page-header']}>
+        <div className={styles['header-content']}>
+          <div className={styles['header-left']}>
+            <div className={styles['header-icon']}>
+              <FiBook />
+            </div>
+            <div>
+              <h1>Управление Базой Знаний</h1>
+              <p>Создавайте категории и статьи для учеников</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Сообщения */}
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {error && (
+        <div className={styles['alert-error']}>
+          <FiAlertCircle />
+          <span>{error}</span>
+        </div>
+      )}
+      {success && (
+        <div className={styles['alert-success']}>
+          <FiCheckCircle />
+          <span>{success}</span>
+        </div>
+      )}
 
       {/* Табы */}
-      <div className={styles['kb-tabs']}>
+      <div className={styles['tabs-container']}>
         <button
-          className={`kb-tab ${activeTab === 'categories' ? 'active' : ''}`}
+          className={`${styles['tab']} ${activeTab === 'categories' ? styles['active'] : ''}`}
           onClick={() => setActiveTab('categories')}
         >
-          <FaFolder /> Категории ({categories.length})
+          <FiFolder />
+          <span>Категории</span>
+          <span className={styles['tab-badge']}>{categories.length}</span>
         </button>
         <button
-          className={`kb-tab ${activeTab === 'subcategories' ? 'active' : ''}`}
+          className={`${styles['tab']} ${activeTab === 'subcategories' ? styles['active'] : ''}`}
           onClick={() => setActiveTab('subcategories')}
         >
-          <FaClipboard /> Подкатегории ({subcategories.length})
+          <FiLayers />
+          <span>Подкатегории</span>
+          <span className={styles['tab-badge']}>{subcategories.length}</span>
         </button>
         <button
-          className={`kb-tab ${activeTab === 'articles' ? 'active' : ''}`}
+          className={`${styles['tab']} ${activeTab === 'articles' ? styles['active'] : ''}`}
           onClick={() => setActiveTab('articles')}
         >
-          <FaFileAlt /> Статьи ({articles.length})
+          <FiFileText />
+          <span>Статьи</span>
+          <span className={styles['tab-badge']}>{articles.length}</span>
         </button>
       </div>
 
       {/* Категории */}
       {activeTab === 'categories' && (
-        <div className={styles['kb-section']}>
-          <div className={styles['kb-section-header']}>
+        <div className={styles['content-section']}>
+          <div className={styles['section-header']}>
             <h2>Категории</h2>
             <button
-              className="btn btn-primary"
+              className={styles['btn-primary']}
               onClick={() => {
                 resetCategoryForm();
                 setShowCategoryModal(true);
               }}
             >
-              <FaPlus /> Создать категорию
+              <FiPlus />
+              <span>Создать категорию</span>
             </button>
           </div>
 
-          <div className={styles['categories-grid']}>
-            {categories.length === 0 ? (
-              <div className={styles['empty-state']}>
-                <p>Нет категорий</p>
+          {categories.length === 0 ? (
+            <div className={styles['empty-state']}>
+              <div className={styles['empty-state-icon']}>
+                <FiFolder />
               </div>
-            ) : (
-              categories.map(category => (
+              <h3>Нет категорий</h3>
+              <p>Создайте первую категорию для базы знаний</p>
+            </div>
+          ) : (
+            <div className={styles['categories-grid']}>
+              {categories.map(category => (
                 <div key={category.id} className={styles['category-card']}>
                   <div className={styles['category-icon']}>{renderIcon(category.icon)}</div>
                   <h3>{category.name}</h3>
-                  <p>{category.description}</p>
+                  <p>{category.description || 'Нет описания'}</p>
                   <div className={styles['category-stats']}>
-                    <FaFileAlt /> {category.articles_count} статей
+                    <FiFileText />
+                    <span>{category.articles_count} статей</span>
                   </div>
                   <div className={styles['category-actions']}>
                     <button
-                      className="btn btn-small btn-edit"
+                      className={styles['btn-icon-edit']}
                       onClick={() => handleEditCategory(category)}
+                      title="Редактировать"
                     >
-                      <FaPencilAlt /> Изменить
+                      <FiEdit2 />
                     </button>
                     <button
-                      className="btn btn-small btn-delete"
+                      className={styles['btn-icon-delete']}
                       onClick={() => handleDeleteCategory(category.id)}
+                      title="Удалить"
                     >
-                      <FaTrash /> Удалить
+                      <FiTrash2 />
                     </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* Подкатегории */}
       {activeTab === 'subcategories' && (
-        <div className={styles['kb-section']}>
-          <div className={styles['kb-section-header']}>
+        <div className={styles['content-section']}>
+          <div className={styles['section-header']}>
             <h2>Подкатегории</h2>
             <button
-              className="btn btn-primary"
+              className={styles['btn-primary']}
               onClick={() => {
                 resetSubcategoryForm();
                 setShowSubcategoryModal(true);
               }}
             >
-              <FaPlus /> Создать подкатегорию
+              <FiPlus />
+              <span>Создать подкатегорию</span>
             </button>
           </div>
 
-          <div className={styles['kb-categories-grid']}>
-            {subcategories.map(subcategory => (
-              <div key={subcategory.id} className={styles['kb-category-card']}>
-                <div className={styles['kb-category-icon']}>{renderIcon(subcategory.icon)}</div>
-                <div className={styles['kb-category-info']}>
-                  <h3>{subcategory.name}</h3>
-                  <p className={styles['category-name']}><FaFolder /> {subcategory.category_name}</p>
-                  <p>{subcategory.description || 'Нет описания'}</p>
-                  <span className={styles['kb-category-count']}>
-                    {subcategory.articles_count} {subcategory.articles_count === 1 ? 'статья' : 'статей'}
-                  </span>
-                </div>
-                <div className={styles['kb-category-actions']}>
-                  <button
-                    className="btn btn-small btn-edit"
-                    onClick={() => handleEditSubcategory(subcategory)}
-                  >
-                    <FaPencilAlt /> Редактировать
-                  </button>
-                  <button
-                    className="btn btn-small btn-delete"
-                    onClick={() => handleDeleteSubcategory(subcategory.id)}
-                  >
-                    <FaTrash /> Удалить
-                  </button>
-                </div>
+          {subcategories.length === 0 ? (
+            <div className={styles['empty-state']}>
+              <div className={styles['empty-state-icon']}>
+                <FiLayers />
               </div>
-            ))}
-          </div>
+              <h3>Нет подкатегорий</h3>
+              <p>Создайте подкатегории для организации статей</p>
+            </div>
+          ) : (
+            <div className={styles['subcategories-list']}>
+              {subcategories.map(subcategory => (
+                <div key={subcategory.id} className={styles['subcategory-card']}>
+                  <div className={styles['subcategory-icon']}>{renderIcon(subcategory.icon)}</div>
+                  <div className={styles['subcategory-info']}>
+                    <h3>{subcategory.name}</h3>
+                    <div className={styles['subcategory-meta']}>
+                      <span className={styles['parent-category']}>
+                        <FiFolder />
+                        {subcategory.category_name}
+                      </span>
+                    </div>
+                    <p>{subcategory.description || 'Нет описания'}</p>
+                    <div className={styles['subcategory-stats']}>
+                      <FiFileText />
+                      <span>{subcategory.articles_count} {subcategory.articles_count === 1 ? 'статья' : 'статей'}</span>
+                    </div>
+                  </div>
+                  <div className={styles['subcategory-actions']}>
+                    <button
+                      className={styles['btn-icon-edit']}
+                      onClick={() => handleEditSubcategory(subcategory)}
+                      title="Редактировать"
+                    >
+                      <FiEdit2 />
+                    </button>
+                    <button
+                      className={styles['btn-icon-delete']}
+                      onClick={() => handleDeleteSubcategory(subcategory.id)}
+                      title="Удалить"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* Статьи */}
       {activeTab === 'articles' && (
-        <div className={styles['kb-section']}>
-          <div className={styles['kb-section-header']}>
+        <div className={styles['content-section']}>
+          <div className={styles['section-header']}>
             <h2>Статьи</h2>
             <button
-              className="btn btn-primary"
+              className={styles['btn-primary']}
               onClick={() => {
                 resetArticleForm();
                 setShowArticleModal(true);
               }}
             >
-              <FaPlus /> Создать статью
+              <FiPlus />
+              <span>Создать статью</span>
             </button>
           </div>
 
-          <div className={styles['articles-table']}>
-            {articles.length === 0 ? (
-              <div className={styles['empty-state']}>
-                <p>Нет статей</p>
+          {articles.length === 0 ? (
+            <div className={styles['empty-state']}>
+              <div className={styles['empty-state-icon']}>
+                <FiFileText />
               </div>
-            ) : (
-              <table>
+              <h3>Нет статей</h3>
+              <p>Создайте первую статью для базы знаний</p>
+            </div>
+          ) : (
+            <div className={styles['table-container']}>
+              <table className={styles['articles-table']}>
                 <thead>
                   <tr>
                     <th>Название</th>
@@ -528,32 +584,50 @@ function KnowledgeBaseManagement() {
                   {articles.map(article => (
                     <tr key={article.id}>
                       <td>
-                        <strong>{article.title}</strong>
-                        <br />
-                        <small>{article.description}</small>
+                        <div className={styles['article-title']}>
+                          <strong>{article.title}</strong>
+                          {article.description && (
+                            <span className={styles['article-desc']}>{article.description}</span>
+                          )}
+                        </div>
                       </td>
                       <td>{article.category_name}</td>
                       <td>{article.subcategory_name || '—'}</td>
-                      <td><FaEye /> {article.views}</td>
                       <td>
-                        <span className={`status-badge ${article.published ? 'published' : 'draft'}`}>
-                          {article.published ? <><FaCheckCircle /> Опубликовано</> : <><FaPencilAlt /> Черновик</>}
-                        </span>
+                        <div className={styles['views-cell']}>
+                          <FiEye />
+                          <span>{article.views}</span>
+                        </div>
+                      </td>
+                      <td>
+                        {article.published ? (
+                          <span className={styles['badge-published']}>
+                            <FiCheckCircle />
+                            <span>Опубликовано</span>
+                          </span>
+                        ) : (
+                          <span className={styles['badge-draft']}>
+                            <FiEdit2 />
+                            <span>Черновик</span>
+                          </span>
+                        )}
                       </td>
                       <td>{new Date(article.created_at).toLocaleDateString('ru-RU')}</td>
                       <td>
-                        <div className={styles['action-buttons']}>
+                        <div className={styles['table-actions']}>
                           <button
-                            className="btn btn-small btn-edit"
+                            className={styles['btn-icon-edit']}
                             onClick={() => handleEditArticle(article)}
+                            title="Редактировать"
                           >
-                            <FaPencilAlt />
+                            <FiEdit2 />
                           </button>
                           <button
-                            className="btn btn-small btn-delete"
+                            className={styles['btn-icon-delete']}
                             onClick={() => handleDeleteArticle(article.id)}
+                            title="Удалить"
                           >
-                            <FaTrash />
+                            <FiTrash2 />
                           </button>
                         </div>
                       </td>
@@ -561,63 +635,69 @@ function KnowledgeBaseManagement() {
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Модальное окно категории */}
       {showCategoryModal && (
         <div className={styles['modal-overlay']} onClick={() => setShowCategoryModal(false)}>
-          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
+          <div className={styles['modal']} onClick={(e) => e.stopPropagation()}>
             <div className={styles['modal-header']}>
               <h2>{editingCategory ? 'Редактировать категорию' : 'Новая категория'}</h2>
-              <button className={styles['modal-close']} onClick={() => setShowCategoryModal(false)}>✕</button>
+              <button className={styles['close-btn']} onClick={() => setShowCategoryModal(false)}>
+                <FiX />
+              </button>
             </div>
             
             <form onSubmit={handleCategorySubmit}>
-              <div className={styles['form-group']}>
-                <label>Название *</label>
-                <input
-                  type="text"
-                  value={categoryForm.name}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                  required
-                  placeholder="Например: Web-разработка"
-                />
-              </div>
+              <div className={styles['modal-body']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Название *</label>
+                  <input
+                    type="text"
+                    className={styles['form-input']}
+                    value={categoryForm.name}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                    required
+                    placeholder="Например: Web-разработка"
+                  />
+                </div>
 
-              <div className={styles['form-group']}>
-                <label>Иконка</label>
-                <div className={styles['icon-selector']}>
-                  {iconOptions.map(iconObj => (
-                    <button
-                      key={iconObj.name}
-                      type="button"
-                      className={`icon-option ${categoryForm.icon === iconObj.name ? 'selected' : ''}`}
-                      onClick={() => setCategoryForm({ ...categoryForm, icon: iconObj.name })}
-                    >
-                      {iconObj.icon}
-                    </button>
-                  ))}
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Иконка</label>
+                  <div className={styles['icon-selector']}>
+                    {iconOptions.map(iconObj => (
+                      <button
+                        key={iconObj.name}
+                        type="button"
+                        className={`${styles['icon-option']} ${categoryForm.icon === iconObj.name ? styles['selected'] : ''}`}
+                        onClick={() => setCategoryForm({ ...categoryForm, icon: iconObj.name })}
+                      >
+                        {iconObj.icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Описание</label>
+                  <textarea
+                    className={styles['form-input']}
+                    value={categoryForm.description}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                    rows="3"
+                    placeholder="Краткое описание категории"
+                  />
                 </div>
               </div>
 
-              <div className={styles['form-group']}>
-                <label>Описание</label>
-                <textarea
-                  value={categoryForm.description}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                  rows="3"
-                  placeholder="Краткое описание категории"
-                />
-              </div>
-
-              <div className={styles['modal-actions']}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowCategoryModal(false)}>
+              <div className={styles['modal-footer']}>
+                <button type="button" className={styles['btn-secondary']} onClick={() => setShowCategoryModal(false)}>
                   Отмена
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className={styles['btn-primary']}>
                   {editingCategory ? 'Сохранить' : 'Создать'}
                 </button>
               </div>
@@ -629,82 +709,90 @@ function KnowledgeBaseManagement() {
       {/* Модальное окно подкатегории */}
       {showSubcategoryModal && (
         <div className={styles['modal-overlay']} onClick={() => setShowSubcategoryModal(false)}>
-          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
+          <div className={styles['modal']} onClick={(e) => e.stopPropagation()}>
             <div className={styles['modal-header']}>
               <h2>{editingSubcategory ? 'Редактировать подкатегорию' : 'Новая подкатегория'}</h2>
-              <button className={styles['modal-close']} onClick={() => setShowSubcategoryModal(false)}>✕</button>
+              <button className={styles['close-btn']} onClick={() => setShowSubcategoryModal(false)}>
+                <FiX />
+              </button>
             </div>
             
             <form onSubmit={handleSubcategorySubmit}>
-              <div className={styles['form-group']}>
-                <label>Название *</label>
-                <input
-                  type="text"
-                  value={subcategoryForm.name}
-                  onChange={(e) => setSubcategoryForm({ ...subcategoryForm, name: e.target.value })}
-                  required
-                  placeholder="Например: Синтаксис и основы"
-                />
-              </div>
+              <div className={styles['modal-body']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Название *</label>
+                  <input
+                    type="text"
+                    className={styles['form-input']}
+                    value={subcategoryForm.name}
+                    onChange={(e) => setSubcategoryForm({ ...subcategoryForm, name: e.target.value })}
+                    required
+                    placeholder="Например: Синтаксис и основы"
+                  />
+                </div>
 
-              <div className={styles['form-group']}>
-                <label>Категория *</label>
-                <select
-                  value={subcategoryForm.category_id}
-                  onChange={(e) => setSubcategoryForm({ ...subcategoryForm, category_id: e.target.value })}
-                  required
-                >
-                  <option value="">Выберите категорию</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Категория *</label>
+                  <select
+                    className={styles['form-input']}
+                    value={subcategoryForm.category_id}
+                    onChange={(e) => setSubcategoryForm({ ...subcategoryForm, category_id: e.target.value })}
+                    required
+                  >
+                    <option value="">Выберите категорию</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className={styles['form-group']}>
-                <label>Иконка</label>
-                <div className={styles['icon-selector']}>
-                  {subIconOptions.map(iconObj => (
-                    <button
-                      key={iconObj.name}
-                      type="button"
-                      className={`icon-option ${subcategoryForm.icon === iconObj.name ? 'selected' : ''}`}
-                      onClick={() => setSubcategoryForm({ ...subcategoryForm, icon: iconObj.name })}
-                    >
-                      {iconObj.icon}
-                    </button>
-                  ))}
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Иконка</label>
+                  <div className={styles['icon-selector']}>
+                    {subIconOptions.map(iconObj => (
+                      <button
+                        key={iconObj.name}
+                        type="button"
+                        className={`${styles['icon-option']} ${subcategoryForm.icon === iconObj.name ? styles['selected'] : ''}`}
+                        onClick={() => setSubcategoryForm({ ...subcategoryForm, icon: iconObj.name })}
+                      >
+                        {iconObj.icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Описание</label>
+                  <textarea
+                    className={styles['form-input']}
+                    value={subcategoryForm.description}
+                    onChange={(e) => setSubcategoryForm({ ...subcategoryForm, description: e.target.value })}
+                    rows="3"
+                    placeholder="Краткое описание подкатегории"
+                  />
+                </div>
+
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Порядок отображения</label>
+                  <input
+                    type="number"
+                    className={styles['form-input']}
+                    value={subcategoryForm.order_index}
+                    onChange={(e) => setSubcategoryForm({ ...subcategoryForm, order_index: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                    min="0"
+                  />
                 </div>
               </div>
 
-              <div className={styles['form-group']}>
-                <label>Описание</label>
-                <textarea
-                  value={subcategoryForm.description}
-                  onChange={(e) => setSubcategoryForm({ ...subcategoryForm, description: e.target.value })}
-                  rows="3"
-                  placeholder="Краткое описание подкатегории"
-                />
-              </div>
-
-              <div className={styles['form-group']}>
-                <label>Порядок отображения</label>
-                <input
-                  type="number"
-                  value={subcategoryForm.order_index}
-                  onChange={(e) => setSubcategoryForm({ ...subcategoryForm, order_index: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  min="0"
-                />
-              </div>
-
-              <div className={styles['modal-actions']}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowSubcategoryModal(false)}>
+              <div className={styles['modal-footer']}>
+                <button type="button" className={styles['btn-secondary']} onClick={() => setShowSubcategoryModal(false)}>
                   Отмена
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className={styles['btn-primary']}>
                   {editingSubcategory ? 'Сохранить' : 'Создать'}
                 </button>
               </div>
@@ -715,20 +803,23 @@ function KnowledgeBaseManagement() {
 
       {/* Модальное окно статьи */}
       {showArticleModal && (
-        <div className={styles['article-modal-overlay']} onClick={() => setShowArticleModal(false)}>
-          <div className={styles['article-modal-content']} onClick={(e) => e.stopPropagation()}>
-            <div className={styles['article-modal-header']}>
+        <div className={styles['modal-overlay']} onClick={() => setShowArticleModal(false)}>
+          <div className={`${styles['modal']} ${styles['modal-xlarge']}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
               <h2>{editingArticle ? 'Редактировать статью' : 'Новая статья'}</h2>
-              <button className={styles['article-modal-close']} onClick={() => setShowArticleModal(false)}>✕</button>
+              <button className={styles['close-btn']} onClick={() => setShowArticleModal(false)}>
+                <FiX />
+              </button>
             </div>
             
             <form onSubmit={handleArticleSubmit}>
-              <div className={styles['article-form-fields-wrapper']}>
-                <div className={styles['article-form-row']}>
-                  <div className={styles['article-form-group']}>
-                    <label>Название статьи *</label>
+              <div className={styles['modal-body']}>
+                <div className={styles['form-row']}>
+                  <div className={styles['form-group']}>
+                    <label className={styles['form-label']}>Название статьи *</label>
                     <input
                       type="text"
+                      className={styles['form-input']}
                       value={articleForm.title}
                       onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
                       required
@@ -736,9 +827,10 @@ function KnowledgeBaseManagement() {
                     />
                   </div>
 
-                  <div className={styles['article-form-group']}>
-                    <label>Категория *</label>
+                  <div className={styles['form-group']}>
+                    <label className={styles['form-label']}>Категория *</label>
                     <select
+                      className={styles['form-input']}
                       value={articleForm.category_id}
                       onChange={(e) => setArticleForm({ ...articleForm, category_id: e.target.value, subcategory_id: '' })}
                       required
@@ -751,10 +843,13 @@ function KnowledgeBaseManagement() {
                       ))}
                     </select>
                   </div>
+                </div>
 
-                  <div className={styles['article-form-group']}>
-                    <label>Подкатегория</label>
+                <div className={styles['form-row']}>
+                  <div className={styles['form-group']}>
+                    <label className={styles['form-label']}>Подкатегория</label>
                     <select
+                      className={styles['form-input']}
                       value={articleForm.subcategory_id}
                       onChange={(e) => setArticleForm({ ...articleForm, subcategory_id: e.target.value })}
                       disabled={!articleForm.category_id}
@@ -769,21 +864,22 @@ function KnowledgeBaseManagement() {
                         ))}
                     </select>
                   </div>
+
+                  <div className={styles['form-group']}>
+                    <label className={styles['form-label']}>Краткое описание</label>
+                    <input
+                      type="text"
+                      className={styles['form-input']}
+                      value={articleForm.description}
+                      onChange={(e) => setArticleForm({ ...articleForm, description: e.target.value })}
+                      placeholder="Краткое описание для превью"
+                    />
+                  </div>
                 </div>
 
-                <div className={styles['article-form-group']}>
-                  <label>Краткое описание</label>
-                  <input
-                    type="text"
-                    value={articleForm.description}
-                    onChange={(e) => setArticleForm({ ...articleForm, description: e.target.value })}
-                    placeholder="Краткое описание для превью"
-                  />
-                </div>
-
-                <div className="article-form-group article-quill-editor-group">
-                  <label>Содержание статьи *</label>
-                  <div className={styles['article-quill-editor-wrapper']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Содержание статьи *</label>
+                  <div className={styles['editor-wrapper']}>
                     <QuillEditor
                       value={articleForm.content}
                       onChange={(content) => setArticleForm({ ...articleForm, content })}
@@ -793,8 +889,8 @@ function KnowledgeBaseManagement() {
                   </div>
                 </div>
 
-                <div className={styles['article-form-group']}>
-                  <label className={styles['article-checkbox-label']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['checkbox-label']}>
                     <input
                       type="checkbox"
                       checked={articleForm.published}
@@ -805,11 +901,11 @@ function KnowledgeBaseManagement() {
                 </div>
               </div>
 
-              <div className={styles['article-modal-actions']}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowArticleModal(false)}>
+              <div className={styles['modal-footer']}>
+                <button type="button" className={styles['btn-secondary']} onClick={() => setShowArticleModal(false)}>
                   Отмена
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className={styles['btn-primary']}>
                   {editingArticle ? 'Сохранить' : 'Создать'}
                 </button>
               </div>

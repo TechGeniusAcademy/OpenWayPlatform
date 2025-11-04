@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { 
+  FiUsers, FiEdit2, FiTrash2, FiPlus, FiUserPlus, 
+  FiX, FiCheck, FiAlertCircle 
+} from 'react-icons/fi';
 import api from '../utils/api';
-import { HiUserGroup } from 'react-icons/hi';
-import { AiOutlineEdit, AiOutlineDelete, AiOutlineUserAdd } from 'react-icons/ai';
 import styles from './GroupsManagement.module.css';
 
 function GroupsManagement() {
@@ -202,22 +204,41 @@ function GroupsManagement() {
   return (
     <div className={styles['groups-page']}>
       <div className={styles['page-header']}>
-        <h1>Управление группами</h1>
-        <p>Создание групп и распределение студентов</p>
+        <div className={styles['header-content']}>
+          <div className={styles['header-left']}>
+            <div className={styles['header-icon']}>
+              <FiUsers />
+            </div>
+            <div>
+              <h1>Управление группами</h1>
+              <p>Создание групп и распределение студентов</p>
+            </div>
+          </div>
+          <button className={styles['btn-primary']} onClick={openCreateModal}>
+            <FiPlus />
+            <span>Создать группу</span>
+          </button>
+        </div>
       </div>
 
-      {success && <div className="alert alert-success">{success}</div>}
-      {error && <div className="alert alert-error">{error}</div>}
-
-      <div className={styles['page-actions']}>
-        <button className="btn btn-primary" onClick={openCreateModal}>
-          + Создать группу
-        </button>
-      </div>
+      {success && (
+        <div className={styles['alert-success']}>
+          <FiCheck className={styles['alert-icon']} />
+          <span>{success}</span>
+        </div>
+      )}
+      {error && (
+        <div className={styles['alert-error']}>
+          <FiAlertCircle className={styles['alert-icon']} />
+          <span>{error}</span>
+        </div>
+      )}
 
       {groups.length === 0 ? (
         <div className={styles['empty-state']}>
-          <div className={styles['empty-state-icon']}>📚</div>
+          <div className={styles['empty-state-icon']}>
+            <FiUsers />
+          </div>
           <h3>Нет групп</h3>
           <p>Создайте первую группу, нажав кнопку выше</p>
         </div>
@@ -229,24 +250,24 @@ function GroupsManagement() {
                 <h3>{group.name}</h3>
                 <div className={styles['group-actions']}>
                   <button
-                    className={styles['icon-btn']}
+                    className={styles['btn-icon-edit']}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEdit(group);
                     }}
                     title="Редактировать"
                   >
-                    <AiOutlineEdit />
+                    <FiEdit2 />
                   </button>
                   <button
-                    className="icon-btn delete"
+                    className={styles['btn-icon-delete']}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(group.id);
                     }}
                     title="Удалить"
                   >
-                    <AiOutlineDelete />
+                    <FiTrash2 />
                   </button>
                 </div>
               </div>
@@ -259,15 +280,15 @@ function GroupsManagement() {
 
               <div className={styles['group-card-footer']}>
                 <div className={styles['student-count']}>
-                  <HiUserGroup className={styles['student-count-icon']} />
+                  <FiUsers />
                   <span>{group.student_count} студентов</span>
                 </div>
                 <button
                   className={styles['manage-btn']}
                   onClick={() => handleManageStudents(group)}
                 >
-                  <AiOutlineUserAdd style={{ marginRight: '5px' }} />
-                  Управление
+                  <FiUserPlus />
+                  <span>Управление</span>
                 </button>
               </div>
             </div>
@@ -281,11 +302,18 @@ function GroupsManagement() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles['modal-header']}>
               <h2>{editingGroup ? 'Редактирование группы' : 'Новая группа'}</h2>
-              <button className={styles['close-btn']} onClick={closeModal}>&times;</button>
+              <button className={styles['close-btn']} onClick={closeModal}>
+                <FiX />
+              </button>
             </div>
 
             <form className={styles['modal-form']} onSubmit={handleSubmit}>
-              {error && <div className="alert alert-error">{error}</div>}
+              {error && (
+                <div className={styles['alert-error']}>
+                  <FiAlertCircle className={styles['alert-icon']} />
+                  <span>{error}</span>
+                </div>
+              )}
 
               <div className={styles['form-group']}>
                 <label className={styles['form-label']}>Название группы *</label>
@@ -312,11 +340,12 @@ function GroupsManagement() {
               </div>
 
               <div className={styles['form-actions']}>
-                <button type="button" className="btn btn-cancel" onClick={closeModal}>
+                <button type="button" className={styles['btn-secondary']} onClick={closeModal}>
                   Отмена
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingGroup ? 'Сохранить' : 'Создать'}
+                <button type="submit" className={styles['btn-primary']}>
+                  <FiCheck />
+                  <span>{editingGroup ? 'Сохранить' : 'Создать'}</span>
                 </button>
               </div>
             </form>
@@ -327,14 +356,26 @@ function GroupsManagement() {
       {/* Модальное окно управления студентами */}
       {showManageModal && selectedGroup && (
         <div className={styles['modal-overlay']} onClick={closeManageModal}>
-          <div className="modal large" onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.modal} ${styles['modal-large']}`} onClick={(e) => e.stopPropagation()}>
             <div className={styles['modal-header']}>
               <h2>Управление группой: {selectedGroup.name}</h2>
-              <button className={styles['close-btn']} onClick={closeManageModal}>&times;</button>
+              <button className={styles['close-btn']} onClick={closeManageModal}>
+                <FiX />
+              </button>
             </div>
 
-            {success && <div className="alert alert-success">{success}</div>}
-            {error && <div className="alert alert-error">{error}</div>}
+            {success && (
+              <div className={styles['alert-success']}>
+                <FiCheck className={styles['alert-icon']} />
+                <span>{success}</span>
+              </div>
+            )}
+            {error && (
+              <div className={styles['alert-error']}>
+                <FiAlertCircle className={styles['alert-icon']} />
+                <span>{error}</span>
+              </div>
+            )}
 
             {/* Текущие студенты */}
             <div className={styles['group-detail-section']}>
@@ -351,7 +392,8 @@ function GroupsManagement() {
                         className={styles['remove-student-btn']}
                         onClick={() => handleRemoveStudent(student.id)}
                       >
-                        Удалить
+                        <FiTrash2 />
+                        <span>Удалить</span>
                       </button>
                     </div>
                   ))}
@@ -388,11 +430,12 @@ function GroupsManagement() {
                   <div className={styles['form-actions']}>
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className={styles['btn-primary']}
                       onClick={handleAddStudents}
                       disabled={selectedStudents.length === 0}
                     >
-                      Добавить выбранных ({selectedStudents.length})
+                      <FiUserPlus />
+                      <span>Добавить выбранных ({selectedStudents.length})</span>
                     </button>
                   </div>
                 </>
@@ -402,7 +445,7 @@ function GroupsManagement() {
             </div>
 
             <div className={styles['form-actions']}>
-              <button type="button" className="btn btn-cancel" onClick={closeManageModal}>
+              <button type="button" className={styles['btn-secondary']} onClick={closeManageModal}>
                 Закрыть
               </button>
             </div>

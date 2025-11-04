@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { FiFileText, FiPlus, FiEdit2, FiTrash2, FiCheckSquare, FiClock, FiLock, FiUnlock, FiX, FiCheck, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
 import api from '../utils/api';
 import QuillEditor from './QuillEditor';
 import styles from './HomeworksManagement.module.css';
@@ -189,27 +190,70 @@ function HomeworksManagement() {
   };
 
   const getStatusBadge = (homework) => {
-    if (homework.is_closed) return <span className="badge badge-closed">Закрыто</span>;
-    if (homework.deadline && new Date(homework.deadline) < new Date()) {
-      return <span className="badge badge-expired">Просрочено</span>;
+    if (homework.is_closed) {
+      return (
+        <span className={`${styles.badge} ${styles['badge-closed']}`}>
+          <FiLock />
+          <span>Закрыто</span>
+        </span>
+      );
     }
-    return <span className="badge badge-active">Активно</span>;
+    if (homework.deadline && new Date(homework.deadline) < new Date()) {
+      return (
+        <span className={`${styles.badge} ${styles['badge-expired']}`}>
+          <FiClock />
+          <span>Просрочено</span>
+        </span>
+      );
+    }
+    return (
+      <span className={`${styles.badge} ${styles['badge-active']}`}>
+        <FiCheck />
+        <span>Активно</span>
+      </span>
+    );
   };
 
-  if (loading) return <div>Загрузка...</div>;
+  if (loading) return (
+    <div className={styles['loading-state']}>
+      <FiRefreshCw className={styles['loading-icon']} />
+      <p>Загрузка домашних заданий...</p>
+    </div>
+  );
 
   return (
-    <div className={styles['homeworks-management']}>
-      <div className={styles.header}>
-        <h2>Управление домашними заданиями</h2>
-        <button className={styles['btn-primary']} onClick={() => openForm()}>+ Создать задание</button>
+    <div className={styles['page-container']}>
+      <div className={styles['page-header']}>
+        <div className={styles['header-content']}>
+          <div className={styles['header-left']}>
+            <div className={styles['header-icon']}>
+              <FiFileText />
+            </div>
+            <div>
+              <h1>Управление домашними заданиями</h1>
+              <p>Создание и проверка домашних заданий для студентов</p>
+            </div>
+          </div>
+          <div className={styles['header-actions']}>
+            <button className={styles['btn-primary']} onClick={() => openForm()}>
+              <FiPlus />
+              <span>Создать задание</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className={styles['homeworks-list']}>
+      <div className={styles['table-container']}>
         {homeworks.length === 0 ? (
-          <p>Нет созданных домашних заданий</p>
+          <div className={styles['empty-state']}>
+            <div className={styles['empty-state-icon']}>
+              <FiFileText />
+            </div>
+            <h3>Нет созданных домашних заданий</h3>
+            <p>Создайте первое задание, нажав кнопку выше</p>
+          </div>
         ) : (
-          <table>
+          <table className={styles['homeworks-table']}>
             <thead>
               <tr>
                 <th>Название</th>
@@ -228,17 +272,44 @@ function HomeworksManagement() {
                   <td>{homework.deadline ? new Date(homework.deadline).toLocaleString('ru-RU') : '∞'}</td>
                   <td>{getStatusBadge(homework)}</td>
                   <td>{homework.assigned_groups_count}</td>
-                  <td className={styles.actions}>
-                    <button onClick={() => openForm(homework)} title="Редактировать">✏️</button>
-                    <button onClick={() => openAssignModal(homework)} title="Назначить группам">📋</button>
-                    <button onClick={() => openSubmissionsModal(homework)} title="Сдачи">📝</button>
-                    <button 
-                      onClick={() => handleToggleClosed(homework)}
-                      title={homework.is_closed ? "Открыть" : "Закрыть"}
-                    >
-                      {homework.is_closed ? '🔓' : '🔒'}
-                    </button>
-                    <button onClick={() => handleDelete(homework.id)} title="Удалить">🗑️</button>
+                  <td>
+                    <div className={styles['table-actions']}>
+                      <button 
+                        className={styles['btn-icon-edit']}
+                        onClick={() => openForm(homework)} 
+                        title="Редактировать"
+                      >
+                        <FiEdit2 />
+                      </button>
+                      <button 
+                        className={styles['btn-icon-assign']}
+                        onClick={() => openAssignModal(homework)} 
+                        title="Назначить группам"
+                      >
+                        <FiCheckSquare />
+                      </button>
+                      <button 
+                        className={styles['btn-icon-submissions']}
+                        onClick={() => openSubmissionsModal(homework)} 
+                        title="Сдачи"
+                      >
+                        <FiFileText />
+                      </button>
+                      <button 
+                        className={homework.is_closed ? styles['btn-icon-unlock'] : styles['btn-icon-lock']}
+                        onClick={() => handleToggleClosed(homework)}
+                        title={homework.is_closed ? "Открыть" : "Закрыть"}
+                      >
+                        {homework.is_closed ? <FiUnlock /> : <FiLock />}
+                      </button>
+                      <button 
+                        className={styles['btn-icon-delete']}
+                        onClick={() => handleDelete(homework.id)} 
+                        title="Удалить"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -250,34 +321,44 @@ function HomeworksManagement() {
       {/* Форма создания/редактирования */}
       {showForm && (
         <div className={styles['modal-overlay']} onClick={() => setShowForm(false)}>
-          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-            <h3>{editingHomework ? 'Редактировать задание' : 'Создать задание'}</h3>
-            <form onSubmit={handleSubmit}>
+          <div className={`${styles.modal} ${styles['modal-large']}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>{editingHomework ? 'Редактировать задание' : 'Создать задание'}</h2>
+              <button className={styles['close-btn']} onClick={() => setShowForm(false)}>
+                <FiX />
+              </button>
+            </div>
+            <form className={styles['modal-form']} onSubmit={handleSubmit}>
               <div className={styles['form-group']}>
-                <label>Название задания *</label>
+                <label className={styles['form-label']}>Название задания *</label>
                 <input
                   type="text"
+                  className={styles['form-input']}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Введите название задания"
                   required
                 />
               </div>
 
               <div className={styles['form-group']}>
-                <label>Описание задания (Rich Text)</label>
-                <QuillEditor
-                  value={description}
-                  onChange={setDescription}
-                  modules={modules}
-                  placeholder="Введите описание задания с форматированием, изображениями и видео..."
-                />
+                <label className={styles['form-label']}>Описание задания (Rich Text)</label>
+                <div className={styles['editor-wrapper']}>
+                  <QuillEditor
+                    value={description}
+                    onChange={setDescription}
+                    modules={modules}
+                    placeholder="Введите описание задания с форматированием, изображениями и видео..."
+                  />
+                </div>
               </div>
 
               <div className={styles['form-row']}>
                 <div className={styles['form-group']}>
-                  <label>Баллы за выполнение</label>
+                  <label className={styles['form-label']}>Баллы за выполнение</label>
                   <input
                     type="number"
+                    className={styles['form-input']}
                     value={points}
                     onChange={(e) => setPoints(e.target.value)}
                     min="0"
@@ -285,9 +366,10 @@ function HomeworksManagement() {
                 </div>
 
                 <div className={styles['form-group']}>
-                  <label>Дедлайн</label>
+                  <label className={styles['form-label']}>Дедлайн</label>
                   <input
                     type="datetime-local"
+                    className={styles['form-input']}
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
                   />
@@ -295,8 +377,14 @@ function HomeworksManagement() {
               </div>
 
               <div className={styles['form-actions']}>
-                <button type="submit" className={styles['btn-primary']}>Сохранить</button>
-                <button type="button" onClick={() => setShowForm(false)}>Отмена</button>
+                <button type="button" className={styles['btn-secondary']} onClick={() => setShowForm(false)}>
+                  <FiX />
+                  <span>Отмена</span>
+                </button>
+                <button type="submit" className={styles['btn-primary']}>
+                  <FiCheck />
+                  <span>Сохранить</span>
+                </button>
               </div>
             </form>
           </div>
@@ -306,27 +394,50 @@ function HomeworksManagement() {
       {/* Модальное окно назначения */}
       {showAssignModal && selectedHomework && (
         <div className={styles['modal-overlay']} onClick={() => setShowAssignModal(false)}>
-          <div className="modal-content small" onClick={(e) => e.stopPropagation()}>
-            <h3>Назначение: {selectedHomework.title}</h3>
+          <div className={`${styles.modal} ${styles['modal-small']}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>Назначение: {selectedHomework.title}</h2>
+              <button className={styles['close-btn']} onClick={() => setShowAssignModal(false)}>
+                <FiX />
+              </button>
+            </div>
             
-            <h4>Назначить группе:</h4>
-            <div className={styles['assign-groups']}>
-              {groups.map(group => {
-                const isAssigned = selectedHomework.assignments?.some(a => a.group_id === group.id);
-                return (
-                  <div key={group.id} className={styles['group-item']}>
-                    <span>{group.name}</span>
-                    {isAssigned ? (
-                      <button onClick={() => handleUnassign(group.id)}>Отменить</button>
-                    ) : (
-                      <button onClick={() => handleAssign(group.id)}>Назначить</button>
-                    )}
-                  </div>
-                );
-              })}
+            <div className={styles['modal-body']}>
+              <h4 className={styles['section-title']}>Назначить группе:</h4>
+              <div className={styles['assign-groups']}>
+                {groups.map(group => {
+                  const isAssigned = selectedHomework.assignments?.some(a => a.group_id === group.id);
+                  return (
+                    <div key={group.id} className={styles['group-item']}>
+                      <span>{group.name}</span>
+                      {isAssigned ? (
+                        <button 
+                          className={styles['btn-unassign']}
+                          onClick={() => handleUnassign(group.id)}
+                        >
+                          <FiX />
+                          <span>Отменить</span>
+                        </button>
+                      ) : (
+                        <button 
+                          className={styles['btn-assign']}
+                          onClick={() => handleAssign(group.id)}
+                        >
+                          <FiCheckSquare />
+                          <span>Назначить</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <button onClick={() => setShowAssignModal(false)}>Закрыть</button>
+            <div className={styles['modal-footer']}>
+              <button className={styles['btn-secondary']} onClick={() => setShowAssignModal(false)}>
+                <span>Закрыть</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -334,27 +445,43 @@ function HomeworksManagement() {
       {/* Модальное окно сдач */}
       {showSubmissionsModal && selectedHomework && (
         <div className={styles['modal-overlay']} onClick={() => setShowSubmissionsModal(false)}>
-          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-            <h3>Сдачи: {selectedHomework.title}</h3>
+          <div className={`${styles.modal} ${styles['modal-xlarge']}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2>Сдачи: {selectedHomework.title}</h2>
+              <button className={styles['close-btn']} onClick={() => setShowSubmissionsModal(false)}>
+                <FiX />
+              </button>
+            </div>
             
-            {submissions.length === 0 ? (
-              <p>Пока никто не сдал это задание</p>
-            ) : (
-              <div className={styles['submissions-list']}>
-                {submissions.map(submission => (
-                  <div key={submission.id} className={styles['submission-card']}>
-                    <div className={styles['submission-header']}>
-                      <div>
-                        <strong>{submission.full_name}</strong>
-                        <span className={styles['submission-date']}>
-                          {new Date(submission.submitted_at).toLocaleString('ru-RU')}
+            <div className={styles['modal-body']}>
+              {submissions.length === 0 ? (
+                <div className={styles['empty-state']}>
+                  <div className={styles['empty-state-icon']}>
+                    <FiFileText />
+                  </div>
+                  <h3>Пока никто не сдал это задание</h3>
+                </div>
+              ) : (
+                <div className={styles['submissions-list']}>
+                  {submissions.map(submission => (
+                    <div key={submission.id} className={styles['submission-card']}>
+                      <div className={styles['submission-header']}>
+                        <div>
+                          <strong>{submission.full_name}</strong>
+                          <span className={styles['submission-date']}>
+                            {new Date(submission.submitted_at).toLocaleString('ru-RU')}
+                          </span>
+                        </div>
+                        <span className={`${styles['status-badge']} ${styles[`status-${submission.status}`]}`}>
+                          {submission.status === 'pending' ? (
+                            <><FiClock /> На проверке</>
+                          ) : submission.status === 'accepted' ? (
+                            <><FiCheck /> Принято</>
+                          ) : (
+                            <><FiX /> Отклонено</>
+                          )}
                         </span>
                       </div>
-                      <span className={`status-badge status-${submission.status}`}>
-                        {submission.status === 'pending' ? 'На проверке' :
-                         submission.status === 'accepted' ? 'Принято' : 'Отклонено'}
-                      </span>
-                    </div>
 
                     <div className={styles['submission-text']} dangerouslySetInnerHTML={{ __html: submission.submission_text }} />
 
@@ -366,47 +493,56 @@ function HomeworksManagement() {
                       </div>
                     )}
 
-                    {submission.status === 'pending' && (
-                      <div className={styles['check-actions']}>
-                        <input
-                          type="number"
-                          placeholder="Баллы"
-                          defaultValue={selectedHomework.points}
-                          id={`points-${submission.id}`}
-                          min="0"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Причина (необязательно)"
-                          id={`reason-${submission.id}`}
-                        />
-                        <button
-                          className={styles['btn-accept']}
-                          onClick={() => {
-                            const pts = document.getElementById(`points-${submission.id}`).value;
-                            const rsn = document.getElementById(`reason-${submission.id}`).value;
-                            handleCheckSubmission(submission.id, 'accepted', rsn, pts);
-                          }}
-                        >
-                          ✅ Принять
-                        </button>
-                        <button
-                          className={styles['btn-reject']}
-                          onClick={() => {
-                            const rsn = document.getElementById(`reason-${submission.id}`).value;
-                            handleCheckSubmission(submission.id, 'rejected', rsn, 0);
-                          }}
-                        >
-                          ❌ Отклонить
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                      {submission.status === 'pending' && (
+                        <div className={styles['check-actions']}>
+                          <input
+                            type="number"
+                            className={styles['input-points']}
+                            placeholder="Баллы"
+                            defaultValue={selectedHomework.points}
+                            id={`points-${submission.id}`}
+                            min="0"
+                          />
+                          <input
+                            type="text"
+                            className={styles['input-reason']}
+                            placeholder="Причина (необязательно)"
+                            id={`reason-${submission.id}`}
+                          />
+                          <button
+                            className={styles['btn-accept']}
+                            onClick={() => {
+                              const pts = document.getElementById(`points-${submission.id}`).value;
+                              const rsn = document.getElementById(`reason-${submission.id}`).value;
+                              handleCheckSubmission(submission.id, 'accepted', rsn, pts);
+                            }}
+                          >
+                            <FiCheck />
+                            <span>Принять</span>
+                          </button>
+                          <button
+                            className={styles['btn-reject']}
+                            onClick={() => {
+                              const rsn = document.getElementById(`reason-${submission.id}`).value;
+                              handleCheckSubmission(submission.id, 'rejected', rsn, 0);
+                            }}
+                          >
+                            <FiX />
+                            <span>Отклонить</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <button onClick={() => setShowSubmissionsModal(false)}>Закрыть</button>
+            <div className={styles['modal-footer']}>
+              <button className={styles['btn-secondary']} onClick={() => setShowSubmissionsModal(false)}>
+                <span>Закрыть</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

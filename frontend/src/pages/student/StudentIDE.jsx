@@ -4,8 +4,11 @@ import Editor from '@monaco-editor/react';
 import FileTree from '../../components/FileTree';
 import AIAssistant from '../../components/AIAssistant';
 import styles from './StudentIDE.module.css';
-import { FaPlay, FaPlus, FaFolderPlus, FaArrowLeft, FaBars, FaTimes } from 'react-icons/fa';
+import { FaPlay, FaPlus, FaFolderPlus, FaArrowLeft, FaBars, FaTimes, FaKeyboard, FaSearch, FaTerminal } from 'react-icons/fa';
 import { AiOutlineClose, AiOutlineRobot } from 'react-icons/ai';
+import { MdComputer, MdTablet, MdPhoneIphone, MdRefresh, MdPause } from 'react-icons/md';
+import { BiRefresh } from 'react-icons/bi';
+import { VscChevronUp, VscChevronDown, VscClose } from 'react-icons/vsc';
 import { emmetHTML, emmetCSS, emmetJSX } from 'emmet-monaco-es';
 import { getProject, updateProject } from '../../services/projectService';
 
@@ -44,7 +47,25 @@ function StudentIDE() {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [selectedCode, setSelectedCode] = useState('');
   const [lastSaveTime, setLastSaveTime] = useState(null); // Время последнего сохранения
+  const [showHotkeys, setShowHotkeys] = useState(false); // Показать панель горячих клавиш
+  const [contextMenu, setContextMenu] = useState(null); // {x, y, tabPath}
+  const [splitMode, setSplitMode] = useState(null); // null | 'vertical' | 'horizontal'
+  const [splitTabs, setSplitTabs] = useState([]); // Вкладки для второго редактора
+  const [activeSplitTab, setActiveSplitTab] = useState(null); // Активная вкладка во втором редакторе
+  const [liveReload, setLiveReload] = useState(true); // Автоматическое обновление предпросмотра
+  const [deviceMode, setDeviceMode] = useState('desktop'); // desktop | tablet | mobile | custom
+  const [customSize, setCustomSize] = useState({ width: 1920, height: 1080 });
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false); // Показать панель глобального поиска
+  const [searchQuery, setSearchQuery] = useState(''); // Поисковый запрос
+  const [searchResults, setSearchResults] = useState([]); // Результаты поиска [{file, line, lineNumber, column, match}]
+  const [isSearching, setIsSearching] = useState(false); // Индикатор поиска
+  const [showTerminal, setShowTerminal] = useState(false); // Показать терминал
+  const [terminalCommand, setTerminalCommand] = useState(''); // Текущая команда в терминале
+  const [terminalOutput, setTerminalOutput] = useState([]); // Вывод терминала [{type: 'input'|'output'|'error', text}]
+  const [terminalHeight, setTerminalHeight] = useState(250); // Высота терминала
+  const [isResizingTerminal, setIsResizingTerminal] = useState(false); // Изменение размера терминала
   const editorRef = useRef(null);
+  const splitEditorRef = useRef(null); // Второй редактор для сплит-режима
   const previewRef = useRef(null);
   const resizerRef = useRef(null);
   const monacoRef = useRef(null);
@@ -556,6 +577,13 @@ function StudentIDE() {
           tab.path === activeTab ? { ...tab, content } : tab
         ));
         
+        // Синхронизируем с splitTabs если файл открыт там
+        setSplitTabs(prevSplitTabs => 
+          prevSplitTabs.map(tab => 
+            tab.path === activeTab ? { ...tab, content } : tab
+          )
+        );
+        
         // Убираем файл из списка несохранённых
         setUnsavedFiles(prev => {
           const newSet = new Set(prev);
@@ -617,30 +645,135 @@ function StudentIDE() {
     setIsResizing(true);
   };
 
-  // Горячая клавиша Ctrl+B для сворачивания/разворачивания боковой панели
+  // Горячие клавиши для IDE
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Проверяем код клавиши вместо символа (работает с любой раскладкой)
+      // Ctrl+B - сворачивание/разворачивание боковой панели
       if (e.ctrlKey && e.code === 'KeyB') {
         e.preventDefault();
         setSidebarCollapsed(prev => !prev);
+      }
+      
+      // Ctrl+S - ручное сохранение
+      if (e.ctrlKey && e.code === 'KeyS') {
+        e.preventDefault();
+        if (activeTab && editorRef.current) {
+          const content = editorRef.current.getValue();
+          const updatedFS = updateFileContent(fileSystem, activeTab, content);
+          setFileSystem(updatedFS);
+          
+          // Убираем файл из списка несохранённых
+          setUnsavedFiles(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(activeTab);
+            return newSet;
+          });
+          
+          console.log('💾 Сохранено вручную:', activeTab);
+          setLastSaveTime(new Date());
+        }
+      }
+      
+      // Ctrl+R или F5 - запуск кода
+      if ((e.ctrlKey && e.code === 'KeyR') || e.code === 'F5') {
+        e.preventDefault();
+        runCode();
+      }
+      
+      // Ctrl+W - закрыть активную вкладку
+      if (e.ctrlKey && e.code === 'KeyW') {
+        e.preventDefault();
+        if (activeTab) {
+          const newTabs = openTabs.filter(tab => tab.path !== activeTab);
+          setOpenTabs(newTabs);
+          setActiveTab(newTabs.length > 0 ? newTabs[newTabs.length - 1].path : null);
+        }
+      }
+      
+      // Ctrl+Tab - переключение между вкладками
+      if (e.ctrlKey && e.code === 'Tab') {
+        e.preventDefault();
+        if (openTabs.length > 1) {
+          const currentIndex = openTabs.findIndex(tab => tab.path === activeTab);
+          const nextIndex = (currentIndex + 1) % openTabs.length;
+          setActiveTab(openTabs[nextIndex].path);
+        }
+      }
+      
+      // Ctrl+Shift+Tab - переключение между вкладками назад
+      if (e.ctrlKey && e.shiftKey && e.code === 'Tab') {
+        e.preventDefault();
+        if (openTabs.length > 1) {
+          const currentIndex = openTabs.findIndex(tab => tab.path === activeTab);
+          const prevIndex = currentIndex === 0 ? openTabs.length - 1 : currentIndex - 1;
+          setActiveTab(openTabs[prevIndex].path);
+        }
+      }
+      
+      // Ctrl+N - новый файл
+      if (e.ctrlKey && e.code === 'KeyN') {
+        e.preventDefault();
+        const name = prompt('Имя файла (с расширением):');
+        if (name && fileSystem.length > 0) {
+          const rootPath = fileSystem[0]?.path || '/Мой проект';
+          handleCreateFile(rootPath, name);
+        }
+      }
+      
+      // Ctrl+Shift+N - новая папка
+      if (e.ctrlKey && e.shiftKey && e.code === 'KeyN') {
+        e.preventDefault();
+        const name = prompt('Имя папки:');
+        if (name && fileSystem.length > 0) {
+          const rootPath = fileSystem[0]?.path || '/Мой проект';
+          handleCreateFolder(rootPath, name);
+        }
+      }
+
+      // Ctrl+\ - открыть/закрыть сплит-режим
+      if (e.ctrlKey && e.code === 'Backslash') {
+        e.preventDefault();
+        if (splitMode) {
+          closeSplitMode();
+        } else if (activeTab) {
+          const file = findFile(fileSystem, activeTab);
+          if (file) openInSplit(file);
+        }
+      }
+
+      // Ctrl+K Ctrl+\ - переключить ориентацию сплита
+      if (e.ctrlKey && e.code === 'Backslash' && splitMode) {
+        e.preventDefault();
+        toggleSplitOrientation();
+      }
+
+      // Ctrl+Shift+F - глобальный поиск
+      if (e.ctrlKey && e.shiftKey && e.code === 'KeyF') {
+        e.preventDefault();
+        setShowGlobalSearch(prev => !prev);
+      }
+
+      // Ctrl+` - открыть/закрыть терминал
+      if (e.ctrlKey && e.code === 'Backquote') {
+        e.preventDefault();
+        setShowTerminal(prev => !prev);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeTab, openTabs, fileSystem, sidebarCollapsed, splitMode, showGlobalSearch, showTerminal]);
 
-  // Автообновление предпросмотра при изменении HTML/CSS/JS
+  // Автообновление предпросмотра при изменении HTML/CSS/JS (Live Reload)
   useEffect(() => {
-    // Обновляем превью только если оно уже показано И есть изменения в файловой системе
-    if (showPreview && fileSystem.length > 0) {
+    // Обновляем превью только если включен live reload И превью показано
+    if (liveReload && showPreview && fileSystem.length > 0) {
       const timer = setTimeout(() => {
         updatePreview();
-      }, 1500); // Увеличена задержка до 1.5 секунд
+      }, 800); // Уменьшена задержка для более быстрого обновления
       return () => clearTimeout(timer);
     }
-  }, [fileSystem]); // Убрали showPreview и openTabs из зависимостей
+  }, [fileSystem, liveReload, showPreview]);
 
   // Найти файл по пути в дереве
   const findFile = (fs, path) => {
@@ -673,17 +806,342 @@ function StudentIDE() {
       setOpenTabs([...openTabs, file]);
     }
     setActiveTab(file.path);
+    
+    // Обновляем предпросмотр если он уже открыт
+    if (showPreview) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'html' || ext === 'css') {
+        setTimeout(() => {
+          updatePreview();
+        }, 300);
+      }
+    }
   };
 
   // Закрыть вкладку
   const closeTab = (path, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     const newTabs = openTabs.filter(tab => tab.path !== path);
     setOpenTabs(newTabs);
     if (activeTab === path) {
       setActiveTab(newTabs.length > 0 ? newTabs[newTabs.length - 1].path : null);
     }
   };
+
+  // Контекстное меню вкладок
+  const handleTabContextMenu = (e, tabPath) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      tabPath
+    });
+  };
+
+  const closeAllTabs = () => {
+    setOpenTabs([]);
+    setActiveTab(null);
+    setContextMenu(null);
+  };
+
+  const closeOtherTabs = (currentPath) => {
+    const newTabs = openTabs.filter(tab => tab.path === currentPath);
+    setOpenTabs(newTabs);
+    setActiveTab(currentPath);
+    setContextMenu(null);
+  };
+
+  const closeTabsToRight = (currentPath) => {
+    const currentIndex = openTabs.findIndex(tab => tab.path === currentPath);
+    const newTabs = openTabs.slice(0, currentIndex + 1);
+    setOpenTabs(newTabs);
+    if (!newTabs.find(tab => tab.path === activeTab)) {
+      setActiveTab(currentPath);
+    }
+    setContextMenu(null);
+  };
+
+  // Функции для сплит-режима
+  const openInSplit = (file) => {
+    if (!splitMode) {
+      setSplitMode('vertical'); // По умолчанию вертикальный сплит
+    }
+    if (!splitTabs.find(tab => tab.path === file.path)) {
+      setSplitTabs([...splitTabs, file]);
+    }
+    setActiveSplitTab(file.path);
+    setContextMenu(null);
+  };
+
+  const closeSplitMode = () => {
+    setSplitMode(null);
+    setSplitTabs([]);
+    setActiveSplitTab(null);
+  };
+
+  const toggleSplitOrientation = () => {
+    setSplitMode(prev => prev === 'vertical' ? 'horizontal' : 'vertical');
+  };
+
+  // Глобальный поиск по всем файлам
+  const performGlobalSearch = (query) => {
+    if (!query || query.trim().length === 0) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    const results = [];
+    const searchTerm = query.toLowerCase();
+
+    // Рекурсивная функция для поиска в файлах
+    const searchInFiles = (items, parentPath = '') => {
+      items.forEach(item => {
+        if (item.type === 'file' && item.content) {
+          const lines = item.content.split('\n');
+          lines.forEach((line, index) => {
+            const lowerLine = line.toLowerCase();
+            const position = lowerLine.indexOf(searchTerm);
+            
+            if (position !== -1) {
+              results.push({
+                file: item.path,
+                fileName: item.name,
+                line: line,
+                lineNumber: index + 1,
+                column: position + 1,
+                match: query
+              });
+            }
+          });
+        } else if (item.type === 'folder' && item.children) {
+          searchInFiles(item.children, item.path);
+        }
+      });
+    };
+
+    searchInFiles(fileSystem);
+    setSearchResults(results);
+    setIsSearching(false);
+  };
+
+  // Обработчик изменения поискового запроса
+  useEffect(() => {
+    if (searchQuery && showGlobalSearch) {
+      const timer = setTimeout(() => {
+        performGlobalSearch(searchQuery);
+      }, 300); // Debounce для производительности
+      return () => clearTimeout(timer);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery, showGlobalSearch, fileSystem]);
+
+  // Перейти к результату поиска
+  const jumpToSearchResult = (result) => {
+    const file = findFile(fileSystem, result.file);
+    if (file) {
+      handleFileSelect(file);
+      
+      // Подождем, пока редактор обновится
+      setTimeout(() => {
+        if (editorRef.current) {
+          editorRef.current.revealLineInCenter(result.lineNumber);
+          editorRef.current.setPosition({ lineNumber: result.lineNumber, column: result.column });
+          editorRef.current.focus();
+        }
+      }, 100);
+    }
+  };
+
+  // Функции терминала
+  const executeTerminalCommand = (cmd) => {
+    if (!cmd.trim()) return;
+
+    // Добавляем команду в вывод
+    setTerminalOutput(prev => [...prev, { type: 'input', text: `$ ${cmd}` }]);
+    
+    // Простая симуляция команд (в реальном приложении это был бы API запрос)
+    setTimeout(() => {
+      let output = '';
+      const lowerCmd = cmd.toLowerCase().trim();
+      
+      // Базовые команды
+      if (lowerCmd === 'help' || lowerCmd === 'помощь') {
+        output = `Доступные команды:
+  help - показать эту справку
+  clear - очистить терминал
+  ls - показать файлы проекта
+  pwd - показать текущую директорию
+  
+Примечание: Это учебная среда. Реальные команды npm/git выполняются на сервере.`;
+      } else if (lowerCmd === 'clear' || lowerCmd === 'cls') {
+        setTerminalOutput([]);
+        setTerminalCommand('');
+        return;
+      } else if (lowerCmd === 'ls' || lowerCmd === 'dir') {
+        const files = fileSystem[0]?.children || [];
+        output = files.map(f => f.type === 'folder' ? `📁 ${f.name}` : `📄 ${f.name}`).join('\n');
+      } else if (lowerCmd === 'pwd') {
+        output = fileSystem[0]?.path || '/Мой проект';
+      } else if (lowerCmd.startsWith('echo ')) {
+        output = cmd.slice(5);
+      } else {
+        output = `Команда "${cmd}" не поддерживается в учебной среде.\nВведите "help" для списка доступных команд.`;
+      }
+      
+      setTerminalOutput(prev => [...prev, { type: 'output', text: output }]);
+    }, 100);
+    
+    setTerminalCommand('');
+  };
+
+  const handleTerminalKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      executeTerminalCommand(terminalCommand);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      // Можно добавить историю команд
+    }
+  };
+
+  // Изменение размера терминала
+  const handleTerminalResize = (e) => {
+    if (!isResizingTerminal) return;
+    const newHeight = window.innerHeight - e.clientY;
+    if (newHeight > 100 && newHeight < window.innerHeight - 200) {
+      setTerminalHeight(newHeight);
+    }
+  };
+
+  useEffect(() => {
+    if (isResizingTerminal) {
+      const handleMouseMove = (e) => handleTerminalResize(e);
+      const handleMouseUp = () => setIsResizingTerminal(false);
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizingTerminal]);
+
+  // Закрыть контекстное меню при клике вне его
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    if (contextMenu) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu]);
+
+  // Обработка навигации между HTML страницами в preview
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data.type === 'navigate' && event.data.href) {
+        const href = event.data.href;
+        console.log('🔗 Навигация к:', href);
+        
+        // Ищем HTML файл по относительному пути
+        const findHtmlByPath = (fs, path) => {
+          // Убираем ./ и ../
+          const cleanPath = path.replace(/^\.\//, '').replace(/^\.\.\//, '');
+          
+          for (const item of fs) {
+            if (item.type === 'file' && (item.name === cleanPath || item.path.endsWith('/' + cleanPath))) {
+              return item;
+            }
+            if (item.type === 'folder' && item.children) {
+              const found = findHtmlByPath(item.children, cleanPath);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        
+        const targetFile = findHtmlByPath(fileSystem, href);
+        if (targetFile && previewRef.current && previewRef.current.contentWindow) {
+          console.log('📄 Найден файл:', targetFile.name);
+          
+          // Получаем CSS и JS файлы
+          const cssFiles = [];
+          const jsFiles = [];
+          
+          const findAllFiles = (fs) => {
+            fs.forEach(item => {
+              if (item.type === 'file') {
+                if (item.name.endsWith('.css')) cssFiles.push(item);
+                if (item.name.endsWith('.js')) jsFiles.push(item);
+              }
+              if (item.type === 'folder' && item.children) {
+                findAllFiles(item.children);
+              }
+            });
+          };
+          
+          findAllFiles(fileSystem);
+          
+          // Формируем новый HTML
+          let newHtml = targetFile.content || '';
+          
+          // Внедряем CSS
+          let styles = '';
+          cssFiles.forEach(file => {
+            styles += `<style>/* ${file.name} */\n${file.content}\n</style>\n`;
+          });
+          
+          // Внедряем JS
+          let scripts = '';
+          jsFiles.forEach(file => {
+            scripts += `<script>// ${file.name}\n${file.content}\n</script>\n`;
+          });
+          
+          // Добавляем навигационный скрипт
+          const navigationScript = `
+            <script>
+              document.addEventListener('click', function(e) {
+                const link = e.target.closest('a');
+                if (link && link.href) {
+                  const href = link.getAttribute('href');
+                  if (href && !href.startsWith('http') && !href.startsWith('//') && !href.startsWith('#')) {
+                    e.preventDefault();
+                    window.parent.postMessage({ type: 'navigate', href: href }, '*');
+                  }
+                }
+              });
+            </script>
+          `;
+          
+          const baseTag = '<base target="_self">';
+          
+          // Вставляем стили и скрипты
+          if (newHtml.includes('</head>')) {
+            newHtml = newHtml.replace('</head>', `${baseTag}${styles}</head>`);
+          } else if (newHtml.includes('<html>')) {
+            newHtml = newHtml.replace('<html>', `<html><head>${baseTag}${styles}</head>`);
+          } else {
+            newHtml = `<!DOCTYPE html><html><head>${baseTag}${styles}</head><body>${newHtml}${scripts}${navigationScript}</body></html>`;
+          }
+          
+          if (newHtml.includes('</body>')) {
+            newHtml = newHtml.replace('</body>', `${scripts}${navigationScript}</body>`);
+          } else {
+            newHtml += scripts + navigationScript;
+          }
+          
+          // Обновляем iframe
+          setPreviewHtml(newHtml);
+        }
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [fileSystem]);
 
   // Создать файл
   const handleCreateFile = (parentPath, fileName) => {
@@ -964,28 +1422,50 @@ function StudentIDE() {
       styles += `<style>/* ${file.name} */\n${file.content}\n</style>\n`;
     });
     
-    // Внедряем JS скрипты
+    // Внедряем JS скрипты  
     let scripts = '';
     jsFiles.forEach(file => {
       scripts += `<script>// ${file.name}\n${file.content}\n</script>\n`;
     });
     
+    // Добавляем скрипт для обработки навигации между страницами
+    const navigationScript = `
+      <script>
+        // Перехватываем клики по ссылкам для SPA-подобной навигации
+        document.addEventListener('click', function(e) {
+          const link = e.target.closest('a');
+          if (link && link.href) {
+            const href = link.getAttribute('href');
+            // Проверяем, что это относительная ссылка на HTML файл
+            if (href && !href.startsWith('http') && !href.startsWith('//') && !href.startsWith('#')) {
+              e.preventDefault();
+              // Отправляем сообщение родительскому окну для загрузки новой страницы
+              window.parent.postMessage({ type: 'navigate', href: href }, '*');
+            }
+          }
+        });
+      </script>
+    `;
+    
+    // Добавляем base target для корректной работы навигации внутри iframe
+    const baseTag = '<base target="_self">';
+    
     // Вставляем стили и скрипты в HTML
     if (htmlContent.includes('</head>')) {
-      htmlContent = htmlContent.replace('</head>', `${styles}</head>`);
+      htmlContent = htmlContent.replace('</head>', `${baseTag}${styles}</head>`);
     } else if (htmlContent.includes('<html>')) {
-      htmlContent = htmlContent.replace('<html>', `<html><head>${styles}</head>`);
+      htmlContent = htmlContent.replace('<html>', `<html><head>${baseTag}${styles}</head>`);
     } else {
       // Если нет тегов html/head, добавляем их
-      htmlContent = `<!DOCTYPE html><html><head>${styles}</head><body>${htmlContent}${scripts}</body></html>`;
+      htmlContent = `<!DOCTYPE html><html><head>${baseTag}${styles}</head><body>${htmlContent}${scripts}</body></html>`;
       setPreviewHtml(htmlContent);
       return;
     }
     
     if (htmlContent.includes('</body>')) {
-      htmlContent = htmlContent.replace('</body>', `${scripts}</body>`);
+      htmlContent = htmlContent.replace('</body>', `${scripts}${navigationScript}</body>`);
     } else {
-      htmlContent += scripts;
+      htmlContent += scripts + navigationScript;
     }
     
     console.log('✅ HTML предпросмотр готов');
@@ -1065,7 +1545,7 @@ function StudentIDE() {
           <button 
             className={styles['student-ide-btn-secondary']} 
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? "Показать проводник" : "Скрыть проводник"}
+            title="Показать/Скрыть проводник (Ctrl+B)"
           >
             {sidebarCollapsed ? <FaBars /> : <FaTimes />}
           </button>
@@ -1091,7 +1571,12 @@ function StudentIDE() {
           >
             <AiOutlineRobot /> AI Ассистент
           </button>
-          <button className={styles['student-ide-btn-primary']} onClick={runCode} disabled={!activeTab}>
+          <button 
+            className={styles['student-ide-btn-primary']} 
+            onClick={runCode} 
+            disabled={!activeTab}
+            title="Запустить код (Ctrl+R или F5)"
+          >
             <FaPlay /> Запустить
           </button>
         </div>
@@ -1102,46 +1587,116 @@ function StudentIDE() {
         {!sidebarCollapsed && (
           <div className={styles['student-ide-sidebar']}>
           <div className={styles['student-ide-sidebar-header']}>
-            <h3>Проводник</h3>
+            <h3>{showGlobalSearch ? 'Поиск' : 'Проводник'}</h3>
             <div className={styles['student-ide-sidebar-actions']}>
+              {!showGlobalSearch && (
+                <>
+                  <button 
+                    title="Новый файл"
+                    onClick={() => {
+                      const name = prompt('Имя файла (с расширением):');
+                      if (name && fileSystem.length > 0) {
+                        // Используем путь первой папки (корневая)
+                        const rootPath = fileSystem[0]?.path || '/Мой проект';
+                        handleCreateFile(rootPath, name);
+                      }
+                    }}
+                  >
+                    <FaPlus />
+                  </button>
+                  <button 
+                    title="Новая папка"
+                    onClick={() => {
+                      const name = prompt('Имя папки:');
+                      if (name && fileSystem.length > 0) {
+                        // Используем путь первой папки (корневая)
+                        const rootPath = fileSystem[0]?.path || '/Мой проект';
+                        handleCreateFolder(rootPath, name);
+                      }
+                    }}
+                  >
+                    <FaFolderPlus />
+                  </button>
+                </>
+              )}
               <button 
-                title="Новый файл"
-                onClick={() => {
-                  const name = prompt('Имя файла (с расширением):');
-                  if (name && fileSystem.length > 0) {
-                    // Используем путь первой папки (корневая)
-                    const rootPath = fileSystem[0]?.path || '/Мой проект';
-                    handleCreateFile(rootPath, name);
-                  }
-                }}
+                title={showGlobalSearch ? "Показать проводник" : "Глобальный поиск (Ctrl+Shift+F)"}
+                onClick={() => setShowGlobalSearch(!showGlobalSearch)}
+                className={showGlobalSearch ? styles['active'] : ''}
               >
-                <FaPlus />
-              </button>
-              <button 
-                title="Новая папка"
-                onClick={() => {
-                  const name = prompt('Имя папки:');
-                  if (name && fileSystem.length > 0) {
-                    // Используем путь первой папки (корневая)
-                    const rootPath = fileSystem[0]?.path || '/Мой проект';
-                    handleCreateFolder(rootPath, name);
-                  }
-                }}
-              >
-                <FaFolderPlus />
+                <FaSearch />
               </button>
             </div>
           </div>
-          <FileTree
-            files={fileSystem}
-            onFileSelect={handleFileSelect}
-            onCreateFile={handleCreateFile}
-            onCreateFolder={handleCreateFolder}
-            onDelete={handleDelete}
-            onRename={handleRename}
-            onMove={handleMove}
-            selectedFile={activeTab}
-          />
+
+          {showGlobalSearch ? (
+            <div className={styles['global-search-panel']}>
+              <div className={styles['search-input-wrapper']}>
+                <input
+                  type="text"
+                  placeholder="Поиск по всем файлам..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                  className={styles['search-input']}
+                />
+                {searchQuery && (
+                  <button 
+                    className={styles['clear-search']}
+                    onClick={() => setSearchQuery('')}
+                    title="Очистить"
+                  >
+                    <AiOutlineClose />
+                  </button>
+                )}
+              </div>
+
+              <div className={styles['search-results']}>
+                {isSearching && <div className={styles['search-loading']}>Поиск...</div>}
+                
+                {!isSearching && searchQuery && searchResults.length === 0 && (
+                  <div className={styles['no-results']}>Совпадений не найдено</div>
+                )}
+
+                {!isSearching && searchResults.length > 0 && (
+                  <>
+                    <div className={styles['results-count']}>
+                      {searchResults.length} {searchResults.length === 1 ? 'совпадение' : 
+                       searchResults.length < 5 ? 'совпадения' : 'совпадений'}
+                    </div>
+                    {searchResults.map((result, index) => (
+                      <div 
+                        key={`${result.file}-${result.lineNumber}-${index}`}
+                        className={styles['search-result-item']}
+                        onClick={() => jumpToSearchResult(result)}
+                      >
+                        <div className={styles['result-file']}>
+                          {result.fileName}
+                          <span className={styles['result-location']}>
+                            :{result.lineNumber}:{result.column}
+                          </span>
+                        </div>
+                        <div className={styles['result-line']}>
+                          {result.line.trim()}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <FileTree
+              files={fileSystem}
+              onFileSelect={handleFileSelect}
+              onCreateFile={handleCreateFile}
+              onCreateFolder={handleCreateFolder}
+              onDelete={handleDelete}
+              onRename={handleRename}
+              onMove={handleMove}
+              selectedFile={activeTab}
+            />
+          )}
         </div>
         )}
 
@@ -1157,6 +1712,7 @@ function StudentIDE() {
                     key={tab.path}
                     className={`${styles['student-ide-tab']} ${activeTab === tab.path ? styles['active'] : ''} ${isUnsaved ? styles['unsaved'] : ''}`}
                     onClick={() => setActiveTab(tab.path)}
+                    onContextMenu={(e) => handleTabContextMenu(e, tab.path)}
                   >
                     <span>{tab.name}</span>
                     {isUnsaved ? (
@@ -1173,8 +1729,53 @@ function StudentIDE() {
             </div>
           )}
 
-          {/* Редактор */}
-          <div className={styles['student-ide-editor-wrapper']}>
+          {/* Контекстное меню вкладок */}
+          {contextMenu && (
+            <div 
+              className={styles['tab-context-menu']}
+              style={{ 
+                left: `${contextMenu.x}px`, 
+                top: `${contextMenu.y}px` 
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div onClick={() => { 
+                const file = findFile(fileSystem, contextMenu.tabPath);
+                if (file) openInSplit(file);
+              }}>
+                ↔ Открыть справа
+              </div>
+              <div style={{ height: '1px', background: 'rgba(102, 126, 234, 0.2)', margin: '4px 0' }}></div>
+              <div onClick={() => { closeTab(contextMenu.tabPath); setContextMenu(null); }}>
+                Закрыть
+              </div>
+              <div onClick={() => closeOtherTabs(contextMenu.tabPath)}>
+                Закрыть другие
+              </div>
+              <div onClick={() => closeTabsToRight(contextMenu.tabPath)}>
+                Закрыть справа
+              </div>
+              <div onClick={closeAllTabs}>
+                Закрыть все
+              </div>
+            </div>
+          )}
+
+          {/* Редактор(ы) */}
+          <div className={`${styles['student-ide-editors-container']} ${splitMode ? styles[`split-${splitMode}`] : ''}`}>
+            {/* Основной редактор */}
+            <div className={styles['student-ide-editor-wrapper']}>
+              {splitMode && (
+                <div className={styles['split-header']}>
+                  <span>Редактор 1</span>
+                  <div className={styles['split-controls']}>
+                    <button onClick={toggleSplitOrientation} title="Изменить ориентацию">
+                      {splitMode === 'vertical' ? '⇄' : '⇅'}
+                    </button>
+                    <button onClick={closeSplitMode} title="Закрыть сплит (Ctrl+\)">✕</button>
+                  </div>
+                </div>
+              )}
             {activeFile ? (
               <Editor
                 key={activeFile.path}
@@ -1339,6 +1940,114 @@ function StudentIDE() {
                 <p>Выберите файл из проводника или создайте новый</p>
               </div>
             )}
+            </div>
+
+            {/* Второй редактор (сплит-режим) */}
+            {splitMode && splitTabs.length > 0 && (
+              <div className={styles['student-ide-editor-wrapper']}>
+                <div className={styles['split-header']}>
+                  <span>Редактор 2</span>
+                </div>
+                <div className={styles['student-ide-tabs-container']}>
+                  {splitTabs.map(tab => {
+                    const isUnsaved = unsavedFiles.has(tab.path);
+                    return (
+                      <div
+                        key={tab.path}
+                        className={`${styles['student-ide-tab']} ${activeSplitTab === tab.path ? styles['active'] : ''} ${isUnsaved ? styles['unsaved'] : ''}`}
+                        onClick={() => setActiveSplitTab(tab.path)}
+                      >
+                        <span>{tab.name}</span>
+                        {isUnsaved ? (
+                          <div className={styles['unsaved-indicator']} onClick={(e) => {
+                            e.stopPropagation();
+                            const newTabs = splitTabs.filter(t => t.path !== tab.path);
+                            setSplitTabs(newTabs);
+                            if (activeSplitTab === tab.path) {
+                              setActiveSplitTab(newTabs.length > 0 ? newTabs[0].path : null);
+                            }
+                          }}>●</div>
+                        ) : (
+                          <AiOutlineClose 
+                            className={styles['close-icon']}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newTabs = splitTabs.filter(t => t.path !== tab.path);
+                              setSplitTabs(newTabs);
+                              if (activeSplitTab === tab.path) {
+                                setActiveSplitTab(newTabs.length > 0 ? newTabs[0].path : null);
+                              }
+                              if (newTabs.length === 0) {
+                                closeSplitMode();
+                              }
+                            }} 
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {activeSplitTab && (() => {
+                  const splitFile = findFile(fileSystem, activeSplitTab);
+                  return splitFile ? (
+                    <Editor
+                      key={splitFile.path}
+                      height="100%"
+                      language={getLanguage(splitFile.name)}
+                      value={splitFile.content}
+                      theme={currentTheme}
+                      onChange={(value) => {
+                        // Обновляем splitTabs
+                        setSplitTabs(splitTabs.map(tab =>
+                          tab.path === splitFile.path ? { ...tab, content: value } : tab
+                        ));
+                        // Синхронизируем с openTabs если файл открыт там
+                        setOpenTabs(prevOpenTabs => 
+                          prevOpenTabs.map(tab => 
+                            tab.path === splitFile.path ? { ...tab, content: value } : tab
+                          )
+                        );
+                      }}
+                      onMount={(editor, monaco) => {
+                        splitEditorRef.current = editor;
+                        
+                        editor.onDidChangeModelContent(() => {
+                          if (activeSplitTab) {
+                            setUnsavedFiles(prev => new Set(prev).add(activeSplitTab));
+                          }
+                        });
+                      }}
+                      options={{
+                        minimap: { enabled: true },
+                        fontSize: 14,
+                        wordWrap: 'on',
+                        automaticLayout: true,
+                        scrollBeyondLastLine: false,
+                        lineNumbers: 'on',
+                        formatOnPaste: true,
+                        formatOnType: true,
+                        quickSuggestions: {
+                          other: true,
+                          comments: false,
+                          strings: true
+                        },
+                        suggestOnTriggerCharacters: true,
+                        acceptSuggestionOnEnter: 'on',
+                        tabCompletion: 'on',
+                        wordBasedSuggestions: true,
+                        suggest: {
+                          snippetsPreventQuickSuggestions: false
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className={styles['student-ide-no-file']}>
+                      <h3>📁 Файл не найден</h3>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Предпросмотр HTML */}
@@ -1355,16 +2064,64 @@ function StudentIDE() {
                 <div className={styles['resizer-handle']}></div>
               </div>
               <div className={styles['student-ide-preview-header']}>
-                <h3>Предпросмотр</h3>
+                <div className={styles['preview-header-left']}>
+                  <h3>Предпросмотр</h3>
+                  <div className={styles['preview-controls']}>
+                    <button 
+                      className={`${styles['device-btn']} ${deviceMode === 'desktop' ? styles['active'] : ''}`}
+                      onClick={() => setDeviceMode('desktop')}
+                      title="Desktop - Полная ширина"
+                    >
+                      <MdComputer />
+                    </button>
+                    <button 
+                      className={`${styles['device-btn']} ${deviceMode === 'tablet' ? styles['active'] : ''}`}
+                      onClick={() => setDeviceMode('tablet')}
+                      title="Tablet - 768x1024px (iPad)"
+                    >
+                      <MdTablet />
+                    </button>
+                    <button 
+                      className={`${styles['device-btn']} ${deviceMode === 'mobile' ? styles['active'] : ''}`}
+                      onClick={() => setDeviceMode('mobile')}
+                      title="Mobile - 375x667px (iPhone)"
+                    >
+                      <MdPhoneIphone />
+                    </button>
+                    <div className={styles['preview-divider']}></div>
+                    <button 
+                      className={`${styles['reload-btn']} ${liveReload ? styles['active'] : ''}`}
+                      onClick={() => setLiveReload(!liveReload)}
+                      title={liveReload ? "Live Reload: Вкл" : "Live Reload: Выкл"}
+                    >
+                      {liveReload ? <MdRefresh /> : <MdPause />}
+                    </button>
+                    <button 
+                      className={styles['refresh-btn']}
+                      onClick={updatePreview}
+                      title="Обновить вручную"
+                    >
+                      <BiRefresh />
+                    </button>
+                  </div>
+                </div>
                 <button onClick={() => setShowPreview(false)}>Закрыть</button>
               </div>
-              <iframe
-                ref={previewRef}
-                className={styles['student-ide-preview-iframe']}
-                title="HTML Preview"
-                sandbox="allow-scripts allow-forms allow-same-origin"
-                srcDoc={previewHtml}
-              />
+              <div className={styles['preview-viewport']}>
+                <iframe
+                  ref={previewRef}
+                  className={styles['student-ide-preview-iframe']}
+                  style={
+                    deviceMode === 'desktop' ? { width: '100%', height: '100%' } :
+                    deviceMode === 'tablet' ? { width: '768px', height: '1024px', margin: '0 auto', border: '1px solid #444' } :
+                    deviceMode === 'mobile' ? { width: '375px', height: '667px', margin: '0 auto', border: '1px solid #444' } :
+                    { width: `${customSize.width}px`, height: `${customSize.height}px`, margin: '0 auto' }
+                  }
+                  title="HTML Preview"
+                  sandbox="allow-scripts allow-forms allow-same-origin"
+                  srcDoc={previewHtml}
+                />
+              </div>
             </div>
           )}
 
@@ -1391,6 +2148,72 @@ function StudentIDE() {
         </div>
       </div>
 
+      {/* Встроенный терминал */}
+      {showTerminal && (
+        <div 
+          className={styles['terminal-container']}
+          style={{ height: `${terminalHeight}px` }}
+        >
+          <div 
+            className={styles['terminal-resizer']}
+            onMouseDown={() => setIsResizingTerminal(true)}
+          ></div>
+          <div className={styles['terminal-header']}>
+            <div className={styles['terminal-header-left']}>
+              <FaTerminal />
+              <span>Терминал</span>
+            </div>
+            <div className={styles['terminal-header-actions']}>
+              <button 
+                onClick={() => setTerminalOutput([])}
+                title="Очистить терминал"
+              >
+                <VscClose />
+              </button>
+              <button 
+                onClick={() => setShowTerminal(false)}
+                title="Закрыть терминал (Ctrl+`)"
+              >
+                <VscChevronDown />
+              </button>
+            </div>
+          </div>
+          <div className={styles['terminal-content']}>
+            {terminalOutput.map((item, index) => (
+              <div 
+                key={index} 
+                className={`${styles['terminal-line']} ${styles[`terminal-${item.type}`]}`}
+              >
+                {item.text}
+              </div>
+            ))}
+            <div className={styles['terminal-input-line']}>
+              <span className={styles['terminal-prompt']}>$</span>
+              <input
+                type="text"
+                value={terminalCommand}
+                onChange={(e) => setTerminalCommand(e.target.value)}
+                onKeyDown={handleTerminalKeyDown}
+                placeholder="Введите команду (help для справки)..."
+                className={styles['terminal-input']}
+                autoFocus
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Кнопка открытия терминала */}
+      {!showTerminal && (
+        <button 
+          className={styles['terminal-toggle-button']}
+          onClick={() => setShowTerminal(true)}
+          title="Открыть терминал (Ctrl+`)"
+        >
+          <FaTerminal />
+        </button>
+      )}
+
       {/* AI Assistant */}
       <AIAssistant
         isOpen={showAIAssistant}
@@ -1399,6 +2222,158 @@ function StudentIDE() {
         language={currentLanguage}
         onInsertCode={handleInsertCode}
       />
+
+      {/* Кнопка горячих клавиш */}
+      <button 
+        className={styles['hotkeys-button']}
+        onClick={() => setShowHotkeys(true)}
+        title="Горячие клавиши (?)"
+      >
+        <FaKeyboard />
+      </button>
+
+      {/* Модальное окно с горячими клавишами */}
+      {showHotkeys && (
+        <div className={styles['hotkeys-modal']} onClick={() => setShowHotkeys(false)}>
+          <div className={styles['hotkeys-content']} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['hotkeys-header']}>
+              <h2><FaKeyboard /> Горячие клавиши</h2>
+              <button onClick={() => setShowHotkeys(false)}>✕</button>
+            </div>
+            <div className={styles['hotkeys-list']}>
+              <div className={styles['hotkeys-section']}>
+                <h3>Основные</h3>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                  <span>Сохранить файл</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>R</kbd> или <kbd>F5</kbd>
+                  <span>Запустить код</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>B</kbd>
+                  <span>Показать/Скрыть проводник</span>
+                </div>
+              </div>
+              
+              <div className={styles['hotkeys-section']}>
+                <h3>Файлы и вкладки</h3>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>N</kbd>
+                  <span>Новый файл</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd>
+                  <span>Новая папка</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>W</kbd>
+                  <span>Закрыть вкладку</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>Tab</kbd>
+                  <span>Следующая вкладка</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd>
+                  <span>Предыдущая вкладка</span>
+                </div>
+              </div>
+
+              <div className={styles['hotkeys-section']}>
+                <h3>Сплит-режим</h3>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>\</kbd>
+                  <span>Открыть/Закрыть сплит</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <span style={{ fontSize: '12px', color: '#999' }}>ПКМ на вкладке</span>
+                  <span>Открыть справа</span>
+                </div>
+              </div>
+
+              <div className={styles['hotkeys-section']}>
+                <h3>Поиск</h3>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>
+                  <span>Глобальный поиск по файлам</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>F</kbd>
+                  <span>Поиск в текущем файле</span>
+                </div>
+              </div>
+
+              <div className={styles['hotkeys-section']}>
+                <h3>Терминал</h3>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>`</kbd>
+                  <span>Открыть/Закрыть терминал</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <span style={{ fontSize: '12px', color: '#999' }}>help</span>
+                  <span>Список доступных команд</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <span style={{ fontSize: '12px', color: '#999' }}>clear</span>
+                  <span>Очистить терминал</span>
+                </div>
+              </div>
+
+              <div className={styles['hotkeys-section']}>
+                <h3>Предпросмотр</h3>
+                <div className={styles['hotkey-item']}>
+                  <span style={{ fontSize: '18px', display: 'flex', alignItems: 'center' }}><MdRefresh /></span>
+                  <span>Live Reload - автообновление</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <span style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <MdComputer /> <MdTablet /> <MdPhoneIphone />
+                  </span>
+                  <span>Режимы устройств</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <span style={{ fontSize: '18px', display: 'flex', alignItems: 'center' }}><BiRefresh /></span>
+                  <span>Обновить вручную</span>
+                </div>
+              </div>
+              
+              <div className={styles['hotkeys-section']}>
+                <h3>Редактирование (встроенные Monaco)</h3>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>F</kbd>
+                  <span>Найти</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>H</kbd>
+                  <span>Заменить</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>/</kbd>
+                  <span>Комментарий строки</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd>
+                  <span>Форматировать документ</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Alt</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd>
+                  <span>Переместить строку</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd>
+                  <span>Дублировать строку</span>
+                </div>
+                <div className={styles['hotkey-item']}>
+                  <kbd>Ctrl</kbd> + <kbd>D</kbd>
+                  <span>Выделить следующее вхождение</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

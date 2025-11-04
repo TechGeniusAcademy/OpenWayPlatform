@@ -14,7 +14,7 @@
 
 /* Заголовок и поиск */
 .kb-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
   color: white;
   padding: 40px 30px;
   border-radius: 0 0 20px 20px;
@@ -249,7 +249,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: 0;
@@ -272,7 +272,7 @@
 
 .kb-category.active {
   border: 2px solid transparent;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
   color: white;
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
   transform: translateY(-2px);
@@ -351,8 +351,8 @@
 }
 
 .kb-subcategory:hover {
-  border-color: #667eea;
-  color: #667eea;
+  background: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  color: #ffffff;
   transform: translateY(-3px);
   box-shadow: 0 6px 18px rgba(102, 126, 234, 0.25);
 }
@@ -363,7 +363,7 @@
 }
 
 .kb-subcategory.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
   color: white;
   border-color: transparent;
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);

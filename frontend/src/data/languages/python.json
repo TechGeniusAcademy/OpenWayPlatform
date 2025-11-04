@@ -1,0 +1,16 @@
+{
+  "name": "Python",
+  "icon": "https://cdn-icons-png.flaticon.com/512/1822/1822920.png",
+  "color": "#3776ab",
+  "words": [
+    "def", "class", "return", "if", "elif", "else", "for", "while", "in", "not",
+    "and", "or", "True", "False", "None", "import", "from", "as", "with", "try",
+    "except", "finally", "raise", "lambda", "yield", "global", "nonlocal", "pass",
+    "break", "continue", "assert", "del", "is", "async", "await", "print", "input",
+    "len", "range", "enumerate", "zip", "map", "filter", "sorted", "reversed",
+    "list", "tuple", "dict", "set", "str", "int", "float", "bool", "type", "isinstance",
+    "open", "read", "write", "close", "append", "extend", "remove", "pop", "insert",
+    "join", "split", "strip", "replace", "format", "upper", "lower", "startswith",
+    "endswith", "find", "index", "count", "keys", "values", "items", "get", "update"
+  ]
+}

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../../utils/api';
-import '../../components/GamesManagement.css';
+import styles from './GamesManagement.module.css';
 import { 
   MdOutlineQuiz, 
-  MdSportsEsports 
+  MdSportsEsports,
+  MdCasino 
 } from "react-icons/md";
 import { 
   FaChess, 
@@ -20,7 +21,6 @@ import {
   FaCircle,
   FaHandshake
 } from "react-icons/fa";
-import { MdCasino } from "react-icons/md";
 
 
 function GamesManagement() {
@@ -182,30 +182,30 @@ function GamesManagement() {
   };
 
   return (
-    <div className="games-management">
+    <div className={styles['games-management']}>
       <h1><FaGamepad /> Управление Играми</h1>
 
-      <div className="games-tabs">
+      <div className={styles['games-tabs']}>
         <button 
-          className={`tab-btn ${activeTab === 'crash' ? 'active' : ''}`}
+          className={`${styles['tab-btn']} ${activeTab === 'crash' ? styles.active : ''}`}
           onClick={() => setActiveTab('crash')}
         >
           <FaRocket /> Crash Game
         </button>
         <button 
-          className={`tab-btn ${activeTab === 'roulette' ? 'active' : ''}`}
+          className={`${styles['tab-btn']} ${activeTab === 'roulette' ? styles.active : ''}`}
           onClick={() => setActiveTab('roulette')}
         >
           <MdCasino /> Рулетка
         </button>
         <button 
-          className={`tab-btn ${activeTab === 'chess' ? 'active' : ''}`}
+          className={`${styles['tab-btn']} ${activeTab === 'chess' ? styles.active : ''}`}
           onClick={() => setActiveTab('chess')}
         >
           <FaChess /> Шахматы
         </button>
         <button 
-          className={`tab-btn ${activeTab === 'quiz' ? 'active' : ''}`}
+          className={`${styles['tab-btn']} ${activeTab === 'quiz' ? styles.active : ''}`}
           onClick={() => setActiveTab('quiz')}
         >
           <MdOutlineQuiz /> Битва Знаний
@@ -214,40 +214,40 @@ function GamesManagement() {
 
       {/* CRASH GAME */}
       {activeTab === 'crash' && (
-        <div className="crash-section">
-          <div className="section-card">
+        <div className={styles['crash-section']}>
+          <div className={styles['section-card']}>
             <h2>История Crash игр</h2>
-            <div className="stats-grid">
-              <div className="stat-box">
-                <div className="stat-label">Всего игр</div>
-                <div className="stat-value">{crashGames.length}</div>
+            <div className={styles['stats-grid']}>
+              <div className={styles['stat-box']}>
+                <div className={styles['stat-label']}>Всего игр</div>
+                <div className={styles['stat-value']}>{crashGames.length}</div>
               </div>
-              <div className="stat-box">
-                <div className="stat-label">Средний краш</div>
-                <div className="stat-value">
+              <div className={styles['stat-box']}>
+                <div className={styles['stat-label']}>Средний краш</div>
+                <div className={styles['stat-value']}>
                   {crashGames.length > 0 
                     ? (crashGames.reduce((sum, g) => sum + parseFloat(g.crash_point), 0) / crashGames.length).toFixed(2) 
                     : '0.00'}x
                 </div>
               </div>
-              <div className="stat-box">
-                <div className="stat-label">Макс. краш</div>
-                <div className="stat-value">
+              <div className={styles['stat-box']}>
+                <div className={styles['stat-label']}>Макс. краш</div>
+                <div className={styles['stat-value']}>
                   {crashGames.length > 0 
                     ? Math.max(...crashGames.map(g => parseFloat(g.crash_point))).toFixed(2) 
                     : '0.00'}x
                 </div>
               </div>
-              <div className="stat-box">
-                <div className="stat-label">Мин. краш</div>
-                <div className="stat-value">
+              <div className={styles['stat-box']}>
+                <div className={styles['stat-label']}>Мин. краш</div>
+                <div className={styles['stat-value']}>
                   {crashGames.length > 0 
                     ? Math.min(...crashGames.map(g => parseFloat(g.crash_point))).toFixed(2) 
                     : '0.00'}x
                 </div>
               </div>
             </div>
-            <div className="games-table">
+            <div className={styles['games-table']}>
               <table>
                 <thead>
                   <tr>
@@ -264,7 +264,7 @@ function GamesManagement() {
                       <td>#{game.id}</td>
                       <td>
                         <span 
-                          className="crash-point-badge"
+                          className={styles['crash-point-badge']}
                           style={{
                             backgroundColor: 
                               parseFloat(game.crash_point) < 2 ? '#ff5722' : 
@@ -280,7 +280,7 @@ function GamesManagement() {
                         </span>
                       </td>
                       <td>
-                        <span className="status-badge crashed">
+                        <span className={`${styles['status-badge']} ${styles.crashed}`}>
                           <FaBomb /> Crashed
                         </span>
                       </td>
@@ -291,7 +291,7 @@ function GamesManagement() {
                 </tbody>
               </table>
               {crashGames.length === 0 && (
-                <p className="no-data">Нет истории Crash игр</p>
+                <p className={styles['no-data']}>Нет истории Crash игр</p>
               )}
             </div>
           </div>
@@ -300,29 +300,29 @@ function GamesManagement() {
 
       {/* РУЛЕТКА */}
       {activeTab === 'roulette' && (
-        <div className="roulette-section">
-          <div className="section-card">
+        <div className={styles['roulette-section']}>
+          <div className={styles['section-card']}>
             <h2>История игр в Рулетку</h2>
-            <div className="stats-grid">
-              <div className="stat-box">
-                <div className="stat-label">Всего игр</div>
-                <div className="stat-value">{rouletteGames.length}</div>
+            <div className={styles['stats-grid']}>
+              <div className={styles['stat-box']}>
+                <div className={styles['stat-label']}>Всего игр</div>
+                <div className={styles['stat-value']}>{rouletteGames.length}</div>
               </div>
-              <div className="stat-box">
-                <div className="stat-label">Общие ставки</div>
-                <div className="stat-value">
+              <div className={styles['stat-box']}>
+                <div className={styles['stat-label']}>Общие ставки</div>
+                <div className={styles['stat-value']}>
                   {rouletteGames.reduce((sum, g) => sum + (g.total_bets || 0), 0)}
                 </div>
               </div>
-              <div className="stat-box">
-                <div className="stat-label">Общие выплаты</div>
-                <div className="stat-value">
+              <div className={styles['stat-box']}>
+                <div className={styles['stat-label']}>Общие выплаты</div>
+                <div className={styles['stat-value']}>
                   {rouletteGames.reduce((sum, g) => sum + (g.total_payout || 0), 0)}
                 </div>
               </div>
-              <div className="stat-box">
-                <div className="stat-label">House Edge</div>
-                <div className="stat-value">
+              <div className={styles['stat-box']}>
+                <div className={styles['stat-label']}>House Edge</div>
+                <div className={styles['stat-value']}>
                   {rouletteGames.length > 0 
                     ? ((1 - rouletteGames.reduce((sum, g) => sum + (g.total_payout || 0), 0) / 
                         Math.max(1, rouletteGames.reduce((sum, g) => sum + (g.total_bets || 0), 0))) * 100).toFixed(2)
@@ -330,7 +330,7 @@ function GamesManagement() {
                 </div>
               </div>
             </div>
-            <div className="games-table">
+            <div className={styles['games-table']}>
               <table>
                 <thead>
                   <tr>
@@ -348,7 +348,7 @@ function GamesManagement() {
                       <td>#{game.game_number}</td>
                       <td>
                         <span 
-                          className="roulette-number-badge"
+                          className={styles['roulette-number-badge']}
                           style={{
                             backgroundColor: 
                               game.winning_color === 'green' ? '#27ae60' :
@@ -367,7 +367,7 @@ function GamesManagement() {
                         </span>
                       </td>
                       <td>
-                        <span className={`color-badge ${game.winning_color}`}>
+                        <span className={`${styles['color-badge']} ${styles[game.winning_color]}`}>
                           {game.winning_color === 'red' && <><FaCircle style={{color: 'red'}} /> Красное</>}
                           {game.winning_color === 'black' && <><FaCircle style={{color: 'black'}} /> Черное</>}
                           {game.winning_color === 'green' && <><FaCircle style={{color: 'green'}} /> Зеленое</>}
@@ -381,7 +381,7 @@ function GamesManagement() {
                 </tbody>
               </table>
               {rouletteGames.length === 0 && (
-                <p className="no-data">Нет истории игр в рулетку</p>
+                <p className={styles['no-data']}>Нет истории игр в рулетку</p>
               )}
             </div>
           </div>
@@ -390,10 +390,10 @@ function GamesManagement() {
 
       {/* ШАХМАТЫ */}
       {activeTab === 'chess' && (
-        <div className="chess-section">
-          <div className="section-card">
+        <div className={styles['chess-section']}>
+          <div className={styles['section-card']}>
             <h2>История Шахматных Игр</h2>
-            <div className="games-table">
+            <div className={styles['games-table']}>
               <table>
                 <thead>
                   <tr>
@@ -421,7 +421,7 @@ function GamesManagement() {
                       <td>{game.bet_amount || 0} <FaTrophy /></td>
                       <td>{formatDate(game.created_at)}</td>
                       <td>
-                        <span className={`status-badge ${game.status}`}>
+                        <span className={`${styles['status-badge']} ${styles[game.status]}`}>
                           {game.status === 'finished' && <><FaCheckCircle /> Завершена</>}
                           {game.status === 'active' && <><MdSportsEsports /> Идёт игра</>}
                           {game.status === 'pending' && <><FaClock /> Ожидание</>}
@@ -432,7 +432,7 @@ function GamesManagement() {
                 </tbody>
               </table>
               {chessGames.length === 0 && (
-                <p className="no-data">Нет истории игр</p>
+                <p className={styles['no-data']}>Нет истории игр</p>
               )}
             </div>
           </div>
@@ -441,12 +441,12 @@ function GamesManagement() {
 
       {/* КВИЗ */}
       {activeTab === 'quiz' && (
-        <div className="quiz-section">
-          <div className="quiz-grid">
+        <div className={styles['quiz-section']}>
+          <div className={styles['quiz-grid']}>
             {/* История битв */}
-            <div className="section-card">
+            <div className={styles['section-card']}>
               <h2>История Битв Знаний</h2>
-              <div className="games-table">
+              <div className={styles['games-table']}>
                 <table>
                   <thead>
                     <tr>
@@ -467,7 +467,7 @@ function GamesManagement() {
                         <td>{battle.player_count || 0}</td>
                       <td>{formatDate(battle.created_at)}</td>
                       <td>
-                        <span className={`status-badge ${battle.status}`}>
+                        <span className={`${styles['status-badge']} ${styles[battle.status]}`}>
                           {battle.status === 'finished' && <><FaCheckCircle /> Завершена</>}
                           {battle.status === 'in_progress' && <><MdSportsEsports /> Идёт игра</>}
                           {battle.status === 'waiting' && <><FaClock /> Ожидание</>}
@@ -478,17 +478,17 @@ function GamesManagement() {
                   </tbody>
                 </table>
                 {quizBattles.length === 0 && (
-                  <p className="no-data">Нет истории битв</p>
+                  <p className={styles['no-data']}>Нет истории битв</p>
                 )}
               </div>
             </div>
 
             {/* Категории вопросов */}
-            <div className="section-card">
-              <div className="section-header">
+            <div className={styles['section-card']}>
+              <div className={styles['section-header']}>
                 <h2>Категории Вопросов</h2>
                 <button 
-                  className="add-btn"
+                  className={styles['add-btn']}
                   onClick={() => {
                     setEditingCategory(null);
                     setCategoryForm({ name: '', description: '' });
@@ -498,17 +498,17 @@ function GamesManagement() {
                   <FaPlus /> Добавить категорию
                 </button>
               </div>
-              <div className="categories-list">
+              <div className={styles['categories-list']}>
                 {categories.map(cat => (
-                  <div key={cat.id} className="category-item">
-                    <div className="category-info">
+                  <div key={cat.id} className={styles['category-item']}>
+                    <div className={styles['category-info']}>
                       <h3>{cat.name}</h3>
                       <p>{cat.description}</p>
-                      <span className="question-count">{cat.question_count || 0} вопросов</span>
+                      <span className={styles['question-count']}>{cat.question_count || 0} вопросов</span>
                     </div>
-                    <div className="category-actions">
+                    <div className={styles['category-actions']}>
                       <button 
-                        className="edit-btn"
+                        className={styles['edit-btn']}
                         onClick={() => {
                           setEditingCategory(cat);
                           setCategoryForm({ name: cat.name, description: cat.description });
@@ -518,7 +518,7 @@ function GamesManagement() {
                         <FaPencilAlt />
                       </button>
                       <button 
-                        className="delete-btn"
+                        className={styles['delete-btn']}
                         onClick={() => handleDeleteCategory(cat.id)}
                       >
                         <FaTrash />
@@ -527,17 +527,17 @@ function GamesManagement() {
                   </div>
                 ))}
                 {categories.length === 0 && (
-                  <p className="no-data">Нет категорий</p>
+                  <p className={styles['no-data']}>Нет категорий</p>
                 )}
               </div>
             </div>
 
             {/* Вопросы */}
-            <div className="section-card full-width">
-              <div className="section-header">
+            <div className={`${styles['section-card']} ${styles['full-width']}`}>
+              <div className={styles['section-header']}>
                 <h2>Вопросы для Квиза</h2>
                 <button 
-                  className="add-btn"
+                  className={styles['add-btn']}
                   onClick={() => {
                     setEditingQuestion(null);
                     setQuestionForm({
@@ -556,7 +556,7 @@ function GamesManagement() {
                   <FaPlus /> Добавить вопрос
                 </button>
               </div>
-              <div className="questions-table">
+              <div className={styles['questions-table']}>
                 <table>
                   <thead>
                     <tr>
@@ -575,7 +575,7 @@ function GamesManagement() {
                         <td>{q.question}</td>
                         <td>{q.category_name || 'Без категории'}</td>
                         <td>
-                          <span className={`difficulty ${q.difficulty}`}>
+                          <span className={`${styles.difficulty} ${styles[q.difficulty]}`}>
                             {q.difficulty === 'easy' && '● Легко'}
                             {q.difficulty === 'medium' && '● Средне'}
                             {q.difficulty === 'hard' && '● Сложно'}
@@ -584,7 +584,7 @@ function GamesManagement() {
                         <td><strong>{q.correct_option?.toUpperCase()}</strong></td>
                         <td>
                           <button 
-                            className="edit-btn"
+                            className={styles['edit-btn']}
                             onClick={() => {
                               setEditingQuestion(q);
                               setQuestionForm({
@@ -603,7 +603,7 @@ function GamesManagement() {
                             <FaPencilAlt />
                           </button>
                           <button 
-                            className="delete-btn"
+                            className={styles['delete-btn']}
                             onClick={() => handleDeleteQuestion(q.id)}
                           >
                             <FaTrash />
@@ -614,7 +614,7 @@ function GamesManagement() {
                   </tbody>
                 </table>
                 {questions.length === 0 && (
-                  <p className="no-data">Нет вопросов</p>
+                  <p className={styles['no-data']}>Нет вопросов</p>
                 )}
               </div>
             </div>
@@ -624,11 +624,11 @@ function GamesManagement() {
 
       {/* Модальное окно категории */}
       {showCategoryModal && (
-        <div className="modal-overlay" onClick={() => setShowCategoryModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className={styles['modal-overlay']} onClick={() => setShowCategoryModal(false)}>
+          <div className={styles['modal-content']} onClick={(e) => e.stopPropagation()}>
             <h2>{editingCategory ? 'Редактировать категорию' : 'Новая категория'}</h2>
             <form onSubmit={handleCreateCategory}>
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label>Название *</label>
                 <input
                   type="text"
@@ -638,7 +638,7 @@ function GamesManagement() {
                   placeholder="Например: История"
                 />
               </div>
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label>Описание</label>
                 <textarea
                   value={categoryForm.description}
@@ -647,11 +647,11 @@ function GamesManagement() {
                   rows="3"
                 />
               </div>
-              <div className="modal-actions">
+              <div className={styles['modal-actions']}>
                 <button type="button" onClick={() => setShowCategoryModal(false)}>
                   Отмена
                 </button>
-                <button type="submit" className="primary">
+                <button type="submit" className={styles.primary}>
                   {editingCategory ? 'Сохранить' : 'Создать'}
                 </button>
               </div>
@@ -662,12 +662,12 @@ function GamesManagement() {
 
       {/* Модальное окно вопроса */}
       {showQuestionModal && (
-        <div className="modal-overlay" onClick={() => setShowQuestionModal(false)}>
-          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
+        <div className={styles['modal-overlay']} onClick={() => setShowQuestionModal(false)}>
+          <div className={`${styles['modal-content']} ${styles.large}`} onClick={(e) => e.stopPropagation()}>
             <h2>{editingQuestion ? 'Редактировать вопрос' : 'Новый вопрос'}</h2>
             <form onSubmit={handleCreateQuestion}>
-              <div className="form-row">
-                <div className="form-group">
+              <div className={styles['form-row']}>
+                <div className={styles['form-group']}>
                   <label>Категория</label>
                   <select
                     value={questionForm.category_id}
@@ -679,7 +679,7 @@ function GamesManagement() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
+                <div className={styles['form-group']}>
                   <label>Сложность *</label>
                   <select
                     value={questionForm.difficulty}
@@ -693,7 +693,7 @@ function GamesManagement() {
                 </div>
               </div>
               
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label>Вопрос *</label>
                 <textarea
                   value={questionForm.question}
@@ -704,8 +704,8 @@ function GamesManagement() {
                 />
               </div>
 
-              <div className="options-grid">
-                <div className="form-group">
+              <div className={styles['options-grid']}>
+                <div className={styles['form-group']}>
                   <label>Вариант A *</label>
                   <input
                     type="text"
@@ -714,7 +714,7 @@ function GamesManagement() {
                     required
                   />
                 </div>
-                <div className="form-group">
+                <div className={styles['form-group']}>
                   <label>Вариант B *</label>
                   <input
                     type="text"
@@ -723,7 +723,7 @@ function GamesManagement() {
                     required
                   />
                 </div>
-                <div className="form-group">
+                <div className={styles['form-group']}>
                   <label>Вариант C *</label>
                   <input
                     type="text"
@@ -732,7 +732,7 @@ function GamesManagement() {
                     required
                   />
                 </div>
-                <div className="form-group">
+                <div className={styles['form-group']}>
                   <label>Вариант D *</label>
                   <input
                     type="text"
@@ -743,7 +743,7 @@ function GamesManagement() {
                 </div>
               </div>
 
-              <div className="form-group">
+              <div className={styles['form-group']}>
                 <label>Правильный ответ *</label>
                 <select
                   value={questionForm.correct_option}
@@ -757,11 +757,11 @@ function GamesManagement() {
                 </select>
               </div>
 
-              <div className="modal-actions">
+              <div className={styles['modal-actions']}>
                 <button type="button" onClick={() => setShowQuestionModal(false)}>
                   Отмена
                 </button>
-                <button type="submit" className="primary">
+                <button type="submit" className={styles.primary}>
                   {editingQuestion ? 'Сохранить' : 'Создать'}
                 </button>
               </div>

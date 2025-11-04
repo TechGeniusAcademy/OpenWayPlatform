@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import { 
+  FiUsers, FiEdit2, FiTrash2, FiPlus, FiImage, 
+  FiUpload, FiX, FiCheck, FiAlertCircle, FiDollarSign 
+} from 'react-icons/fi';
 import api, { BASE_URL } from '../utils/api';
 import styles from './UsersManagement.module.css';
 
@@ -245,23 +249,42 @@ function UsersManagement() {
   return (
     <div className={styles['users-page']}>
       <div className={styles['page-header']}>
-        <h1>Управление пользователями</h1>
-        <p>Регистрация и управление учетными записями</p>
+        <div className={styles['header-content']}>
+          <div className={styles['header-left']}>
+            <div className={styles['header-icon']}>
+              <FiUsers />
+            </div>
+            <div>
+              <h1>Управление пользователями</h1>
+              <p>Регистрация и управление учетными записями</p>
+            </div>
+          </div>
+          <button className={styles['btn-primary']} onClick={openCreateModal}>
+            <FiPlus />
+            <span>Добавить пользователя</span>
+          </button>
+        </div>
       </div>
 
-      {success && <div className="alert alert-success">{success}</div>}
-      {error && <div className="alert alert-error">{error}</div>}
-
-      <div className={styles['page-actions']}>
-        <button className="btn btn-primary" onClick={openCreateModal}>
-          + Добавить пользователя
-        </button>
-      </div>
+      {success && (
+        <div className={styles['alert-success']}>
+          <FiCheck className={styles['alert-icon']} />
+          <span>{success}</span>
+        </div>
+      )}
+      {error && (
+        <div className={styles['alert-error']}>
+          <FiAlertCircle className={styles['alert-icon']} />
+          <span>{error}</span>
+        </div>
+      )}
 
       <div className={styles['users-table-container']}>
         {users.length === 0 ? (
           <div className={styles['empty-state']}>
-            <div className={styles['empty-state-icon']}>👥</div>
+            <div className={styles['empty-state-icon']}>
+              <FiUsers />
+            </div>
             <h3>Нет пользователей</h3>
             <p>Создайте первого пользователя, нажав кнопку выше</p>
           </div>
@@ -304,8 +327,12 @@ function UsersManagement() {
                   <td>{user.email}</td>
                   <td>{user.full_name || '-'}</td>
                   <td>
-                    <span className={`role-badge ${user.role}`}>
-                      {user.role === 'admin' ? 'Администратор' : 'Ученик'}
+                    <span className={`${styles['role-badge']} ${styles['role-' + user.role]}`}>
+                      {user.role === 'admin' && 'Администратор'}
+                      {user.role === 'student' && 'Ученик'}
+                      {user.role === 'teacher' && 'Учитель'}
+                      {user.role === 'tester' && 'Тестер'}
+                      {user.role === 'css_editor' && 'CSS Редактор'}
                     </span>
                   </td>
                   <td>{user.group_name || '-'}</td>
@@ -318,32 +345,34 @@ function UsersManagement() {
                       {user.role === 'student' && (
                         <>
                           <button 
-                            className="btn btn-small btn-avatar"
+                            className={styles['btn-icon-avatar']}
                             onClick={() => openAvatarModal(user)}
                             title="Изменить аватарку"
                           >
-                            🖼️
+                            <FiImage />
                           </button>
                           <button 
-                            className="btn btn-small btn-points"
+                            className={styles['btn-icon-points']}
                             onClick={() => openPointsModal(user)}
                             title="Управление баллами"
                           >
-                            🪙
+                            <FiDollarSign />
                           </button>
                         </>
                       )}
                       <button 
-                        className="btn btn-small btn-edit"
+                        className={styles['btn-icon-edit']}
                         onClick={() => handleEdit(user)}
+                        title="Редактировать"
                       >
-                        ✏️
+                        <FiEdit2 />
                       </button>
                       <button 
-                        className="btn btn-small btn-delete"
+                        className={styles['btn-icon-delete']}
                         onClick={() => handleDelete(user.id)}
+                        title="Удалить"
                       >
-                        🗑️
+                        <FiTrash2 />
                       </button>
                     </div>
                   </td>
@@ -359,11 +388,18 @@ function UsersManagement() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles['modal-header']}>
               <h2>{editingUser ? 'Редактирование пользователя' : 'Новый пользователь'}</h2>
-              <button className={styles['close-btn']} onClick={closeModal}>&times;</button>
+              <button className={styles['close-btn']} onClick={closeModal}>
+                <FiX />
+              </button>
             </div>
 
             <form className={styles['modal-form']} onSubmit={handleSubmit}>
-              {error && <div className="alert alert-error">{error}</div>}
+              {error && (
+                <div className={styles['alert-error']}>
+                  <FiAlertCircle className={styles['alert-icon']} />
+                  <span>{error}</span>
+                </div>
+              )}
 
               <div className={styles['form-group']}>
                 <label className={styles['form-label']}>Имя пользователя *</label>
@@ -432,11 +468,12 @@ function UsersManagement() {
               </div>
 
               <div className={styles['form-actions']}>
-                <button type="button" className="btn btn-cancel" onClick={closeModal}>
+                <button type="button" className={styles['btn-secondary']} onClick={closeModal}>
                   Отмена
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {editingUser ? 'Сохранить' : 'Создать'}
+                <button type="submit" className={styles['btn-primary']}>
+                  <FiCheck />
+                  <span>{editingUser ? 'Сохранить' : 'Создать'}</span>
                 </button>
               </div>
             </form>
@@ -446,10 +483,15 @@ function UsersManagement() {
 
       {showPointsModal && selectedUser && (
         <div className={styles['modal-overlay']} onClick={closePointsModal}>
-          <div className="modal modal-small" onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.modal} ${styles['modal-small']}`} onClick={(e) => e.stopPropagation()}>
             <div className={styles['modal-header']}>
-              <h2>🪙 Управление баллами</h2>
-              <button className={styles['close-btn']} onClick={closePointsModal}>&times;</button>
+              <div className={styles['modal-title']}>
+                <FiDollarSign className={styles['modal-icon']} />
+                <h2>Управление баллами</h2>
+              </div>
+              <button className={styles['close-btn']} onClick={closePointsModal}>
+                <FiX />
+              </button>
             </div>
 
             <div className={styles['modal-body']}>
@@ -473,18 +515,19 @@ function UsersManagement() {
               </div>
 
               <div className={styles['quick-buttons']}>
-                <button className="btn btn-quick" onClick={() => setPointsAmount(5)}>+5</button>
-                <button className="btn btn-quick" onClick={() => setPointsAmount(10)}>+10</button>
-                <button className="btn btn-quick" onClick={() => setPointsAmount(20)}>+20</button>
-                <button className="btn btn-quick btn-negative" onClick={() => setPointsAmount(-5)}>-5</button>
+                <button className={styles['btn-quick']} onClick={() => setPointsAmount(5)}>+5</button>
+                <button className={styles['btn-quick']} onClick={() => setPointsAmount(10)}>+10</button>
+                <button className={styles['btn-quick']} onClick={() => setPointsAmount(20)}>+20</button>
+                <button className={`${styles['btn-quick']} ${styles['btn-negative']}`} onClick={() => setPointsAmount(-5)}>-5</button>
               </div>
 
               <div className={styles['form-actions']}>
-                <button type="button" className="btn btn-cancel" onClick={closePointsModal}>
+                <button type="button" className={styles['btn-secondary']} onClick={closePointsModal}>
                   Отмена
                 </button>
-                <button type="button" className="btn btn-primary" onClick={handleAddPoints}>
-                  Применить
+                <button type="button" className={styles['btn-primary']} onClick={handleAddPoints}>
+                  <FiCheck />
+                  <span>Применить</span>
                 </button>
               </div>
             </div>
@@ -495,10 +538,15 @@ function UsersManagement() {
       {/* Модальное окно для загрузки аватарки */}
       {showAvatarModal && selectedAvatarUser && (
         <div className={styles['modal-overlay']} onClick={closeAvatarModal}>
-          <div className="modal modal-small" onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.modal} ${styles['modal-small']}`} onClick={(e) => e.stopPropagation()}>
             <div className={styles['modal-header']}>
-              <h2>🖼️ Изменить аватарку</h2>
-              <button className={styles['close-btn']} onClick={closeAvatarModal}>&times;</button>
+              <div className={styles['modal-title']}>
+                <FiImage className={styles['modal-icon']} />
+                <h2>Изменить аватарку</h2>
+              </div>
+              <button className={styles['close-btn']} onClick={closeAvatarModal}>
+                <FiX />
+              </button>
             </div>
 
             <div className={styles['modal-body']}>
@@ -535,25 +583,27 @@ function UsersManagement() {
                 {selectedAvatarUser.avatar_url && (
                   <button 
                     type="button" 
-                    className="btn btn-danger"
+                    className={styles['btn-danger']}
                     onClick={() => {
                       handleDeleteAvatar(selectedAvatarUser.id);
                       closeAvatarModal();
                     }}
                   >
-                    Удалить аватарку
+                    <FiTrash2 />
+                    <span>Удалить аватарку</span>
                   </button>
                 )}
-                <button type="button" className="btn btn-cancel" onClick={closeAvatarModal}>
+                <button type="button" className={styles['btn-secondary']} onClick={closeAvatarModal}>
                   Отмена
                 </button>
                 <button 
                   type="button" 
-                  className="btn btn-primary" 
+                  className={styles['btn-primary']} 
                   onClick={handleUploadAvatar}
                   disabled={!avatarFile || uploadingAvatar}
                 >
-                  {uploadingAvatar ? 'Загрузка...' : 'Загрузить'}
+                  <FiUpload />
+                  <span>{uploadingAvatar ? 'Загрузка...' : 'Загрузить'}</span>
                 </button>
               </div>
             </div>
