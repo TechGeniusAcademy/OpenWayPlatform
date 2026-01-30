@@ -282,11 +282,18 @@ router.post('/:chatId/messages', authenticate, upload.single('file'), async (req
     // Если есть файл, создаем сообщение с файлом
     if (file) {
       const filePath = `/uploads/chat-files/${file.filename}`;
+      
+      // Определяем тип: используем переданный или определяем по MIME
+      let fileMessageType = messageType || 'file';
+      if (!messageType && file.mimetype.startsWith('image/')) {
+        fileMessageType = 'image';
+      }
+      
       const message = await Message.create({
         chatId,
         senderId: req.user.id,
         content: file.originalname,
-        messageType: 'file',
+        messageType: fileMessageType,
         filePath,
         fileName: file.originalname,
         fileSize: file.size

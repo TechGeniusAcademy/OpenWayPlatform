@@ -18,7 +18,7 @@ import {
   Search
 } from '@chatscope/chat-ui-kit-react';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
-import './Chat.css';
+import styles from './Chat.module.css';
 import { 
   IoChatbubblesOutline, 
   IoPeopleOutline, 
@@ -49,32 +49,186 @@ function Chat() {
   // Refs
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-  const socket = getSocket();
+  const activeChatRef = useRef(null);
+  const socketRef = useRef(null);
+  const processedIds = useRef(new Set());
+  const fileInputRef = useRef(null);
+  
+  // File upload state
+  const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
+  // WebSocket handlers
+  const onNewMessage = (message) => {
+    console.log('WebSocket: new message received', message);
+    
+    // Проверяем, не обработано ли уже это сообщение
+    if (processedIds.current.has(message.id)) return;
+    processedIds.current.add(message.id);
+    
+    const currentChatId = activeChatRef.current?.id;
+    
+    if (currentChatId && message.chat_id === currentChatId) {
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, transformMessage(message)];
+      });
+      markAsRead(message.chat_id);
+    }
     loadChats();
-    loadUsers();
-    setupWebSocket();
+  };
+
+  const onChatNotification = (message) => {
+    console.log('WebSocket: chat notification', message);
+    loadChats();
+  };
+
+  const onUserOnline = (data) => {
+    setOnlineUsers(prev => new Set([...prev, data.userId]));
+    setChats(prev => prev.map(c => ({
+      ...c,
+      isOnline: c.chat_type === 'private' && c.otherUserId === data.userId
+    })));
+    setUsers(prev => prev.map(u => ({
+      ...u,
+      isOnline: u.id === data.userId
+    })));
+  };
+
+  const onUserOffline = (data) => {
+    setOnlineUsers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(data.userId);
+      return newSet;
+    });
+    setChats(prev => prev.map(c => ({
+      ...c,
+      isOnline: c.chat_type === 'private' && c.otherUserId === data.userId ? false : c.isOnline
+    })));
+    setUsers(prev => prev.map(u => ({
+      ...u,
+      isOnline: u.id === data.userId ? false : u.isOnline
+    })));
+  };
+
+  // Инициализация
+  useEffect(() => {
+    const init = async () => {
+      await Promise.all([
+        loadChats(),
+        loadUsers()
+      ]);
+      
+      setLoading(false);
+    };
+
+    init();
+  }, []);
+
+  // WebSocket подключение - отдельный эффект с повторными попытками
+  useEffect(() => {
+    let retryInterval = null;
+    let mounted = true;
+    
+    const setupSocket = () => {
+      const socket = getSocket();
+      
+      if (!socket) {
+        console.log('Chat: Socket not available yet, retrying...');
+        return false;
+      }
+      
+      console.log('Chat: Setting up WebSocket listeners, socket connected:', socket.connected);
+      socketRef.current = socket;
+      
+      // Подписываемся на события
+      socket.on('new-message', onNewMessage);
+      socket.on('chat-message-notification', onChatNotification);
+      socket.on('user-online', onUserOnline);
+      socket.on('user-offline', onUserOffline);
+      
+      // Если сокет уже подключен и есть активный чат, присоединяемся к комнате
+      if (socket.connected && activeChatRef.current) {
+        console.log('Chat: Socket ready, joining chat room', activeChatRef.current.id);
+        socket.emit('join-chat', activeChatRef.current.id);
+      }
+      
+      console.log('Chat: Socket setup complete, id:', socket.id);
+      return true;
+    };
+    
+    // Пробуем сразу
+    if (!setupSocket()) {
+      // Если не получилось, пробуем каждые 500ms
+      retryInterval = setInterval(() => {
+        if (mounted && setupSocket()) {
+          clearInterval(retryInterval);
+        }
+      }, 500);
+    }
 
     return () => {
+      mounted = false;
+      if (retryInterval) {
+        clearInterval(retryInterval);
+      }
+      const socket = socketRef.current;
       if (socket) {
-        socket.off('chat:message');
-        socket.off('chat:user-online');
-        socket.off('chat:user-offline');
-        socket.off('chat:typing');
-        socket.off('chat:message-edited');
-        socket.off('chat:message-deleted');
-        socket.off('chat:reaction-added');
+        console.log('Chat: Cleaning up WebSocket listeners');
+        socket.off('new-message', onNewMessage);
+        socket.off('chat-message-notification', onChatNotification);
+        socket.off('user-online', onUserOnline);
+        socket.off('user-offline', onUserOffline);
       }
     };
   }, []);
 
+  // При смене активного чата
   useEffect(() => {
     if (activeChat) {
+      // Покидаем предыдущую комнату
+      if (activeChatRef.current && socketRef.current) {
+        console.log('Chat: Leaving chat room', activeChatRef.current.id);
+        socketRef.current.emit('leave-chat', activeChatRef.current.id);
+      }
+      
+      // Обновляем ref
+      activeChatRef.current = activeChat;
+      
+      // Присоединяемся к новой комнате
+      if (socketRef.current?.connected) {
+        console.log('Chat: Joining chat room', activeChat.id);
+        socketRef.current.emit('join-chat', activeChat.id);
+      } else {
+        console.log('Chat: Cannot join yet - socket not ready, will retry');
+        // Повторная попытка через 1 сек если сокет появится
+        setTimeout(() => {
+          if (socketRef.current?.connected && activeChatRef.current?.id === activeChat.id) {
+            console.log('Chat: Retry joining chat room', activeChat.id);
+            socketRef.current.emit('join-chat', activeChat.id);
+          }
+        }, 1000);
+      }
+      
+      // Очищаем обработанные ID и загружаем сообщения
+      processedIds.current.clear();
       loadMessages(activeChat.id);
       markAsRead(activeChat.id);
     }
   }, [activeChat]);
+
+  // Привязка обработчика к кнопке прикрепления файлов
+  useEffect(() => {
+    const attachButton = document.querySelector('.cs-button--attachment');
+    if (attachButton) {
+      const handleClick = () => {
+        console.log('Attachment button clicked via DOM!');
+        fileInputRef.current?.click();
+      };
+      attachButton.addEventListener('click', handleClick);
+      return () => attachButton.removeEventListener('click', handleClick);
+    }
+  }, [activeChat]); // Перепривязываем при смене чата
 
   // Авто-прокрутка к последнему сообщению
   useEffect(() => {
@@ -84,94 +238,6 @@ function Chat() {
       }, 100);
     }
   }, [messages]);
-
-  const setupWebSocket = () => {
-    if (!socket) return;
-
-    socket.on('chat:message', (data) => {
-      if (activeChat && data.chatId === activeChat.id) {
-        setMessages(prev => {
-          const exists = prev.some(m => m.id === data.message.id);
-          if (exists) return prev;
-          return [...prev, transformMessage(data.message)];
-        });
-        markAsRead(data.chatId);
-      }
-      loadChats(); // Обновить список чатов
-    });
-
-    socket.on('chat:user-online', (data) => {
-      setOnlineUsers(prev => new Set([...prev, data.userId]));
-      // Обновляем статусы в списках
-      setChats(prev => prev.map(c => ({
-        ...c,
-        isOnline: c.chat_type === 'private' && c.otherUserId === data.userId
-      })));
-      setUsers(prev => prev.map(u => ({
-        ...u,
-        isOnline: u.id === data.userId
-      })));
-    });
-
-    socket.on('chat:user-offline', (data) => {
-      setOnlineUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(data.userId);
-        return newSet;
-      });
-      // Обновляем статусы в списках
-      setChats(prev => prev.map(c => ({
-        ...c,
-        isOnline: c.chat_type === 'private' && c.otherUserId === data.userId ? false : c.isOnline
-      })));
-      setUsers(prev => prev.map(u => ({
-        ...u,
-        isOnline: u.id === data.userId ? false : u.isOnline
-      })));
-    });
-
-    socket.on('chat:typing', (data) => {
-      if (activeChat && data.chatId === activeChat.id) {
-        setTypingUsers(prev => ({
-          ...prev,
-          [data.userId]: data.userName
-        }));
-        
-        setTimeout(() => {
-          setTypingUsers(prev => {
-            const { [data.userId]: _, ...rest } = prev;
-            return rest;
-          });
-        }, 3000);
-      }
-    });
-
-    socket.on('chat:message-edited', (data) => {
-      if (activeChat && data.chatId === activeChat.id) {
-        setMessages(prev => prev.map(m => 
-          m.id === data.messageId 
-            ? { ...m, message: data.content, isEdited: true }
-            : m
-        ));
-      }
-    });
-
-    socket.on('chat:message-deleted', (data) => {
-      if (activeChat && data.chatId === activeChat.id) {
-        setMessages(prev => prev.filter(m => m.id !== data.messageId));
-      }
-    });
-
-    socket.on('chat:reaction-added', (data) => {
-      if (activeChat && data.chatId === activeChat.id) {
-        setMessages(prev => prev.map(m => 
-          m.id === data.messageId
-            ? { ...m, reactions: data.reactions }
-            : m
-        ));
-      }
-    });
-  };
 
   const loadChats = async () => {
     try {
@@ -238,7 +304,7 @@ function Chat() {
   const transformMessage = (msg) => ({
     id: msg.id,
     message: msg.content,
-    sentTime: formatTime(msg.created_at),
+    sentTime: msg.created_at,
     sender: msg.sender_name,
     senderId: msg.sender_id,
     direction: msg.sender_id === user.id ? 'outgoing' : 'incoming',
@@ -280,20 +346,74 @@ function Chat() {
     }
   };
 
+  // Открытие диалога выбора файла
+  const handleAttachClick = () => {
+    console.log('Attach button clicked!');
+    console.log('fileInputRef:', fileInputRef.current);
+    fileInputRef.current?.click();
+  };
+
+  // Обработка выбора файла
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeChat) return;
+
+    // Сбрасываем input для возможности повторного выбора того же файла
+    e.target.value = '';
+
+    // Проверка размера (100MB)
+    if (file.size > 100 * 1024 * 1024) {
+      alert('Файл слишком большой. Максимальный размер: 100MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Определяем тип сообщения по типу файла
+      const isImage = file.type.startsWith('image/');
+      formData.append('messageType', isImage ? 'image' : 'file');
+
+      const response = await api.post(`/chat/${activeChat.id}/messages`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Добавляем сообщение в локальный state
+      if (response.data && response.data.message) {
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === response.data.message.id);
+          if (exists) return prev;
+          return [...prev, transformMessage(response.data.message)];
+        });
+      }
+
+      loadUnreadCount();
+    } catch (error) {
+      console.error('Ошибка загрузки файла:', error);
+      alert('Не удалось загрузить файл');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleTyping = () => {
+    const socket = socketRef.current;
     if (!socket || !activeChat) return;
 
-    socket.emit('chat:typing', {
+    socket.emit('typing-start', {
       chatId: activeChat.id,
-      userId: user.id,
       userName: user.full_name
     });
 
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('chat:stop-typing', {
-        chatId: activeChat.id,
-        userId: user.id
+      socket.emit('typing-stop', {
+        chatId: activeChat.id
       });
     }, 1000);
   };
@@ -327,7 +447,11 @@ function Chat() {
   };
 
   const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
+    
     const now = new Date();
     const diff = now - date;
 
@@ -391,33 +515,33 @@ function Chat() {
 
   if (loading) {
     return (
-      <div className="chat-loading">
-        <div className="chat-loading-spinner"></div>
+      <div className={styles.loading}>
+        <div className={styles.loadingSpinner}></div>
         <span>Загрузка чатов...</span>
       </div>
     );
   }
 
   return (
-    <div className="modern-chat-container">
+    <div className={styles.container}>
       <MainContainer responsive>
         <Sidebar position="left" scrollable={false}>
-          <div className="chat-tabs">
+          <div className={styles.tabs}>
             <button 
-              className={`chat-tab ${activeTab === 'chats' ? 'active' : ''}`}
+              className={`${styles.tab} ${activeTab === 'chats' ? styles.tabActive : ''}`}
               onClick={() => setActiveTab('chats')}
             >
-              <IoChatbubblesOutline className="tab-icon" />
+              <IoChatbubblesOutline className={styles.tabIcon} />
               <span>Чаты</span>
-              {chats.length > 0 && <span className="tab-count">{chats.length}</span>}
+              {chats.length > 0 && <span className={styles.tabCount}>{chats.length}</span>}
             </button>
             <button 
-              className={`chat-tab ${activeTab === 'users' ? 'active' : ''}`}
+              className={`${styles.tab} ${activeTab === 'users' ? styles.tabActive : ''}`}
               onClick={() => setActiveTab('users')}
             >
-              <IoPeopleOutline className="tab-icon" />
+              <IoPeopleOutline className={styles.tabIcon} />
               <span>Пользователи</span>
-              {users.length > 0 && <span className="tab-count">{users.length}</span>}
+              {users.length > 0 && <span className={styles.tabCount}>{users.length}</span>}
             </button>
           </div>
           <Search 
@@ -475,87 +599,106 @@ function Chat() {
               )}
             >
               {messages.map((msg, index) => {
-                const showDate = index === 0 || 
-                  new Date(messages[index - 1].sentTime).toDateString() !== 
-                  new Date(msg.sentTime).toDateString();
+                const currentDate = msg.sentTime ? new Date(msg.sentTime) : null;
+                const prevDate = index > 0 && messages[index - 1].sentTime 
+                  ? new Date(messages[index - 1].sentTime) 
+                  : null;
+                
+                const today = new Date();
+                const isToday = currentDate && 
+                  currentDate.toDateString() === today.toDateString();
+                
+                const showDate = currentDate && (
+                  index === 0 || 
+                  !prevDate || 
+                  prevDate.toDateString() !== currentDate.toDateString()
+                );
+
+                const timeStr = currentDate && !isNaN(currentDate.getTime())
+                  ? currentDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                  : '';
 
                 return (
                   <div key={msg.id}>
-                    {showDate && (
+                    {showDate && currentDate && !isNaN(currentDate.getTime()) && (
                       <MessageSeparator>
-                        {new Date(msg.sentTime).toLocaleDateString('ru-RU', {
+                        {isToday ? 'Сегодня' : currentDate.toLocaleDateString('ru-RU', {
                           day: 'numeric',
-                          month: 'long'
+                          month: 'long',
+                          year: currentDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
                         })}
                       </MessageSeparator>
                     )}
-                    <Message model={msg}>
-                      {msg.direction === 'incoming' && (
-                        <Avatar src={msg.avatarSrc} name={msg.sender} />
-                      )}
-                      {msg.type === 'custom' && msg.messageType === 'code' && (
-                        <Message.CustomContent>
-                          <div className="code-message">
-                            <div className="code-header">
-                              <span className="code-language">{msg.codeLanguage}</span>
-                            </div>
-                            <pre><code>{msg.message}</code></pre>
-                          </div>
-                        </Message.CustomContent>
-                      )}
-                      {msg.messageType === 'file' && (
-                        <Message.CustomContent>
-                          <div className="file-message">
-                            <div className="file-icon-wrapper">
-                              <BsFileEarmarkText className="file-icon" />
-                            </div>
-                            <div className="file-info">
-                              <div className="file-name">{msg.fileName}</div>
-                              <div className="file-size">
-                                {(msg.fileSize / 1024).toFixed(2)} KB
+                    <div className={styles.messageWrapper}>
+                      <Message model={msg}>
+                        {msg.direction === 'incoming' && (
+                          <Avatar src={msg.avatarSrc} name={msg.sender} />
+                        )}
+                        {msg.type === 'custom' && msg.messageType === 'code' && (
+                          <Message.CustomContent>
+                            <div className={styles.codeMessage}>
+                              <div className={styles.codeHeader}>
+                                <span className={styles.codeLanguage}>{msg.codeLanguage}</span>
                               </div>
+                              <pre><code>{msg.message}</code></pre>
                             </div>
-                            <a
-                              href={`${BASE_URL}/api/chat/files/${msg.filePath}`}
-                              download={msg.fileName}
-                              className="file-download"
-                            >
-                              <IoDownloadOutline />
-                              <span>Скачать</span>
-                            </a>
-                          </div>
-                        </Message.CustomContent>
-                      )}
-                      {msg.messageType === 'image' && (
-                        <Message.ImageContent
-                          src={`${BASE_URL}/api/chat/files/${msg.filePath}`}
-                          alt={msg.fileName}
-                          width={300}
-                        />
-                      )}
-                      {msg.isEdited && (
+                          </Message.CustomContent>
+                        )}
+                        {msg.messageType === 'file' && (
+                          <Message.CustomContent>
+                            <div className={styles.fileMessage}>
+                              <div className={styles.fileIconWrapper}>
+                                <BsFileEarmarkText className={styles.fileIcon} />
+                              </div>
+                              <div className={styles.fileInfo}>
+                                <div className={styles.fileName}>{msg.fileName}</div>
+                                <div className={styles.fileSize}>
+                                  {(msg.fileSize / 1024).toFixed(2)} KB
+                                </div>
+                              </div>
+                              <a
+                                href={`${BASE_URL}/api/chat/files/${msg.filePath}`}
+                                download={msg.fileName}
+                                className={styles.fileDownload}
+                              >
+                                <IoDownloadOutline />
+                                <span>Скачать</span>
+                              </a>
+                            </div>
+                          </Message.CustomContent>
+                        )}
+                        {msg.messageType === 'image' && (
+                          <Message.ImageContent
+                            src={`${BASE_URL}/api/chat/files/${msg.filePath}`}
+                            alt={msg.fileName}
+                            width={300}
+                          />
+                        )}
                         <Message.Footer>
-                          <span className="edited-label">изменено</span>
+                          <span className={styles.messageTime}>{timeStr}</span>
+                          {msg.isEdited && <span className={styles.editedLabel}>изм.</span>}
                         </Message.Footer>
-                      )}
-                    </Message>
+                      </Message>
+                    </div>
                   </div>
                 );
               })}
               <div ref={messagesEndRef} />
             </MessageList>
             <MessageInput
-              placeholder="Введите сообщение..."
+              placeholder={uploading ? "Загрузка файла..." : "Введите сообщение..."}
               onSend={handleSendMessage}
               onChange={handleTyping}
+              onAttachClick={handleAttachClick}
               attachButton={true}
               sendButton={true}
+              disabled={uploading}
             />
           </ChatContainer>
         ) : (
-          <div className="no-chat-selected">
-            <div className="no-chat-content">
-              <div className="no-chat-icon">
+          <div className={styles.noChat}>
+            <div className={styles.noChatContent}>
+              <div className={styles.noChatIcon}>
                 <BsChatDots />
               </div>
               <h3>Выберите чат</h3>
@@ -564,6 +707,15 @@ function Chat() {
           </div>
         )}
       </MainContainer>
+      
+      {/* Скрытый input для загрузки файлов - вынесен за пределы условия */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z"
+      />
     </div>
   );
 }
