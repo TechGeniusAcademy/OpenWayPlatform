@@ -114,7 +114,9 @@ export function NotificationProvider({ children }) {
   const loadUnreadCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const baseUrl = `http://${window.location.hostname}:5000`;
+      const baseUrl = import.meta.env.VITE_API_URL 
+        ? import.meta.env.VITE_API_URL.replace('/api', '')
+        : `${window.location.protocol}//${window.location.hostname}:5000`;
       
       const response = await fetch(`${baseUrl}/api/chat/unread-count`, {
         headers: {

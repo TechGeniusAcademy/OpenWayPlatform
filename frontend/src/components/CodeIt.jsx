@@ -854,7 +854,9 @@ function CodeIt() {
     
     const token = localStorage.getItem('token');
     // Get socket URL without /api path - just host:port
-    const socketUrl = `http://${window.location.hostname}:5000`;
+    const socketUrl = import.meta.env.VITE_WS_URL 
+      || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : null)
+      || `${window.location.protocol}//${window.location.hostname}:5000`;
     
     console.log('[FPS] Attempting to connect to:', `${socketUrl}/codeit-fps`);
     

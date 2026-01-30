@@ -6,7 +6,14 @@ const WebSocketContext = createContext();
 
 // Динамическое определение SOCKET_URL на основе текущего хоста
 const getSocketUrl = () => {
-  return `http://${window.location.hostname}:5000`;
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace('/api', '');
+  }
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  return `${protocol}//${window.location.hostname}:5000`;
 };
 
 const SOCKET_URL = getSocketUrl();

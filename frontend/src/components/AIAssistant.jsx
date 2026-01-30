@@ -16,7 +16,7 @@ import { HiLightningBolt } from 'react-icons/hi';
 import styles from './AIAssistant.module.css';
 
 // Динамическое определение API URL на основе текущего хоста
-const API_URL = `http://${window.location.hostname}:5000/api`;
+const API_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 // Предложенные промпты
 const SUGGESTED_PROMPTS = [
