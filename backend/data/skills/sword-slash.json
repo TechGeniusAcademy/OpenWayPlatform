@@ -1,0 +1,54 @@
+{
+  "id": "sword_slash",
+  "name": "Sword Slash",
+  "description": "Passive AoE damage around your melee attacks. Each level increases splash damage and radius.",
+  "icon": "181_skill sword slash.png",
+  "type": "passive",
+  "category": "sword",
+  "maxLevel": 7,
+  "requires": [],
+  "levels": {
+    "1": {
+      "splashDamagePercent": 25,
+      "splashRadius": 1.5,
+      "requiredLevel": 1,
+      "description": "Deals 25% weapon damage to enemies within 1.5 tiles"
+    },
+    "2": {
+      "splashDamagePercent": 35,
+      "splashRadius": 1.8,
+      "requiredLevel": 5,
+      "description": "Deals 35% weapon damage to enemies within 1.8 tiles"
+    },
+    "3": {
+      "splashDamagePercent": 45,
+      "splashRadius": 2.0,
+      "requiredLevel": 10,
+      "description": "Deals 45% weapon damage to enemies within 2.0 tiles"
+    },
+    "4": {
+      "splashDamagePercent": 55,
+      "splashRadius": 2.3,
+      "requiredLevel": 20,
+      "description": "Deals 55% weapon damage to enemies within 2.3 tiles"
+    },
+    "5": {
+      "splashDamagePercent": 70,
+      "splashRadius": 2.5,
+      "requiredLevel": 35,
+      "description": "Deals 70% weapon damage to enemies within 2.5 tiles"
+    },
+    "6": {
+      "splashDamagePercent": 85,
+      "splashRadius": 2.8,
+      "requiredLevel": 50,
+      "description": "Deals 85% weapon damage to enemies within 2.8 tiles"
+    },
+    "7": {
+      "splashDamagePercent": 100,
+      "splashRadius": 3.0,
+      "requiredLevel": 70,
+      "description": "Deals 100% weapon damage to enemies within 3.0 tiles"
+    }
+  }
+}

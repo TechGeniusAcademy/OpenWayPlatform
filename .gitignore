@@ -48,3 +48,8 @@ Thumbs.db
 *.tmp
 *.temp
 asdasd.txt
+db_export.sql
+db_backup.dump
+backend/uploads/videos/*
+*.mov
+*.mp4

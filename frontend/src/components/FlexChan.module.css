@@ -1,0 +1,555 @@
+.container {
+  width: 100%;
+  height: 100%;
+  min-height: 800px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* Экран выбора уровней */
+.levelSelectArea {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 24px;
+}
+
+.levelHeader {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.headerImage {
+  width: 140px;
+  height: 140px;
+  margin-bottom: 16px;
+}
+
+.levelHeader h1 {
+  font-size: 42px;
+  color: #f59e0b;
+  margin: 0 0 8px 0;
+  text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+}
+
+.levelHeader p {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.levelsGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.levelButton {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.levelButton:hover:not(.locked) {
+  background: rgba(245, 158, 11, 0.3);
+  border-color: #f59e0b;
+  transform: scale(1.05);
+}
+
+.levelButton.locked {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: not-allowed;
+}
+
+.levelButton.completed {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: #22c55e;
+}
+
+.levelNumber {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+}
+
+.lockIcon {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.starIcon {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 14px;
+  color: #fbbf24;
+}
+
+/* Игровое поле */
+.gameArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.gameHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.backButton,
+.resetButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backButton:hover,
+.resetButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.levelInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 28px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  color: #f59e0b;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.difficultyBadge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+}
+
+.progressInfo {
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+}
+
+.levelPoints {
+  font-size: 10px;
+  color: #22c55e;
+  position: absolute;
+  bottom: 4px;
+  font-weight: 600;
+}
+
+/* Состояние загрузки */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: 400px;
+}
+
+.loadingState p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 18px;
+}
+
+.loadingImage {
+  width: 120px;
+  height: 120px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+}
+
+/* Заработанные баллы */
+.earnedPoints {
+  font-size: 32px;
+  font-weight: 800;
+  color: #22c55e;
+  margin: 10px 0;
+  text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+  animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.levelTitle {
+  text-align: center;
+  color: white;
+}
+
+.levelTitle h2 {
+  font-size: 24px;
+  margin: 0 0 6px 0;
+  color: #f59e0b;
+}
+
+.levelTitle p {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.gameContent {
+  display: flex;
+  gap: 30px;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.gridContainer {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 
+    0 0 30px rgba(245, 158, 11, 0.2),
+    inset 0 0 40px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.grid {
+  display: grid;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  width: 550px;
+  height: 550px;
+}
+
+.cell {
+  background: rgba(30, 41, 59, 0.8);
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.targetCell {
+  background: rgba(245, 158, 11, 0.3);
+  box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.targetCell::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px dashed rgba(245, 158, 11, 0.6);
+  border-radius: 4px;
+}
+
+.itemImage {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+/* Панель с кодом */
+.codePanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 380px;
+  max-width: 450px;
+}
+
+.codeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px 10px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+}
+
+.codeHeader span {
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.hint {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+}
+
+/* Защищённый редактор кода */
+.protectedEditor {
+  width: 100%;
+  min-height: 320px;
+  padding: 18px;
+  background: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 10px 10px;
+  color: #d4d4d4;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 16px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.staticCode {
+  color: #d4d4d4;
+  user-select: none;
+}
+
+.editableInput {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px dashed rgba(245, 158, 11, 0.5);
+  border-radius: 4px;
+  color: #4fc3f7;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 16px;
+  padding: 4px 8px;
+  min-width: 200px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.editableInput:focus {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.2);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.editableInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editableInput::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.codeEditor {
+  width: 100%;
+  min-height: 320px;
+  padding: 18px;
+  background: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 10px 10px;
+  color: #d4d4d4;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 16px;
+  line-height: 1.8;
+  resize: none;
+  outline: none;
+}
+
+.codeEditor:focus {
+  border-color: #f59e0b;
+}
+
+.codeEditor:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Результат */
+.resultOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.resultModal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 50px;
+  text-align: center;
+  max-width: 450px;
+}
+
+.resultImage {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 24px;
+}
+
+.resultModal h2 {
+  color: white;
+  font-size: 32px;
+  margin: 0 0 12px 0;
+}
+
+.resultModal p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 18px;
+  margin: 0 0 28px 0;
+}
+
+.resultButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.resultButtons button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.resultButtons button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.nextButton {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  border: none !important;
+}
+
+.nextButton:hover {
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .gameContent {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .grid {
+    width: 450px;
+    height: 450px;
+  }
+  
+  .codePanel {
+    width: 100%;
+    max-width: 550px;
+  }
+}
+
+@media (max-width: 600px) {
+  .levelsGrid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  
+  .grid {
+    width: 320px;
+    height: 320px;
+  }
+  
+  .levelHeader h1 {
+    font-size: 28px;
+  }
+  
+  .gameHeader {
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .editableInput {
+    min-width: 150px;
+    font-size: 14px;
+  }
+  
+  .protectedEditor {
+    font-size: 14px;
+    padding: 12px;
+  }
+}

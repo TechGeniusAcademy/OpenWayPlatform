@@ -27,10 +27,14 @@ import aiRoutes from './routes/ai.js';
 import chessRoutes from './routes/chess.js';
 import testingRoutes from './routes/testing.js';
 import quizBattleRoutes from './routes/quiz-battle.js';
-import crashRoutes from './routes/crash.js';
 import rouletteRoutes from './routes/roulette.js';
 import technicalSpecsRoutes from './routes/technical-specs.js';
 import designProjectsRoutes from './routes/design-projects.js';
+import coursesRoutes from './routes/courses.js';
+import flexchanRoutes from './routes/flexchan.js';
+import codeitFpsRoutes, { setupFpsSocket } from './routes/codeit-fps.js';
+import layoutGameRoutes from './routes/layout-game.js';
+import jsGameRoutes from './routes/js-game.js';
 
 dotenv.config();
 
@@ -57,11 +61,15 @@ const io = new Server(httpServer, {
 });
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0'; // Слушаем все интерфейсы
 
 // Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: corsOrigin,
+  credentials: true
+}));
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/shop', express.static(path.join(__dirname, 'uploads', 'shop')));
 
@@ -90,15 +98,20 @@ app.use('/api/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/updates', updatesRoutes);
 app.use('/api/admin/updates', adminUpdatesRoutes);
 app.use('/api/projects', projectsRoutes);
+app.use('/api/projects-pg', projectsRoutes);
 app.use('/api/submissions', submissionsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/chess', chessRoutes);
 app.use('/api/testing', testingRoutes);
 app.use('/api/quiz-battle', quizBattleRoutes);
-app.use('/api/crash', crashRoutes);
 app.use('/api/roulette', rouletteRoutes);
+app.use('/api/flexchan', flexchanRoutes);
+app.use('/api/codeit-fps', codeitFpsRoutes);
 app.use('/api/technical-specs', technicalSpecsRoutes);
 app.use('/api/design-projects', designProjectsRoutes);
+app.use('/api/courses', coursesRoutes);
+app.use('/api/layout-game', layoutGameRoutes);
+app.use('/api/js-game', jsGameRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
@@ -369,215 +382,7 @@ io.on('connection', (socket) => {
 });
 
 // ========================================
-// CRASH GAME WEBSOCKET LOGIC
-// ========================================
-import CrashGame from './models/CrashGame.js';
 
-let currentCrashGame = null;
-let crashGameInterval = null;
-
-// Функция создания новой игры
-async function createNewCrashGame() {
-  try {
-    const crashPoint = CrashGame.generateFairCrashPoint();
-    currentCrashGame = await CrashGame.createGame(crashPoint);
-    
-    console.log(`🎰 Новая Crash игра создана: ID ${currentCrashGame.id}, crash point: ${crashPoint}x`);
-    
-    // Уведомить всех о новой игре
-    io.to('crash-room').emit('crash:new-game', {
-      gameId: currentCrashGame.id,
-      status: 'waiting'
-    });
-    
-    // Через 10 секунд начать игру
-    setTimeout(() => startCrashGame(), 10000);
-    
-  } catch (error) {
-    console.error('Ошибка создания Crash игры:', error);
-  }
-}
-
-// Функция старта игры
-async function startCrashGame() {
-  try {
-    if (!currentCrashGame) return;
-    
-    // Обновить статус на running
-    await CrashGame.startGame(currentCrashGame.id);
-    currentCrashGame.status = 'running';
-    
-    console.log(`🚀 Crash игра ${currentCrashGame.id} началась!`);
-    
-    // Уведомить всех о старте
-    io.to('crash-room').emit('crash:game-started', {
-      gameId: currentCrashGame.id
-    });
-    
-    // Начать обновление множителя
-    let multiplier = 1.00;
-    const crashPoint = currentCrashGame.crash_point;
-    
-    crashGameInterval = setInterval(async () => {
-      if (multiplier >= crashPoint) {
-        // КРАШ!
-        await crashGameNow();
-        clearInterval(crashGameInterval);
-        return;
-      }
-      
-      // Увеличиваем множитель
-      multiplier += 0.01;
-      
-      // Обновляем в базе
-      await CrashGame.updateMultiplier(currentCrashGame.id, multiplier);
-      
-      // Отправляем обновление клиентам
-      io.to('crash-room').emit('crash:multiplier-update', {
-        gameId: currentCrashGame.id,
-        multiplier: parseFloat(multiplier.toFixed(2))
-      });
-      
-    }, 100); // Обновление каждые 100ms
-    
-  } catch (error) {
-    console.error('Ошибка старта Crash игры:', error);
-  }
-}
-
-// Функция краша
-async function crashGameNow() {
-  try {
-    if (!currentCrashGame) return;
-    
-    // Обновить статус на crashed
-    await CrashGame.crashGame(currentCrashGame.id);
-    
-    console.log(`💥 Crash! Игра ${currentCrashGame.id} упала на ${currentCrashGame.crash_point}x`);
-    
-    // Сохранить в историю
-    await CrashGame.saveToHistory(currentCrashGame.id);
-    
-    // Уведомить всех о краше
-    io.to('crash-room').emit('crash:game-crashed', {
-      gameId: currentCrashGame.id,
-      crashPoint: currentCrashGame.crash_point
-    });
-    
-    // Через 5 секунд создать новую игру
-    setTimeout(() => {
-      currentCrashGame = null;
-      createNewCrashGame();
-    }, 5000);
-    
-  } catch (error) {
-    console.error('Ошибка краша игры:', error);
-  }
-}
-
-// Crash WebSocket обработчики
-io.on('connection', (socket) => {
-  
-  // Присоединиться к Crash комнате
-  socket.on('crash:join', async () => {
-    socket.join('crash-room');
-    console.log(`🎰 Пользователь ${socket.userId} присоединился к Crash комнате`);
-    
-    // Отправить текущее состояние игры
-    if (currentCrashGame) {
-      socket.emit('crash:current-game', {
-        game: currentCrashGame,
-        bets: await CrashGame.getGameBets(currentCrashGame.id)
-      });
-    } else {
-      socket.emit('crash:no-game');
-    }
-  });
-  
-  // Покинуть Crash комнату
-  socket.on('crash:leave', () => {
-    socket.leave('crash-room');
-    console.log(`🎰 Пользователь ${socket.userId} покинул Crash комнату`);
-  });
-  
-  // Разместить ставку через WebSocket
-  socket.on('crash:place-bet', async (data) => {
-    try {
-      const { betAmount } = data;
-      
-      console.log(`[CRASH] Place bet request from socket ${socket.id}, userId: ${socket.userId}`);
-      
-      if (!socket.userId) {
-        socket.emit('crash:bet-error', { error: 'Пользователь не авторизован. Перезагрузите страницу.' });
-        return;
-      }
-      
-      if (!currentCrashGame || currentCrashGame.status !== 'waiting') {
-        socket.emit('crash:bet-error', { error: 'Нет доступной игры для ставок' });
-        return;
-      }
-      
-      // Разместить ставку
-      const bet = await CrashGame.placeBet(currentCrashGame.id, socket.userId, betAmount);
-      
-      // Уведомить игрока
-      socket.emit('crash:bet-placed', { bet });
-      
-      // Уведомить всех о новой ставке
-      const bets = await CrashGame.getGameBets(currentCrashGame.id);
-      io.to('crash-room').emit('crash:bets-update', { bets });
-      
-      console.log(`💰 Ставка ${betAmount} от пользователя ${socket.userId} в игре ${currentCrashGame.id}`);
-      
-    } catch (error) {
-      console.error('Ошибка размещения ставки:', error);
-      socket.emit('crash:bet-error', { error: error.message });
-    }
-  });
-  
-  // Кешаут через WebSocket
-  socket.on('crash:cashout', async (data) => {
-    try {
-      const { betId } = data;
-      
-      if (!currentCrashGame || currentCrashGame.status !== 'running') {
-        socket.emit('crash:cashout-error', { error: 'Игра не активна' });
-        return;
-      }
-      
-      const multiplier = currentCrashGame.current_multiplier;
-      
-      // Кешаут
-      const result = await CrashGame.cashout(betId, socket.userId, multiplier);
-      
-      // Уведомить игрока
-      socket.emit('crash:cashout-success', { 
-        betId, 
-        multiplier, 
-        winAmount: result.winAmount 
-      });
-      
-      // Уведомить всех об обновлении ставок
-      const bets = await CrashGame.getGameBets(currentCrashGame.id);
-      io.to('crash-room').emit('crash:bets-update', { bets });
-      
-      console.log(`💸 Кешаут на ${multiplier}x от пользователя ${socket.userId}, выигрыш: ${result.winAmount}`);
-      
-    } catch (error) {
-      console.error('Ошибка кешаута:', error);
-      socket.emit('crash:cashout-error', { error: error.message });
-    }
-  });
-});
-
-// Создать первую игру при запуске
-setTimeout(() => {
-  createNewCrashGame();
-}, 2000);
-
-// ========================================
-// END OF CRASH GAME LOGIC
-// ========================================
 
 // ========================================
 // ROULETTE GAME LOGIC
@@ -726,11 +531,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Создать первую игру рулетки при запуске
-setTimeout(() => {
-  createNewRouletteGame();
-}, 3000);
-
 // ========================================
 // END OF ROULETTE GAME LOGIC
 // ========================================
@@ -741,8 +541,12 @@ const startServer = async () => {
     // Инициализация PostgreSQL базы данных
     await initDatabase();
     
-    httpServer.listen(PORT, () => {
-      console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
+    // Setup CodeIt FPS socket handlers
+    setupFpsSocket(io);
+    
+    httpServer.listen(PORT, HOST, () => {
+      console.log(`🚀 Сервер запущен на http://${HOST}:${PORT}`);
+      console.log(`🌐 Публичный доступ: http://2.74.192.182:${PORT}`);
       console.log(`📊 PostgreSQL база данных подключена`);
       console.log(`💬 WebSocket сервер готов`);
     });

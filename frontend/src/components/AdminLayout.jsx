@@ -6,7 +6,7 @@ import { AiOutlineUser, AiOutlineMessage, AiOutlineMenu, AiOutlineClose, AiOutli
 import { HiUserGroup } from "react-icons/hi";
 import { MdOutlineMapsHomeWork } from "react-icons/md";
 import { CiShop } from "react-icons/ci";
-import { FaTrophy } from "react-icons/fa";
+import { FaTrophy, FaGraduationCap, FaCode, FaJs } from "react-icons/fa";
 import { BsKeyboard } from "react-icons/bs";
 import { FaRegNoteSticky, FaQuestion } from "react-icons/fa6";
 import { LuBookOpenText } from "react-icons/lu";
@@ -43,6 +43,7 @@ function AdminLayout({ children }) {
     {
       title: 'Обучение',
       items: [
+        { to: '/admin/courses', icon: <FaGraduationCap />, text: 'Курсы' },
         { to: '/admin/tests', icon: <FaRegNoteSticky />, text: 'Тесты' },
         { to: '/admin/homeworks', icon: <MdOutlineMapsHomeWork />, text: 'Домашние задания' },
         { to: '/admin/submissions', icon: <AiOutlineSend />, text: 'Проверка проектов' },
@@ -55,6 +56,9 @@ function AdminLayout({ children }) {
         { to: '/admin/typing', icon: <BsKeyboard />, text: 'Клавиатура' },
         { to: '/admin/game', icon: <FaQuestion />, text: 'Викторина' },
         { to: '/admin/games', icon: <IoGameControllerOutline />, text: 'Игры' },
+        { to: '/admin/flexchan', icon: <IoGameControllerOutline />, text: 'FlexChan' },
+        { to: '/admin/layout-game', icon: <FaCode />, text: 'Верстка' },
+        { to: '/admin/js-game', icon: <FaJs />, text: 'JavaScript' },
       ]
     },
     {

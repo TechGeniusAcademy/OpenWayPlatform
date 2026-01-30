@@ -1,0 +1,345 @@
+.modern-chat-container {
+  width: 100%;
+  height: calc(100vh - 80px);
+  background: #f5f5f5;
+  overflow: hidden;
+}
+
+.chat-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #666;
+}
+
+.chat-tabs {
+  display: flex;
+  background: #ffffff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 8px;
+  gap: 8px;
+}
+
+.chat-tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chat-tab:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.chat-tab.active {
+  background: #2196f3;
+  color: white;
+}
+
+.empty-list {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+}
+
+.empty-list p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.no-chat-selected {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: #ffffff;
+}
+
+.no-chat-content {
+  text-align: center;
+  color: #999;
+}
+
+.no-chat-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.no-chat-content h3 {
+  font-size: 24px;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.no-chat-content p {
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Кастомные стили для сообщений */
+.code-message {
+  background: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 500px;
+}
+
+.code-header {
+  background: #2d2d2d;
+  padding: 8px 16px;
+  border-bottom: 1px solid #3d3d3d;
+}
+
+.code-language {
+  color: #61afef;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.code-message pre {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.code-message code {
+  color: #abb2bf;
+  font-family: 'Fira Code', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.file-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  min-width: 280px;
+}
+
+.file-icon {
+  font-size: 32px;
+}
+
+.file-info {
+  flex: 1;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.file-size {
+  font-size: 12px;
+  color: #999;
+}
+
+.file-download {
+  background: #007bff;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.file-download:hover {
+  background: #0056b3;
+}
+
+.edited-label {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+/* Переопределение стилей библиотеки для современного вида */
+.cs-main-container {
+  border-radius: 12px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.cs-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e8e8e8;
+}
+
+.cs-search {
+  padding: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.cs-search__input {
+  border-radius: 20px;
+  background: #f5f5f5;
+  border: none;
+  padding: 10px 16px;
+}
+
+.cs-conversation {
+  transition: background 0.2s;
+}
+
+.cs-conversation:hover {
+  background: #f8f9fa;
+}
+
+.cs-conversation--active {
+  background: #e3f2fd !important;
+  border-left: 3px solid #2196f3;
+}
+
+.cs-avatar {
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cs-avatar--status-available {
+  border-color: #4caf50;
+}
+
+.cs-message {
+  margin-bottom: 12px;
+}
+
+.cs-message__content {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cs-message--outgoing .cs-message__content {
+  background: #2196f3;
+  color: white;
+}
+
+.cs-message-input {
+  background: #ffffff;
+  border-top: 1px solid #e8e8e8;
+  padding: 16px;
+}
+
+.cs-message-input__content-editor {
+  border-radius: 24px;
+  background: #f5f5f5;
+  border: none;
+  padding: 12px 20px;
+}
+
+.cs-message-input__content-editor:focus {
+  background: #ffffff;
+  border: 1px solid #2196f3;
+}
+
+.cs-button--send {
+  background: #2196f3;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
+
+.cs-button--send:hover {
+  background: #1976d2;
+}
+
+.cs-typing-indicator {
+  padding: 8px 16px;
+  color: #666;
+  font-size: 14px;
+}
+
+.cs-message-separator {
+  margin: 24px 0;
+  color: #999;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Скролл */
+.cs-message-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cs-message-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.cs-message-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.cs-message-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .modern-chat-container {
+    height: calc(100vh - 60px);
+  }
+
+  .cs-main-container {
+    border-radius: 0;
+  }
+
+  .code-message {
+    max-width: 100%;
+  }
+
+  .file-message {
+    min-width: auto;
+    flex-wrap: wrap;
+  }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cs-message {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Улучшенный внешний вид счетчиков непрочитанных */
+.cs-conversation__unread-count {
+  background: #f44336;
+  color: white;
+  font-weight: 600;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}

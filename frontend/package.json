@@ -9,14 +9,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chatscope/chat-ui-kit-react": "^2.1.1",
+    "@chatscope/chat-ui-kit-styles": "^1.4.0",
+    "@codesandbox/sandpack-react": "^2.20.0",
     "@monaco-editor/react": "^4.7.0",
+    "@react-three/drei": "^9.92.7",
+    "@react-three/fiber": "^8.15.19",
     "axios": "^1.12.2",
     "chess.js": "^1.4.0",
     "cors": "^2.8.5",
+    "emmet": "^2.4.11",
     "emmet-monaco-es": "^5.4.0",
     "framer-motion": "^12.23.24",
+    "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "multer": "^2.0.2",
+    "prismjs": "^1.30.0",
     "react": "^18.2.0",
     "react-chessboard": "^4.7.1",
     "react-dom": "^18.2.0",
@@ -26,7 +34,8 @@
     "react-syntax-highlighter": "^15.6.6",
     "react-toastify": "^11.0.5",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "three": "^0.158.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

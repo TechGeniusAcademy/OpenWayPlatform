@@ -1,0 +1,427 @@
+.lessonViewer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.lessonHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background: #f8f9fa;
+  border-color: #4F46E5;
+  color: #4F46E5;
+}
+
+.headerActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.completeButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.completeButton:hover:not(:disabled) {
+  background: #218838;
+}
+
+.completeButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.completedBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #d4edda;
+  color: #155724;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.lessonCard {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.lessonInfo {
+  padding: 2rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.lessonTitle {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.lessonMeta {
+  display: flex;
+  gap: 2rem;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.lessonMeta span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lessonMeta svg {
+  color: #4F46E5;
+}
+
+.videoSection {
+  margin-bottom: 2rem;
+}
+
+.videoContainer {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  background: #000;
+  margin-bottom: 1.5rem;
+}
+
+.videoContainer iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.localVideo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.videoPlaceholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.videoPlaceholder svg {
+  font-size: 4rem;
+  color: white;
+  opacity: 0.6;
+}
+
+.lessonContent {
+  padding: 2rem;
+}
+
+.lessonContent :global(.ql-editor) {
+  padding: 0;
+  min-height: auto;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.lessonContent :global(.ql-editor) h1,
+.lessonContent :global(.ql-editor) h2,
+.lessonContent :global(.ql-editor) h3 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.lessonContent :global(.ql-editor) h1 {
+  font-size: 2rem;
+}
+
+.lessonContent :global(.ql-editor) h2 {
+  font-size: 1.5rem;
+}
+
+.lessonContent :global(.ql-editor) h3 {
+  font-size: 1.25rem;
+}
+
+.lessonContent :global(.ql-editor) p {
+  margin-bottom: 1rem;
+  color: #555;
+}
+
+.lessonContent :global(.ql-editor) ul,
+.lessonContent :global(.ql-editor) ol {
+  padding-left: 2rem;
+  margin-bottom: 1rem;
+}
+
+.lessonContent :global(.ql-editor) li {
+  margin-bottom: 0.5rem;
+}
+
+.lessonContent :global(.ql-editor) img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.lessonContent :global(.ql-editor) blockquote {
+  border-left: 4px solid #4F46E5;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: #666;
+  font-style: italic;
+}
+
+.lessonContent :global(.ql-editor) pre {
+  background: #f5f5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+}
+
+.lessonContent :global(.ql-editor) code {
+  background: #f5f5f5;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.lessonContent :global(.ql-editor) a {
+  color: #4F46E5;
+  text-decoration: none;
+}
+
+.lessonContent :global(.ql-editor) a:hover {
+  text-decoration: underline;
+}
+
+.lessonNavigation {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.navButton:hover:not(:disabled) {
+  background: #4338CA;
+}
+
+.navButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.navButton.prev {
+  flex-direction: row;
+}
+
+.navButton.next {
+  flex-direction: row-reverse;
+}
+
+.navInfo {
+  text-align: center;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+  color: #ddd;
+  margin-bottom: 1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .lessonViewer {
+    padding: 1rem;
+  }
+
+  .lessonHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .completeButton,
+  .completedBadge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lessonInfo {
+    padding: 1.5rem;
+  }
+
+  .lessonTitle {
+    font-size: 1.5rem;
+  }
+
+  .lessonMeta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .lessonContent {
+    padding: 1.5rem;
+  }
+
+  .lessonNavigation {
+    flex-direction: column;
+  }
+
+  .navButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Стили для таймкодов */
+.timecodesPanel {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid #e9ecef;
+}
+
+.timecodesPanel h3 {
+  color: #333;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.2rem;
+}
+
+.timecodesPanel h3 svg {
+  color: #4F46E5;
+}
+
+.timecodesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.timecodeItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.timecodeItem:hover {
+  background: #e9ecef;
+  border-color: #4F46E5;
+  transform: translateX(5px);
+}
+
+.timecodeTime {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #4F46E5;
+  font-family: 'Courier New', monospace;
+  min-width: 80px;
+  font-size: 0.95rem;
+}
+
+.timecodeTime svg {
+  font-size: 0.85rem;
+}
+
+.timecodeTitle {
+  flex: 1;
+  color: #333;
+  font-size: 0.95rem;
+}

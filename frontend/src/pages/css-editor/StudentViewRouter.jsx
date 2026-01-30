@@ -13,10 +13,6 @@ import StudentHomeworks from '../student/StudentHomeworks';
 import Shop from '../student/Shop';
 import KnowledgeBase from '../student/KnowledgeBase';
 import StudentUpdates from '../student/StudentUpdates';
-import StudentProjects from '../student/StudentProjects';
-import StudentDatabases from '../student/StudentDatabases';
-import StudentPlugins from '../student/StudentPlugins';
-import StudentThemes from '../student/StudentThemes';
 import Games from '../student/Games';
 import './ViewPage.css';
 
@@ -43,10 +39,6 @@ function StudentViewRouter() {
               <Route path="shop" element={<Shop />} />
               <Route path="knowledge" element={<KnowledgeBase />} />
               <Route path="updates" element={<StudentUpdates />} />
-              <Route path="projects" element={<StudentProjects />} />
-              <Route path="databases" element={<StudentDatabases />} />
-              <Route path="plugins" element={<StudentPlugins />} />
-              <Route path="themes" element={<StudentThemes />} />
               <Route path="games" element={<Games />} />
             </Routes>
           </StudentLayout>

@@ -831,6 +831,130 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_technical_specs_created_at ON technical_specs(created_at DESC);
     `);
 
+    // Таблица 28: Игра "Верстка" - уровни
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS layout_game_levels (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        difficulty INTEGER DEFAULT 1,
+        order_index INTEGER DEFAULT 0,
+        points_reward INTEGER DEFAULT 10,
+        image_url TEXT,
+        target_html TEXT,
+        target_css TEXT,
+        canvas_width INTEGER DEFAULT 800,
+        canvas_height INTEGER DEFAULT 600,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_by INTEGER REFERENCES users(id),
+        is_active BOOLEAN DEFAULT true
+      );
+    `);
+
+    // Добавить новые колонки если их нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'layout_game_levels' AND column_name = 'target_html'
+        ) THEN
+          ALTER TABLE layout_game_levels ADD COLUMN target_html TEXT;
+        END IF;
+        
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'layout_game_levels' AND column_name = 'target_css'
+        ) THEN
+          ALTER TABLE layout_game_levels ADD COLUMN target_css TEXT;
+        END IF;
+        
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'layout_game_levels' AND column_name = 'canvas_width'
+        ) THEN
+          ALTER TABLE layout_game_levels ADD COLUMN canvas_width INTEGER DEFAULT 800;
+        END IF;
+        
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'layout_game_levels' AND column_name = 'canvas_height'
+        ) THEN
+          ALTER TABLE layout_game_levels ADD COLUMN canvas_height INTEGER DEFAULT 600;
+        END IF;
+        
+        -- Сделать image_url необязательным
+        ALTER TABLE layout_game_levels ALTER COLUMN image_url DROP NOT NULL;
+      EXCEPTION WHEN others THEN NULL;
+      END $$;
+    `);
+
+    // Таблица 29: Игра "Верстка" - прогресс пользователей
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS layout_game_progress (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        level_id INTEGER REFERENCES layout_game_levels(id) ON DELETE CASCADE,
+        completed BOOLEAN DEFAULT false,
+        best_accuracy DECIMAL(5,2) DEFAULT 0,
+        attempts INTEGER DEFAULT 0,
+        completed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, level_id)
+      );
+    `);
+
+    // Индексы для игры "Верстка"
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_layout_game_levels_active ON layout_game_levels(is_active);
+      CREATE INDEX IF NOT EXISTS idx_layout_game_levels_order ON layout_game_levels(order_index);
+      CREATE INDEX IF NOT EXISTS idx_layout_game_progress_user ON layout_game_progress(user_id);
+      CREATE INDEX IF NOT EXISTS idx_layout_game_progress_level ON layout_game_progress(level_id);
+    `);
+
+    // Таблицы для игры "JavaScript"
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS js_game_levels (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        difficulty INT DEFAULT 1 CHECK (difficulty BETWEEN 1 AND 5),
+        points_reward INT DEFAULT 10,
+        task_description TEXT NOT NULL,
+        initial_code TEXT DEFAULT '',
+        solution_code TEXT,
+        tests JSONB NOT NULL DEFAULT '[]',
+        hints JSONB DEFAULT '[]',
+        time_limit INT DEFAULT 5000,
+        order_index INT DEFAULT 0,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS js_game_progress (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        level_id INT NOT NULL REFERENCES js_game_levels(id) ON DELETE CASCADE,
+        submitted_code TEXT,
+        status VARCHAR(20) DEFAULT 'pending',
+        attempts INT DEFAULT 0,
+        tests_passed INT DEFAULT 0,
+        tests_total INT DEFAULT 0,
+        solved_at TIMESTAMP,
+        points_awarded INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, level_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_js_game_progress_user ON js_game_progress(user_id);
+      CREATE INDEX IF NOT EXISTS idx_js_game_progress_level ON js_game_progress(level_id);
+      CREATE INDEX IF NOT EXISTS idx_js_game_levels_order ON js_game_levels(order_index);
+    `);
+
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {
     console.error('❌ Ошибка инициализации базы данных:', error);

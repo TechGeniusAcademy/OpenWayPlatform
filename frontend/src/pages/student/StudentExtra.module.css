@@ -1,0 +1,881 @@
+.extraPage {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.mainContent {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.contentArea {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 320px;
+}
+
+.sidebar {
+  width: 280px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  height: fit-content;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  position: fixed;
+  right: 24px;
+  top: 100px;
+}
+
+.sidebarHeader {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.sidebarHeader h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebarItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-size: 15px;
+  color: #666;
+}
+
+.sidebarItem:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.sidebarItem.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 500;
+}
+
+.sidebarIcon {
+  font-size: 20px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.sidebarText {
+  flex: 1;
+}
+
+.toolContent {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.3s ease;
+}
+
+.toolContent h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+}
+
+.description {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 32px 0;
+}
+
+/* Встроенный инструмент */
+.embeddedTool {
+  margin-bottom: 40px;
+}
+
+.sectionSubtitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 20px 0;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.linksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.linkCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.linkCard:hover {
+  background: white;
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.linkIcon {
+  font-size: 40px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.linkInfo {
+  flex: 1;
+}
+
+.linkInfo h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.linkInfo p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.comingSoonBox {
+  text-align: center;
+  padding: 60px 40px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+}
+
+.comingSoonIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.comingSoonBox h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.comingSoonBox p {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.recommendationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.recommendationCard {
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+  transition: all 0.3s;
+}
+
+.recommendationCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.recommendationIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.recommendationCard h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.recommendationCard p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Скроллбар */
+.sidebar::-webkit-scrollbar,
+.contentArea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.contentArea::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.contentArea::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.contentArea::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .mainContent {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: calc(100% - 32px);
+    max-height: none;
+    position: static;
+    margin-bottom: 24px;
+  }
+
+  .contentArea {
+    padding-right: 0;
+  }
+
+  .sidebarNav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .sidebarItem {
+    flex: 1;
+    min-width: 150px;
+  }
+}
+
+/* Карточка встроенного инструмента */
+.toolCard {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+.toolCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+}
+
+.toolCardGradient {
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  animation: gradientShift 5s ease infinite;
+  background-size: 200% 200%;
+}
+
+.toolCardShadow {
+  height: 60px;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolCardShadow::after {
+  content: '';
+  width: 50px;
+  height: 30px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 4px 8px rgba(0, 0, 0, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.1),
+    0 16px 32px rgba(0, 0, 0, 0.12);
+  animation: shadowPulse 3s ease-in-out infinite;
+}
+
+@keyframes shadowPulse {
+  0%, 100% { 
+    box-shadow: 
+      0 1px 2px rgba(0, 0, 0, 0.06),
+      0 4px 8px rgba(0, 0, 0, 0.08),
+      0 8px 16px rgba(0, 0, 0, 0.1),
+      0 16px 32px rgba(0, 0, 0, 0.12);
+  }
+  50% { 
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.08),
+      0 8px 16px rgba(0, 0, 0, 0.1),
+      0 16px 32px rgba(0, 0, 0, 0.14),
+      0 24px 48px rgba(0, 0, 0, 0.16);
+  }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.toolCardNeumorphism {
+  height: 60px;
+  background: #e0e5ec;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolCardNeumorphism::after {
+  content: '';
+  width: 40px;
+  height: 40px;
+  background: #e0e5ec;
+  border-radius: 12px;
+  box-shadow: 
+    8px 8px 16px #a3b1c6,
+    -8px -8px 16px #ffffff;
+  animation: neumorphPulse 3s ease-in-out infinite;
+}
+
+@keyframes neumorphPulse {
+  0%, 100% { 
+    box-shadow: 
+      8px 8px 16px #a3b1c6,
+      -8px -8px 16px #ffffff;
+  }
+  50% { 
+    box-shadow: 
+      inset 4px 4px 8px #a3b1c6,
+      inset -4px -4px 8px #ffffff;
+  }
+}
+
+.toolCardClipPath {
+  height: 60px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.toolCardClipPath::after {
+  content: '';
+  width: 50px;
+  height: 50px;
+  background: white;
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+  animation: clipPathMorph 4s ease-in-out infinite;
+}
+
+@keyframes clipPathMorph {
+  0%, 100% { 
+    clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+  }
+  25% { 
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  }
+  50% { 
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  }
+  75% { 
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+}
+
+.toolCardBezier {
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.toolCardBezier::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.toolCardBezier::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  top: calc(50% - 6px);
+  left: 10%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: bezierBall 2s cubic-bezier(0.68, -0.6, 0.32, 1.6) infinite;
+}
+
+@keyframes bezierBall {
+  0%, 100% {
+    left: 10%;
+  }
+  50% {
+    left: calc(90% - 12px);
+  }
+}
+
+.toolCardGlass {
+  height: 60px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.toolCardGlass::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    45deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  animation: glassShine 3s ease-in-out infinite;
+}
+
+.toolCardGlass::after {
+  content: '';
+  width: 50px;
+  height: 35px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  animation: glassPulse 2s ease-in-out infinite;
+}
+
+@keyframes glassShine {
+  0%, 100% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes glassPulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.toolCardKeyframes {
+  height: 60px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.toolCardKeyframes::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at 30% 50%,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 50%
+  );
+}
+
+.toolCardKeyframes::after {
+  content: '';
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  animation: keyframesBounce 1.5s ease-in-out infinite;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes keyframesBounce {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: translateY(-12px) rotate(-5deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(0) rotate(0deg) scale(0.9);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translateY(-8px) rotate(5deg);
+    opacity: 0.8;
+  }
+}
+
+.toolCardWaves {
+  height: 60px;
+  background: linear-gradient(180deg, #87ceeb 0%, #e0f7ff 60%);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.toolCardWaves::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 30px;
+  background: linear-gradient(90deg, #0099ff, #00ccff, #0099ff);
+  border-radius: 100% 100% 0 0;
+  animation: waveMove 2s ease-in-out infinite;
+}
+
+.toolCardWaves::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 20px;
+  background: linear-gradient(90deg, #00ccff, #0099ff, #00ccff);
+  border-radius: 100% 100% 0 0;
+  animation: waveMove 2s ease-in-out infinite reverse;
+  opacity: 0.6;
+}
+
+@keyframes waveMove {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-25%);
+  }
+}
+
+.toolCardCodeshot {
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.toolCardCodeshot::before {
+  content: '{ }';
+  position: absolute;
+  font-family: 'Fira Code', monospace;
+  font-size: 24px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  animation: codeTyping 2s ease-in-out infinite;
+}
+
+.toolCardCodeshot::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  animation: codeshotShine 2s ease-in-out infinite;
+}
+
+@keyframes codeTyping {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes codeshotShine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.toolCardScreenSize {
+  height: 60px;
+  background: linear-gradient(135deg, #22c55e 0%, #06b6d4 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.toolCardScreenSize::before {
+  content: '';
+  position: absolute;
+  width: 50px;
+  height: 35px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  animation: screenResize 2s ease-in-out infinite;
+}
+
+.toolCardScreenSize::after {
+  content: '';
+  position: absolute;
+  width: 25px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  left: 20px;
+  animation: screenResize 2s ease-in-out infinite reverse;
+}
+
+@keyframes screenResize {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+}
+
+.toolCardContent {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  position: relative;
+}
+
+.toolBadge {
+  position: absolute;
+  top: -10px;
+  right: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Модальное окно */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modalContent {
+  background: transparent;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+
+.modalClose {
+  position: absolute;
+  top: 12px;
+  right: 60px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  font-size: 18px;
+  color: #666;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.modalClose:hover {
+  background: white;
+  color: #333;
+  transform: scale(1.1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .extraPage {
+    padding: 16px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .toolContent {
+    padding: 20px;
+  }
+
+  .toolContent h2 {
+    font-size: 22px;
+  }
+
+  .linksGrid,
+  .recommendationsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebarItem {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .sidebarIcon {
+    font-size: 18px;
+  }
+
+  .modalOverlay {
+    padding: 10px;
+  }
+
+  .modalContent {
+    max-height: 95vh;
+  }
+
+  .modalClose {
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+  }
+}

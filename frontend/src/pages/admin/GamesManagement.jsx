@@ -24,10 +24,9 @@ import {
 
 
 function GamesManagement() {
-  const [activeTab, setActiveTab] = useState('crash');
+  const [activeTab, setActiveTab] = useState('roulette');
   const [chessGames, setChessGames] = useState([]);
   const [quizBattles, setQuizBattles] = useState([]);
-  const [crashGames, setCrashGames] = useState([]);
   const [rouletteGames, setRouletteGames] = useState([]);
   const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
@@ -54,7 +53,6 @@ function GamesManagement() {
   useEffect(() => {
     fetchChessGames();
     fetchQuizBattles();
-    fetchCrashGames();
     fetchRouletteGames();
     fetchCategories();
     fetchQuestions();
@@ -75,15 +73,6 @@ function GamesManagement() {
       setQuizBattles(response.data);
     } catch (error) {
       console.error('Failed to fetch quiz battles:', error);
-    }
-  };
-
-  const fetchCrashGames = async () => {
-    try {
-      const response = await api.get('/crash/history?limit=100');
-      setCrashGames(response.data.history || []);
-    } catch (error) {
-      console.error('Failed to fetch crash games:', error);
     }
   };
 
@@ -187,12 +176,6 @@ function GamesManagement() {
 
       <div className={styles['games-tabs']}>
         <button 
-          className={`${styles['tab-btn']} ${activeTab === 'crash' ? styles.active : ''}`}
-          onClick={() => setActiveTab('crash')}
-        >
-          <FaRocket /> Crash Game
-        </button>
-        <button 
           className={`${styles['tab-btn']} ${activeTab === 'roulette' ? styles.active : ''}`}
           onClick={() => setActiveTab('roulette')}
         >
@@ -211,92 +194,6 @@ function GamesManagement() {
           <MdOutlineQuiz /> Битва Знаний
         </button>
       </div>
-
-      {/* CRASH GAME */}
-      {activeTab === 'crash' && (
-        <div className={styles['crash-section']}>
-          <div className={styles['section-card']}>
-            <h2>История Crash игр</h2>
-            <div className={styles['stats-grid']}>
-              <div className={styles['stat-box']}>
-                <div className={styles['stat-label']}>Всего игр</div>
-                <div className={styles['stat-value']}>{crashGames.length}</div>
-              </div>
-              <div className={styles['stat-box']}>
-                <div className={styles['stat-label']}>Средний краш</div>
-                <div className={styles['stat-value']}>
-                  {crashGames.length > 0 
-                    ? (crashGames.reduce((sum, g) => sum + parseFloat(g.crash_point), 0) / crashGames.length).toFixed(2) 
-                    : '0.00'}x
-                </div>
-              </div>
-              <div className={styles['stat-box']}>
-                <div className={styles['stat-label']}>Макс. краш</div>
-                <div className={styles['stat-value']}>
-                  {crashGames.length > 0 
-                    ? Math.max(...crashGames.map(g => parseFloat(g.crash_point))).toFixed(2) 
-                    : '0.00'}x
-                </div>
-              </div>
-              <div className={styles['stat-box']}>
-                <div className={styles['stat-label']}>Мин. краш</div>
-                <div className={styles['stat-value']}>
-                  {crashGames.length > 0 
-                    ? Math.min(...crashGames.map(g => parseFloat(g.crash_point))).toFixed(2) 
-                    : '0.00'}x
-                </div>
-              </div>
-            </div>
-            <div className={styles['games-table']}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Crash Point</th>
-                    <th>Статус</th>
-                    <th>Начало</th>
-                    <th>Конец</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {crashGames.map(game => (
-                    <tr key={game.id}>
-                      <td>#{game.id}</td>
-                      <td>
-                        <span 
-                          className={styles['crash-point-badge']}
-                          style={{
-                            backgroundColor: 
-                              parseFloat(game.crash_point) < 2 ? '#ff5722' : 
-                              parseFloat(game.crash_point) < 5 ? '#ff9800' : 
-                              parseFloat(game.crash_point) < 10 ? '#4caf50' : '#00ff88',
-                            color: 'white',
-                            padding: '5px 10px',
-                            borderRadius: '5px',
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          {parseFloat(game.crash_point).toFixed(2)}x
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`${styles['status-badge']} ${styles.crashed}`}>
-                          <FaBomb /> Crashed
-                        </span>
-                      </td>
-                      <td>{formatDate(game.started_at)}</td>
-                      <td>{formatDate(game.crashed_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {crashGames.length === 0 && (
-                <p className={styles['no-data']}>Нет истории Crash игр</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* РУЛЕТКА */}
       {activeTab === 'roulette' && (

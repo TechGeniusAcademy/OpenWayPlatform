@@ -602,6 +602,7 @@
   display: flex;
   flex-direction: column;
   animation: modalSlideIn 0.3s ease;
+  overflow: hidden;
 }
 
 .modal-xlarge {
@@ -660,6 +661,7 @@
   padding: 24px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .modal-body::-webkit-scrollbar {
@@ -804,18 +806,24 @@
   font-size: 15px;
   font-family: inherit;
   border: none;
-  min-height: 300px;
+  min-height: 200px;
+  max-height: 40vh;
 }
 
 .editor-wrapper :global(.ql-toolbar) {
   border: none;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .editor-wrapper :global(.ql-editor) {
-  min-height: 300px;
+  min-height: 200px;
+  max-height: 40vh;
   padding: 16px;
+  overflow-y: auto;
 }
 
 .editor-wrapper :global(.ql-editor.ql-blank::before) {

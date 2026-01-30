@@ -1,7 +1,15 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-export const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'; // Экспортируем базовый URL для изображений
+// Динамически определяем API URL на основе текущего хоста
+// Если зашли по localhost - API будет localhost:5000
+// Если зашли по IP - API будет IP:5000
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
+  return `http://${hostname}:5000/api`;
+};
+
+const API_URL = getApiUrl();
+export const BASE_URL = `http://${window.location.hostname}:5000`; // Базовый URL для изображений
 
 const api = axios.create({
   baseURL: API_URL,

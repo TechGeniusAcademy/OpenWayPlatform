@@ -8,7 +8,7 @@ import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlin
 import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
 import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
-import { FaTrophy, FaPlug, FaPalette, FaGamepad, FaPen, FaFileAlt } from 'react-icons/fa';
+import { FaTrophy, FaPlug, FaPalette, FaGamepad, FaPen, FaFileAlt, FaBriefcase, FaStar } from 'react-icons/fa';
 import { BiData } from 'react-icons/bi';
 import { VscFiles } from 'react-icons/vsc';
 import { useState, useEffect } from 'react';
@@ -157,30 +157,6 @@ function StudentLayout({ children }) {
             {/* Программирование */}
             <li className={styles['menu-category-title']}>Программирование</li>
             <li>
-              <NavLink to="/student/projects" onClick={closeSidebar}>
-                <span className={styles['menu-icon']}><VscFiles /></span>
-                <span className={styles['menu-text']}>Мои проекты</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/student/databases" onClick={closeSidebar}>
-                <span className={styles['menu-icon']}><BiData /></span>
-                <span className={styles['menu-text']}>Базы данных</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/student/plugins" onClick={closeSidebar}>
-                <span className={styles['menu-icon']}><FaPlug /></span>
-                <span className={styles['menu-text']}>Плагины</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/student/themes" onClick={closeSidebar}>
-                <span className={styles['menu-icon']}><FaPalette /></span>
-                <span className={styles['menu-text']}>Темы</span>
-              </NavLink>
-            </li>
-            <li>
               <NavLink to="/student/design" onClick={closeSidebar}>
                 <span className={styles['menu-icon']}><FaPen /></span>
                 <span className={styles['menu-text']}>Дизайн</span>
@@ -243,6 +219,12 @@ function StudentLayout({ children }) {
               <NavLink to="/student/updates" onClick={closeSidebar}>
                 <span className={styles['menu-icon']}><AiOutlineBell /></span>
                 <span className={styles['menu-text']}>Обновления</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/extra" onClick={closeSidebar}>
+                <span className={styles['menu-icon']}><FaStar /></span>
+                <span className={styles['menu-text']}>Дополнительно</span>
               </NavLink>
             </li>
           </ul>

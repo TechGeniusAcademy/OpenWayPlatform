@@ -4,13 +4,9 @@ import io from 'socket.io-client';
 
 const WebSocketContext = createContext();
 
-// Правильное определение SOCKET_URL для production и development
+// Динамическое определение SOCKET_URL на основе текущего хоста
 const getSocketUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  if (apiUrl) {
-    return apiUrl.replace('/api', '');
-  }
-  return 'http://localhost:5000';
+  return `http://${window.location.hostname}:5000`;
 };
 
 const SOCKET_URL = getSocketUrl();

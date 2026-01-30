@@ -627,4 +627,62 @@ router.delete('/messages/:messageId', authenticate, async (req, res) => {
   }
 });
 
+// Добавить реакцию к сообщению
+router.post('/messages/:messageId/reactions', authenticate, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.user.id;
+
+    if (!emoji) {
+      return res.status(400).json({ error: 'Не указана реакция' });
+    }
+
+    // Получаем чат ID сообщения
+    const messageResult = await pool.query(
+      'SELECT chat_id FROM messages WHERE id = $1',
+      [messageId]
+    );
+
+    if (messageResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Сообщение не найдено' });
+    }
+
+    const chatId = messageResult.rows[0].chat_id;
+
+    // Добавляем/удаляем реакцию
+    const result = await pool.query(
+      `INSERT INTO message_reactions (message_id, user_id, emoji)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (message_id, user_id, emoji) 
+       DO DELETE WHERE message_reactions.message_id = $1 
+         AND message_reactions.user_id = $2 
+         AND message_reactions.emoji = $3
+       RETURNING *`,
+      [messageId, userId, emoji]
+    );
+
+    // Получаем все реакции сообщения
+    const reactionsResult = await pool.query(
+      `SELECT emoji, user_id, 
+        (SELECT full_name FROM users WHERE id = user_id) as user_name
+       FROM message_reactions 
+       WHERE message_id = $1`,
+      [messageId]
+    );
+
+    // Отправляем обновление через WebSocket
+    io.to(`chat-${chatId}`).emit('chat:reaction-added', {
+      chatId,
+      messageId,
+      reactions: reactionsResult.rows
+    });
+
+    res.json({ reactions: reactionsResult.rows });
+  } catch (error) {
+    console.error('Ошибка добавления реакции:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 export default router;

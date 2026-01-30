@@ -15,7 +15,8 @@ import { BiMessageSquareDetail } from 'react-icons/bi';
 import { HiLightningBolt } from 'react-icons/hi';
 import styles from './AIAssistant.module.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Динамическое определение API URL на основе текущего хоста
+const API_URL = `http://${window.location.hostname}:5000/api`;
 
 // Предложенные промпты
 const SUGGESTED_PROMPTS = [

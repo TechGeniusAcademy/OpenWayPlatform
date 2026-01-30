@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import ChessGame from '../../components/ChessGame';
 import OnlineChess from '../../components/OnlineChess';
 import QuizBattle from '../../components/QuizBattle';
-import CrashGame from '../../components/CrashGame';
 import PokerGame from '../../components/PokerGame';
+import FlexChan from '../../components/FlexChan';
+import CodeIt from '../../components/CodeIt';
+import LayoutGame from '../../components/LayoutGame';
+import JSGame from '../../components/JSGame';
 import styles from './Games.module.css';
 import { MdOutlineQuiz } from "react-icons/md";
-import { FaChess, FaRocket, FaGamepad, FaBullseye, FaLightbulb, FaClock, FaFire } from "react-icons/fa";
+import { FaChess, FaRocket, FaGamepad, FaBullseye, FaLightbulb, FaClock, FaFire, FaCode, FaJs } from "react-icons/fa";
 import { GiPokerHand, GiSpades, GiPartyPopper } from "react-icons/gi";
 import { IoGameController } from "react-icons/io5";
-import { BsLightningChargeFill } from "react-icons/bs";
+import { BsLightningChargeFill, BsGrid3X3Gap } from "react-icons/bs";
 
 
 
@@ -19,14 +22,6 @@ function Games() {
   const [selectedGame, setSelectedGame] = useState(null);
 
   const games = [
-    {
-      id: 'crash',
-      title: 'Crash Game',
-      icon: <FaRocket />,
-      description: 'Азартная игра с множителями! Ставь баллы и выводи их вовремя, пока не произошел краш',
-      color: '#f093fb',
-      available: true
-    },
     {
       id: 'poker',
       title: 'Техасский Холдем (Еще в разработке)',
@@ -58,6 +53,39 @@ function Games() {
       description: 'Классическая игра в шахматы против компьютера с разными уровнями сложности',
       color: '#764ba2',
       available: true
+    },
+    {
+      id: 'flex-chan',
+      title: 'Flex Chan',
+      icon: <BsGrid3X3Gap />,
+      image: '/flexchan/cardimg.svg',
+      description: 'Изучай CSS Flexbox в игровой форме! Помоги персонажам занять правильные позиции',
+      color: '#f59e0b',
+      available: true
+    },
+    {
+      id: 'code-it',
+      title: 'CodeIt',
+      icon: <FaRocket />,
+      description: 'Новая игра для изучения программирования. Скоро!',
+      color: '#667eea',
+      available: true
+    },
+    {
+      id: 'layout-game',
+      title: 'Верстка',
+      icon: <FaCode />,
+      description: 'Сверстай макет в точности как на картинке! Система проверит каждый пиксель',
+      color: '#10b981',
+      available: true
+    },
+    {
+      id: 'js-game',
+      title: 'JavaScript',
+      icon: <FaJs />,
+      description: 'Решай задачи на JavaScript! Пиши функции, проходи тесты и зарабатывай баллы',
+      color: '#f7df1e',
+      available: true
     }
   ];
 
@@ -70,17 +98,6 @@ function Games() {
   const handleBack = () => {
     setSelectedGame(null);
   };
-
-  if (selectedGame === 'crash') {
-    return (
-      <div className={styles['games-page']}>
-        <button onClick={handleBack} className={styles['back-button']}>
-          ← Назад к играм
-        </button>
-        <CrashGame />
-      </div>
-    );
-  }
 
   if (selectedGame === 'poker') {
     return (
@@ -126,6 +143,44 @@ function Games() {
     );
   }
 
+  if (selectedGame === 'flex-chan') {
+    return (
+      <div className={styles['games-page']}>
+        <button onClick={handleBack} className={styles['back-button']}>
+          ← Назад к играм
+        </button>
+        <FlexChan />
+      </div>
+    );
+  }
+
+  if (selectedGame === 'code-it') {
+    return (
+      <div className={styles['games-page']}>
+        <button onClick={handleBack} className={styles['back-button']}>
+          ← Назад к играм
+        </button>
+        <CodeIt />
+      </div>
+    );
+  }
+
+  if (selectedGame === 'layout-game') {
+    return (
+      <div className={styles['games-page']}>
+        <LayoutGame onBack={handleBack} />
+      </div>
+    );
+  }
+
+  if (selectedGame === 'js-game') {
+    return (
+      <div className={styles['games-page']}>
+        <JSGame onBack={handleBack} />
+      </div>
+    );
+  }
+
   return (
     <div className={styles['games-page']}>
       <div className={styles['games-header']}>
@@ -153,7 +208,13 @@ function Games() {
                 : 'linear-gradient(135deg, #95a5a615, #95a5a630)'
             }}
           >
-            <div className={styles['game-icon']}>{game.icon}</div>
+            {game.image ? (
+              <div className={styles['game-image']}>
+                <img src={game.image} alt={game.title} />
+              </div>
+            ) : (
+              <div className={styles['game-icon']}>{game.icon}</div>
+            )}
             <h3>{game.title}</h3>
             <p>{game.description}</p>
             {!game.available && (

@@ -1,0 +1,436 @@
+.generator {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.generator.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  border-radius: 0;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.header h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.iconBtn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.iconBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Main Section */
+.mainSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Graph Section */
+.graphSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.graph {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  background: #fafbfc;
+  border-radius: 12px;
+}
+
+.controlPoint {
+  cursor: grab;
+  transition: r 0.15s;
+}
+
+.controlPoint:hover {
+  r: 10;
+}
+
+.controlPoint:active {
+  cursor: grabbing;
+}
+
+.bezierValue {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 13px;
+  color: #667eea;
+  background: #f1f5f9;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* Preview Section */
+.previewSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.previewHeader span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.playBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.playBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.animationTrack {
+  height: 60px;
+  background: linear-gradient(90deg, #e0e7ff 0%, #fce7f3 100%);
+  border-radius: 30px;
+  position: relative;
+  padding: 10px;
+}
+
+.animationBall {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition-property: left;
+}
+
+.animationBall.animate {
+  left: calc(100% - 50px);
+}
+
+.comparisonTrack {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.comparisonTrack span {
+  font-size: 12px;
+  color: #94a3b8;
+  width: 50px;
+}
+
+.animationTrackSmall {
+  flex: 1;
+  height: 30px;
+  background: #f1f5f9;
+  border-radius: 15px;
+  position: relative;
+  padding: 5px;
+}
+
+.animationBallSmall {
+  width: 20px;
+  height: 20px;
+  background: #94a3b8;
+  border-radius: 50%;
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  transition-property: left;
+}
+
+.animationBallSmall.animate {
+  left: calc(100% - 25px);
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.controlsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controlGroup > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e2e8f0;
+  border-radius: 3px;
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #334155 0%, #475569 100%);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.sliderBlue::-webkit-slider-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.sliderPink::-webkit-slider-thumb {
+  background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+}
+
+/* Presets */
+.presetsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.presetsSection > label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.presetBtn {
+  padding: 6px 12px;
+  background: #f1f5f9;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.presetBtn:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background: white;
+}
+
+/* Output */
+.outputSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.outputHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.outputHeader > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.codeBlock {
+  background: #1e1e2e;
+  border-radius: 10px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.codeBlock pre {
+  margin: 0;
+  font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #cdd6f4;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.outputActions {
+  display: flex;
+  gap: 10px;
+}
+
+.copyBtn, .downloadBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copyBtn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.copyBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+
+.copyBtn.copied {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.downloadBtn {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.downloadBtn:hover {
+  background: #e2e8f0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
+
+  .mainSection {
+    grid-template-columns: 1fr;
+  }
+
+  .graph {
+    max-width: 240px;
+  }
+
+  .controlsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .presets {
+    max-height: 120px;
+  }
+
+  .outputActions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 16px;
+  }
+
+  .header h3 {
+    font-size: 16px;
+  }
+
+  .animationTrack {
+    height: 50px;
+  }
+
+  .animationBall {
+    width: 30px;
+    height: 30px;
+  }
+}

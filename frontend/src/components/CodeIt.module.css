@@ -1,0 +1,740 @@
+/* CodeIt FPS - 3D Multiplayer Shooter Styles */
+.container {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile/fullscreen */
+  max-height: 100vh;
+  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  color: white;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Fullscreen specific styles */
+.container:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+.container:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+/* ========== MENU SCREEN ========== */
+.menuScreen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.menuHeader {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.logo3d {
+  perspective: 500px;
+  margin-bottom: 20px;
+}
+
+.gunIcon {
+  display: inline-block;
+  font-size: 100px;
+  animation: gunFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 20px 40px rgba(239, 68, 68, 0.5));
+}
+
+@keyframes gunFloat {
+  0%, 100% { transform: translateY(0) rotateY(0deg); }
+  50% { transform: translateY(-15px) rotateY(15deg); }
+}
+
+.menuHeader h1 {
+  font-size: 64px;
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-weight: 900;
+}
+
+.menuHeader p {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.menuContent {
+  width: 100%;
+  max-width: 500px;
+}
+
+.features {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 30px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s, background 0.3s;
+}
+
+.feature:hover {
+  transform: translateY(-5px);
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.feature svg {
+  font-size: 28px;
+  color: #ef4444;
+}
+
+.feature span {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.joinForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.joinForm input {
+  padding: 18px 24px;
+  font-size: 18px;
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  text-align: center;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.joinForm input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.joinForm input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.joinForm button {
+  padding: 18px 24px;
+  font-size: 20px;
+  font-weight: 700;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.joinForm button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(239, 68, 68, 0.5);
+}
+
+.joinForm button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.controls {
+  text-align: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.controls h3 {
+  margin: 0 0 16px 0;
+  color: #ef4444;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.controlsList p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.controlsList kbd {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  margin: 0 2px;
+}
+
+/* ========== GAME SCREEN ========== */
+.gameScreen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0; /* Important for flex child to not overflow */
+  overflow: hidden;
+}
+
+.header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.header > * {
+  pointer-events: auto;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.8);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backBtn:hover {
+  background: #ef4444;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 16px;
+  border-radius: 20px;
+}
+
+.connectionDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  transition: background 0.3s;
+}
+
+.connectionDot.online {
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+}
+
+.fullscreenHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.fullscreenHint kbd {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.kills, .playersCount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.kills {
+  color: #ef4444;
+}
+
+.playersCount {
+  color: #667eea;
+}
+
+/* ========== 3D CANVAS ========== */
+.canvasWrapper {
+  flex: 1;
+  position: relative;
+  cursor: crosshair;
+  min-height: 0; /* Important for flex to work properly */
+  overflow: hidden;
+}
+
+.canvasWrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ========== CROSSHAIR ========== */
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.crosshairH, .crosshairV {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+.crosshairH {
+  width: 20px;
+  height: 2px;
+  left: -10px;
+  top: -1px;
+}
+
+.crosshairV {
+  width: 2px;
+  height: 20px;
+  left: -1px;
+  top: -10px;
+}
+
+/* Hit marker X shape */
+.hitMarker .crosshairH,
+.hitMarker .crosshairV {
+  background: #ff4444;
+  box-shadow: 0 0 10px #ff4444;
+}
+
+.hitX1, .hitX2 {
+  position: absolute;
+  width: 15px;
+  height: 2px;
+  background: #ff4444;
+  box-shadow: 0 0 8px #ff4444;
+}
+
+.hitX1 {
+  transform: rotate(45deg);
+}
+
+.hitX2 {
+  transform: rotate(-45deg);
+}
+
+/* ========== DAMAGE OVERLAY ========== */
+.damageOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 200;
+  animation: damageFlash 0.5s ease-out;
+}
+
+@keyframes damageFlash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.damageVignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-shadow: inset 0 0 150px 50px rgba(255, 0, 0, 0.6);
+  animation: vignetteFlash 0.5s ease-out;
+}
+
+@keyframes vignetteFlash {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+.damageNumber {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 72px;
+  font-weight: 900;
+  color: #ff4444;
+  text-shadow: 
+    0 0 20px rgba(255, 0, 0, 0.8),
+    0 4px 8px rgba(0, 0, 0, 0.5);
+  animation: damageNumberFloat 0.5s ease-out;
+}
+
+@keyframes damageNumberFloat {
+  0% { 
+    opacity: 1; 
+    transform: translateX(-50%) translateY(0) scale(1.2);
+  }
+  100% { 
+    opacity: 0; 
+    transform: translateX(-50%) translateY(-30px) scale(1);
+  }
+}
+
+/* ========== HEALTH BAR ========== */
+.healthBar {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  z-index: 50;
+}
+
+.heartIcon {
+  font-size: 24px;
+  color: #ef4444;
+  animation: heartbeat 1s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.healthTrack {
+  width: 200px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.healthValue {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.3s, background 0.3s;
+  border-radius: 10px;
+}
+
+.healthText {
+  font-size: 18px;
+  font-weight: bold;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* ========== DEATH SCREEN ========== */
+.deathScreen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 200;
+  animation: deathFade 0.5s ease-out;
+}
+
+@keyframes deathFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.deathIcon {
+  font-size: 120px;
+  color: white;
+  margin-bottom: 20px;
+  animation: deathPulse 1s ease-in-out infinite;
+}
+
+@keyframes deathPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.deathScreen h1 {
+  font-size: 72px;
+  margin: 0 0 30px 0;
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  text-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.deathScreen button {
+  padding: 20px 50px;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 16px;
+  background: white;
+  color: #8b0000;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.deathScreen button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* ========== CLICK OVERLAY ========== */
+.clickOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 60;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.clickOverlay p {
+  font-size: 24px;
+  color: white;
+  padding: 20px 40px;
+  background: rgba(239, 68, 68, 0.8);
+  border-radius: 16px;
+  animation: clickPulse 2s ease-in-out infinite;
+}
+
+@keyframes clickPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.canvasWrapper:has(canvas:focus) .clickOverlay,
+.canvasWrapper.locked .clickOverlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ========== CHAT PANEL ========== */
+.chatPanel {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  width: 350px;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  z-index: 100;
+  transition: all 0.3s;
+}
+
+.chatPanel:not(.open) {
+  max-height: 50px;
+}
+
+.chatHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: rgba(239, 68, 68, 0.3);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chatHeader:hover {
+  background: rgba(239, 68, 68, 0.4);
+}
+
+.chatMessages {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+}
+
+.chatEmpty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 30px;
+  font-size: 14px;
+}
+
+.chatMessage {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.chatMessage.system {
+  background: rgba(102, 126, 234, 0.2);
+  text-align: center;
+  font-style: italic;
+}
+
+.chatMessage.kill {
+  background: rgba(239, 68, 68, 0.3);
+  text-align: center;
+  font-weight: bold;
+}
+
+.systemText {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+.chatAuthor {
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.chatText {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chatInput {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.chatInput input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  outline: none;
+}
+
+.chatInput input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chatInput button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #ef4444;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chatInput button:hover {
+  background: #dc2626;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .menuHeader h1 {
+    font-size: 40px;
+  }
+  
+  .features {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .feature {
+    flex-direction: row;
+    padding: 14px 20px;
+  }
+  
+  .chatPanel {
+    width: calc(100% - 60px);
+    bottom: 20px;
+    right: 30px;
+    left: 30px;
+  }
+  
+  .healthBar {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .deathScreen h1 {
+    font-size: 48px;
+  }
+}

@@ -11,9 +11,105 @@ import {
   AiOutlineFileText,
   AiOutlineAppstore,
   AiOutlineFire,
-  AiOutlineStar
+  AiOutlineCode,
+  AiOutlineBulb,
+  AiOutlineRocket,
+  AiOutlineSetting,
+  AiOutlineGlobal,
+  AiOutlineDesktop,
+  AiOutlineMobile,
+  AiOutlineDatabase,
+  AiOutlineCloud,
+  AiOutlineSafety,
+  AiOutlineExperiment,
+  AiOutlineTool,
+  AiOutlineHeart,
+  AiOutlineThunderbolt
 } from 'react-icons/ai';
-import { FaFolderOpen } from 'react-icons/fa';
+import { 
+  FaFolderOpen, 
+  FaReact, 
+  FaPython, 
+  FaJs, 
+  FaHtml5, 
+  FaCss3Alt,
+  FaNodeJs,
+  FaGitAlt,
+  FaDocker,
+  FaLinux
+} from 'react-icons/fa';
+import { 
+  SiTypescript, 
+  SiVuedotjs, 
+  SiAngular,
+  SiNextdotjs,
+  SiMongodb,
+  SiPostgresql
+} from 'react-icons/si';
+import { BiServer, BiData } from 'react-icons/bi';
+import { HiOutlineLightBulb, HiOutlineAcademicCap } from 'react-icons/hi';
+import { MdOutlineSchool, MdOutlineTipsAndUpdates } from 'react-icons/md';
+
+// Маппинг иконок для категорий
+const getCategoryIcon = (iconName) => {
+  const iconMap = {
+    // Emoji mappings
+    '📚': <AiOutlineBook />,
+    '💻': <AiOutlineCode />,
+    '🚀': <AiOutlineRocket />,
+    '⚡': <AiOutlineThunderbolt />,
+    '🔧': <AiOutlineTool />,
+    '💡': <AiOutlineBulb />,
+    '🌐': <AiOutlineGlobal />,
+    '🖥️': <AiOutlineDesktop />,
+    '📱': <AiOutlineMobile />,
+    '🗄️': <AiOutlineDatabase />,
+    '☁️': <AiOutlineCloud />,
+    '🔒': <AiOutlineSafety />,
+    '🧪': <AiOutlineExperiment />,
+    '❤️': <AiOutlineHeart />,
+    '🎓': <HiOutlineAcademicCap />,
+    '📖': <AiOutlineBook />,
+    '🎯': <AiOutlineFire />,
+    '⚙️': <AiOutlineSetting />,
+    // Tech icons
+    'react': <FaReact />,
+    'python': <FaPython />,
+    'javascript': <FaJs />,
+    'js': <FaJs />,
+    'html': <FaHtml5 />,
+    'css': <FaCss3Alt />,
+    'node': <FaNodeJs />,
+    'nodejs': <FaNodeJs />,
+    'git': <FaGitAlt />,
+    'docker': <FaDocker />,
+    'linux': <FaLinux />,
+    'typescript': <SiTypescript />,
+    'ts': <SiTypescript />,
+    'vue': <SiVuedotjs />,
+    'angular': <SiAngular />,
+    'next': <SiNextdotjs />,
+    'nextjs': <SiNextdotjs />,
+    'mongodb': <SiMongodb />,
+    'postgres': <SiPostgresql />,
+    'postgresql': <SiPostgresql />,
+    'server': <BiServer />,
+    'data': <BiData />,
+    'backend': <BiServer />,
+    'frontend': <AiOutlineDesktop />,
+    'database': <AiOutlineDatabase />,
+    'api': <AiOutlineCloud />,
+    'security': <AiOutlineSafety />,
+    'tips': <MdOutlineTipsAndUpdates />,
+    'tutorial': <HiOutlineLightBulb />,
+    'education': <MdOutlineSchool />
+  };
+  
+  if (!iconName) return <AiOutlineFileText />;
+  
+  const lowerIcon = iconName.toLowerCase().trim();
+  return iconMap[lowerIcon] || iconMap[iconName] || <AiOutlineFileText />;
+};
 
 function KnowledgeBase() {
   const [articles, setArticles] = useState([]);
@@ -191,7 +287,7 @@ function KnowledgeBase() {
                 className={`${styles['kb-category']} ${selectedCategory === category.id ? styles['active'] : ''}`}
                 onClick={() => setSelectedCategory(category.id)}
               >
-                <span className={styles['category-icon']}>{category.icon}</span>
+                <span className={styles['category-icon']}>{getCategoryIcon(category.icon)}</span>
                 <span className={styles['category-name']}>{category.name}</span>
               </button>
             ))}
@@ -212,7 +308,7 @@ function KnowledgeBase() {
                   className={`${styles['kb-subcategory']} ${selectedSubcategory === subcategory.id ? styles['active'] : ''}`}
                   onClick={() => setSelectedSubcategory(subcategory.id)}
                 >
-                  {subcategory.icon} {subcategory.name}
+                  {getCategoryIcon(subcategory.icon)} {subcategory.name}
                 </button>
               ))}
             </div>

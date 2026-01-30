@@ -13,6 +13,11 @@ import KnowledgeBaseManagement from '../components/KnowledgeBaseManagement';
 import UpdatesManagement from '../components/UpdatesManagement';
 import AdminSubmissions from './admin/AdminSubmissions';
 import GamesManagement from './admin/GamesManagement';
+import AdminCourses from './admin/AdminCourses';
+import CourseLessons from './admin/CourseLessons';
+import FlexChanAdmin from './admin/FlexChanAdmin';
+import LayoutGameManagement from '../components/LayoutGameManagement';
+import JSGameManagement from '../components/JSGameManagement';
 
 function AdminDashboard() {
   return (
@@ -31,6 +36,11 @@ function AdminDashboard() {
         <Route path="/knowledge" element={<KnowledgeBaseManagement />} />
         <Route path="/updates" element={<UpdatesManagement />} />
         <Route path="/submissions" element={<AdminSubmissions />} />
+        <Route path="/courses" element={<AdminCourses />} />
+        <Route path="/courses/:courseId/lessons" element={<CourseLessons />} />
+        <Route path="/flexchan" element={<FlexChanAdmin />} />
+        <Route path="/layout-game" element={<LayoutGameManagement />} />
+        <Route path="/js-game" element={<JSGameManagement />} />
         {/* Здесь можно добавлять новые маршруты */}
       </Routes>
     </AdminLayout>

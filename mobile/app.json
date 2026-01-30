@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "OpenWay Platform",
+    "slug": "openway-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "kz.openway.mobile"
+    },
+    "android": {
+      "package": "kz.openway.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      },
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b157651d-1363-4565-b542-4b18e9e96d00"
+      }
+    },
+    "owner": "wixaliss"
+  }
+}
