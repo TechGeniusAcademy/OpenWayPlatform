@@ -1,109 +1,164 @@
+/* ===================================
+   MODERN CHAT STYLES
+   =================================== */
+
+/* Container */
 .modern-chat-container {
   width: 100%;
   height: calc(100vh - 80px);
-  background: #f5f5f5;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   overflow: hidden;
 }
 
+/* Loading State */
 .chat-loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  font-size: 18px;
-  color: #666;
+  height: 100%;
+  gap: 16px;
+  color: #64748b;
+  font-size: 15px;
 }
 
+.chat-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Chat Tabs */
 .chat-tabs {
   display: flex;
-  background: #ffffff;
-  border-bottom: 1px solid #e8e8e8;
-  padding: 8px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px;
   gap: 8px;
 }
 
 .chat-tab {
   flex: 1;
-  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
   border: none;
-  background: transparent;
-  border-radius: 8px;
+  background: #f8fafc;
+  border-radius: 12px;
   font-size: 14px;
-  font-weight: 500;
-  color: #666;
+  font-weight: 600;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .chat-tab:hover {
-  background: #f5f5f5;
-  color: #333;
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .chat-tab.active {
-  background: #2196f3;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
-.empty-list {
-  padding: 40px 20px;
-  text-align: center;
-  color: #999;
+.chat-tab .tab-icon {
+  font-size: 18px;
 }
 
-.empty-list p {
-  margin: 0;
-  font-size: 14px;
+.chat-tab .tab-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
+.chat-tab:not(.active) .tab-count {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+/* No Chat Selected State */
 .no-chat-selected {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .no-chat-content {
   text-align: center;
-  color: #999;
+  padding: 40px;
+  max-width: 400px;
 }
 
 .no-chat-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #6366f1;
 }
 
 .no-chat-content h3 {
   font-size: 24px;
-  margin: 0 0 10px 0;
-  color: #333;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: #1e293b;
 }
 
 .no-chat-content p {
-  font-size: 16px;
+  font-size: 15px;
+  color: #64748b;
   margin: 0;
+  line-height: 1.6;
 }
 
-/* Кастомные стили для сообщений */
+/* Code Message */
 .code-message {
-  background: #1e1e1e;
-  border-radius: 8px;
+  background: #1e293b;
+  border-radius: 12px;
   overflow: hidden;
   max-width: 500px;
+  border: 1px solid #334155;
 }
 
 .code-header {
-  background: #2d2d2d;
-  padding: 8px 16px;
-  border-bottom: 1px solid #3d3d3d;
+  background: #334155;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-header svg {
+  color: #a5b4fc;
+  font-size: 14px;
 }
 
 .code-language {
-  color: #61afef;
+  color: #a5b4fc;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .code-message pre {
@@ -113,194 +168,339 @@
 }
 
 .code-message code {
-  color: #abb2bf;
-  font-family: 'Fira Code', 'Monaco', 'Courier New', monospace;
-  font-size: 14px;
-  line-height: 1.5;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
+/* File Message */
 .file-message {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  min-width: 280px;
+  gap: 14px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  min-width: 300px;
+  border: 1px solid #e2e8f0;
 }
 
-.file-icon {
-  font-size: 32px;
+.file-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-icon-wrapper .file-icon {
+  font-size: 24px;
+  color: white;
 }
 
 .file-info {
   flex: 1;
+  min-width: 0;
 }
 
 .file-name {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: #1e293b;
   margin-bottom: 4px;
   word-break: break-all;
+  font-size: 14px;
 }
 
 .file-size {
   font-size: 12px;
-  color: #999;
+  color: #64748b;
 }
 
 .file-download {
-  background: #007bff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #6366f1;
   color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 10px 16px;
+  border-radius: 10px;
   text-decoration: none;
-  font-size: 14px;
-  transition: background 0.2s;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .file-download:hover {
-  background: #0056b3;
+  background: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
+.file-download svg {
+  font-size: 16px;
+}
+
+/* Edited Label */
 .edited-label {
   font-size: 11px;
-  color: #999;
+  color: #94a3b8;
   font-style: italic;
   margin-top: 4px;
   display: inline-block;
 }
 
-/* Переопределение стилей библиотеки для современного вида */
+/* Override Library Styles */
 .cs-main-container {
-  border-radius: 12px;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 16px !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08) !important;
   overflow: hidden;
+  border: 1px solid #e2e8f0 !important;
 }
 
 .cs-sidebar {
-  background: #ffffff;
-  border-right: 1px solid #e8e8e8;
+  background: white !important;
+  border-right: 1px solid #e2e8f0 !important;
 }
 
 .cs-search {
-  padding: 16px;
-  border-bottom: 1px solid #e8e8e8;
+  padding: 16px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  background: white !important;
 }
 
 .cs-search__input {
-  border-radius: 20px;
-  background: #f5f5f5;
-  border: none;
-  padding: 10px 16px;
+  border-radius: 12px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.cs-search__input:focus {
+  background: white !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+.cs-conversation-list {
+  background: white !important;
 }
 
 .cs-conversation {
-  transition: background 0.2s;
+  transition: all 0.2s ease !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border-left: 3px solid transparent !important;
 }
 
 .cs-conversation:hover {
-  background: #f8f9fa;
+  background: #f8fafc !important;
 }
 
 .cs-conversation--active {
-  background: #e3f2fd !important;
-  border-left: 3px solid #2196f3;
+  background: linear-gradient(90deg, #eef2ff, #f8fafc) !important;
+  border-left-color: #6366f1 !important;
+}
+
+.cs-conversation__name {
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  font-size: 14px !important;
+}
+
+.cs-conversation__info {
+  color: #64748b !important;
+  font-size: 13px !important;
 }
 
 .cs-avatar {
-  border: 2px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid white !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 
-.cs-avatar--status-available {
-  border-color: #4caf50;
+.cs-avatar--status-available::after {
+  background: #10b981 !important;
+  border: 2px solid white !important;
+}
+
+.cs-avatar--status-unavailable::after {
+  background: #94a3b8 !important;
+}
+
+/* Message Styles */
+.cs-message-list {
+  background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%) !important;
+  padding: 20px !important;
 }
 
 .cs-message {
-  margin-bottom: 12px;
+  margin-bottom: 16px !important;
 }
 
 .cs-message__content {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 12px 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: white !important;
+  border-radius: 16px !important;
+  padding: 14px 18px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid #f1f5f9 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
 }
 
 .cs-message--outgoing .cs-message__content {
-  background: #2196f3;
-  color: white;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25) !important;
 }
 
+.cs-message__sender-name {
+  font-weight: 600 !important;
+  color: #6366f1 !important;
+  font-size: 12px !important;
+  margin-bottom: 4px !important;
+}
+
+/* Message Input */
 .cs-message-input {
-  background: #ffffff;
-  border-top: 1px solid #e8e8e8;
-  padding: 16px;
+  background: white !important;
+  border-top: 1px solid #e2e8f0 !important;
+  padding: 16px 20px !important;
+}
+
+.cs-message-input__content-editor-wrapper {
+  background: #f8fafc !important;
+  border-radius: 24px !important;
+  border: 1px solid #e2e8f0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.cs-message-input__content-editor-wrapper:focus-within {
+  background: white !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
 }
 
 .cs-message-input__content-editor {
-  border-radius: 24px;
-  background: #f5f5f5;
-  border: none;
-  padding: 12px 20px;
-}
-
-.cs-message-input__content-editor:focus {
-  background: #ffffff;
-  border: 1px solid #2196f3;
+  padding: 14px 20px !important;
+  font-size: 14px !important;
 }
 
 .cs-button--send {
-  background: #2196f3;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  border-radius: 50% !important;
+  width: 44px !important;
+  height: 44px !important;
+  transition: all 0.2s ease !important;
 }
 
 .cs-button--send:hover {
-  background: #1976d2;
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
 }
 
+.cs-button--attachment {
+  color: #64748b !important;
+  transition: color 0.2s ease !important;
+}
+
+.cs-button--attachment:hover {
+  color: #6366f1 !important;
+}
+
+/* Typing Indicator */
 .cs-typing-indicator {
-  padding: 8px 16px;
-  color: #666;
-  font-size: 14px;
+  padding: 12px 16px !important;
+  color: #64748b !important;
+  font-size: 13px !important;
+  background: #f8fafc !important;
+  border-radius: 12px !important;
+  margin: 8px 0 !important;
 }
 
+/* Message Separator */
 .cs-message-separator {
-  margin: 24px 0;
-  color: #999;
-  font-size: 13px;
-  text-align: center;
+  margin: 24px 0 !important;
 }
 
-/* Скролл */
-.cs-message-list::-webkit-scrollbar {
+.cs-message-separator__content {
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  background: #f8fafc !important;
+  padding: 6px 14px !important;
+  border-radius: 20px !important;
+}
+
+/* Unread Count Badge */
+.cs-conversation__unread-count {
+  background: linear-gradient(135deg, #ef4444, #f97316) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  min-width: 22px !important;
+  height: 22px !important;
+  border-radius: 11px !important;
+  padding: 0 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Scrollbar */
+.cs-message-list::-webkit-scrollbar,
+.cs-conversation-list::-webkit-scrollbar {
   width: 6px;
 }
 
-.cs-message-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.cs-message-list::-webkit-scrollbar-track,
+.cs-conversation-list::-webkit-scrollbar-track {
+  background: #f8fafc;
 }
 
-.cs-message-list::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+.cs-message-list::-webkit-scrollbar-thumb,
+.cs-conversation-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
   border-radius: 3px;
 }
 
-.cs-message-list::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+.cs-message-list::-webkit-scrollbar-thumb:hover,
+.cs-conversation-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-/* Адаптивность */
+/* Responsive */
 @media (max-width: 768px) {
   .modern-chat-container {
     height: calc(100vh - 60px);
   }
 
   .cs-main-container {
-    border-radius: 0;
+    border-radius: 0 !important;
+  }
+
+  .chat-tabs {
+    padding: 8px;
+  }
+
+  .chat-tab {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .chat-tab span:not(.tab-count) {
+    display: none;
+  }
+
+  .chat-tab .tab-icon {
+    font-size: 20px;
   }
 
   .code-message {
@@ -310,14 +510,26 @@
   .file-message {
     min-width: auto;
     flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .file-download {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .no-chat-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 36px;
   }
 }
 
-/* Анимации */
+/* Animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -326,20 +538,32 @@
 }
 
 .cs-message {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.25s ease !important;
 }
 
-/* Улучшенный внешний вид счетчиков непрочитанных */
-.cs-conversation__unread-count {
-  background: #f44336;
-  color: white;
-  font-weight: 600;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  padding: 0 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
+/* Chat Header - if exists */
+.cs-chat-container__header {
+  background: white !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 16px 20px !important;
+}
+
+.cs-conversation-header {
+  background: white !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.cs-conversation-header__content {
+  padding: 16px 20px !important;
+}
+
+.cs-conversation-header__user-name {
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  font-size: 16px !important;
+}
+
+.cs-conversation-header__info {
+  color: #64748b !important;
+  font-size: 13px !important;
 }

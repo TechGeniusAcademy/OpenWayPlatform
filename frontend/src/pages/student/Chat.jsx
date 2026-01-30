@@ -19,6 +19,16 @@ import {
 } from '@chatscope/chat-ui-kit-react';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import './Chat.css';
+import { 
+  IoChatbubblesOutline, 
+  IoPeopleOutline, 
+  IoDocumentTextOutline,
+  IoDownloadOutline,
+  IoChatbubbleEllipsesOutline,
+  IoCodeSlash
+} from 'react-icons/io5';
+import { HiOutlineUserGroup } from 'react-icons/hi';
+import { BsFileEarmarkText, BsChatDots } from 'react-icons/bs';
 
 function Chat() {
   const { user } = useAuth();
@@ -361,7 +371,12 @@ function Chat() {
   const showTyping = typingUserNames.length > 0;
 
   if (loading) {
-    return <div className="chat-loading">Загрузка чатов...</div>;
+    return (
+      <div className="chat-loading">
+        <div className="chat-loading-spinner"></div>
+        <span>Загрузка чатов...</span>
+      </div>
+    );
   }
 
   return (
@@ -373,13 +388,17 @@ function Chat() {
               className={`chat-tab ${activeTab === 'chats' ? 'active' : ''}`}
               onClick={() => setActiveTab('chats')}
             >
-              💬 Чаты {chats.length > 0 && `(${chats.length})`}
+              <IoChatbubblesOutline className="tab-icon" />
+              <span>Чаты</span>
+              {chats.length > 0 && <span className="tab-count">{chats.length}</span>}
             </button>
             <button 
               className={`chat-tab ${activeTab === 'users' ? 'active' : ''}`}
               onClick={() => setActiveTab('users')}
             >
-              👥 Пользователи {users.length > 0 && `(${users.length})`}
+              <IoPeopleOutline className="tab-icon" />
+              <span>Пользователи</span>
+              {users.length > 0 && <span className="tab-count">{users.length}</span>}
             </button>
           </div>
           <Search 
@@ -468,7 +487,9 @@ function Chat() {
                       {msg.messageType === 'file' && (
                         <Message.CustomContent>
                           <div className="file-message">
-                            <span className="file-icon">📄</span>
+                            <div className="file-icon-wrapper">
+                              <BsFileEarmarkText className="file-icon" />
+                            </div>
                             <div className="file-info">
                               <div className="file-name">{msg.fileName}</div>
                               <div className="file-size">
@@ -480,7 +501,8 @@ function Chat() {
                               download={msg.fileName}
                               className="file-download"
                             >
-                              Скачать
+                              <IoDownloadOutline />
+                              <span>Скачать</span>
                             </a>
                           </div>
                         </Message.CustomContent>
@@ -513,9 +535,11 @@ function Chat() {
         ) : (
           <div className="no-chat-selected">
             <div className="no-chat-content">
-              <div className="no-chat-icon">💬</div>
+              <div className="no-chat-icon">
+                <BsChatDots />
+              </div>
               <h3>Выберите чат</h3>
-              <p>Выберите чат из списка, чтобы начать общение</p>
+              <p>Выберите чат из списка слева или начните новый диалог с пользователем</p>
             </div>
           </div>
         )}
