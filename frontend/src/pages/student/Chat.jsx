@@ -76,6 +76,15 @@ function Chat() {
     }
   }, [activeChat]);
 
+  // Авто-прокрутка к последнему сообщению
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [messages]);
+
   const setupWebSocket = () => {
     if (!socket) return;
 
@@ -254,6 +263,15 @@ function Chat() {
         messageType: 'text'
       });
 
+      // Добавляем сообщение в локальный state сразу
+      if (response.data && response.data.message) {
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === response.data.message.id);
+          if (exists) return prev;
+          return [...prev, transformMessage(response.data.message)];
+        });
+      }
+
       // Сообщение придет через WebSocket
       loadUnreadCount();
     } catch (error) {
@@ -416,7 +434,7 @@ function Chat() {
                     lastSenderName={chat.lastSenderName}
                     info={chat.lastMessage}
                     active={activeChat?.id === chat.id}
-                    unreadCnt={chat.unreadCount}
+                    unreadCnt={Number(chat.unreadCount) || 0}
                     onClick={() => setActiveChat(chat)}
                   >
                     <Avatar 
@@ -523,6 +541,7 @@ function Chat() {
                   </div>
                 );
               })}
+              <div ref={messagesEndRef} />
             </MessageList>
             <MessageInput
               placeholder="Введите сообщение..."
