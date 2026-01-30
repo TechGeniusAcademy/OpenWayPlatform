@@ -1,15 +1,27 @@
 import axios from 'axios';
 
-// Динамически определяем API URL на основе текущего хоста
-// Если зашли по localhost - API будет localhost:5000
-// Если зашли по IP - API будет IP:5000
+// Используем env переменную или определяем API URL на основе текущего хоста
 const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
   const hostname = window.location.hostname;
-  return `http://${hostname}:5000/api`;
+  const protocol = window.location.protocol;
+  return `${protocol}//${hostname}:5000/api`;
+};
+
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    // Убираем /api из URL
+    return import.meta.env.VITE_API_URL.replace('/api', '');
+  }
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  return `${protocol}//${hostname}:5000`;
 };
 
 const API_URL = getApiUrl();
-export const BASE_URL = `http://${window.location.hostname}:5000`; // Базовый URL для изображений
+export const BASE_URL = getBaseUrl(); // Базовый URL для изображений
 
 const api = axios.create({
   baseURL: API_URL,
