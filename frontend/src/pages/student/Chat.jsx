@@ -228,7 +228,8 @@ function Chat() {
   const loadMessages = async (chatId) => {
     try {
       const response = await api.get(`/chat/${chatId}/messages`);
-      setMessages(response.data.map(transformMessage));
+      const messagesArray = response.data.messages || response.data || [];
+      setMessages(messagesArray.map(transformMessage));
     } catch (error) {
       console.error('Ошибка загрузки сообщений:', error);
     }
@@ -258,7 +259,7 @@ function Chat() {
     if (!activeChat || !textContent.trim()) return;
 
     try {
-      const response = await api.post(`/chat/${activeChat.id}/message`, {
+      const response = await api.post(`/chat/${activeChat.id}/messages`, {
         content: textContent.trim(),
         messageType: 'text'
       });
@@ -299,7 +300,7 @@ function Chat() {
 
   const markAsRead = async (chatId) => {
     try {
-      await api.post(`/chat/${chatId}/read`);
+      await api.put(`/chat/${chatId}/mark-read`);
       loadUnreadCount();
       setChats(prev => prev.map(c => 
         c.id === chatId ? { ...c, unreadCount: 0 } : c
