@@ -579,7 +579,8 @@ function LayoutGame({ onBack }) {
         if (response.data.pointsAwarded > 0) {
           toast.info(`+${response.data.pointsAwarded} очков!`);
         }
-        loadLevels();
+        // Обновляем список уровней чтобы разблокировать следующий
+        await loadLevels();
         loadStats();
       } else {
         toast.warning(response.data.message);
@@ -591,6 +592,23 @@ function LayoutGame({ onBack }) {
       setIsChecking(false);
     }
   };
+
+  // Переход к следующему уровню
+  const goToNextLevel = useCallback(() => {
+    const currentIndex = levels.findIndex(l => l.id === selectedLevel.id);
+    if (currentIndex !== -1 && currentIndex < levels.length - 1) {
+      const nextLevel = levels[currentIndex + 1];
+      selectLevel(nextLevel);
+      setLastResult(null);
+    }
+  }, [levels, selectedLevel]);
+
+  // Проверка есть ли следующий уровень
+  const hasNextLevel = useMemo(() => {
+    if (!selectedLevel || !levels.length) return false;
+    const currentIndex = levels.findIndex(l => l.id === selectedLevel.id);
+    return currentIndex !== -1 && currentIndex < levels.length - 1;
+  }, [levels, selectedLevel]);
 
   // Форматирование цвета для отображения
   const formatColor = (color) => {
@@ -1270,6 +1288,16 @@ function LayoutGame({ onBack }) {
             <>
               <FaCheck /> Уровень пройден! Точность: {lastResult.accuracy.toFixed(1)}%
               {lastResult.pointsAwarded > 0 && ` (+${lastResult.pointsAwarded} очков)`}
+              {hasNextLevel && (
+                <button onClick={goToNextLevel} className={styles.nextButton}>
+                  <FaRocket /> Следующий уровень
+                </button>
+              )}
+              {!hasNextLevel && (
+                <button onClick={() => setSelectedLevel(null)} className={styles.nextButton}>
+                  <FaTrophy /> К списку уровней
+                </button>
+              )}
             </>
           ) : (
             <>
