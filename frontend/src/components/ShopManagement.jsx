@@ -305,10 +305,10 @@ function ShopManagement() {
       {/* Список баннеров */}
       <div className={styles['items-section']}>
         <h2>🎨 Баннеры профиля ({banners.length})</h2>
-        <div className="items-grid banners-grid">
+        <div className={`${styles['items-grid']} ${styles['banners-grid']}`}>
           {banners.map(item => (
-            <div key={item.id} className="shop-item-card banner-card">
-              <div className="item-image banner-preview">
+            <div key={item.id} className={`${styles['shop-item-card']} ${styles['banner-card']}`}>
+              <div className={`${styles['item-image']} ${styles['banner-preview']}`}>
                 {item.image_url ? (
                   <img src={`${BASE_URL}${item.image_url}`} alt={item.name} />
                 ) : (

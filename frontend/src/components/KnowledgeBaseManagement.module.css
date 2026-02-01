@@ -831,6 +831,90 @@
   font-style: normal;
 }
 
+/* ==================== Table Insert ==================== */
+
+.editor-toolbar-extra {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.btn-insert-table {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-insert-table:hover {
+  background: #e5e7eb;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.table-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  animation: modalSlideIn 0.3s ease;
+}
+
+.table-modal-content {
+  padding: 20px;
+}
+
+.table-size-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.table-preview {
+  text-align: center;
+}
+
+.table-preview p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.table-grid-preview {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #f3f4f6;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.table-row-preview {
+  display: flex;
+  gap: 2px;
+}
+
+.table-cell-preview {
+  width: 24px;
+  height: 20px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+}
+
+.table-cell-preview.header-cell {
+  background: #e5e7eb;
+}
+
 /* ==================== Responsive ==================== */
 
 @media (max-width: 768px) {

@@ -296,7 +296,12 @@
 }
 
 .banners-grid {
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 350px));
+  justify-content: start;
+}
+
+.banner-card {
+  max-width: 350px;
 }
 
 .shop-item-card {

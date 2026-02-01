@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import ReactQuill from 'react-quill';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import api from '../utils/api';
 import styles from './KnowledgeBaseManagement.module.css';
@@ -15,13 +15,15 @@ import {
 } from 'react-icons/fi';
 
 // Wrapper для ReactQuill чтобы избежать findDOMNode warning
-const QuillEditor = ({ value, onChange, modules, placeholder }) => {
+const QuillEditor = ({ value, onChange, modules, formats, placeholder, editorRef }) => {
   return (
     <ReactQuill
+      ref={editorRef}
       theme="snow"
       value={value}
       onChange={onChange}
       modules={modules}
+      formats={formats}
       placeholder={placeholder}
     />
   );
@@ -38,6 +40,12 @@ function KnowledgeBaseManagement() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false);
+  
+  // Редактор
+  const quillRef = useRef(null);
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
   
   // Данные для форм
   const [editingCategory, setEditingCategory] = useState(null);
@@ -304,18 +312,60 @@ function KnowledgeBaseManagement() {
     });
   };
 
+  // Функция вставки таблицы
+  const insertTable = useCallback(() => {
+    const rows = tableRows;
+    const cols = tableCols;
+    
+    // Создаём HTML таблицы
+    let tableHTML = '<table style="border-collapse: collapse; width: 100%; margin: 10px 0;"><tbody>';
+    
+    for (let i = 0; i < rows; i++) {
+      tableHTML += '<tr>';
+      for (let j = 0; j < cols; j++) {
+        if (i === 0) {
+          tableHTML += '<th style="border: 1px solid #ddd; padding: 8px; background: #f5f5f5; font-weight: bold;">Заголовок</th>';
+        } else {
+          tableHTML += '<td style="border: 1px solid #ddd; padding: 8px;">Ячейка</td>';
+        }
+      }
+      tableHTML += '</tr>';
+    }
+    tableHTML += '</tbody></table><p><br></p>';
+    
+    // Вставляем в редактор
+    const currentContent = articleForm.content || '';
+    setArticleForm(prev => ({
+      ...prev,
+      content: currentContent + tableHTML
+    }));
+    
+    setShowTableModal(false);
+    setTableRows(3);
+    setTableCols(3);
+  }, [tableRows, tableCols, articleForm.content]);
+
   // Конфигурация Quill
   const quillModules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
-      ['link', 'image', 'code-block'],
-      ['clean']
-    ]
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'align': [] }],
+        ['link', 'image', 'code-block'],
+        ['clean']
+      ]
+    }
   };
+  
+  // Форматы для Quill (включая таблицы)
+  const quillFormats = [
+    'header', 'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'color', 'background', 'align',
+    'link', 'image', 'code-block'
+  ];
 
   // Функция для рендеринга иконки по имени
   const renderIcon = (iconName) => {
@@ -879,11 +929,23 @@ function KnowledgeBaseManagement() {
 
                 <div className={styles['form-group']}>
                   <label className={styles['form-label']}>Содержание статьи *</label>
+                  <div className={styles['editor-toolbar-extra']}>
+                    <button
+                      type="button"
+                      className={styles['btn-insert-table']}
+                      onClick={() => setShowTableModal(true)}
+                      title="Вставить таблицу"
+                    >
+                      <FiGrid /> Вставить таблицу
+                    </button>
+                  </div>
                   <div className={styles['editor-wrapper']}>
                     <QuillEditor
+                      editorRef={quillRef}
                       value={articleForm.content}
                       onChange={(content) => setArticleForm({ ...articleForm, content })}
                       modules={quillModules}
+                      formats={quillFormats}
                       placeholder="Напишите содержание статьи..."
                     />
                   </div>
@@ -910,6 +972,69 @@ function KnowledgeBaseManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Модалка вставки таблицы */}
+      {showTableModal && (
+        <div className={styles['modal-overlay']} onClick={() => setShowTableModal(false)}>
+          <div className={styles['table-modal']} onClick={e => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <h2><FiGrid /> Вставить таблицу</h2>
+              <button className={styles['close-btn']} onClick={() => setShowTableModal(false)}>
+                <FiX />
+              </button>
+            </div>
+            <div className={styles['table-modal-content']}>
+              <div className={styles['table-size-inputs']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Строки</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={tableRows}
+                    onChange={(e) => setTableRows(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                    className={styles['form-input']}
+                  />
+                </div>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Столбцы</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={tableCols}
+                    onChange={(e) => setTableCols(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                    className={styles['form-input']}
+                  />
+                </div>
+              </div>
+              <div className={styles['table-preview']}>
+                <p>Превью: {tableRows} x {tableCols}</p>
+                <div className={styles['table-grid-preview']}>
+                  {Array(Math.min(tableRows, 5)).fill(null).map((_, rowIdx) => (
+                    <div key={rowIdx} className={styles['table-row-preview']}>
+                      {Array(Math.min(tableCols, 6)).fill(null).map((_, colIdx) => (
+                        <div 
+                          key={colIdx} 
+                          className={`${styles['table-cell-preview']} ${rowIdx === 0 ? styles['header-cell'] : ''}`}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className={styles['modal-footer']}>
+              <button className={styles['btn-secondary']} onClick={() => setShowTableModal(false)}>
+                Отмена
+              </button>
+              <button className={styles['btn-primary']} onClick={insertTable}>
+                <FiPlus /> Вставить
+              </button>
+            </div>
           </div>
         </div>
       )}
