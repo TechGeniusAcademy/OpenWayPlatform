@@ -863,13 +863,18 @@
   background: #ffffff;
   border-radius: 12px;
   width: 100%;
-  max-width: 400px;
+  max-width: 700px;
+  max-height: 90vh;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
   animation: modalSlideIn 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .table-modal-content {
   padding: 20px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .table-size-inputs {
@@ -879,40 +884,56 @@
   margin-bottom: 20px;
 }
 
-.table-preview {
-  text-align: center;
+.table-editor {
+  margin-top: 16px;
 }
 
-.table-preview p {
-  margin: 0 0 12px;
+.table-editor-hint {
   font-size: 13px;
   color: #6b7280;
+  margin: 0 0 12px;
 }
 
-.table-grid-preview {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 2px;
-  background: #f3f4f6;
-  padding: 8px;
+.table-editor-scroll {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
 }
 
-.table-row-preview {
-  display: flex;
-  gap: 2px;
+.editable-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 400px;
 }
 
-.table-cell-preview {
-  width: 24px;
-  height: 20px;
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 2px;
+.editable-table td {
+  padding: 0;
+  border: 1px solid #e5e7eb;
 }
 
-.table-cell-preview.header-cell {
-  background: #e5e7eb;
+.header-cell-edit {
+  background: #f3f4f6;
+}
+
+.table-cell-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  font-size: 14px;
+  background: transparent;
+  outline: none;
+}
+
+.table-cell-input:focus {
+  background: #eff6ff;
+}
+
+.header-cell-edit .table-cell-input {
+  font-weight: 600;
+}
+
+.table-cell-input::placeholder {
+  color: #9ca3af;
 }
 
 /* ==================== Responsive ==================== */

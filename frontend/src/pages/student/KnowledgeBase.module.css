@@ -569,6 +569,36 @@
   margin: 20px 0 10px 0;
 }
 
+/* Таблицы в статьях */
+.kb-article-body table,
+.kb-article-body .kb-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+
+.kb-article-body table th,
+.kb-article-body table td {
+  border: 1px solid #d1d5db;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.kb-article-body table th {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.kb-article-body table tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.kb-article-body table tr:hover {
+  background: #eff6ff;
+}
+
 /* Загрузка */
 .knowledge-base-loading {
   display: flex;

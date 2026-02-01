@@ -46,6 +46,7 @@ function KnowledgeBaseManagement() {
   const quillRef = useRef(null);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
+  const [tableData, setTableData] = useState([]);
   
   // Данные для форм
   const [editingCategory, setEditingCategory] = useState(null);
@@ -314,36 +315,90 @@ function KnowledgeBaseManagement() {
 
   // Функция вставки таблицы
   const insertTable = useCallback(() => {
-    const rows = tableRows;
-    const cols = tableCols;
+    // Генерируем HTML таблицы из данных
+    let tableHTML = '<table class="kb-table" style="border-collapse: collapse; width: 100%; margin: 16px 0;"><tbody>';
     
-    // Создаём HTML таблицы
-    let tableHTML = '<table style="border-collapse: collapse; width: 100%; margin: 10px 0;"><tbody>';
-    
-    for (let i = 0; i < rows; i++) {
+    tableData.forEach((row, rowIdx) => {
       tableHTML += '<tr>';
-      for (let j = 0; j < cols; j++) {
-        if (i === 0) {
-          tableHTML += '<th style="border: 1px solid #ddd; padding: 8px; background: #f5f5f5; font-weight: bold;">Заголовок</th>';
+      row.forEach((cell) => {
+        if (rowIdx === 0) {
+          tableHTML += `<th style="border: 1px solid #d1d5db; padding: 10px 12px; background: #f3f4f6; font-weight: 600; text-align: left;">${cell || 'Заголовок'}</th>`;
         } else {
-          tableHTML += '<td style="border: 1px solid #ddd; padding: 8px;">Ячейка</td>';
+          tableHTML += `<td style="border: 1px solid #d1d5db; padding: 10px 12px;">${cell || ''}</td>`;
         }
-      }
+      });
       tableHTML += '</tr>';
-    }
-    tableHTML += '</tbody></table><p><br></p>';
+    });
+    tableHTML += '</tbody></table>';
     
-    // Вставляем в редактор
+    // Добавляем таблицу в конец контента
+    // Используем специальный маркер чтобы Quill не испортил таблицу
+    const tableMarker = `<!--TABLE_START-->${tableHTML}<!--TABLE_END-->`;
+    
     const currentContent = articleForm.content || '';
     setArticleForm(prev => ({
       ...prev,
-      content: currentContent + tableHTML
+      content: currentContent + tableMarker
     }));
     
     setShowTableModal(false);
+    resetTableEditor();
+  }, [tableData, articleForm.content]);
+  
+  // Инициализация редактора таблицы
+  const initTableEditor = useCallback(() => {
+    const rows = tableRows;
+    const cols = tableCols;
+    const newData = [];
+    for (let i = 0; i < rows; i++) {
+      const row = [];
+      for (let j = 0; j < cols; j++) {
+        row.push(i === 0 ? `Заголовок ${j + 1}` : '');
+      }
+      newData.push(row);
+    }
+    setTableData(newData);
+  }, [tableRows, tableCols]);
+  
+  // Сброс редактора таблицы
+  const resetTableEditor = () => {
     setTableRows(3);
     setTableCols(3);
-  }, [tableRows, tableCols, articleForm.content]);
+    setTableData([]);
+  };
+  
+  // Обновление размера таблицы
+  const updateTableSize = (newRows, newCols) => {
+    setTableRows(newRows);
+    setTableCols(newCols);
+    
+    const newData = [];
+    for (let i = 0; i < newRows; i++) {
+      const row = [];
+      for (let j = 0; j < newCols; j++) {
+        // Сохраняем существующие данные если есть
+        row.push(tableData[i]?.[j] ?? (i === 0 ? `Заголовок ${j + 1}` : ''));
+      }
+      newData.push(row);
+    }
+    setTableData(newData);
+  };
+  
+  // Обновление ячейки таблицы
+  const updateTableCell = (rowIdx, colIdx, value) => {
+    setTableData(prev => {
+      const newData = [...prev];
+      newData[rowIdx] = [...newData[rowIdx]];
+      newData[rowIdx][colIdx] = value;
+      return newData;
+    });
+  };
+  
+  // Открытие модалки таблицы
+  const openTableModal = () => {
+    initTableEditor();
+    setShowTableModal(true);
+  };
 
   // Конфигурация Quill
   const quillModules = {
@@ -933,7 +988,7 @@ function KnowledgeBaseManagement() {
                     <button
                       type="button"
                       className={styles['btn-insert-table']}
-                      onClick={() => setShowTableModal(true)}
+                      onClick={openTableModal}
                       title="Вставить таблицу"
                     >
                       <FiGrid /> Вставить таблицу
@@ -978,11 +1033,11 @@ function KnowledgeBaseManagement() {
 
       {/* Модалка вставки таблицы */}
       {showTableModal && (
-        <div className={styles['modal-overlay']} onClick={() => setShowTableModal(false)}>
+        <div className={styles['modal-overlay']} onClick={() => { setShowTableModal(false); resetTableEditor(); }}>
           <div className={styles['table-modal']} onClick={e => e.stopPropagation()}>
             <div className={styles['modal-header']}>
-              <h2><FiGrid /> Вставить таблицу</h2>
-              <button className={styles['close-btn']} onClick={() => setShowTableModal(false)}>
+              <h2><FiGrid /> Создать таблицу</h2>
+              <button className={styles['close-btn']} onClick={() => { setShowTableModal(false); resetTableEditor(); }}>
                 <FiX />
               </button>
             </div>
@@ -992,10 +1047,10 @@ function KnowledgeBaseManagement() {
                   <label className={styles['form-label']}>Строки</label>
                   <input
                     type="number"
-                    min="1"
-                    max="20"
+                    min="2"
+                    max="15"
                     value={tableRows}
-                    onChange={(e) => setTableRows(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                    onChange={(e) => updateTableSize(Math.max(2, Math.min(15, parseInt(e.target.value) || 2)), tableCols)}
                     className={styles['form-input']}
                   />
                 </div>
@@ -1004,35 +1059,45 @@ function KnowledgeBaseManagement() {
                   <input
                     type="number"
                     min="1"
-                    max="10"
+                    max="8"
                     value={tableCols}
-                    onChange={(e) => setTableCols(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                    onChange={(e) => updateTableSize(tableRows, Math.max(1, Math.min(8, parseInt(e.target.value) || 1)))}
                     className={styles['form-input']}
                   />
                 </div>
               </div>
-              <div className={styles['table-preview']}>
-                <p>Превью: {tableRows} x {tableCols}</p>
-                <div className={styles['table-grid-preview']}>
-                  {Array(Math.min(tableRows, 5)).fill(null).map((_, rowIdx) => (
-                    <div key={rowIdx} className={styles['table-row-preview']}>
-                      {Array(Math.min(tableCols, 6)).fill(null).map((_, colIdx) => (
-                        <div 
-                          key={colIdx} 
-                          className={`${styles['table-cell-preview']} ${rowIdx === 0 ? styles['header-cell'] : ''}`}
-                        />
+              
+              <div className={styles['table-editor']}>
+                <p className={styles['table-editor-hint']}>Заполните таблицу (первая строка - заголовки):</p>
+                <div className={styles['table-editor-scroll']}>
+                  <table className={styles['editable-table']}>
+                    <tbody>
+                      {tableData.map((row, rowIdx) => (
+                        <tr key={rowIdx}>
+                          {row.map((cell, colIdx) => (
+                            <td key={colIdx} className={rowIdx === 0 ? styles['header-cell-edit'] : ''}>
+                              <input
+                                type="text"
+                                value={cell}
+                                onChange={(e) => updateTableCell(rowIdx, colIdx, e.target.value)}
+                                placeholder={rowIdx === 0 ? 'Заголовок' : 'Данные'}
+                                className={styles['table-cell-input']}
+                              />
+                            </td>
+                          ))}
+                        </tr>
                       ))}
-                    </div>
-                  ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
             <div className={styles['modal-footer']}>
-              <button className={styles['btn-secondary']} onClick={() => setShowTableModal(false)}>
+              <button className={styles['btn-secondary']} onClick={() => { setShowTableModal(false); resetTableEditor(); }}>
                 Отмена
               </button>
-              <button className={styles['btn-primary']} onClick={insertTable}>
-                <FiPlus /> Вставить
+              <button className={styles['btn-primary']} onClick={insertTable} disabled={tableData.length === 0}>
+                <FiPlus /> Вставить таблицу
               </button>
             </div>
           </div>
