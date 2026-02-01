@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   FiUsers, FiEdit2, FiTrash2, FiPlus, FiImage, 
-  FiUpload, FiX, FiCheck, FiAlertCircle, FiDollarSign 
+  FiUpload, FiX, FiCheck, FiAlertCircle, FiDollarSign, FiSearch 
 } from 'react-icons/fi';
 import api, { BASE_URL } from '../utils/api';
 import styles from './UsersManagement.module.css';
@@ -33,6 +33,32 @@ function UsersManagement() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Для поиска
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Фильтрация пользователей по поисковому запросу
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return users.filter(user => {
+      const searchFields = [
+        user.id?.toString(),
+        user.username,
+        user.email,
+        user.full_name,
+        user.role,
+        user.group_name,
+        user.points?.toString(),
+        new Date(user.created_at).toLocaleDateString('ru-RU')
+      ];
+      
+      return searchFields.some(field => 
+        field && field.toLowerCase().includes(query)
+      );
+    });
+  }, [users, searchQuery]);
 
   useEffect(() => {
     loadUsers();
@@ -279,6 +305,34 @@ function UsersManagement() {
         </div>
       )}
 
+      {/* Поиск */}
+      <div className={styles['search-container']}>
+        <div className={styles['search-input-wrapper']}>
+          <FiSearch className={styles['search-icon']} />
+          <input
+            type="text"
+            placeholder="Поиск по ID, имени, email, ФИО, роли, группе..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles['search-input']}
+          />
+          {searchQuery && (
+            <button 
+              className={styles['search-clear']} 
+              onClick={() => setSearchQuery('')}
+              title="Очистить поиск"
+            >
+              <FiX />
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <div className={styles['search-results-count']}>
+            Найдено: {filteredUsers.length} из {users.length}
+          </div>
+        )}
+      </div>
+
       <div className={styles['users-table-container']}>
         {users.length === 0 ? (
           <div className={styles['empty-state']}>
@@ -305,7 +359,7 @@ function UsersManagement() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id}>
                   <td data-label="ID">{user.id}</td>
                   <td data-label="Аватар">
