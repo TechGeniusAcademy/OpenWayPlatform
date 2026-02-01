@@ -611,7 +611,27 @@
   }
 }
 
-/* Responsive */
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  :global(.cs-sidebar) {
+    width: 280px !important;
+    min-width: 280px !important;
+  }
+
+  :global(.cs-conversation__name) {
+    font-size: 13px !important;
+  }
+
+  :global(.cs-conversation__info) {
+    font-size: 12px !important;
+  }
+}
+
+/* Mobile */
 @media (max-width: 768px) {
   .container {
     height: calc(100vh - 60px);
@@ -619,18 +639,39 @@
 
   :global(.cs-main-container) {
     border-radius: 0 !important;
+    flex-direction: column !important;
   }
 
+  /* Sidebar на мобильном */
+  :global(.cs-sidebar) {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-height: 45vh !important;
+    border-right: none !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  :global(.cs-sidebar--visible) {
+    display: flex !important;
+  }
+
+  :global(.cs-conversation-list) {
+    max-height: calc(45vh - 120px) !important;
+  }
+
+  /* Tabs */
   .tabs {
     padding: 8px;
+    gap: 6px;
   }
 
   .tab {
     padding: 10px 12px;
     font-size: 13px;
+    border-radius: 10px;
   }
 
-  .tab span:not(.tabCount) {
+  .tab span:not(.tabCount):not(.tabIcon) {
     display: none;
   }
 
@@ -638,25 +679,274 @@
     font-size: 20px;
   }
 
+  .tabCount {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  /* Search */
+  :global(.cs-search) {
+    padding: 10px !important;
+  }
+
+  :global(.cs-search__input) {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
+
+  /* Conversations */
+  :global(.cs-conversation) {
+    padding: 10px 12px !important;
+  }
+
+  :global(.cs-avatar) {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  /* Chat Container */
+  :global(.cs-chat-container) {
+    flex: 1 !important;
+    min-height: 0 !important;
+  }
+
+  /* Message List */
+  :global(.cs-message-list) {
+    padding: 12px !important;
+  }
+
+  :global(.cs-message) {
+    margin-bottom: 12px !important;
+  }
+
+  :global(.cs-message__content) {
+    padding: 10px 12px !important;
+    padding-bottom: 16px !important;
+    font-size: 13px !important;
+    max-width: 85% !important;
+  }
+
+  :global(.cs-message__sender-name) {
+    font-size: 11px !important;
+  }
+
+  :global(.cs-message__footer) span {
+    font-size: 9px !important;
+  }
+
+  /* Message Input */
+  :global(.cs-message-input) {
+    padding: 10px 12px !important;
+  }
+
+  :global(.cs-message-input__content-editor-wrapper) {
+    height: 40px !important;
+    border-radius: 20px !important;
+  }
+
+  :global(.cs-message-input__content-editor) {
+    height: 40px !important;
+    line-height: 40px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+  }
+
+  :global(.cs-button--send) {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  :global(.cs-button--attachment) {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* Code Message */
   .codeMessage {
     max-width: 100%;
   }
 
+  .codeHeader {
+    padding: 8px 12px;
+  }
+
+  .codeLanguage {
+    font-size: 11px;
+  }
+
+  .codeMessage pre {
+    padding: 12px;
+  }
+
+  .codeMessage code {
+    font-size: 12px;
+  }
+
+  /* File Message */
   .fileMessage {
     min-width: auto;
+    padding: 12px 14px;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
+  }
+
+  .fileIconWrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .fileIcon {
+    font-size: 20px;
+  }
+
+  .fileName {
+    font-size: 13px;
+  }
+
+  .fileSize {
+    font-size: 11px;
   }
 
   .fileDownload {
     width: 100%;
     justify-content: center;
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  /* No Chat State */
+  .noChat {
+    min-height: 200px;
+  }
+
+  .noChatContent {
+    padding: 24px;
   }
 
   .noChatIcon {
-    width: 80px;
-    height: 80px;
-    font-size: 36px;
+    width: 70px;
+    height: 70px;
+    font-size: 32px;
+    margin-bottom: 16px;
+  }
+
+  .noChatContent h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  .noChatContent p {
+    font-size: 13px;
+  }
+
+  /* Message Separator */
+  :global(.cs-message-separator) {
+    margin: 16px 0 !important;
+  }
+
+  :global(.cs-message-separator__content) {
+    font-size: 11px !important;
+    padding: 4px 12px !important;
+  }
+
+  /* Typing Indicator */
+  :global(.cs-typing-indicator) {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Conversation Header */
+  :global(.cs-conversation-header__content) {
+    padding: 12px 16px !important;
+  }
+
+  :global(.cs-conversation-header__user-name) {
+    font-size: 14px !important;
+  }
+
+  :global(.cs-conversation-header__info) {
+    font-size: 12px !important;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .container {
+    height: calc(100vh - 56px);
+  }
+
+  :global(.cs-sidebar) {
+    max-height: 40vh !important;
+  }
+
+  :global(.cs-conversation-list) {
+    max-height: calc(40vh - 110px) !important;
+  }
+
+  .tabs {
+    padding: 6px;
+    gap: 4px;
+  }
+
+  .tab {
+    padding: 8px 10px;
+  }
+
+  :global(.cs-message__content) {
+    max-width: 90% !important;
+    padding: 8px 10px !important;
+    padding-bottom: 14px !important;
+  }
+
+  :global(.cs-avatar) {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .fileMessage {
+    padding: 10px 12px;
+  }
+
+  .fileIconWrapper {
+    width: 36px;
+    height: 36px;
+  }
+
+  .noChatIcon {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+
+  .noChatContent h3 {
+    font-size: 16px;
+  }
+
+  .noChatContent p {
+    font-size: 12px;
+  }
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  :global(.cs-sidebar) {
+    max-height: 35vh !important;
+  }
+
+  :global(.cs-conversation-list) {
+    max-height: calc(35vh - 100px) !important;
+  }
+
+  .noChatContent {
+    padding: 16px;
+  }
+
+  .noChatIcon {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    margin-bottom: 12px;
   }
 }
 
