@@ -424,7 +424,15 @@ function ProtectedCodeEditor({ initialCode, onChange, disabled }) {
   }, [editableValues, parts, onChange]);
   
   const handleInputChange = (id, value) => {
-    setEditableValues(prev => ({ ...prev, [id]: value }));
+    // Запрещаем ввод после точки с запятой
+    // Если есть ;, обрезаем всё что после неё
+    let cleanValue = value;
+    const semicolonIndex = value.indexOf(';');
+    if (semicolonIndex !== -1) {
+      cleanValue = value.slice(0, semicolonIndex + 1);
+    }
+    
+    setEditableValues(prev => ({ ...prev, [id]: cleanValue }));
   };
   
   return (
@@ -586,65 +594,96 @@ function FlexChan() {
       });
     }
     
+    // Получаем gap (в ячейках сетки)
+    const gap = flexProps['gap'] ? parseInt(flexProps['gap']) || 0 : 0;
+    
     // Проверяем есть ли flex-свойства которые влияют на позиционирование
     const hasFlexPositioning = flexProps['justify-content'] || 
                                flexProps['align-items'] || 
-                               flexProps['flex-direction'];
+                               flexProps['flex-direction'] ||
+                               gap > 0;
     
-    // Симуляция flexbox позиционирования
-    const newPositions = currentLevel.items.map((item, index) => {
+    const direction = flexProps['flex-direction'] || 'row';
+    const justifyContent = flexProps['justify-content'] || 'flex-start';
+    const alignItems = flexProps['align-items'] || 'flex-start';
+    
+    // Сначала создаём элементы с order
+    let itemsWithOrder = currentLevel.items.map((item, index) => {
+      const order = itemProps[item.type]?.order ? parseInt(itemProps[item.type].order) : 0;
+      const alignSelf = itemProps[item.type]?.['align-self'];
+      return {
+        ...item,
+        originalIndex: index,
+        order,
+        alignSelf
+      };
+    });
+    
+    // Сортируем по order для правильного позиционирования
+    itemsWithOrder.sort((a, b) => a.order - b.order);
+    
+    const itemCount = itemsWithOrder.length;
+    
+    // Вычисляем позиции
+    const newPositions = itemsWithOrder.map((item, sortedIndex) => {
       let col = item.startPos.col;
       let row = item.startPos.row;
-      const order = itemProps[item.type]?.order ? parseInt(itemProps[item.type].order) : 0;
       
       // Если нет flex-свойств, оставляем начальные позиции
       if (!hasFlexPositioning) {
         return {
           ...item,
-          currentPos: { row, col },
-          order
+          currentPos: { row, col }
         };
       }
       
-      const direction = flexProps['flex-direction'] || 'row';
-      const justifyContent = flexProps['justify-content'];
-      const alignItems = flexProps['align-items'];
-      
-      // Базовые расчеты для горизонтального направления (row)
+      // Горизонтальное направление (row, row-reverse)
       if (direction === 'row' || direction === 'row-reverse') {
-        // justify-content (горизонталь)
+        // justify-content (основная ось - горизонталь)
         switch (justifyContent) {
+          case 'flex-start':
+            col = sortedIndex * (1 + gap);
+            break;
           case 'flex-end':
-            col = 9 - (currentLevel.items.length - 1 - index);
+            col = 9 - (itemCount - 1 - sortedIndex) * (1 + gap);
             break;
           case 'center':
-            col = Math.floor((10 - currentLevel.items.length) / 2) + index;
+            const totalWidthRow = itemCount + (itemCount - 1) * gap;
+            const startColCenter = Math.floor((10 - totalWidthRow) / 2);
+            col = startColCenter + sortedIndex * (1 + gap);
             break;
           case 'space-between':
-            col = currentLevel.items.length > 1 ? Math.round(index * 9 / (currentLevel.items.length - 1)) : 0;
+            if (itemCount > 1) {
+              col = Math.round(sortedIndex * (9 / (itemCount - 1)));
+            } else {
+              col = 0;
+            }
             break;
           case 'space-around':
-            const spaceAround = 10 / currentLevel.items.length;
-            col = Math.round(spaceAround / 2 + index * spaceAround);
+            const spaceAround = 10 / itemCount;
+            col = Math.round(spaceAround / 2 + sortedIndex * spaceAround);
             break;
           case 'space-evenly':
-            col = Math.round((index + 1) * 10 / (currentLevel.items.length + 1)) - 1;
-            break;
-          case 'flex-start':
-            col = index;
+            col = Math.round((sortedIndex + 1) * 10 / (itemCount + 1)) - 1;
             break;
           default:
-            // Оставляем начальную позицию если нет justify-content
-            col = item.startPos.col;
+            col = sortedIndex * (1 + gap);
         }
         
-        // align-items (вертикаль)
-        switch (alignItems) {
+        // align-items (поперечная ось - вертикаль)
+        const effectiveAlignItems = item.alignSelf || alignItems;
+        switch (effectiveAlignItems) {
+          case 'flex-start':
+            row = 0;
+            break;
           case 'flex-end':
             row = 9;
             break;
           case 'center':
             row = 4;
+            break;
+          case 'stretch':
+            row = 4; // Для визуализации stretch = center
             break;
           default:
             row = item.startPos.row;
@@ -655,40 +694,55 @@ function FlexChan() {
         }
       }
       
-      // Вертикальное направление (column)
+      // Вертикальное направление (column, column-reverse)
       if (direction === 'column' || direction === 'column-reverse') {
-        // justify-content (теперь вертикаль)
+        // justify-content (основная ось - вертикаль)
         switch (justifyContent) {
+          case 'flex-start':
+            row = sortedIndex * (1 + gap);
+            break;
           case 'flex-end':
-            row = 9 - (currentLevel.items.length - 1 - index);
+            row = 9 - (itemCount - 1 - sortedIndex) * (1 + gap);
             break;
           case 'center':
-            row = Math.floor((10 - currentLevel.items.length) / 2) + index;
+            const totalHeightCol = itemCount + (itemCount - 1) * gap;
+            const startRowCenter = Math.floor((10 - totalHeightCol) / 2);
+            row = startRowCenter + sortedIndex * (1 + gap);
             break;
           case 'space-between':
-            row = currentLevel.items.length > 1 ? Math.round(index * 9 / (currentLevel.items.length - 1)) : 0;
+            if (itemCount > 1) {
+              row = Math.round(sortedIndex * (9 / (itemCount - 1)));
+            } else {
+              row = 0;
+            }
             break;
-          case 'flex-start':
-            row = index;
+          case 'space-around':
+            const spaceAroundCol = 10 / itemCount;
+            row = Math.round(spaceAroundCol / 2 + sortedIndex * spaceAroundCol);
+            break;
+          case 'space-evenly':
+            row = Math.round((sortedIndex + 1) * 10 / (itemCount + 1)) - 1;
             break;
           default:
-            // Оставляем начальную позицию если нет justify-content
-            row = item.startPos.row;
+            row = sortedIndex * (1 + gap);
         }
         
-        // align-items (теперь горизонталь)
-        switch (alignItems) {
+        // align-items (поперечная ось - горизонталь)
+        const effectiveAlignItems = item.alignSelf || alignItems;
+        switch (effectiveAlignItems) {
+          case 'flex-start':
+            col = 0;
+            break;
           case 'flex-end':
             col = 9;
             break;
           case 'center':
             col = 4;
             break;
-          case 'flex-start':
-            col = 0;
+          case 'stretch':
+            col = 4; // Для визуализации stretch = center
             break;
           default:
-            // Оставляем начальную позицию если нет align-items
             col = item.startPos.col;
         }
         
@@ -703,15 +757,17 @@ function FlexChan() {
       
       return {
         ...item,
-        currentPos: { row, col },
-        order
+        currentPos: { row, col }
       };
     });
     
-    // Сортируем по order
-    newPositions.sort((a, b) => (a.order || 0) - (b.order || 0));
+    // Возвращаем в оригинальном порядке для отображения, но с новыми позициями
+    const finalPositions = currentLevel.items.map((item, index) => {
+      const found = newPositions.find(p => p.originalIndex === index);
+      return found || { ...item, currentPos: item.startPos };
+    });
     
-    setItemPositions(newPositions);
+    setItemPositions(finalPositions);
   }, [currentLevel]);
 
   // Проверка решения

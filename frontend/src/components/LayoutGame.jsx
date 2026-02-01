@@ -85,6 +85,7 @@ function LayoutGame({ onBack }) {
   const [hoveredElement, setHoveredElement] = useState(null);
   const [selectedElement, setSelectedElement] = useState(null);
   const [showTargetOverlay, setShowTargetOverlay] = useState(true);
+  const [altPressed, setAltPressed] = useState(false);
   
   // Refs
   const targetFrameRef = useRef(null);
@@ -102,42 +103,342 @@ function LayoutGame({ onBack }) {
     }
   }, []);
 
-  // Получить аббревиатуру перед курсором
+  // Получить аббревиатуру перед курсором (улучшенная версия как в VS Code)
   const getAbbreviation = useCallback((textarea) => {
     const cursorPos = textarea.selectionStart;
     const value = textarea.value;
     
+    // Находим начало аббревиатуры - останавливаемся на пробелах, переносах, <, >, {, }, ;
     let abbrevStart = cursorPos;
-    while (abbrevStart > 0 && !/[\s\n]/.test(value[abbrevStart - 1])) {
+    const stopChars = /[\s\n<>{};\(\)]/;
+    
+    while (abbrevStart > 0 && !stopChars.test(value[abbrevStart - 1])) {
       abbrevStart--;
     }
     
+    const abbreviation = value.slice(abbrevStart, cursorPos);
+    
     return {
-      abbreviation: value.slice(abbrevStart, cursorPos),
+      abbreviation,
       start: abbrevStart,
       end: cursorPos
     };
   }, []);
 
-  // Попытка развернуть Emmet и показать подсказку
+  // Улучшенный Emmet как в VS Code
   const tryExpandEmmet = useCallback((abbreviation, isHtml) => {
-    if (!abbreviation || abbreviation.length < 2) return null;
+    if (!abbreviation || abbreviation.length < 1) return null;
     
-    try {
-      const expanded = emmet(abbreviation, {
-        type: isHtml ? 'markup' : 'stylesheet',
-        options: {
-          'output.indent': '  ',
-          'output.newline': '\n'
-        }
-      });
+    // Быстрые сниппеты для HTML (мгновенное раскрытие)
+    const htmlSnippets = {
+      '!': '<!DOCTYPE html>\n<html lang="ru">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Document</title>\n</head>\n<body>\n  |\n</body>\n</html>',
+      'html:5': '<!DOCTYPE html>\n<html lang="ru">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Document</title>\n</head>\n<body>\n  |\n</body>\n</html>',
+      'link:css': '<link rel="stylesheet" href="style.css">',
+      'script:src': '<script src="|"></script>',
+      'a:link': '<a href="http://|"></a>',
+      'a:mail': '<a href="mailto:|"></a>',
+      'input:text': '<input type="text" name="|" id="">',
+      'input:password': '<input type="password" name="|" id="">',
+      'input:checkbox': '<input type="checkbox" name="|" id="">',
+      'input:radio': '<input type="radio" name="|" id="">',
+      'input:submit': '<input type="submit" value="|">',
+      'input:button': '<input type="button" value="|">',
+      'input:email': '<input type="email" name="|" id="">',
+      'btn': '<button>|</button>',
+      'btn:s': '<button type="submit">|</button>',
+      'btn:r': '<button type="reset">|</button>',
+      'form:get': '<form action="|" method="get"></form>',
+      'form:post': '<form action="|" method="post"></form>',
+      'img': '<img src="|" alt="">',
+      'pic': '<picture>\n  <source srcset="|" type="image/webp">\n  <img src="" alt="">\n</picture>',
+      'video': '<video src="|" controls></video>',
+      'audio': '<audio src="|" controls></audio>',
+      'iframe': '<iframe src="|" frameborder="0"></iframe>',
+      'fig': '<figure>\n  |\n  <figcaption></figcaption>\n</figure>',
+      'ol+': '<ol>\n  <li>|</li>\n</ol>',
+      'ul+': '<ul>\n  <li>|</li>\n</ul>',
+      'dl+': '<dl>\n  <dt>|</dt>\n  <dd></dd>\n</dl>',
+      'table+': '<table>\n  <tr>\n    <td>|</td>\n  </tr>\n</table>',
+      'tr+': '<tr>\n  <td>|</td>\n</tr>',
+      'bq': '<blockquote>|</blockquote>',
+      'hdr': '<header>|</header>',
+      'ftr': '<footer>|</footer>',
+      'mn': '<main>|</main>',
+      'sect': '<section>|</section>',
+      'art': '<article>|</article>',
+      'asd': '<aside>|</aside>',
+      'nav': '<nav>|</nav>',
+      'c': '<!-- | -->',
+      'cc:ie': '<!--[if IE]>|<![endif]-->',
+    };
+
+    // Быстрые CSS сниппеты
+    const cssSnippets = {
+      // Display
+      'd': 'display: |;',
+      'dn': 'display: none;',
+      'db': 'display: block;',
+      'dib': 'display: inline-block;',
+      'di': 'display: inline;',
+      'df': 'display: flex;',
+      'dif': 'display: inline-flex;',
+      'dg': 'display: grid;',
       
-      if (expanded && expanded !== abbreviation && expanded.length > abbreviation.length) {
-        return expanded;
+      // Flexbox
+      'fxd': 'flex-direction: |;',
+      'fxdr': 'flex-direction: row;',
+      'fxdc': 'flex-direction: column;',
+      'fxw': 'flex-wrap: wrap;',
+      'jc': 'justify-content: |;',
+      'jcc': 'justify-content: center;',
+      'jcsb': 'justify-content: space-between;',
+      'jcsa': 'justify-content: space-around;',
+      'jcse': 'justify-content: space-evenly;',
+      'jcfs': 'justify-content: flex-start;',
+      'jcfe': 'justify-content: flex-end;',
+      'ai': 'align-items: |;',
+      'aic': 'align-items: center;',
+      'aifs': 'align-items: flex-start;',
+      'aife': 'align-items: flex-end;',
+      'ais': 'align-items: stretch;',
+      'ac': 'align-content: |;',
+      'acc': 'align-content: center;',
+      'fx': 'flex: |;',
+      'fx1': 'flex: 1;',
+      'fxg': 'flex-grow: |;',
+      'fxs': 'flex-shrink: |;',
+      'fxb': 'flex-basis: |;',
+      'g': 'gap: |;',
+      
+      // Grid
+      'gtc': 'grid-template-columns: |;',
+      'gtr': 'grid-template-rows: |;',
+      'ga': 'grid-area: |;',
+      'gc': 'grid-column: |;',
+      'gr': 'grid-row: |;',
+      'gg': 'grid-gap: |;',
+      
+      // Position
+      'pos': 'position: |;',
+      'poss': 'position: static;',
+      'posr': 'position: relative;',
+      'posa': 'position: absolute;',
+      'posf': 'position: fixed;',
+      'post': 'position: sticky;',
+      't': 'top: |;',
+      'r': 'right: |;',
+      'b': 'bottom: |;',
+      'l': 'left: |;',
+      't0': 'top: 0;',
+      'r0': 'right: 0;',
+      'b0': 'bottom: 0;',
+      'l0': 'left: 0;',
+      'z': 'z-index: |;',
+      
+      // Размеры
+      'w': 'width: |;',
+      'w100': 'width: 100%;',
+      'w100p': 'width: 100%;',
+      'h': 'height: |;',
+      'h100': 'height: 100%;',
+      'h100p': 'height: 100%;',
+      'h100vh': 'height: 100vh;',
+      'maw': 'max-width: |;',
+      'mah': 'max-height: |;',
+      'miw': 'min-width: |;',
+      'mih': 'min-height: |;',
+      
+      // Margin/Padding
+      'm': 'margin: |;',
+      'm0': 'margin: 0;',
+      'ma': 'margin: auto;',
+      'mt': 'margin-top: |;',
+      'mr': 'margin-right: |;',
+      'mb': 'margin-bottom: |;',
+      'ml': 'margin-left: |;',
+      'mx': 'margin-left: |; margin-right: |;',
+      'my': 'margin-top: |; margin-bottom: |;',
+      'mxa': 'margin-left: auto; margin-right: auto;',
+      'p': 'padding: |;',
+      'p0': 'padding: 0;',
+      'pt': 'padding-top: |;',
+      'pr': 'padding-right: |;',
+      'pb': 'padding-bottom: |;',
+      'pl': 'padding-left: |;',
+      'px': 'padding-left: |; padding-right: |;',
+      'py': 'padding-top: |; padding-bottom: |;',
+      
+      // Typography
+      'fz': 'font-size: |;',
+      'ff': 'font-family: |;',
+      'ffs': 'font-family: serif;',
+      'ffss': 'font-family: sans-serif;',
+      'fw': 'font-weight: |;',
+      'fwb': 'font-weight: bold;',
+      'fwn': 'font-weight: normal;',
+      'fs': 'font-style: |;',
+      'fsi': 'font-style: italic;',
+      'lh': 'line-height: |;',
+      'ls': 'letter-spacing: |;',
+      'ta': 'text-align: |;',
+      'tac': 'text-align: center;',
+      'tal': 'text-align: left;',
+      'tar': 'text-align: right;',
+      'taj': 'text-align: justify;',
+      'td': 'text-decoration: |;',
+      'tdn': 'text-decoration: none;',
+      'tdu': 'text-decoration: underline;',
+      'tt': 'text-transform: |;',
+      'ttu': 'text-transform: uppercase;',
+      'ttl': 'text-transform: lowercase;',
+      'ttc': 'text-transform: capitalize;',
+      'whs': 'white-space: |;',
+      'whsn': 'white-space: nowrap;',
+      
+      // Colors
+      'c': 'color: |;',
+      'bg': 'background: |;',
+      'bgc': 'background-color: |;',
+      'bgi': 'background-image: url(|);',
+      'bgp': 'background-position: |;',
+      'bgs': 'background-size: |;',
+      'bgsc': 'background-size: cover;',
+      'bgsct': 'background-size: contain;',
+      'bgr': 'background-repeat: |;',
+      'bgrn': 'background-repeat: no-repeat;',
+      'op': 'opacity: |;',
+      
+      // Border
+      'bd': 'border: |;',
+      'bdn': 'border: none;',
+      'bd1': 'border: 1px solid |;',
+      'bdt': 'border-top: |;',
+      'bdr': 'border-right: |;',
+      'bdb': 'border-bottom: |;',
+      'bdl': 'border-left: |;',
+      'bdrs': 'border-radius: |;',
+      'bdrs50': 'border-radius: 50%;',
+      'bxsh': 'box-shadow: |;',
+      'bxshn': 'box-shadow: none;',
+      
+      // Overflow
+      'ov': 'overflow: |;',
+      'ovh': 'overflow: hidden;',
+      'ova': 'overflow: auto;',
+      'ovs': 'overflow: scroll;',
+      'ovv': 'overflow: visible;',
+      'ovx': 'overflow-x: |;',
+      'ovy': 'overflow-y: |;',
+      
+      // Cursor
+      'cur': 'cursor: |;',
+      'curp': 'cursor: pointer;',
+      'curd': 'cursor: default;',
+      'curn': 'cursor: not-allowed;',
+      
+      // Transition/Animation
+      'trs': 'transition: |;',
+      'trsall': 'transition: all 0.3s ease;',
+      'anim': 'animation: |;',
+      'trf': 'transform: |;',
+      'trfr': 'transform: rotate(|deg);',
+      'trfs': 'transform: scale(|);',
+      'trft': 'transform: translate(|);',
+      
+      // Visibility
+      'v': 'visibility: |;',
+      'vh': 'visibility: hidden;',
+      'vv': 'visibility: visible;',
+      
+      // Other
+      'cnt': 'content: "|";',
+      'ol': 'outline: |;',
+      'oln': 'outline: none;',
+      'rsz': 'resize: |;',
+      'us': 'user-select: |;',
+      'usn': 'user-select: none;',
+      'pe': 'pointer-events: |;',
+      'pen': 'pointer-events: none;',
+      
+      // Centering helpers
+      'center': 'display: flex; justify-content: center; align-items: center;',
+      'abs-center': 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);',
+    };
+
+    if (isHtml) {
+      // Проверяем быстрые сниппеты
+      if (htmlSnippets[abbreviation]) {
+        return htmlSnippets[abbreviation];
       }
-    } catch (err) {
-      // Не удалось развернуть
+      
+      // Стандартный Emmet для HTML
+      try {
+        const expanded = emmet(abbreviation, {
+          type: 'markup',
+          options: {
+            'output.indent': '  ',
+            'output.newline': '\n',
+            'output.selfClosingStyle': 'xhtml'
+          }
+        });
+        
+        if (expanded && expanded !== abbreviation && expanded.length > abbreviation.length) {
+          return expanded;
+        }
+      } catch (err) {
+        // Не удалось развернуть
+      }
+    } else {
+      // CSS - проверяем сниппеты
+      if (cssSnippets[abbreviation]) {
+        return cssSnippets[abbreviation];
+      }
+      
+      // CSS селекторы: .class, #id, tag, .class.class2, tag.class и т.д.
+      // Раскрываем в формат с фигурными скобками на разных строках
+      const selectorMatch = abbreviation.match(/^([.#]?[a-zA-Z_-][a-zA-Z0-9_.-]*)$/);
+      if (selectorMatch && !abbreviation.includes(':')) {
+        const selector = selectorMatch[1];
+        // Проверяем что это похоже на селектор (начинается с . # или буквы)
+        if (/^[.#a-zA-Z]/.test(selector)) {
+          return `${selector} {\n  |\n}`;
+        }
+      }
+      
+      // Числовые значения: m10 -> margin: 10px; p20 -> padding: 20px;
+      const numericMatch = abbreviation.match(/^(m|p|mt|mr|mb|ml|pt|pr|pb|pl|w|h|t|r|b|l|fz|g|bdrs|lh)(-?\d+)$/);
+      if (numericMatch) {
+        const propMap = {
+          'm': 'margin', 'p': 'padding',
+          'mt': 'margin-top', 'mr': 'margin-right', 'mb': 'margin-bottom', 'ml': 'margin-left',
+          'pt': 'padding-top', 'pr': 'padding-right', 'pb': 'padding-bottom', 'pl': 'padding-left',
+          'w': 'width', 'h': 'height',
+          't': 'top', 'r': 'right', 'b': 'bottom', 'l': 'left',
+          'fz': 'font-size', 'g': 'gap', 'bdrs': 'border-radius', 'lh': 'line-height'
+        };
+        const prop = propMap[numericMatch[1]];
+        const value = numericMatch[2];
+        return `${prop}: ${value}px;`;
+      }
+      
+      // Стандартный Emmet для CSS
+      try {
+        const expanded = emmet(abbreviation, {
+          type: 'stylesheet',
+          options: {
+            'output.indent': '  ',
+            'output.newline': '\n'
+          }
+        });
+        
+        if (expanded && expanded !== abbreviation && expanded.length > abbreviation.length) {
+          return expanded;
+        }
+      } catch (err) {
+        // Не удалось развернуть
+      }
     }
+    
     return null;
   }, []);
 
@@ -183,7 +484,7 @@ function LayoutGame({ onBack }) {
     }
   }, [getAbbreviation, tryExpandEmmet]);
 
-  // Применить подсказку
+  // Применить подсказку (улучшенная версия с умным курсором)
   const applySuggestion = useCallback(() => {
     if (!emmetSuggestion) return;
     
@@ -194,7 +495,25 @@ function LayoutGame({ onBack }) {
     const { start, end } = getAbbreviation(textarea);
     const value = textarea.value;
     
-    const newValue = value.slice(0, start) + expanded + value.slice(end);
+    // Ищем позицию курсора (символ |) в развёрнутом тексте
+    let finalExpanded = expanded;
+    let cursorOffset = expanded.length;
+    
+    const cursorPos = expanded.indexOf('|');
+    if (cursorPos !== -1) {
+      // Убираем символ | и запоминаем позицию
+      finalExpanded = expanded.slice(0, cursorPos) + expanded.slice(cursorPos + 1);
+      cursorOffset = cursorPos;
+    } else {
+      // Если нет |, ставим курсор между открывающим и закрывающим тегами
+      // Например: <div></div> -> курсор после >
+      const emptyTagMatch = finalExpanded.match(/^<(\w+)[^>]*><\/\1>$/);
+      if (emptyTagMatch) {
+        cursorOffset = finalExpanded.indexOf('></') + 1;
+      }
+    }
+    
+    const newValue = value.slice(0, start) + finalExpanded + value.slice(end);
     
     if (isHtml) {
       setHtmlCode(newValue);
@@ -202,9 +521,9 @@ function LayoutGame({ onBack }) {
       setCssCode(newValue);
     }
     
-    // Установить курсор
+    // Установить курсор в правильную позицию
     setTimeout(() => {
-      const newPos = start + expanded.length;
+      const newPos = start + cursorOffset;
       textarea.focus();
       textarea.selectionStart = newPos;
       textarea.selectionEnd = newPos;
@@ -215,6 +534,10 @@ function LayoutGame({ onBack }) {
 
   // Обработчик клавиш
   const handleEditorKeyDown = useCallback((e, isHtml) => {
+    const textarea = e.target;
+    const value = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    
     // Если есть подсказка и нажат Tab или Enter - применить
     if (emmetSuggestion && (e.key === 'Tab' || e.key === 'Enter')) {
       e.preventDefault();
@@ -228,12 +551,173 @@ function LayoutGame({ onBack }) {
       return;
     }
     
-    // Tab без подсказки - вставить отступ
-    if (e.key === 'Tab' && !emmetSuggestion) {
+    // Enter - автоматический отступ
+    if (e.key === 'Enter' && !emmetSuggestion) {
       e.preventDefault();
-      const textarea = e.target;
-      const cursorPos = textarea.selectionStart;
-      const value = textarea.value;
+      
+      // Находим текущую строку
+      const textBeforeCursor = value.slice(0, cursorPos);
+      const textAfterCursor = value.slice(cursorPos);
+      const currentLineStart = textBeforeCursor.lastIndexOf('\n') + 1;
+      const currentLine = textBeforeCursor.slice(currentLineStart);
+      
+      // Определяем текущий отступ
+      const indentMatch = currentLine.match(/^(\s*)/);
+      const currentIndent = indentMatch ? indentMatch[1] : '';
+      
+      // Проверяем, находимся ли мы между открывающим и закрывающим тегом: ><
+      const charBefore = textBeforeCursor.slice(-1);
+      const charAfter = textAfterCursor[0];
+      const betweenTags = charBefore === '>' && charAfter === '<';
+      
+      // Проверяем, заканчивается ли строка открывающим тегом (нужен дополнительный отступ)
+      const endsWithOpenTag = /<[a-zA-Z][^\/]*>$/.test(textBeforeCursor.trim()) || 
+                             /{\s*$/.test(textBeforeCursor); // CSS открывающая скобка
+      
+      let newText;
+      let newCursorPos;
+      
+      if (betweenTags) {
+        // Между тегами: добавляем новую строку с отступом и ещё одну для закрывающего тега
+        const newIndent = currentIndent + '  ';
+        newText = value.slice(0, cursorPos) + '\n' + newIndent + '\n' + currentIndent + value.slice(cursorPos);
+        newCursorPos = cursorPos + 1 + newIndent.length;
+      } else if (endsWithOpenTag) {
+        // После открывающего тега - добавляем дополнительный отступ
+        const newIndent = currentIndent + '  ';
+        newText = value.slice(0, cursorPos) + '\n' + newIndent + value.slice(cursorPos);
+        newCursorPos = cursorPos + 1 + newIndent.length;
+      } else {
+        // Обычный перенос - сохраняем текущий отступ
+        newText = value.slice(0, cursorPos) + '\n' + currentIndent + value.slice(cursorPos);
+        newCursorPos = cursorPos + 1 + currentIndent.length;
+      }
+      
+      if (isHtml) {
+        setHtmlCode(newText);
+      } else {
+        setCssCode(newText);
+      }
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.selectionStart = newCursorPos;
+        textarea.selectionEnd = newCursorPos;
+      }, 0);
+      
+      return;
+    }
+    
+    // Автоматическое закрытие скобок и кавычек
+    const autoPairs = {
+      '(': ')',
+      '[': ']',
+      '{': '}',
+      '"': '"',
+      "'": "'",
+      '`': '`',
+      '<': '>'
+    };
+    
+    if (autoPairs[e.key] && !e.ctrlKey && !e.altKey) {
+      // Для < проверяем, что это не закрывающий тег
+      if (e.key === '<' && value[cursorPos] === '/') {
+        return;
+      }
+      
+      e.preventDefault();
+      const closingChar = autoPairs[e.key];
+      const newValue = value.slice(0, cursorPos) + e.key + closingChar + value.slice(cursorPos);
+      
+      if (isHtml) {
+        setHtmlCode(newValue);
+      } else {
+        setCssCode(newValue);
+      }
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.selectionStart = cursorPos + 1;
+        textarea.selectionEnd = cursorPos + 1;
+      }, 0);
+      
+      return;
+    }
+    
+    // Backspace - удаление парных символов
+    if (e.key === 'Backspace' && cursorPos > 0) {
+      const charBefore = value[cursorPos - 1];
+      const charAfter = value[cursorPos];
+      const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'", '`': '`', '<': '>' };
+      
+      if (pairs[charBefore] === charAfter) {
+        e.preventDefault();
+        const newValue = value.slice(0, cursorPos - 1) + value.slice(cursorPos + 1);
+        
+        if (isHtml) {
+          setHtmlCode(newValue);
+        } else {
+          setCssCode(newValue);
+        }
+        
+        setTimeout(() => {
+          textarea.focus();
+          textarea.selectionStart = cursorPos - 1;
+          textarea.selectionEnd = cursorPos - 1;
+        }, 0);
+        
+        return;
+      }
+    }
+    
+    // Tab без подсказки - попробовать развернуть Emmet или вставить отступ
+    if (e.key === 'Tab' && !emmetSuggestion) {
+      const { abbreviation, start, end } = getAbbreviation(textarea);
+      
+      // Пробуем развернуть Emmet
+      if (abbreviation && abbreviation.length >= 1) {
+        const expanded = tryExpandEmmet(abbreviation, isHtml);
+        
+        if (expanded) {
+          e.preventDefault();
+          
+          // Обработка курсора (символ |)
+          let finalExpanded = expanded;
+          let cursorOffset = expanded.length;
+          
+          const cursorPosInExpanded = expanded.indexOf('|');
+          if (cursorPosInExpanded !== -1) {
+            finalExpanded = expanded.slice(0, cursorPosInExpanded) + expanded.slice(cursorPosInExpanded + 1);
+            cursorOffset = cursorPosInExpanded;
+          } else {
+            const emptyTagMatch = finalExpanded.match(/^<(\w+)[^>]*><\/\1>$/);
+            if (emptyTagMatch) {
+              cursorOffset = finalExpanded.indexOf('></') + 1;
+            }
+          }
+          
+          const newValue = value.slice(0, start) + finalExpanded + value.slice(end);
+          
+          if (isHtml) {
+            setHtmlCode(newValue);
+          } else {
+            setCssCode(newValue);
+          }
+          
+          setTimeout(() => {
+            const newPos = start + cursorOffset;
+            textarea.focus();
+            textarea.selectionStart = newPos;
+            textarea.selectionEnd = newPos;
+          }, 0);
+          
+          setEmmetSuggestion(null);
+          return;
+        }
+      }
+      
+      // Если Emmet не сработал - вставить отступ
+      e.preventDefault();
       const newValue = value.slice(0, cursorPos) + '  ' + value.slice(cursorPos);
       
       if (isHtml) {
@@ -247,7 +731,7 @@ function LayoutGame({ onBack }) {
         textarea.selectionEnd = cursorPos + 2;
       }, 0);
     }
-  }, [emmetSuggestion, applySuggestion]);
+  }, [emmetSuggestion, applySuggestion, getAbbreviation, tryExpandEmmet]);
 
   useEffect(() => {
     loadLevels();
@@ -349,7 +833,17 @@ function LayoutGame({ onBack }) {
           justifyContent: computed.justifyContent,
           alignItems: computed.alignItems,
           gap: computed.gap,
-          position: computed.position
+          position: computed.position,
+          // Новые свойства
+          boxShadow: computed.boxShadow,
+          textShadow: computed.textShadow,
+          lineHeight: computed.lineHeight,
+          letterSpacing: computed.letterSpacing,
+          textAlign: computed.textAlign,
+          opacity: computed.opacity,
+          transform: computed.transform,
+          overflow: computed.overflow,
+          zIndex: computed.zIndex
         }
       });
     }
@@ -360,6 +854,68 @@ function LayoutGame({ onBack }) {
     e.preventDefault();
     setSelectedElement(hoveredElement);
   }, [inspectorEnabled, hoveredElement]);
+
+  // Вычисление расстояния между выбранным и наведённым элементом (Alt+hover)
+  const calculateDistance = useCallback((start, end) => {
+    if (!start || !end) return null;
+    
+    const startBounds = start.bounds;
+    const endBounds = end.bounds;
+    
+    if (!startBounds || !endBounds) return null;
+    
+    // Горизонтальное расстояние
+    let horizontalDistance = 0;
+    if (endBounds.left >= startBounds.left + startBounds.width) {
+      horizontalDistance = endBounds.left - (startBounds.left + startBounds.width);
+    } else if (startBounds.left >= endBounds.left + endBounds.width) {
+      horizontalDistance = startBounds.left - (endBounds.left + endBounds.width);
+    }
+    
+    // Вертикальное расстояние
+    let verticalDistance = 0;
+    if (endBounds.top >= startBounds.top + startBounds.height) {
+      verticalDistance = endBounds.top - (startBounds.top + startBounds.height);
+    } else if (startBounds.top >= endBounds.top + endBounds.height) {
+      verticalDistance = startBounds.top - (endBounds.top + endBounds.height);
+    }
+    
+    return { horizontal: Math.round(horizontalDistance), vertical: Math.round(verticalDistance) };
+  }, []);
+
+  // Отслеживание Alt
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Alt' || e.altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        setAltPressed(true);
+      }
+    };
+    const handleKeyUp = (e) => {
+      if (e.key === 'Alt') {
+        e.preventDefault();
+        setAltPressed(false);
+      }
+    };
+    
+    // Блокируем меню браузера
+    const preventAltMenu = (e) => {
+      if (e.altKey) {
+        e.preventDefault();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('keydown', preventAltMenu, { capture: true });
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener('keydown', preventAltMenu, { capture: true });
+    };
+  }, []);
 
   const handleTargetMouseLeave = useCallback(() => {
     setHoveredElement(null);
@@ -734,10 +1290,79 @@ function LayoutGame({ onBack }) {
               </div>
               <div className={styles.propRow}>
                 <span>gap</span>
-                <span>{element.styles.gap}</span>
+                <span className={styles.gapValue}>{element.styles.gap}</span>
               </div>
             </div>
           )}
+
+          {/* Box Shadow */}
+          {element.styles.boxShadow && element.styles.boxShadow !== 'none' && (
+            <div className={styles.propSection}>
+              <h4>🌓 Box Shadow</h4>
+              <div className={styles.propRow}>
+                <span>box-shadow</span>
+                <span className={styles.shadowValue}>
+                  <span 
+                    className={styles.shadowPreview} 
+                    style={{ boxShadow: element.styles.boxShadow }}
+                  />
+                  {element.styles.boxShadow}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Text Shadow */}
+          {element.styles.textShadow && element.styles.textShadow !== 'none' && (
+            <div className={styles.propSection}>
+              <h4>✨ Text Shadow</h4>
+              <div className={styles.propRow}>
+                <span>text-shadow</span>
+                <span className={styles.shadowValue}>
+                  <span 
+                    className={styles.textShadowPreview}
+                    style={{ textShadow: element.styles.textShadow }}
+                  >
+                    Aa
+                  </span>
+                  {element.styles.textShadow}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Spacing между элементами */}
+          <div className={styles.propSection}>
+            <h4>📏 Отступы</h4>
+            <div className={styles.spacingGrid}>
+              <div className={styles.spacingItem}>
+                <span className={styles.spacingLabel}>Margin</span>
+                <div className={styles.spacingValues}>
+                  <span title="top">{parseInt(element.styles.marginTop) || 0}</span>
+                  <span title="right">{parseInt(element.styles.marginRight) || 0}</span>
+                  <span title="bottom">{parseInt(element.styles.marginBottom) || 0}</span>
+                  <span title="left">{parseInt(element.styles.marginLeft) || 0}</span>
+                </div>
+              </div>
+              <div className={styles.spacingItem}>
+                <span className={styles.spacingLabel}>Padding</span>
+                <div className={styles.spacingValues}>
+                  <span title="top">{parseInt(element.styles.paddingTop) || 0}</span>
+                  <span title="right">{parseInt(element.styles.paddingRight) || 0}</span>
+                  <span title="bottom">{parseInt(element.styles.paddingBottom) || 0}</span>
+                  <span title="left">{parseInt(element.styles.paddingLeft) || 0}</span>
+                </div>
+              </div>
+              {element.styles.gap && element.styles.gap !== 'normal' && (
+                <div className={styles.spacingItem}>
+                  <span className={styles.spacingLabel}>Gap</span>
+                  <div className={styles.spacingValues}>
+                    <span className={styles.gapHighlight}>{element.styles.gap}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {element.styles.borderRadius !== '0px' && (
             <div className={styles.propSection}>
@@ -750,6 +1375,18 @@ function LayoutGame({ onBack }) {
                 <div className={styles.propRow}>
                   <span>border</span>
                   <span>{element.styles.border}</span>
+                </div>
+              )}
+              {element.styles.opacity !== '1' && (
+                <div className={styles.propRow}>
+                  <span>opacity</span>
+                  <span>{element.styles.opacity}</span>
+                </div>
+              )}
+              {element.styles.transform !== 'none' && (
+                <div className={styles.propRow}>
+                  <span>transform</span>
+                  <span className={styles.transformValue}>{element.styles.transform}</span>
                 </div>
               )}
             </div>
@@ -1347,6 +1984,88 @@ function LayoutGame({ onBack }) {
                 </div>
               </div>
             )}
+            
+            {/* Подсветка ВЫБРАННОГО элемента (постоянная) */}
+            {selectedElement && inspectorEnabled && (
+              <div 
+                className={`${styles.elementHighlight} ${styles.selectedHighlight}`}
+                style={{
+                  top: selectedElement.bounds.top,
+                  left: selectedElement.bounds.left,
+                  width: selectedElement.bounds.width,
+                  height: selectedElement.bounds.height
+                }}
+              >
+                <div className={styles.highlightLabel} style={{ background: '#10b981' }}>
+                  {selectedElement.tagName} • {selectedElement.bounds.width} × {selectedElement.bounds.height}
+                </div>
+              </div>
+            )}
+            
+            {/* Линия расстояния при Alt+hover */}
+            {altPressed && selectedElement && hoveredElement && selectedElement !== hoveredElement && (
+              <div className={styles.measureLine}>
+                {(() => {
+                  const dist = calculateDistance(selectedElement, hoveredElement);
+                  const startCenter = {
+                    x: selectedElement.bounds.left + selectedElement.bounds.width / 2,
+                    y: selectedElement.bounds.top + selectedElement.bounds.height / 2
+                  };
+                  const endCenter = {
+                    x: hoveredElement.bounds.left + hoveredElement.bounds.width / 2,
+                    y: hoveredElement.bounds.top + hoveredElement.bounds.height / 2
+                  };
+                  
+                  return (
+                    <>
+                      {/* Подсветка выбранного элемента */}
+                      <div 
+                        className={`${styles.elementHighlight} ${styles.measureHighlight}`}
+                        style={{
+                          top: selectedElement.bounds.top,
+                          left: selectedElement.bounds.left,
+                          width: selectedElement.bounds.width,
+                          height: selectedElement.bounds.height,
+                          borderColor: '#f59e0b'
+                        }}
+                      />
+                      {/* Подсветка наведённого элемента */}
+                      <div 
+                        className={`${styles.elementHighlight} ${styles.measureHighlight}`}
+                        style={{
+                          top: hoveredElement.bounds.top,
+                          left: hoveredElement.bounds.left,
+                          width: hoveredElement.bounds.width,
+                          height: hoveredElement.bounds.height,
+                          borderColor: '#3b82f6'
+                        }}
+                      />
+                      <svg className={styles.measureSvg}>
+                        <line 
+                          x1={startCenter.x} 
+                          y1={startCenter.y} 
+                          x2={endCenter.x} 
+                          y2={endCenter.y}
+                          stroke="#10b981"
+                          strokeWidth="2"
+                          strokeDasharray="5,5"
+                        />
+                      </svg>
+                      <div 
+                        className={styles.measureResult}
+                        style={{
+                          left: (startCenter.x + endCenter.x) / 2,
+                          top: (startCenter.y + endCenter.y) / 2
+                        }}
+                      >
+                        <span>↔ {dist?.horizontal || 0}px</span>
+                        <span>↕ {dist?.vertical || 0}px</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
           </div>
           
           {/* Инспектор */}
@@ -1364,6 +2083,11 @@ function LayoutGame({ onBack }) {
                 )}
               </div>
               {renderInspector()}
+              {selectedElement && (
+                <div className={styles.measureHintBar}>
+                  💡 Зажмите <kbd>Alt</kbd> и наведите на другой элемент для измерения расстояния
+                </div>
+              )}
             </div>
           )}
         </div>

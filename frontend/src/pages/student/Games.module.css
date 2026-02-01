@@ -1,21 +1,25 @@
 .games-page {
-  padding: 30px;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 100vh;
+  padding: 20px;
+  width: 100%;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
 }
 
 .back-button {
-  padding: 12px 24px;
+  padding: 10px 20px;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border: none;
   border-radius: 10px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+  width: fit-content;
   transition: all 0.3s;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
