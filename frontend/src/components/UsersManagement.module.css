@@ -747,3 +747,137 @@
     font-size: 14px;
   }
 }
+
+/* Mobile Card View for Users Table */
+@media (max-width: 900px) {
+  .users-table-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .users-table {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .users-table thead {
+    display: none;
+  }
+
+  .users-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .users-table tbody tr {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .users-table tbody tr:hover {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .users-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .users-table td:last-child {
+    border-bottom: none;
+    padding-top: 12px;
+    justify-content: center;
+  }
+
+  .users-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    margin-right: 12px;
+  }
+
+  /* Avatar cell styling for mobile */
+  .user-avatar-cell {
+    justify-content: flex-end;
+  }
+
+  /* Points badge mobile */
+  .points-badge {
+    font-size: 14px;
+    padding: 6px 14px;
+  }
+
+  /* Role badge mobile */
+  .role-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  /* Action buttons mobile */
+  .action-buttons {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-icon-avatar,
+  .btn-icon-points,
+  .btn-icon-edit,
+  .btn-icon-delete {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+  .users-table tbody tr {
+    padding: 12px;
+  }
+
+  .users-table td {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .users-table td::before {
+    margin-right: 0;
+  }
+
+  .user-avatar-cell {
+    justify-content: flex-start;
+  }
+
+  .action-buttons {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .btn-icon-avatar,
+  .btn-icon-points,
+  .btn-icon-edit,
+  .btn-icon-delete {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}

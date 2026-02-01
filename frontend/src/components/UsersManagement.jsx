@@ -307,8 +307,8 @@ function UsersManagement() {
             <tbody>
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td>{user.id}</td>
-                  <td>
+                  <td data-label="ID">{user.id}</td>
+                  <td data-label="Аватар">
                     <div className={styles['user-avatar-cell']}>
                       {user.avatar_url ? (
                         <img 
@@ -323,10 +323,10 @@ function UsersManagement() {
                       )}
                     </div>
                   </td>
-                  <td>{user.username}</td>
-                  <td>{user.email}</td>
-                  <td>{user.full_name || '-'}</td>
-                  <td>
+                  <td data-label="Имя">{user.username}</td>
+                  <td data-label="Email">{user.email}</td>
+                  <td data-label="ФИО">{user.full_name || '-'}</td>
+                  <td data-label="Роль">
                     <span className={`${styles['role-badge']} ${styles['role-' + user.role]}`}>
                       {user.role === 'admin' && 'Администратор'}
                       {user.role === 'student' && 'Ученик'}
@@ -335,12 +335,12 @@ function UsersManagement() {
                       {user.role === 'css_editor' && 'CSS Редактор'}
                     </span>
                   </td>
-                  <td>{user.group_name || '-'}</td>
-                  <td>
+                  <td data-label="Группа">{user.group_name || '-'}</td>
+                  <td data-label="Баллы">
                     <span className={styles['points-badge']}>{user.points || 0}</span>
                   </td>
-                  <td>{new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
-                  <td>
+                  <td data-label="Дата">{new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
+                  <td data-label="Действия">
                     <div className={styles['action-buttons']}>
                       {user.role === 'student' && (
                         <>
