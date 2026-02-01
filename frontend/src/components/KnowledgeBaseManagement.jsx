@@ -1,6 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import ReactQuill, { Quill } from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { useState, useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { Link } from '@tiptap/extension-link';
+import { Image } from '@tiptap/extension-image';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import { Highlight } from '@tiptap/extension-highlight';
 import api from '../utils/api';
 import styles from './KnowledgeBaseManagement.module.css';
 import './ArticleModal.css';
@@ -11,21 +22,283 @@ import {
   FiFileText, FiEdit2, FiClipboard, FiStar, FiMapPin,
   FiType, FiMonitor, FiBox, FiClock, FiSearch,
   FiFolder, FiEye, FiCheckCircle, FiTrash2, FiPlus,
-  FiRefreshCw, FiX, FiAlertCircle, FiArrowUp, FiArrowDown
+  FiRefreshCw, FiX, FiAlertCircle
 } from 'react-icons/fi';
+import { 
+  FaBold, FaItalic, FaUnderline, FaStrikethrough, 
+  FaListUl, FaListOl, FaQuoteRight, FaCode,
+  FaAlignLeft, FaAlignCenter, FaAlignRight,
+  FaLink, FaImage, FaTable, FaUndo, FaRedo,
+  FaPlusCircle, FaMinusCircle
+} from 'react-icons/fa';
 
-// Wrapper для ReactQuill чтобы избежать findDOMNode warning
-const QuillEditor = ({ value, onChange, modules, formats, placeholder, editorRef }) => {
+// TipTap Editor Toolbar
+const EditorToolbar = ({ editor }) => {
+  if (!editor) return null;
+  
+  const addImage = () => {
+    const url = window.prompt('URL изображения:');
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  };
+  
+  const setLink = () => {
+    const url = window.prompt('URL ссылки:');
+    if (url) {
+      editor.chain().focus().setLink({ href: url }).run();
+    } else {
+      editor.chain().focus().unsetLink().run();
+    }
+  };
+  
   return (
-    <ReactQuill
-      ref={editorRef}
-      theme="snow"
-      value={value}
-      onChange={onChange}
-      modules={modules}
-      formats={formats}
-      placeholder={placeholder}
-    />
+    <div className={styles['tiptap-toolbar']}>
+      <div className={styles['toolbar-group']}>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={editor.isActive('bold') ? styles.active : ''}
+          title="Жирный"
+        >
+          <FaBold />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={editor.isActive('italic') ? styles.active : ''}
+          title="Курсив"
+        >
+          <FaItalic />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          className={editor.isActive('underline') ? styles.active : ''}
+          title="Подчёркнутый"
+        >
+          <FaUnderline />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          className={editor.isActive('strike') ? styles.active : ''}
+          title="Зачёркнутый"
+        >
+          <FaStrikethrough />
+        </button>
+      </div>
+      
+      <div className={styles['toolbar-group']}>
+        <select
+          onChange={(e) => {
+            const level = parseInt(e.target.value);
+            if (level === 0) {
+              editor.chain().focus().setParagraph().run();
+            } else {
+              editor.chain().focus().toggleHeading({ level }).run();
+            }
+          }}
+          value={
+            editor.isActive('heading', { level: 1 }) ? 1 :
+            editor.isActive('heading', { level: 2 }) ? 2 :
+            editor.isActive('heading', { level: 3 }) ? 3 : 0
+          }
+          className={styles['toolbar-select']}
+        >
+          <option value={0}>Обычный</option>
+          <option value={1}>Заголовок 1</option>
+          <option value={2}>Заголовок 2</option>
+          <option value={3}>Заголовок 3</option>
+        </select>
+      </div>
+      
+      <div className={styles['toolbar-group']}>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={editor.isActive('bulletList') ? styles.active : ''}
+          title="Маркированный список"
+        >
+          <FaListUl />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={editor.isActive('orderedList') ? styles.active : ''}
+          title="Нумерованный список"
+        >
+          <FaListOl />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          className={editor.isActive('blockquote') ? styles.active : ''}
+          title="Цитата"
+        >
+          <FaQuoteRight />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          className={editor.isActive('codeBlock') ? styles.active : ''}
+          title="Блок кода"
+        >
+          <FaCode />
+        </button>
+      </div>
+      
+      <div className={styles['toolbar-group']}>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setTextAlign('left').run()}
+          className={editor.isActive({ textAlign: 'left' }) ? styles.active : ''}
+          title="По левому краю"
+        >
+          <FaAlignLeft />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setTextAlign('center').run()}
+          className={editor.isActive({ textAlign: 'center' }) ? styles.active : ''}
+          title="По центру"
+        >
+          <FaAlignCenter />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setTextAlign('right').run()}
+          className={editor.isActive({ textAlign: 'right' }) ? styles.active : ''}
+          title="По правому краю"
+        >
+          <FaAlignRight />
+        </button>
+      </div>
+      
+      <div className={styles['toolbar-group']}>
+        <button type="button" onClick={setLink} title="Вставить ссылку">
+          <FaLink />
+        </button>
+        <button type="button" onClick={addImage} title="Вставить изображение">
+          <FaImage />
+        </button>
+      </div>
+      
+      <div className={styles['toolbar-group']}>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+          title="Вставить таблицу"
+        >
+          <FaTable />
+        </button>
+        {editor.isActive('table') && (
+          <>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().addColumnAfter().run()}
+              title="Добавить столбец"
+            >
+              <FaPlusCircle style={{ color: '#3b82f6' }} />
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().deleteColumn().run()}
+              title="Удалить столбец"
+            >
+              <FaMinusCircle style={{ color: '#ef4444' }} />
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().addRowAfter().run()}
+              title="Добавить строку"
+              className={styles['btn-add-row']}
+            >
+              + Строка
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().deleteRow().run()}
+              title="Удалить строку"
+              className={styles['btn-del-row']}
+            >
+              − Строка
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().deleteTable().run()}
+              title="Удалить таблицу"
+              className={styles['btn-del-table']}
+            >
+              <FiTrash2 /> Таблица
+            </button>
+          </>
+        )}
+      </div>
+      
+      <div className={styles['toolbar-group']}>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
+          title="Отменить"
+        >
+          <FaUndo />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
+          title="Повторить"
+        >
+          <FaRedo />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// TipTap Editor Component
+const TipTapEditor = ({ content, onChange }) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextStyle,
+      Color,
+      Highlight,
+      Link.configure({
+        openOnClick: false,
+      }),
+      Image,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+    ],
+    content: content || '',
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+  });
+  
+  // Обновляем контент при изменении извне
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content || '');
+    }
+  }, [content, editor]);
+  
+  return (
+    <div className={styles['tiptap-editor']}>
+      <EditorToolbar editor={editor} />
+      <EditorContent editor={editor} className={styles['tiptap-content']} />
+    </div>
   );
 };
 
@@ -34,19 +307,12 @@ function KnowledgeBaseManagement() {
   const [subcategories, setSubcategories] = useState([]);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('categories'); // 'categories', 'subcategories' или 'articles'
+  const [activeTab, setActiveTab] = useState('categories');
   
   // Модальные окна
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
-  const [showTableModal, setShowTableModal] = useState(false);
-  
-  // Редактор
-  const quillRef = useRef(null);
-  const [tableRows, setTableRows] = useState(3);
-  const [tableCols, setTableCols] = useState(3);
-  const [tableData, setTableData] = useState([]);
   
   // Данные для форм
   const [editingCategory, setEditingCategory] = useState(null);
@@ -75,9 +341,6 @@ function KnowledgeBaseManagement() {
     content: '',
     published: true
   });
-  
-  // Таблицы статьи (хранятся отдельно от Quill контента)
-  const [articleTables, setArticleTables] = useState([]);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -259,19 +522,11 @@ function KnowledgeBaseManagement() {
     setSuccess('');
 
     try {
-      // Объединяем контент Quill с таблицами
-      const finalContent = mergeContentWithTables(articleForm.content, articleTables);
-      
-      const dataToSend = {
-        ...articleForm,
-        content: finalContent
-      };
-      
       if (editingArticle) {
-        await api.put(`/knowledge-base/articles/${editingArticle.id}`, dataToSend);
+        await api.put(`/knowledge-base/articles/${editingArticle.id}`, articleForm);
         setSuccess('Статья обновлена');
       } else {
-        await api.post('/knowledge-base/articles', dataToSend);
+        await api.post('/knowledge-base/articles', articleForm);
         setSuccess('Статья создана');
       }
       
@@ -283,73 +538,17 @@ function KnowledgeBaseManagement() {
       setError(error.response?.data?.error || 'Ошибка при сохранении');
     }
   };
-  
-  // Функция извлечения таблиц из HTML контента
-  const extractTablesFromContent = (htmlContent) => {
-    if (!htmlContent) return { content: '', tables: [] };
-    
-    const tables = [];
-    let cleanContent = htmlContent;
-    
-    // Находим все таблицы в контенте
-    const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/gi;
-    let match;
-    let tableIndex = 0;
-    
-    while ((match = tableRegex.exec(htmlContent)) !== null) {
-      const tableHTML = match[0];
-      const placeholder = `<!--TABLE_PLACEHOLDER_${tableIndex}-->`;
-      
-      tables.push({
-        id: Date.now() + tableIndex,
-        html: tableHTML,
-        placeholder: placeholder,
-        position: match.index // Позиция в тексте
-      });
-      
-      cleanContent = cleanContent.replace(tableHTML, placeholder);
-      tableIndex++;
-    }
-    
-    return { content: cleanContent, tables };
-  };
-  
-  // Функция объединения контента с таблицами по позициям
-  const mergeContentWithTables = (content, tables) => {
-    let finalContent = content || '';
-    
-    // Очищаем placeholder'ы из контента
-    let cleanedContent = finalContent;
-    tables.forEach((table, idx) => {
-      const placeholder = table.placeholder || `<!--TABLE_PLACEHOLDER_${idx}-->`;
-      cleanedContent = cleanedContent.replace(`<p>${placeholder}</p>`, '');
-      cleanedContent = cleanedContent.replace(placeholder, '');
-    });
-    
-    // Добавляем все таблицы в конец в правильном порядке
-    if (tables.length > 0) {
-      const tablesHTML = tables.map(t => t.html).join('\n');
-      cleanedContent = cleanedContent + '\n' + tablesHTML;
-    }
-    
-    return cleanedContent;
-  };
 
   const handleEditArticle = (article) => {
     setEditingArticle(article);
-    
-    // Извлекаем таблицы из контента
-    const { content: cleanContent, tables } = extractTablesFromContent(article.content || '');
-    
     setArticleForm({
       title: article.title,
       category_id: article.category_id,
       subcategory_id: article.subcategory_id || '',
       description: article.description,
-      content: cleanContent, // Контент без таблиц
+      content: article.content || '',
       published: article.published
     });
-    setArticleTables(tables); // Таблицы отдельно
     setShowArticleModal(true);
   };
 
@@ -378,153 +577,7 @@ function KnowledgeBaseManagement() {
       content: '',
       published: true
     });
-    setArticleTables([]); // Очищаем таблицы
   };
-
-  // Функция вставки таблицы - добавляем в отдельный массив
-  const insertTable = useCallback(() => {
-    // Генерируем HTML таблицы из данных
-    let tableHTML = '<table class="kb-table" style="border-collapse: collapse; width: 100%; margin: 16px 0;"><tbody>';
-    
-    tableData.forEach((row, rowIdx) => {
-      tableHTML += '<tr>';
-      row.forEach((cell) => {
-        if (rowIdx === 0) {
-          tableHTML += `<th style="border: 1px solid #d1d5db; padding: 10px 12px; background: #f3f4f6; font-weight: 600; text-align: left;">${cell || 'Заголовок'}</th>`;
-        } else {
-          tableHTML += `<td style="border: 1px solid #d1d5db; padding: 10px 12px;">${cell || ''}</td>`;
-        }
-      });
-      tableHTML += '</tr>';
-    });
-    tableHTML += '</tbody></table>';
-    
-    const tableIndex = articleTables.length;
-    const placeholder = `<!--TABLE_PLACEHOLDER_${tableIndex}-->`;
-    
-    // Добавляем таблицу в отдельный массив
-    setArticleTables(prev => [...prev, {
-      id: Date.now(),
-      html: tableHTML,
-      data: [...tableData],
-      placeholder: placeholder
-    }]);
-    
-    // Добавляем placeholder в контент где была позиция курсора
-    // (пока просто в конец, так как Quill не даёт легко вставить HTML)
-    setArticleForm(prev => ({
-      ...prev,
-      content: prev.content + `<p>${placeholder}</p>`
-    }));
-    
-    setShowTableModal(false);
-    resetTableEditor();
-  }, [tableData, articleTables.length]);
-  
-  // Удаление таблицы
-  const removeTable = (tableId) => {
-    const tableToRemove = articleTables.find(t => t.id === tableId);
-    if (tableToRemove?.placeholder) {
-      // Удаляем placeholder из контента
-      setArticleForm(prev => ({
-        ...prev,
-        content: prev.content.replace(`<p>${tableToRemove.placeholder}</p>`, '').replace(tableToRemove.placeholder, '')
-      }));
-    }
-    setArticleTables(prev => prev.filter(t => t.id !== tableId));
-  };
-  
-  // Перемещение таблицы вверх/вниз
-  const moveTable = (tableId, direction) => {
-    setArticleTables(prev => {
-      const index = prev.findIndex(t => t.id === tableId);
-      if (index === -1) return prev;
-      
-      const newIndex = direction === 'up' ? index - 1 : index + 1;
-      if (newIndex < 0 || newIndex >= prev.length) return prev;
-      
-      const newTables = [...prev];
-      [newTables[index], newTables[newIndex]] = [newTables[newIndex], newTables[index]];
-      return newTables;
-    });
-  };
-  
-  // Инициализация редактора таблицы
-  const initTableEditor = useCallback(() => {
-    const rows = tableRows;
-    const cols = tableCols;
-    const newData = [];
-    for (let i = 0; i < rows; i++) {
-      const row = [];
-      for (let j = 0; j < cols; j++) {
-        row.push(i === 0 ? `Заголовок ${j + 1}` : '');
-      }
-      newData.push(row);
-    }
-    setTableData(newData);
-  }, [tableRows, tableCols]);
-  
-  // Сброс редактора таблицы
-  const resetTableEditor = () => {
-    setTableRows(3);
-    setTableCols(3);
-    setTableData([]);
-  };
-  
-  // Обновление размера таблицы
-  const updateTableSize = (newRows, newCols) => {
-    setTableRows(newRows);
-    setTableCols(newCols);
-    
-    const newData = [];
-    for (let i = 0; i < newRows; i++) {
-      const row = [];
-      for (let j = 0; j < newCols; j++) {
-        // Сохраняем существующие данные если есть
-        row.push(tableData[i]?.[j] ?? (i === 0 ? `Заголовок ${j + 1}` : ''));
-      }
-      newData.push(row);
-    }
-    setTableData(newData);
-  };
-  
-  // Обновление ячейки таблицы
-  const updateTableCell = (rowIdx, colIdx, value) => {
-    setTableData(prev => {
-      const newData = [...prev];
-      newData[rowIdx] = [...newData[rowIdx]];
-      newData[rowIdx][colIdx] = value;
-      return newData;
-    });
-  };
-  
-  // Открытие модалки таблицы
-  const openTableModal = () => {
-    initTableEditor();
-    setShowTableModal(true);
-  };
-
-  // Конфигурация Quill
-  const quillModules = {
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        ['link', 'image', 'code-block'],
-        ['clean']
-      ]
-    }
-  };
-  
-  // Форматы для Quill (включая таблицы)
-  const quillFormats = [
-    'header', 'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet', 'color', 'background', 'align',
-    'link', 'image', 'code-block'
-  ];
 
   // Функция для рендеринга иконки по имени
   const renderIcon = (iconName) => {
@@ -1088,78 +1141,10 @@ function KnowledgeBaseManagement() {
 
                 <div className={styles['form-group']}>
                   <label className={styles['form-label']}>Содержание статьи *</label>
-                  <div className={styles['editor-toolbar-extra']}>
-                    <button
-                      type="button"
-                      className={styles['btn-insert-table']}
-                      onClick={openTableModal}
-                      title="Вставить таблицу"
-                    >
-                      <FiGrid /> Вставить таблицу
-                    </button>
-                  </div>
-                  <div className={styles['editor-wrapper']}>
-                    <QuillEditor
-                      editorRef={quillRef}
-                      value={articleForm.content}
-                      onChange={(content) => setArticleForm({ ...articleForm, content })}
-                      modules={quillModules}
-                      formats={quillFormats}
-                      placeholder="Напишите содержание статьи..."
-                    />
-                  </div>
-                  
-                  {/* Список добавленных таблиц */}
-                  {articleTables.length > 0 && (
-                    <div className={styles['tables-list']}>
-                      <p className={styles['tables-list-title']}>
-                        📊 Таблицы статьи ({articleTables.length}):
-                        <span className={styles['tables-hint']}> — таблицы добавятся в конец статьи в указанном порядке</span>
-                      </p>
-                      {articleTables.map((table, idx) => (
-                        <div key={table.id} className={styles['table-item']}>
-                          <div className={styles['table-item-header']}>
-                            <div className={styles['table-item-info']}>
-                              <span className={styles['table-number']}>#{idx + 1}</span>
-                              <span>Таблица ({table.data?.length || '?'} строк × {table.data?.[0]?.length || '?'} столбцов)</span>
-                            </div>
-                            <div className={styles['table-item-actions']}>
-                              <button 
-                                type="button" 
-                                className={styles['btn-move-table']}
-                                onClick={() => moveTable(table.id, 'up')}
-                                disabled={idx === 0}
-                                title="Переместить вверх"
-                              >
-                                <FiArrowUp />
-                              </button>
-                              <button 
-                                type="button" 
-                                className={styles['btn-move-table']}
-                                onClick={() => moveTable(table.id, 'down')}
-                                disabled={idx === articleTables.length - 1}
-                                title="Переместить вниз"
-                              >
-                                <FiArrowDown />
-                              </button>
-                              <button 
-                                type="button" 
-                                className={styles['btn-remove-table']}
-                                onClick={() => removeTable(table.id)}
-                                title="Удалить таблицу"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          </div>
-                          <div 
-                            className={styles['table-preview-mini']}
-                            dangerouslySetInnerHTML={{ __html: table.html }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <TipTapEditor
+                    content={articleForm.content}
+                    onChange={(content) => setArticleForm({ ...articleForm, content })}
+                  />
                 </div>
 
                 <div className={styles['form-group']}>
@@ -1183,79 +1168,6 @@ function KnowledgeBaseManagement() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Модалка вставки таблицы */}
-      {showTableModal && (
-        <div className={styles['modal-overlay']} onClick={() => { setShowTableModal(false); resetTableEditor(); }}>
-          <div className={styles['table-modal']} onClick={e => e.stopPropagation()}>
-            <div className={styles['modal-header']}>
-              <h2><FiGrid /> Создать таблицу</h2>
-              <button className={styles['close-btn']} onClick={() => { setShowTableModal(false); resetTableEditor(); }}>
-                <FiX />
-              </button>
-            </div>
-            <div className={styles['table-modal-content']}>
-              <div className={styles['table-size-inputs']}>
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>Строки</label>
-                  <input
-                    type="number"
-                    min="2"
-                    max="15"
-                    value={tableRows}
-                    onChange={(e) => updateTableSize(Math.max(2, Math.min(15, parseInt(e.target.value) || 2)), tableCols)}
-                    className={styles['form-input']}
-                  />
-                </div>
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>Столбцы</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="8"
-                    value={tableCols}
-                    onChange={(e) => updateTableSize(tableRows, Math.max(1, Math.min(8, parseInt(e.target.value) || 1)))}
-                    className={styles['form-input']}
-                  />
-                </div>
-              </div>
-              
-              <div className={styles['table-editor']}>
-                <p className={styles['table-editor-hint']}>Заполните таблицу (первая строка - заголовки):</p>
-                <div className={styles['table-editor-scroll']}>
-                  <table className={styles['editable-table']}>
-                    <tbody>
-                      {tableData.map((row, rowIdx) => (
-                        <tr key={rowIdx}>
-                          {row.map((cell, colIdx) => (
-                            <td key={colIdx} className={rowIdx === 0 ? styles['header-cell-edit'] : ''}>
-                              <input
-                                type="text"
-                                value={cell}
-                                onChange={(e) => updateTableCell(rowIdx, colIdx, e.target.value)}
-                                placeholder={rowIdx === 0 ? 'Заголовок' : 'Данные'}
-                                className={styles['table-cell-input']}
-                              />
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div className={styles['modal-footer']}>
-              <button className={styles['btn-secondary']} onClick={() => { setShowTableModal(false); resetTableEditor(); }}>
-                Отмена
-              </button>
-              <button className={styles['btn-primary']} onClick={insertTable} disabled={tableData.length === 0}>
-                <FiPlus /> Вставить таблицу
-              </button>
-            </div>
           </div>
         </div>
       )}
