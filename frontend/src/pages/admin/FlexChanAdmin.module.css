@@ -676,6 +676,66 @@
   border: 2px dashed #f59e0b;
 }
 
+.gridCell.targetGirl {
+  background: rgba(236, 72, 153, 0.2);
+  border: 2px dashed #ec4899;
+}
+
+.gridCell.targetBoy {
+  background: rgba(59, 130, 246, 0.2);
+  border: 2px dashed #3b82f6;
+}
+
+.cellItemWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.itemNumber {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #10b981;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.targetWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.targetImage {
+  opacity: 0.5;
+}
+
+.targetNumber {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #f59e0b;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .cellImage {
   width: 28px;
   height: 28px;

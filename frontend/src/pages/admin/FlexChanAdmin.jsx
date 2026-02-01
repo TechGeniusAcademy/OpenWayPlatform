@@ -102,25 +102,46 @@ function GridEditor({ items, targets, onItemsChange, onTargetsChange }) {
               const item = items.find(
                 i => i.startPos.row === rowIndex && i.startPos.col === colIndex
               );
-              const isTarget = targets.some(
+              const itemIndex = items.findIndex(
+                i => i.startPos.row === rowIndex && i.startPos.col === colIndex
+              );
+              // Находим индекс цели и соответствующего персонажа
+              const targetIndex = targets.findIndex(
                 t => t.row === rowIndex && t.col === colIndex
               );
+              const isTarget = targetIndex !== -1;
+              // Персонаж для этой цели (по индексу)
+              const targetItem = isTarget && items[targetIndex] ? items[targetIndex] : null;
               
               return (
                 <div
                   key={colIndex}
-                  className={`${styles.gridCell} ${isTarget ? styles.targetCell : ''}`}
+                  className={`${styles.gridCell} ${isTarget ? styles.targetCell : ''} ${isTarget && targetItem ? (targetItem.type === 'boy' ? styles.targetBoy : styles.targetGirl) : ''}`}
                   onClick={() => handleCellClick(rowIndex, colIndex)}
                 >
                   {item && (
-                    <img 
-                      src={`/flexchan/${item.type === 'boy' ? 'boy_' : ''}normalface.svg`}
-                      alt={item.type}
-                      className={styles.cellImage}
-                    />
+                    <div className={styles.cellItemWrapper}>
+                      <img 
+                        src={`/flexchan/${item.type === 'boy' ? 'boy_' : ''}normalface.svg`}
+                        alt={item.type}
+                        className={styles.cellImage}
+                      />
+                      <span className={styles.itemNumber}>{itemIndex + 1}</span>
+                    </div>
                   )}
                   {isTarget && !item && (
-                    <span className={styles.targetMarker}>🎯</span>
+                    <div className={styles.targetWrapper}>
+                      {targetItem ? (
+                        <img 
+                          src={`/flexchan/${targetItem.type === 'boy' ? 'boy_' : ''}normalface.svg`}
+                          alt={targetItem.type}
+                          className={`${styles.cellImage} ${styles.targetImage}`}
+                        />
+                      ) : (
+                        <span className={styles.targetMarker}>🎯</span>
+                      )}
+                      <span className={styles.targetNumber}>{targetIndex + 1}</span>
+                    </div>
                   )}
                 </div>
               );
@@ -130,8 +151,10 @@ function GridEditor({ items, targets, onItemsChange, onTargetsChange }) {
       </div>
       
       <div className={styles.gridLegend}>
-        <span><img src="/flexchan/normalface.svg" alt="" /> = Стартовая позиция персонажа</span>
-        <span>🎯 = Целевая позиция</span>
+        <span><img src="/flexchan/normalface.svg" alt="" /> = Стартовая позиция (номер = порядок)</span>
+        <span style={{color: '#ec4899'}}>🎯 Girl цель</span>
+        <span style={{color: '#3b82f6'}}>🎯 Boy цель</span>
+        <span>Номер цели = номер персонажа</span>
       </div>
     </div>
   );
