@@ -628,7 +628,8 @@ function FlexChan() {
     
     const direction = flexProps['flex-direction'] || 'row';
     const justifyContent = flexProps['justify-content'] || 'flex-start';
-    const alignItems = flexProps['align-items'] || 'flex-start';
+    const alignItems = flexProps['align-items']; // НЕ задаём default - undefined означает "не менять"
+    const hasAlignItems = !!flexProps['align-items']; // Флаг - был ли align-items задан явно
     
     // Сначала создаём элементы с order
     let itemsWithOrder = currentLevel.items.map((item, index) => {
@@ -694,23 +695,28 @@ function FlexChan() {
         }
         
         // align-items (поперечная ось - вертикаль)
+        // Применяем только если align-items или align-self явно заданы
         const effectiveAlignItems = item.alignSelf || alignItems;
-        switch (effectiveAlignItems) {
-          case 'flex-start':
-            row = 0;
-            break;
-          case 'flex-end':
-            row = 9;
-            break;
-          case 'center':
-            row = 4;
-            break;
-          case 'stretch':
-            row = 4; // Для визуализации stretch = center
-            break;
-          default:
-            row = item.startPos.row;
+        if (effectiveAlignItems) {
+          switch (effectiveAlignItems) {
+            case 'flex-start':
+              row = 0;
+              break;
+            case 'flex-end':
+              row = 9;
+              break;
+            case 'center':
+              row = 4;
+              break;
+            case 'stretch':
+              row = 4; // Для визуализации stretch = center
+              break;
+            default:
+              // Оставляем row как есть
+              break;
+          }
         }
+        // Если align-items не задан, row остаётся из startPos
         
         if (direction === 'row-reverse') {
           col = 9 - col;
@@ -751,23 +757,28 @@ function FlexChan() {
         }
         
         // align-items (поперечная ось - горизонталь)
+        // Применяем только если align-items или align-self явно заданы
         const effectiveAlignItems = item.alignSelf || alignItems;
-        switch (effectiveAlignItems) {
-          case 'flex-start':
-            col = 0;
-            break;
-          case 'flex-end':
-            col = 9;
-            break;
-          case 'center':
-            col = 4;
-            break;
-          case 'stretch':
-            col = 4; // Для визуализации stretch = center
-            break;
-          default:
-            col = item.startPos.col;
+        if (effectiveAlignItems) {
+          switch (effectiveAlignItems) {
+            case 'flex-start':
+              col = 0;
+              break;
+            case 'flex-end':
+              col = 9;
+              break;
+            case 'center':
+              col = 4;
+              break;
+            case 'stretch':
+              col = 4; // Для визуализации stretch = center
+              break;
+            default:
+              // Оставляем col как есть
+              break;
+          }
         }
+        // Если align-items не задан, col остаётся из startPos
         
         if (direction === 'column-reverse') {
           row = 9 - row;
