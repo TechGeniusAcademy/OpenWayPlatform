@@ -562,8 +562,43 @@ function FlexChan() {
     if (!currentLevel) return;
     
     // Парсим CSS свойства из кода
+    // ВАЖНО: принимаем только полностью написанные свойства (заканчивающиеся на ;)
     const flexProps = {};
     const itemProps = { girl: {}, boy: {} };
+    
+    // Функция для парсинга только завершённых свойств
+    const parseCompleteProps = (cssBlock) => {
+      const props = {};
+      if (!cssBlock) return props;
+      
+      // Разбиваем по ; и берём только те части, которые имеют полную структуру key: value
+      const statements = cssBlock.split(';');
+      
+      // Последний элемент после split может быть неполным (без ;), игнорируем его
+      statements.forEach((statement, index) => {
+        // Если это последний элемент и исходный текст не заканчивается на ;
+        // значит это неполное свойство - пропускаем
+        if (index === statements.length - 1 && !cssBlock.trim().endsWith(';')) {
+          return;
+        }
+        
+        const trimmed = statement.trim();
+        if (!trimmed) return;
+        
+        const colonIndex = trimmed.indexOf(':');
+        if (colonIndex === -1) return;
+        
+        const key = trimmed.slice(0, colonIndex).trim();
+        const value = trimmed.slice(colonIndex + 1).trim();
+        
+        // Проверяем что и ключ и значение не пустые
+        if (key && value) {
+          props[key] = value;
+        }
+      });
+      
+      return props;
+    };
     
     // Разбиваем на блоки по селекторам
     const containerMatch = cssCode.match(/\.container\s*\{([^}]*)\}/);
@@ -571,27 +606,15 @@ function FlexChan() {
     const boyMatch = cssCode.match(/\.boy\s*\{([^}]*)\}/);
     
     if (containerMatch) {
-      const props = containerMatch[1].split(';').filter(p => p.trim());
-      props.forEach(prop => {
-        const [key, value] = prop.split(':').map(s => s.trim());
-        if (key && value) flexProps[key] = value;
-      });
+      Object.assign(flexProps, parseCompleteProps(containerMatch[1]));
     }
     
     if (girlMatch) {
-      const props = girlMatch[1].split(';').filter(p => p.trim());
-      props.forEach(prop => {
-        const [key, value] = prop.split(':').map(s => s.trim());
-        if (key && value) itemProps.girl[key] = value;
-      });
+      Object.assign(itemProps.girl, parseCompleteProps(girlMatch[1]));
     }
     
     if (boyMatch) {
-      const props = boyMatch[1].split(';').filter(p => p.trim());
-      props.forEach(prop => {
-        const [key, value] = prop.split(':').map(s => s.trim());
-        if (key && value) itemProps.boy[key] = value;
-      });
+      Object.assign(itemProps.boy, parseCompleteProps(boyMatch[1]));
     }
     
     // Получаем gap (в ячейках сетки)
