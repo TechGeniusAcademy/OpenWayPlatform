@@ -620,16 +620,17 @@ function FlexChan() {
     // Получаем gap (в ячейках сетки)
     const gap = flexProps['gap'] ? parseInt(flexProps['gap']) || 0 : 0;
     
+    // Проверяем какие свойства явно заданы
+    const hasJustifyContent = !!flexProps['justify-content'];
+    const hasAlignItems = !!flexProps['align-items'];
+    const hasFlexDirection = !!flexProps['flex-direction'];
+    
     // Проверяем есть ли flex-свойства которые влияют на позиционирование
-    const hasFlexPositioning = flexProps['justify-content'] || 
-                               flexProps['align-items'] || 
-                               flexProps['flex-direction'] ||
-                               gap > 0;
+    const hasFlexPositioning = hasJustifyContent || hasAlignItems || hasFlexDirection || gap > 0;
     
     const direction = flexProps['flex-direction'] || 'row';
-    const justifyContent = flexProps['justify-content'] || 'flex-start';
-    const alignItems = flexProps['align-items']; // НЕ задаём default - undefined означает "не менять"
-    const hasAlignItems = !!flexProps['align-items']; // Флаг - был ли align-items задан явно
+    const justifyContent = flexProps['justify-content']; // undefined если не задан
+    const alignItems = flexProps['align-items']; // undefined если не задан
     
     // Сначала создаём элементы с order
     let itemsWithOrder = currentLevel.items.map((item, index) => {
@@ -664,35 +665,49 @@ function FlexChan() {
       // Горизонтальное направление (row, row-reverse)
       if (direction === 'row' || direction === 'row-reverse') {
         // justify-content (основная ось - горизонталь)
-        switch (justifyContent) {
-          case 'flex-start':
-            col = sortedIndex * (1 + gap);
-            break;
-          case 'flex-end':
-            col = 9 - (itemCount - 1 - sortedIndex) * (1 + gap);
-            break;
-          case 'center':
-            const totalWidthRow = itemCount + (itemCount - 1) * gap;
-            const startColCenter = Math.floor((10 - totalWidthRow) / 2);
-            col = startColCenter + sortedIndex * (1 + gap);
-            break;
-          case 'space-between':
-            if (itemCount > 1) {
-              col = Math.round(sortedIndex * (9 / (itemCount - 1)));
-            } else {
-              col = 0;
-            }
-            break;
-          case 'space-around':
-            const spaceAround = 10 / itemCount;
-            col = Math.round(spaceAround / 2 + sortedIndex * spaceAround);
-            break;
-          case 'space-evenly':
-            col = Math.round((sortedIndex + 1) * 10 / (itemCount + 1)) - 1;
-            break;
-          default:
-            col = sortedIndex * (1 + gap);
+        // Применяем только если явно задан
+        if (hasJustifyContent) {
+          switch (justifyContent) {
+            case 'flex-start':
+              col = sortedIndex * (1 + gap);
+              if (direction === 'row-reverse') col = 9 - col;
+              break;
+            case 'flex-end':
+              col = 9 - (itemCount - 1 - sortedIndex) * (1 + gap);
+              if (direction === 'row-reverse') col = 9 - col;
+              break;
+            case 'center':
+              const totalWidthRow = itemCount + (itemCount - 1) * gap;
+              const startColCenter = Math.floor((10 - totalWidthRow) / 2);
+              col = startColCenter + sortedIndex * (1 + gap);
+              break;
+            case 'space-between':
+              if (itemCount > 1) {
+                col = Math.round(sortedIndex * (9 / (itemCount - 1)));
+              } else {
+                col = 4; // Центр для одного элемента
+              }
+              if (direction === 'row-reverse') col = 9 - col;
+              break;
+            case 'space-around':
+              const spaceAround = 10 / itemCount;
+              col = Math.round(spaceAround / 2 + sortedIndex * spaceAround) - 1;
+              if (col < 0) col = 0;
+              break;
+            case 'space-evenly':
+              col = Math.round((sortedIndex + 1) * 10 / (itemCount + 1)) - 1;
+              if (col < 0) col = 0;
+              break;
+            default:
+              // Неизвестное значение - оставляем как есть
+              break;
+          }
+        } else if (hasFlexDirection) {
+          // Если только flex-direction задан (без justify-content), применяем flex-start по умолчанию
+          col = sortedIndex * (1 + gap);
+          if (direction === 'row-reverse') col = 9 - col;
         }
+        // Если justify-content не задан, col остаётся из startPos
         
         // align-items (поперечная ось - вертикаль)
         // Применяем только если align-items или align-self явно заданы
@@ -717,44 +732,54 @@ function FlexChan() {
           }
         }
         // Если align-items не задан, row остаётся из startPos
-        
-        if (direction === 'row-reverse') {
-          col = 9 - col;
-        }
       }
       
       // Вертикальное направление (column, column-reverse)
       if (direction === 'column' || direction === 'column-reverse') {
         // justify-content (основная ось - вертикаль)
-        switch (justifyContent) {
-          case 'flex-start':
-            row = sortedIndex * (1 + gap);
-            break;
-          case 'flex-end':
-            row = 9 - (itemCount - 1 - sortedIndex) * (1 + gap);
-            break;
-          case 'center':
-            const totalHeightCol = itemCount + (itemCount - 1) * gap;
-            const startRowCenter = Math.floor((10 - totalHeightCol) / 2);
-            row = startRowCenter + sortedIndex * (1 + gap);
-            break;
-          case 'space-between':
-            if (itemCount > 1) {
-              row = Math.round(sortedIndex * (9 / (itemCount - 1)));
-            } else {
-              row = 0;
-            }
-            break;
-          case 'space-around':
-            const spaceAroundCol = 10 / itemCount;
-            row = Math.round(spaceAroundCol / 2 + sortedIndex * spaceAroundCol);
-            break;
-          case 'space-evenly':
-            row = Math.round((sortedIndex + 1) * 10 / (itemCount + 1)) - 1;
-            break;
-          default:
-            row = sortedIndex * (1 + gap);
+        // Применяем только если явно задан
+        if (hasJustifyContent) {
+          switch (justifyContent) {
+            case 'flex-start':
+              row = sortedIndex * (1 + gap);
+              if (direction === 'column-reverse') row = 9 - row;
+              break;
+            case 'flex-end':
+              row = 9 - (itemCount - 1 - sortedIndex) * (1 + gap);
+              if (direction === 'column-reverse') row = 9 - row;
+              break;
+            case 'center':
+              const totalHeightCol = itemCount + (itemCount - 1) * gap;
+              const startRowCenter = Math.floor((10 - totalHeightCol) / 2);
+              row = startRowCenter + sortedIndex * (1 + gap);
+              break;
+            case 'space-between':
+              if (itemCount > 1) {
+                row = Math.round(sortedIndex * (9 / (itemCount - 1)));
+              } else {
+                row = 4; // Центр для одного элемента
+              }
+              if (direction === 'column-reverse') row = 9 - row;
+              break;
+            case 'space-around':
+              const spaceAroundCol = 10 / itemCount;
+              row = Math.round(spaceAroundCol / 2 + sortedIndex * spaceAroundCol) - 1;
+              if (row < 0) row = 0;
+              break;
+            case 'space-evenly':
+              row = Math.round((sortedIndex + 1) * 10 / (itemCount + 1)) - 1;
+              if (row < 0) row = 0;
+              break;
+            default:
+              // Неизвестное значение - оставляем как есть
+              break;
+          }
+        } else if (hasFlexDirection) {
+          // Если только flex-direction задан (без justify-content), применяем flex-start по умолчанию
+          row = sortedIndex * (1 + gap);
+          if (direction === 'column-reverse') row = 9 - row;
         }
+        // Если justify-content не задан, row остаётся из startPos
         
         // align-items (поперечная ось - горизонталь)
         // Применяем только если align-items или align-self явно заданы
@@ -779,10 +804,6 @@ function FlexChan() {
           }
         }
         // Если align-items не задан, col остаётся из startPos
-        
-        if (direction === 'column-reverse') {
-          row = 9 - row;
-        }
       }
       
       // Ограничиваем значения
