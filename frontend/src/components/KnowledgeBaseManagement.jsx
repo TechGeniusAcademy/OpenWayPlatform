@@ -11,7 +11,7 @@ import {
   FiFileText, FiEdit2, FiClipboard, FiStar, FiMapPin,
   FiType, FiMonitor, FiBox, FiClock, FiSearch,
   FiFolder, FiEye, FiCheckCircle, FiTrash2, FiPlus,
-  FiRefreshCw, FiX, FiAlertCircle
+  FiRefreshCw, FiX, FiAlertCircle, FiArrowUp, FiArrowDown
 } from 'react-icons/fi';
 
 // Wrapper для ReactQuill чтобы избежать findDOMNode warning
@@ -260,13 +260,7 @@ function KnowledgeBaseManagement() {
 
     try {
       // Объединяем контент Quill с таблицами
-      let finalContent = articleForm.content || '';
-      
-      // Добавляем таблицы в конец контента
-      if (articleTables.length > 0) {
-        const tablesHTML = articleTables.map(t => t.html).join('\n');
-        finalContent = finalContent + '\n' + tablesHTML;
-      }
+      const finalContent = mergeContentWithTables(articleForm.content, articleTables);
       
       const dataToSend = {
         ...articleForm,
@@ -289,18 +283,73 @@ function KnowledgeBaseManagement() {
       setError(error.response?.data?.error || 'Ошибка при сохранении');
     }
   };
+  
+  // Функция извлечения таблиц из HTML контента
+  const extractTablesFromContent = (htmlContent) => {
+    if (!htmlContent) return { content: '', tables: [] };
+    
+    const tables = [];
+    let cleanContent = htmlContent;
+    
+    // Находим все таблицы в контенте
+    const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/gi;
+    let match;
+    let tableIndex = 0;
+    
+    while ((match = tableRegex.exec(htmlContent)) !== null) {
+      const tableHTML = match[0];
+      const placeholder = `<!--TABLE_PLACEHOLDER_${tableIndex}-->`;
+      
+      tables.push({
+        id: Date.now() + tableIndex,
+        html: tableHTML,
+        placeholder: placeholder,
+        position: match.index // Позиция в тексте
+      });
+      
+      cleanContent = cleanContent.replace(tableHTML, placeholder);
+      tableIndex++;
+    }
+    
+    return { content: cleanContent, tables };
+  };
+  
+  // Функция объединения контента с таблицами по позициям
+  const mergeContentWithTables = (content, tables) => {
+    let finalContent = content || '';
+    
+    // Очищаем placeholder'ы из контента
+    let cleanedContent = finalContent;
+    tables.forEach((table, idx) => {
+      const placeholder = table.placeholder || `<!--TABLE_PLACEHOLDER_${idx}-->`;
+      cleanedContent = cleanedContent.replace(`<p>${placeholder}</p>`, '');
+      cleanedContent = cleanedContent.replace(placeholder, '');
+    });
+    
+    // Добавляем все таблицы в конец в правильном порядке
+    if (tables.length > 0) {
+      const tablesHTML = tables.map(t => t.html).join('\n');
+      cleanedContent = cleanedContent + '\n' + tablesHTML;
+    }
+    
+    return cleanedContent;
+  };
 
   const handleEditArticle = (article) => {
     setEditingArticle(article);
+    
+    // Извлекаем таблицы из контента
+    const { content: cleanContent, tables } = extractTablesFromContent(article.content || '');
+    
     setArticleForm({
       title: article.title,
       category_id: article.category_id,
       subcategory_id: article.subcategory_id || '',
       description: article.description,
-      content: article.content || '',
+      content: cleanContent, // Контент без таблиц
       published: article.published
     });
-    setArticleTables([]); // При редактировании таблицы уже в content
+    setArticleTables(tables); // Таблицы отдельно
     setShowArticleModal(true);
   };
 
@@ -350,20 +399,54 @@ function KnowledgeBaseManagement() {
     });
     tableHTML += '</tbody></table>';
     
-    // Добавляем таблицу в отдельный массив (не в Quill!)
+    const tableIndex = articleTables.length;
+    const placeholder = `<!--TABLE_PLACEHOLDER_${tableIndex}-->`;
+    
+    // Добавляем таблицу в отдельный массив
     setArticleTables(prev => [...prev, {
       id: Date.now(),
       html: tableHTML,
-      data: [...tableData]
+      data: [...tableData],
+      placeholder: placeholder
     }]);
+    
+    // Добавляем placeholder в контент где была позиция курсора
+    // (пока просто в конец, так как Quill не даёт легко вставить HTML)
+    setArticleForm(prev => ({
+      ...prev,
+      content: prev.content + `<p>${placeholder}</p>`
+    }));
     
     setShowTableModal(false);
     resetTableEditor();
-  }, [tableData]);
+  }, [tableData, articleTables.length]);
   
   // Удаление таблицы
   const removeTable = (tableId) => {
+    const tableToRemove = articleTables.find(t => t.id === tableId);
+    if (tableToRemove?.placeholder) {
+      // Удаляем placeholder из контента
+      setArticleForm(prev => ({
+        ...prev,
+        content: prev.content.replace(`<p>${tableToRemove.placeholder}</p>`, '').replace(tableToRemove.placeholder, '')
+      }));
+    }
     setArticleTables(prev => prev.filter(t => t.id !== tableId));
+  };
+  
+  // Перемещение таблицы вверх/вниз
+  const moveTable = (tableId, direction) => {
+    setArticleTables(prev => {
+      const index = prev.findIndex(t => t.id === tableId);
+      if (index === -1) return prev;
+      
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      
+      const newTables = [...prev];
+      [newTables[index], newTables[newIndex]] = [newTables[newIndex], newTables[index]];
+      return newTables;
+    });
   };
   
   // Инициализация редактора таблицы
@@ -1029,18 +1112,45 @@ function KnowledgeBaseManagement() {
                   {/* Список добавленных таблиц */}
                   {articleTables.length > 0 && (
                     <div className={styles['tables-list']}>
-                      <p className={styles['tables-list-title']}>Добавленные таблицы ({articleTables.length}):</p>
+                      <p className={styles['tables-list-title']}>
+                        📊 Таблицы статьи ({articleTables.length}):
+                        <span className={styles['tables-hint']}> — таблицы добавятся в конец статьи в указанном порядке</span>
+                      </p>
                       {articleTables.map((table, idx) => (
                         <div key={table.id} className={styles['table-item']}>
                           <div className={styles['table-item-header']}>
-                            <span>Таблица {idx + 1} ({table.data.length} строк × {table.data[0]?.length || 0} столбцов)</span>
-                            <button 
-                              type="button" 
-                              className={styles['btn-remove-table']}
-                              onClick={() => removeTable(table.id)}
-                            >
-                              <FiTrash2 /> Удалить
-                            </button>
+                            <div className={styles['table-item-info']}>
+                              <span className={styles['table-number']}>#{idx + 1}</span>
+                              <span>Таблица ({table.data?.length || '?'} строк × {table.data?.[0]?.length || '?'} столбцов)</span>
+                            </div>
+                            <div className={styles['table-item-actions']}>
+                              <button 
+                                type="button" 
+                                className={styles['btn-move-table']}
+                                onClick={() => moveTable(table.id, 'up')}
+                                disabled={idx === 0}
+                                title="Переместить вверх"
+                              >
+                                <FiArrowUp />
+                              </button>
+                              <button 
+                                type="button" 
+                                className={styles['btn-move-table']}
+                                onClick={() => moveTable(table.id, 'down')}
+                                disabled={idx === articleTables.length - 1}
+                                title="Переместить вниз"
+                              >
+                                <FiArrowDown />
+                              </button>
+                              <button 
+                                type="button" 
+                                className={styles['btn-remove-table']}
+                                onClick={() => removeTable(table.id)}
+                                title="Удалить таблицу"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </div>
                           </div>
                           <div 
                             className={styles['table-preview-mini']}
