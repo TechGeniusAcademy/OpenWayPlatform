@@ -806,8 +806,8 @@
   font-size: 15px;
   font-family: inherit;
   border: none;
-  min-height: 200px;
-  max-height: 40vh;
+  min-height: 150px;
+  max-height: 250px;
 }
 
 .editor-wrapper :global(.ql-toolbar) {
@@ -820,8 +820,8 @@
 }
 
 .editor-wrapper :global(.ql-editor) {
-  min-height: 200px;
-  max-height: 40vh;
+  min-height: 150px;
+  max-height: 250px;
   padding: 16px;
   overflow-y: auto;
 }
@@ -829,6 +829,80 @@
 .editor-wrapper :global(.ql-editor.ql-blank::before) {
   color: #9ca3af;
   font-style: normal;
+}
+
+/* ==================== Tables List ==================== */
+
+.tables-list {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.tables-list-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.table-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.table-item:last-child {
+  margin-bottom: 0;
+}
+
+.table-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f3f4f6;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.btn-remove-table {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-remove-table:hover {
+  background: #fee2e2;
+}
+
+.table-preview-mini {
+  padding: 12px;
+  max-height: 150px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.table-preview-mini table {
+  font-size: 12px;
+}
+
+.table-preview-mini th,
+.table-preview-mini td {
+  padding: 6px 8px !important;
 }
 
 /* ==================== Table Insert ==================== */

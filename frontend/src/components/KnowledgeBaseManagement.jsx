@@ -75,6 +75,9 @@ function KnowledgeBaseManagement() {
     content: '',
     published: true
   });
+  
+  // Таблицы статьи (хранятся отдельно от Quill контента)
+  const [articleTables, setArticleTables] = useState([]);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -256,11 +259,25 @@ function KnowledgeBaseManagement() {
     setSuccess('');
 
     try {
+      // Объединяем контент Quill с таблицами
+      let finalContent = articleForm.content || '';
+      
+      // Добавляем таблицы в конец контента
+      if (articleTables.length > 0) {
+        const tablesHTML = articleTables.map(t => t.html).join('\n');
+        finalContent = finalContent + '\n' + tablesHTML;
+      }
+      
+      const dataToSend = {
+        ...articleForm,
+        content: finalContent
+      };
+      
       if (editingArticle) {
-        await api.put(`/knowledge-base/articles/${editingArticle.id}`, articleForm);
+        await api.put(`/knowledge-base/articles/${editingArticle.id}`, dataToSend);
         setSuccess('Статья обновлена');
       } else {
-        await api.post('/knowledge-base/articles', articleForm);
+        await api.post('/knowledge-base/articles', dataToSend);
         setSuccess('Статья создана');
       }
       
@@ -283,6 +300,7 @@ function KnowledgeBaseManagement() {
       content: article.content || '',
       published: article.published
     });
+    setArticleTables([]); // При редактировании таблицы уже в content
     setShowArticleModal(true);
   };
 
@@ -311,9 +329,10 @@ function KnowledgeBaseManagement() {
       content: '',
       published: true
     });
+    setArticleTables([]); // Очищаем таблицы
   };
 
-  // Функция вставки таблицы
+  // Функция вставки таблицы - добавляем в отдельный массив
   const insertTable = useCallback(() => {
     // Генерируем HTML таблицы из данных
     let tableHTML = '<table class="kb-table" style="border-collapse: collapse; width: 100%; margin: 16px 0;"><tbody>';
@@ -331,19 +350,21 @@ function KnowledgeBaseManagement() {
     });
     tableHTML += '</tbody></table>';
     
-    // Добавляем таблицу в конец контента
-    // Используем специальный маркер чтобы Quill не испортил таблицу
-    const tableMarker = `<!--TABLE_START-->${tableHTML}<!--TABLE_END-->`;
-    
-    const currentContent = articleForm.content || '';
-    setArticleForm(prev => ({
-      ...prev,
-      content: currentContent + tableMarker
-    }));
+    // Добавляем таблицу в отдельный массив (не в Quill!)
+    setArticleTables(prev => [...prev, {
+      id: Date.now(),
+      html: tableHTML,
+      data: [...tableData]
+    }]);
     
     setShowTableModal(false);
     resetTableEditor();
-  }, [tableData, articleForm.content]);
+  }, [tableData]);
+  
+  // Удаление таблицы
+  const removeTable = (tableId) => {
+    setArticleTables(prev => prev.filter(t => t.id !== tableId));
+  };
   
   // Инициализация редактора таблицы
   const initTableEditor = useCallback(() => {
@@ -1004,6 +1025,31 @@ function KnowledgeBaseManagement() {
                       placeholder="Напишите содержание статьи..."
                     />
                   </div>
+                  
+                  {/* Список добавленных таблиц */}
+                  {articleTables.length > 0 && (
+                    <div className={styles['tables-list']}>
+                      <p className={styles['tables-list-title']}>Добавленные таблицы ({articleTables.length}):</p>
+                      {articleTables.map((table, idx) => (
+                        <div key={table.id} className={styles['table-item']}>
+                          <div className={styles['table-item-header']}>
+                            <span>Таблица {idx + 1} ({table.data.length} строк × {table.data[0]?.length || 0} столбцов)</span>
+                            <button 
+                              type="button" 
+                              className={styles['btn-remove-table']}
+                              onClick={() => removeTable(table.id)}
+                            >
+                              <FiTrash2 /> Удалить
+                            </button>
+                          </div>
+                          <div 
+                            className={styles['table-preview-mini']}
+                            dangerouslySetInnerHTML={{ __html: table.html }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className={styles['form-group']}>
