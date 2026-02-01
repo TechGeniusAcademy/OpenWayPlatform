@@ -72,26 +72,50 @@ const uploadVideo = multer({
 
 router.get('/', authenticate, async (req, res) => {
     try {
-        const { published } = req.query;
-        let query = `
-            SELECT c.*, 
-                   COUNT(DISTINCT cl.id) as lesson_count,
-                   COUNT(DISTINCT ce.id) as enrolled_count,
-                   u.username as created_by_name
-            FROM courses c
-            LEFT JOIN course_lessons cl ON c.id = cl.course_id
-            LEFT JOIN course_enrollments ce ON c.id = ce.course_id
-            LEFT JOIN users u ON c.created_by = u.id
-        `;
+        const { published, page = 1, limit = 12 } = req.query;
+        const offset = (parseInt(page) - 1) * parseInt(limit);
         
+        let whereClause = '';
         if (req.user.role === 'student' || published === 'true') {
-            query += ' WHERE c.is_published = true';
+            whereClause = 'WHERE c.is_published = true';
         }
         
-        query += ' GROUP BY c.id, u.username ORDER BY c.created_at DESC';
+        // Оптимизированный запрос с подзапросами вместо GROUP BY
+        const query = `
+            SELECT c.id, c.title, c.description, c.thumbnail_url, 
+                   c.difficulty_level, c.duration_hours, c.is_published,
+                   c.created_at, c.created_by,
+                   (SELECT COUNT(*) FROM course_lessons cl WHERE cl.course_id = c.id) as lesson_count,
+                   (SELECT COUNT(*) FROM course_enrollments ce WHERE ce.course_id = c.id) as enrolled_count
+            FROM courses c
+            ${whereClause}
+            ORDER BY c.created_at DESC
+            LIMIT $1 OFFSET $2
+        `;
         
-        const result = await pool.query(query);
-        res.json({ courses: result.rows });
+        // Общее количество для пагинации
+        const countQuery = `
+            SELECT COUNT(*) FROM courses c ${whereClause}
+        `;
+        
+        const [result, countResult] = await Promise.all([
+            pool.query(query, [parseInt(limit), offset]),
+            pool.query(countQuery)
+        ]);
+        
+        const totalCount = parseInt(countResult.rows[0].count);
+        const totalPages = Math.ceil(totalCount / parseInt(limit));
+        
+        res.json({ 
+            courses: result.rows,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalCount,
+                totalPages,
+                hasMore: parseInt(page) < totalPages
+            }
+        });
     } catch (error) {
         console.error('Ошибка получения курсов:', error);
         res.status(500).json({ error: 'Ошибка сервера' });

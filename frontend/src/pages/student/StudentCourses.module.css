@@ -50,12 +50,26 @@
   justify-content: center;
   color: white;
   font-size: 64px;
+  position: relative;
+  overflow: hidden;
 }
 
 .courseThumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.imageSkeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
 .courseContent {
@@ -162,4 +176,113 @@
   font-size: 16px;
   color: #666;
   margin: 0;
+}
+
+/* ============================================================
+   SKELETON LOADING STYLES
+   ============================================================ */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  pointer-events: none;
+}
+
+.skeleton .courseThumbnail {
+  background: #f0f0f0;
+}
+
+.skeletonImage {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeletonBadge {
+  width: 80px;
+  height: 24px;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 12px;
+}
+
+.skeletonTitle {
+  width: 70%;
+  height: 24px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 12px;
+}
+
+.skeletonDescription {
+  width: 100%;
+  height: 48px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 16px;
+}
+
+.skeletonStats {
+  width: 60%;
+  height: 20px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 16px;
+}
+
+.skeletonButton {
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .coursesPage {
+    padding: 16px;
+  }
+
+  .pageHeader h1 {
+    font-size: 24px;
+  }
+
+  .coursesGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .courseThumbnail {
+    height: 160px;
+  }
+
+  .courseContent {
+    padding: 16px;
+  }
+
+  .courseTitle {
+    font-size: 18px;
+  }
 }
