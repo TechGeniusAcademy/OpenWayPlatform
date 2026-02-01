@@ -29,6 +29,7 @@ import {
 } from 'react-icons/io5';
 import { HiOutlineUserGroup } from 'react-icons/hi';
 import { BsFileEarmarkText, BsChatDots } from 'react-icons/bs';
+import { IoArrowBack } from 'react-icons/io5';
 
 function Chat() {
   const { user } = useAuth();
@@ -45,6 +46,7 @@ function Chat() {
   const [typingUsers, setTypingUsers] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('chats'); // 'chats' или 'users'
+  const [showMobileChat, setShowMobileChat] = useState(false); // Для мобильного переключения
   
   // Refs
   const messagesEndRef = useRef(null);
@@ -481,6 +483,17 @@ function Chat() {
     u.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Обработчик выбора чата (с поддержкой мобильного)
+  const handleSelectChat = (chat) => {
+    setActiveChat(chat);
+    setShowMobileChat(true); // Показать чат на мобильном
+  };
+
+  // Вернуться к списку чатов (мобильный)
+  const handleBackToList = () => {
+    setShowMobileChat(false);
+  };
+
   const handleUserClick = async (selectedUser) => {
     try {
       // Создать или получить существующий чат с этим пользователем
@@ -493,7 +506,7 @@ function Chat() {
       
       // Открыть чат
       const newChat = response.data.chat;
-      setActiveChat({
+      const chatData = {
         id: newChat.id,
         chat_type: 'private',
         type: 'private',
@@ -501,7 +514,9 @@ function Chat() {
         avatarSrc: selectedUser.avatarSrc,
         isOnline: selectedUser.isOnline,
         otherUserId: selectedUser.id
-      });
+      };
+      setActiveChat(chatData);
+      setShowMobileChat(true); // Показать чат на мобильном
       
       // Переключаемся на вкладку чатов
       setActiveTab('chats');
@@ -523,9 +538,9 @@ function Chat() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${showMobileChat ? styles.showMobileChat : ''}`}>
       <MainContainer responsive>
-        <Sidebar position="left" scrollable={false}>
+        <Sidebar position="left" scrollable={false} className={styles.sidebar}>
           <div className={styles.tabs}>
             <button 
               className={`${styles.tab} ${activeTab === 'chats' ? styles.tabActive : ''}`}
@@ -560,7 +575,7 @@ function Chat() {
                     info={chat.lastMessage}
                     active={activeChat?.id === chat.id}
                     unreadCnt={Number(chat.unreadCount) || 0}
-                    onClick={() => setActiveChat(chat)}
+                    onClick={() => handleSelectChat(chat)}
                   >
                     <Avatar 
                       src={chat.avatarSrc}
@@ -592,7 +607,27 @@ function Chat() {
         </Sidebar>
 
         {activeChat ? (
-          <ChatContainer>
+          <ChatContainer className={styles.chatContainer}>
+            {/* Кнопка назад для мобильных */}
+            <div className={styles.mobileHeader}>
+              <button className={styles.backButton} onClick={handleBackToList}>
+                <IoArrowBack />
+              </button>
+              <div className={styles.mobileHeaderInfo}>
+                <Avatar 
+                  src={activeChat.avatarSrc}
+                  name={activeChat.name}
+                  size="sm"
+                  status={activeChat.isOnline ? 'available' : 'unavailable'}
+                />
+                <div className={styles.mobileHeaderText}>
+                  <span className={styles.mobileHeaderName}>{activeChat.name}</span>
+                  <span className={styles.mobileHeaderStatus}>
+                    {activeChat.isOnline ? 'В сети' : 'Не в сети'}
+                  </span>
+                </div>
+              </div>
+            </div>
             <MessageList
               typingIndicator={showTyping && (
                 <TypingIndicator content={`${typingUserNames.join(', ')} печатает...`} />

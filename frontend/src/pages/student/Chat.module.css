@@ -612,6 +612,63 @@
 }
 
 /* ============================================================
+   MOBILE CHAT HEADER (Back button)
+   ============================================================ */
+
+.mobileHeader {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f8fafc;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #1e293b;
+  font-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: #f1f5f9;
+  color: #6366f1;
+}
+
+.mobileHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.mobileHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobileHeaderName {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1e293b;
+}
+
+.mobileHeaderStatus {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ============================================================
    RESPONSIVE DESIGN
    ============================================================ */
 
@@ -635,28 +692,78 @@
 @media (max-width: 768px) {
   .container {
     height: calc(100vh - 60px);
+    position: relative;
   }
 
   :global(.cs-main-container) {
     border-radius: 0 !important;
     flex-direction: column !important;
+    position: relative !important;
   }
 
-  /* Sidebar на мобильном */
+  /* Sidebar на мобильном - показываем по умолчанию */
   :global(.cs-sidebar) {
     width: 100% !important;
     min-width: 100% !important;
-    max-height: 45vh !important;
+    max-height: 100% !important;
+    height: 100% !important;
     border-right: none !important;
-    border-bottom: 1px solid #e2e8f0 !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 10 !important;
+    transition: transform 0.3s ease !important;
   }
 
-  :global(.cs-sidebar--visible) {
+  /* Chat Container на мобильном - скрыт по умолчанию */
+  :global(.cs-chat-container) {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 5 !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.3s ease !important;
+  }
+
+  /* Когда выбран чат - показываем чат, скрываем sidebar */
+  .showMobileChat :global(.cs-sidebar) {
+    transform: translateX(-100%) !important;
+  }
+
+  .showMobileChat :global(.cs-chat-container) {
+    transform: translateX(0) !important;
+  }
+
+  /* Показать мобильный header */
+  .mobileHeader {
     display: flex !important;
   }
 
+  /* Скрыть обычный header chatscope */
+  .showMobileChat :global(.cs-conversation-header) {
+    display: none !important;
+  }
+
+  /* No Chat также скрываем на мобильном */
+  .noChat {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 5 !important;
+    transform: translateX(100%) !important;
+  }
+
+  .showMobileChat .noChat {
+    transform: translateX(0) !important;
+  }
+
   :global(.cs-conversation-list) {
-    max-height: calc(45vh - 120px) !important;
+    max-height: calc(100vh - 180px) !important;
+    flex: 1 !important;
   }
 
   /* Tabs */
