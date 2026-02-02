@@ -18,6 +18,7 @@ import CourseLessons from './admin/CourseLessons';
 import FlexChanAdmin from './admin/FlexChanAdmin';
 import LayoutGameManagement from '../components/LayoutGameManagement';
 import JSGameManagement from '../components/JSGameManagement';
+import UserLevelsManagement from '../components/UserLevelsManagement';
 
 function AdminDashboard() {
   return (
@@ -41,6 +42,7 @@ function AdminDashboard() {
         <Route path="/flexchan" element={<FlexChanAdmin />} />
         <Route path="/layout-game" element={<LayoutGameManagement />} />
         <Route path="/js-game" element={<JSGameManagement />} />
+        <Route path="/user-levels" element={<UserLevelsManagement />} />
         {/* Здесь можно добавлять новые маршруты */}
       </Routes>
     </AdminLayout>

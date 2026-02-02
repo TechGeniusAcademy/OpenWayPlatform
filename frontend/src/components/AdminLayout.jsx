@@ -6,7 +6,7 @@ import { AiOutlineUser, AiOutlineMessage, AiOutlineMenu, AiOutlineClose, AiOutli
 import { HiUserGroup } from "react-icons/hi";
 import { MdOutlineMapsHomeWork } from "react-icons/md";
 import { CiShop } from "react-icons/ci";
-import { FaTrophy, FaGraduationCap, FaCode, FaJs } from "react-icons/fa";
+import { FaTrophy, FaGraduationCap, FaCode, FaJs, FaStar } from "react-icons/fa";
 import { BsKeyboard } from "react-icons/bs";
 import { FaRegNoteSticky, FaQuestion } from "react-icons/fa6";
 import { LuBookOpenText } from "react-icons/lu";
@@ -64,6 +64,7 @@ function AdminLayout({ children }) {
     {
       title: 'Система',
       items: [
+        { to: '/admin/user-levels', icon: <FaStar />, text: 'Уровни' },
         { to: '/admin/chat', icon: <AiOutlineMessage />, text: 'Чат' },
         { to: '/admin/shop', icon: <CiShop />, text: 'Магазин' },
         { to: '/admin/updates', icon: <AiOutlineBell />, text: 'Обновления' },

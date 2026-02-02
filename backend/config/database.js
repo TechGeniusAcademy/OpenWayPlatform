@@ -955,6 +955,21 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_js_game_levels_order ON js_game_levels(order_index);
     `);
 
+    // Таблица уровней пользователей
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_levels (
+        id SERIAL PRIMARY KEY,
+        level_number INTEGER NOT NULL UNIQUE,
+        experience_required INTEGER NOT NULL DEFAULT 0,
+        image_url VARCHAR(500),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_user_levels_number ON user_levels(level_number);
+      CREATE INDEX IF NOT EXISTS idx_user_levels_xp ON user_levels(experience_required);
+    `);
+
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {
     console.error('❌ Ошибка инициализации базы данных:', error);

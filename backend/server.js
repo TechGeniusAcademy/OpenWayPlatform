@@ -35,6 +35,7 @@ import flexchanRoutes from './routes/flexchan.js';
 import codeitFpsRoutes, { setupFpsSocket } from './routes/codeit-fps.js';
 import layoutGameRoutes from './routes/layout-game.js';
 import jsGameRoutes from './routes/js-game.js';
+import userLevelsRoutes from './routes/user-levels.js';
 
 dotenv.config();
 
@@ -112,6 +113,7 @@ app.use('/api/design-projects', designProjectsRoutes);
 app.use('/api/courses', coursesRoutes);
 app.use('/api/layout-game', layoutGameRoutes);
 app.use('/api/js-game', jsGameRoutes);
+app.use('/api/user-levels', userLevelsRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
