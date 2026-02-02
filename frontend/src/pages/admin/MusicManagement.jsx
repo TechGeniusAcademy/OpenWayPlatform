@@ -419,13 +419,18 @@ function MusicManagement() {
               
               <div className={styles.formGroup}>
                 <label>
-                  <FaAlignLeft /> Текст песни
+                  <FaAlignLeft /> Текст песни (с таймкодами)
                 </label>
+                <div className={styles.lyricsHint}>
+                  💡 Для синхронизации добавьте таймкоды: <code>[MM:SS]текст</code>
+                  <br />
+                  Пример: <code>[00:15]Первая строка</code>, <code>[01:30]Вторая строка</code>
+                </div>
                 <textarea
                   value={form.lyrics}
                   onChange={(e) => setForm(prev => ({ ...prev, lyrics: e.target.value }))}
-                  placeholder="Текст песни (необязательно)"
-                  rows={6}
+                  placeholder={`[00:00]Первая строка текста\n[00:05]Вторая строка\n[00:10]Третья строка\n\nИли просто текст без таймкодов`}
+                  rows={8}
                 />
               </div>
               

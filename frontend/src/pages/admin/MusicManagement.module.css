@@ -505,7 +505,28 @@
 .formGroup textarea {
   resize: vertical;
   min-height: 120px;
-  font-family: inherit;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lyricsHint {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.lyricsHint code {
+  background: rgba(102, 126, 234, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #667eea;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 12px;
 }
 
 .fileUpload {

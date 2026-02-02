@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMusic } from '../../context/MusicContext';
 import { BASE_URL } from '../../utils/api';
 import api from '../../utils/api';
@@ -13,8 +13,10 @@ function StudentMusic() {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'liked'
   const [likedTracks, setLikedTracks] = useState([]);
   const [lyricsModal, setLyricsModal] = useState(null); // трек для показа текста
+  const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
+  const lyricsContentRef = useRef(null);
   
-  const { currentTrack, isPlaying, playTrack } = useMusic();
+  const { currentTrack, isPlaying, playTrack, currentTime } = useMusic();
 
   useEffect(() => {
     loadTracks();
@@ -104,7 +106,70 @@ function StudentMusic() {
 
   const closeLyrics = () => {
     setLyricsModal(null);
+    setCurrentLyricIndex(-1);
   };
+
+  // Парсинг текста с таймкодами: [MM:SS]текст или просто текст
+  const parseLyrics = (lyricsText) => {
+    if (!lyricsText) return [];
+    
+    const lines = lyricsText.split('\n');
+    const parsed = [];
+    
+    for (const line of lines) {
+      // Ищем таймкод в формате [MM:SS] или [M:SS]
+      const match = line.match(/^\[(\d{1,2}):(\d{2})\](.*)$/);
+      if (match) {
+        const minutes = parseInt(match[1], 10);
+        const seconds = parseInt(match[2], 10);
+        const time = minutes * 60 + seconds;
+        const text = match[3].trim();
+        parsed.push({ time, text, hasTimecode: true });
+      } else {
+        // Строка без таймкода
+        parsed.push({ time: null, text: line, hasTimecode: false });
+      }
+    }
+    
+    return parsed;
+  };
+
+  // Определяем текущую строку по времени воспроизведения
+  useEffect(() => {
+    if (!lyricsModal || !currentTrack || currentTrack.id !== lyricsModal.id) {
+      return;
+    }
+    
+    const parsedLyrics = parseLyrics(lyricsModal.lyrics);
+    const lyricsWithTime = parsedLyrics.filter(l => l.hasTimecode);
+    
+    if (lyricsWithTime.length === 0) return;
+    
+    // Находим текущую строку
+    let newIndex = -1;
+    for (let i = lyricsWithTime.length - 1; i >= 0; i--) {
+      if (currentTime >= lyricsWithTime[i].time) {
+        // Находим индекс в оригинальном массиве
+        newIndex = parsedLyrics.findIndex(l => l === lyricsWithTime[i]);
+        break;
+      }
+    }
+    
+    if (newIndex !== currentLyricIndex) {
+      setCurrentLyricIndex(newIndex);
+      
+      // Автоскролл к текущей строке
+      if (newIndex >= 0 && lyricsContentRef.current) {
+        const lyricElements = lyricsContentRef.current.querySelectorAll('[data-lyric-index]');
+        if (lyricElements[newIndex]) {
+          lyricElements[newIndex].scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }
+    }
+  }, [currentTime, lyricsModal, currentTrack]);
 
   if (loading) {
     return (
@@ -274,12 +339,21 @@ function StudentMusic() {
                 <FaTimes />
               </button>
             </div>
-            <div className={styles.lyricsContent}>
-              {lyricsModal.lyrics.split('\n').map((line, index) => (
-                <p key={index} className={styles.lyricsLine}>
-                  {line || <br />}
-                </p>
-              ))}
+            <div className={styles.lyricsContent} ref={lyricsContentRef}>
+              {parseLyrics(lyricsModal.lyrics).map((lyric, index) => {
+                const isCurrentLine = currentTrack?.id === lyricsModal.id && index === currentLyricIndex;
+                const isPastLine = currentTrack?.id === lyricsModal.id && lyric.hasTimecode && index < currentLyricIndex;
+                
+                return (
+                  <p 
+                    key={index} 
+                    data-lyric-index={index}
+                    className={`${styles.lyricsLine} ${isCurrentLine ? styles.currentLyric : ''} ${isPastLine ? styles.pastLyric : ''} ${lyric.hasTimecode ? styles.timedLyric : ''}`}
+                  >
+                    {lyric.text || <br />}
+                  </p>
+                );
+              })}
             </div>
           </div>
         </div>
