@@ -5,7 +5,7 @@
   flex-direction: column;
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
   padding: 20px;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .header {

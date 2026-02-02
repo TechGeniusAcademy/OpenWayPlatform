@@ -362,7 +362,7 @@ router.get('/activity', async (req, res) => {
         'test' as type,
         t.title as test_name,
         ta.score as points,
-        ta.experience_earned as experience,
+        ta.points_earned as experience,
         ta.completed_at as created_at
       FROM test_attempts ta
       JOIN tests t ON ta.test_id = t.id
@@ -442,14 +442,14 @@ router.get('/activity', async (req, res) => {
     const jsGameQuery = await pool.query(`
       SELECT 
         jp.id,
-        jp.completed_at as created_at,
+        jp.solved_at as created_at,
         jl.title,
         jl.points_reward,
         jl.experience_reward
       FROM js_game_progress jp
       JOIN js_game_levels jl ON jp.level_id = jl.id
-      WHERE jp.user_id = $1 AND jp.completed = true
-      ORDER BY jp.completed_at DESC
+      WHERE jp.user_id = $1 AND jp.status = 'passed'
+      ORDER BY jp.solved_at DESC
     `, [userId]);
     
     jsGameQuery.rows.forEach(row => {
