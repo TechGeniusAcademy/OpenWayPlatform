@@ -18,6 +18,7 @@ import Games from './student/Games';
 import DesignEditor from '../components/DesignEditor';
 import StudentTechnicalSpecs from './student/StudentTechnicalSpecs';
 import StudentExtra from './student/StudentExtra';
+import StudentMusic from './student/StudentMusic';
 import styles from './StudentDashboard.module.css';
 
 function StudentDashboard() {
@@ -41,6 +42,7 @@ function StudentDashboard() {
       <Route path="design" element={<DesignEditor />} />
       <Route path="technical-specs" element={<StudentLayout><StudentTechnicalSpecs /></StudentLayout>} />
       <Route path="extra" element={<StudentLayout><StudentExtra /></StudentLayout>} />
+      <Route path="music" element={<StudentLayout><StudentMusic /></StudentLayout>} />
     </Routes>
   );
 }

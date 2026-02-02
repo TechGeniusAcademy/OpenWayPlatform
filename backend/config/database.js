@@ -1070,6 +1070,39 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON user_achievements(achievement_id);
     `);
 
+    // Таблица музыки
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS music (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        artist VARCHAR(255),
+        cover_url VARCHAR(500),
+        duration INTEGER DEFAULT 0,
+        lyrics TEXT,
+        file_url VARCHAR(500) NOT NULL,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_music_title ON music(title);
+      CREATE INDEX IF NOT EXISTS idx_music_artist ON music(artist);
+    `);
+
+    // Таблица лайков музыки
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS music_likes (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        music_id INTEGER REFERENCES music(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, music_id)
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_music_likes_user ON music_likes(user_id);
+      CREATE INDEX IF NOT EXISTS idx_music_likes_music ON music_likes(music_id);
+    `);
+
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {
     console.error('❌ Ошибка инициализации базы данных:', error);

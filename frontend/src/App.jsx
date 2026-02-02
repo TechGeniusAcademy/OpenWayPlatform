@@ -9,6 +9,8 @@ import CSSEditorDashboard from './pages/CSSEditorDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { MusicProvider } from './context/MusicContext';
+import MiniPlayer from './components/MiniPlayer';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -36,6 +38,7 @@ function App() {
     <AuthProvider>
       <WebSocketProvider>
         <NotificationProvider>
+          <MusicProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               <Route path="/" element={<Login />} />
@@ -80,6 +83,7 @@ function App() {
                 }
               />
             </Routes>
+            <MiniPlayer />
             <ToastContainer
               position="top-right"
               autoClose={3000}
@@ -93,6 +97,7 @@ function App() {
               theme="dark"
             />
           </Router>
+          </MusicProvider>
         </NotificationProvider>
       </WebSocketProvider>
     </AuthProvider>

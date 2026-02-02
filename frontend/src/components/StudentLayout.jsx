@@ -8,7 +8,7 @@ import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlin
 import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
 import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
-import { FaTrophy, FaPlug, FaPalette, FaGamepad, FaPen, FaFileAlt, FaBriefcase, FaStar } from 'react-icons/fa';
+import { FaTrophy, FaPlug, FaPalette, FaGamepad, FaPen, FaFileAlt, FaBriefcase, FaStar, FaMusic } from 'react-icons/fa';
 import { BiData } from 'react-icons/bi';
 import { VscFiles } from 'react-icons/vsc';
 import { useState, useEffect } from 'react';
@@ -201,6 +201,12 @@ function StudentLayout({ children }) {
               <NavLink to="/student/games" onClick={closeSidebar}>
                 <span className={styles['menu-icon']}><FaGamepad /></span>
                 <span className={styles['menu-text']}>Игры</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/music" onClick={closeSidebar}>
+                <span className={styles['menu-icon']}><FaMusic /></span>
+                <span className={styles['menu-text']}>Музыка</span>
               </NavLink>
             </li>
             <li>

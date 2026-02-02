@@ -37,6 +37,7 @@ import layoutGameRoutes from './routes/layout-game.js';
 import jsGameRoutes from './routes/js-game.js';
 import userLevelsRoutes from './routes/user-levels.js';
 import achievementsRoutes from './routes/achievements.js';
+import musicRoutes from './routes/music.js';
 
 dotenv.config();
 
@@ -116,6 +117,7 @@ app.use('/api/layout-game', layoutGameRoutes);
 app.use('/api/js-game', jsGameRoutes);
 app.use('/api/user-levels', userLevelsRoutes);
 app.use('/api/achievements', achievementsRoutes);
+app.use('/api/music', musicRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
