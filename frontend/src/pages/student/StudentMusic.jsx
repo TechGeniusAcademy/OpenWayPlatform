@@ -3,7 +3,7 @@ import { useMusic } from '../../context/MusicContext';
 import { BASE_URL } from '../../utils/api';
 import api from '../../utils/api';
 import styles from './StudentMusic.module.css';
-import { FaPlay, FaPause, FaHeart, FaSearch, FaMusic, FaClock, FaHeadphones } from 'react-icons/fa';
+import { FaPlay, FaPause, FaHeart, FaSearch, FaMusic, FaClock, FaHeadphones, FaAlignLeft, FaTimes } from 'react-icons/fa';
 
 function StudentMusic() {
   const [tracks, setTracks] = useState([]);
@@ -12,6 +12,7 @@ function StudentMusic() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'liked'
   const [likedTracks, setLikedTracks] = useState([]);
+  const [lyricsModal, setLyricsModal] = useState(null); // трек для показа текста
   
   const { currentTrack, isPlaying, playTrack } = useMusic();
 
@@ -94,6 +95,15 @@ function StudentMusic() {
   const handlePlayTrack = (track) => {
     const tracksToPlay = activeTab === 'liked' ? likedTracks : tracks;
     playTrack(track, tracksToPlay);
+  };
+
+  const openLyrics = (e, track) => {
+    e.stopPropagation();
+    setLyricsModal(track);
+  };
+
+  const closeLyrics = () => {
+    setLyricsModal(null);
   };
 
   if (loading) {
@@ -213,6 +223,16 @@ function StudentMusic() {
                   {formatDuration(track.duration)}
                 </div>
                 
+                {track.lyrics && (
+                  <button 
+                    className={styles.lyricsBtn}
+                    onClick={(e) => openLyrics(e, track)}
+                    title="Показать текст"
+                  >
+                    <FaAlignLeft />
+                  </button>
+                )}
+                
                 <button 
                   className={`${styles.likeBtn} ${track.is_liked ? styles.liked : ''}`}
                   onClick={(e) => handleLike(e, track.id)}
@@ -225,6 +245,43 @@ function StudentMusic() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Модальное окно с текстом песни */}
+      {lyricsModal && (
+        <div className={styles.lyricsOverlay} onClick={closeLyrics}>
+          <div className={styles.lyricsModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.lyricsHeader}>
+              <div className={styles.lyricsTrackInfo}>
+                {lyricsModal.cover_url ? (
+                  <img 
+                    src={lyricsModal.cover_url.startsWith('http') ? lyricsModal.cover_url : `${BASE_URL}${lyricsModal.cover_url}`} 
+                    alt={lyricsModal.title}
+                    className={styles.lyricsCover}
+                  />
+                ) : (
+                  <div className={styles.lyricsNoCover}>
+                    <FaMusic />
+                  </div>
+                )}
+                <div>
+                  <h2 className={styles.lyricsTitle}>{lyricsModal.title}</h2>
+                  <p className={styles.lyricsArtist}>{lyricsModal.artist || 'Неизвестный исполнитель'}</p>
+                </div>
+              </div>
+              <button className={styles.lyricsCloseBtn} onClick={closeLyrics}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className={styles.lyricsContent}>
+              {lyricsModal.lyrics.split('\n').map((line, index) => (
+                <p key={index} className={styles.lyricsLine}>
+                  {line || <br />}
+                </p>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
