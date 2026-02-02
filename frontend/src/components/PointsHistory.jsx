@@ -58,7 +58,7 @@ function PointsHistory({ isOpen, onClose, userId = null }) {
               {history.map((item) => (
                 <div 
                   key={item.id} 
-                  className={`history-item ${item.points_change > 0 ? 'positive' : 'negative'}`}
+                  className={`${styles['history-item']} ${item.points_change > 0 ? styles.positive : styles.negative}`}
                 >
                   <div className={styles['item-icon']}>
                     {item.points_change > 0 ? (
@@ -88,7 +88,7 @@ function PointsHistory({ isOpen, onClose, userId = null }) {
                     </div>
                   </div>
                   
-                  <div className={`item-amount ${item.points_change > 0 ? 'positive' : 'negative'}`}>
+                  <div className={`${styles['item-amount']} ${item.points_change > 0 ? styles.positive : styles.negative}`}>
                     {item.points_change > 0 ? '+' : ''}{item.points_change}
                   </div>
                 </div>
