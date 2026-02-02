@@ -28,7 +28,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -169,12 +169,12 @@ router.get('/current/:userId', authenticate, async (req, res) => {
     const { userId } = req.params;
     
     // Получаем опыт пользователя
-    const userResult = await pool.query('SELECT points FROM users WHERE id = $1', [userId]);
+    const userResult = await pool.query('SELECT experience FROM users WHERE id = $1', [userId]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
     
-    const userPoints = userResult.rows[0].points || 0;
+    const userExperience = userResult.rows[0].experience || 0;
     
     // Находим текущий уровень пользователя
     const levelResult = await pool.query(`
@@ -182,7 +182,7 @@ router.get('/current/:userId', authenticate, async (req, res) => {
       WHERE experience_required <= $1
       ORDER BY level_number DESC
       LIMIT 1
-    `, [userPoints]);
+    `, [userExperience]);
     
     // Находим следующий уровень
     const nextLevelResult = await pool.query(`
@@ -190,12 +190,12 @@ router.get('/current/:userId', authenticate, async (req, res) => {
       WHERE experience_required > $1
       ORDER BY level_number ASC
       LIMIT 1
-    `, [userPoints]);
+    `, [userExperience]);
     
     res.json({
       current_level: levelResult.rows[0] || null,
       next_level: nextLevelResult.rows[0] || null,
-      current_xp: userPoints
+      current_xp: userExperience
     });
   } catch (error) {
     console.error('Ошибка получения уровня пользователя:', error);

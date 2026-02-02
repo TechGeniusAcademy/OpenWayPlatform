@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaUpload, FaStar, FaSpinner } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import api from '../services/api';
+import api from '../utils/api';
 import styles from './UserLevelsManagement.module.css';
 
 function UserLevelsManagement() {
@@ -100,9 +100,9 @@ function UserLevelsManagement() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Проверка размера (макс 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Файл слишком большой. Максимум 2MB');
+    // Проверка размера (макс 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Файл слишком большой. Максимум 5MB');
       return;
     }
 
@@ -224,7 +224,7 @@ function UserLevelsManagement() {
                   </div>
                 )}
               </div>
-              <p className={styles.hint}>Рекомендуемый размер: 150×30 пикселей</p>
+              <p className={styles.hint}>Рекомендуемый размер: 400×400 пикселей</p>
             </div>
             
             <div className={styles.formActions}>

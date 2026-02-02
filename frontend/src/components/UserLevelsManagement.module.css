@@ -194,8 +194,8 @@
 }
 
 .imagePreview img {
-  max-width: 150px;
-  height: 30px;
+  max-width: 400px;
+  max-height: 400px;
   object-fit: contain;
   display: block;
 }
@@ -346,8 +346,8 @@
 }
 
 .levelImage img {
-  max-width: 150px;
-  height: 30px;
+  max-width: 200px;
+  max-height: 200px;
   object-fit: contain;
 }
 
@@ -355,8 +355,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 150px;
-  height: 30px;
+  width: 100px;
+  height: 100px;
   background: #e2e8f0;
   border-radius: 6px;
   color: #94a3b8;

@@ -145,6 +145,19 @@ export const initDatabase = async () => {
       END $$;
     `);
 
+    // 4.6. Добавление колонки experience (опыт) в users, если её нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'experience'
+        ) THEN
+          ALTER TABLE users ADD COLUMN experience INTEGER DEFAULT 0 NOT NULL;
+        END IF;
+      END $$;
+    `);
+
     // 4.5. Добавление колонки для стиля никнейма, если её нет
     await pool.query(`
       DO $$ 

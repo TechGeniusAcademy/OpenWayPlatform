@@ -25,9 +25,12 @@ function StudentProfile() {
   const [preview, setPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [userPoints, setUserPoints] = useState(0);
+  const [userExperience, setUserExperience] = useState(0);
   const [appliedFrame, setAppliedFrame] = useState(null);
   const [appliedBanner, setAppliedBanner] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [userLevel, setUserLevel] = useState(null);
+  const [nextLevel, setNextLevel] = useState(null);
   const [userStats, setUserStats] = useState({
     completedTasks: 0,
     totalProjects: 0,
@@ -40,6 +43,7 @@ function StudentProfile() {
     refreshUserData();
     fetchAppliedCosmetics();
     fetchUserStats();
+    fetchUserLevel();
   }, []);
 
   useEffect(() => {
@@ -52,6 +56,18 @@ function StudentProfile() {
       setUserPoints(response.data.totalPoints || 0);
     } catch (error) {
       console.error('Ошибка получения баллов:', error);
+    }
+  };
+
+  const fetchUserLevel = async () => {
+    try {
+      if (!user?.id) return;
+      const response = await api.get(`/user-levels/current/${user.id}`);
+      setUserLevel(response.data.current_level);
+      setNextLevel(response.data.next_level);
+      setUserExperience(response.data.current_xp || 0);
+    } catch (error) {
+      console.error('Ошибка получения уровня:', error);
     }
   };
 
@@ -274,6 +290,58 @@ function StudentProfile() {
             <span className={styles['info-value']}>
               {new Date(user?.created_at).toLocaleDateString('ru-RU')}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Уровень и опыт */}
+      <div className={styles['level-section']}>
+        <h2 className={styles['section-title']}>
+          <AiOutlineStar /> Уровень и опыт
+        </h2>
+        <div className={styles['level-card']}>
+          <div className={styles['level-info']}>
+            {userLevel?.image_url ? (
+              <img 
+                src={userLevel.image_url.startsWith('http') ? userLevel.image_url : `${BASE_URL}${userLevel.image_url}`}
+                alt={`Уровень ${userLevel.level_number}`}
+                className={styles['level-image']}
+              />
+            ) : (
+              <div className={styles['level-number']}>
+                <span className={styles['level-label']}>Уровень</span>
+                <span className={styles['level-value']}>{userLevel?.level_number || 1}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className={styles['xp-section']}>
+            <div className={styles['xp-header']}>
+              <span className={styles['xp-current']}>{userExperience.toLocaleString()} XP</span>
+              {nextLevel && (
+                <span className={styles['xp-next']}>/ {nextLevel.experience_required.toLocaleString()} XP</span>
+              )}
+            </div>
+            
+            {nextLevel && (
+              <>
+                <div className={styles['xp-bar']}>
+                  <div 
+                    className={styles['xp-fill']}
+                    style={{
+                      width: `${Math.min(100, (userExperience / nextLevel.experience_required) * 100)}%`
+                    }}
+                  />
+                </div>
+                <div className={styles['xp-remaining']}>
+                  До следующего уровня: {(nextLevel.experience_required - userExperience).toLocaleString()} XP
+                </div>
+              </>
+            )}
+            
+            {!nextLevel && userLevel && (
+              <div className={styles['max-level']}>Максимальный уровень достигнут! 🎉</div>
+            )}
           </div>
         </div>
       </div>

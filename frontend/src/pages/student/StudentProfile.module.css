@@ -550,6 +550,125 @@
   border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
+/* Level Section */
+.level-section {
+  margin-bottom: 32px;
+  animation: fadeIn 0.5s ease 0.1s both;
+}
+
+.level-card {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  background: white;
+  border-radius: 20px;
+  padding: 28px 32px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.level-info {
+  flex-shrink: 0;
+}
+
+.level-image {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 16px;
+}
+
+.level-number {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 16px;
+  border: 3px solid #f59e0b;
+}
+
+.level-label {
+  font-size: 0.85rem;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.level-value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #b45309;
+  line-height: 1;
+}
+
+.xp-section {
+  flex: 1;
+}
+
+.xp-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.xp-current {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.xp-next {
+  font-size: 1rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.xp-bar {
+  height: 16px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.xp-remaining {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.max-level {
+  font-size: 1.1rem;
+  color: #10b981;
+  font-weight: 600;
+  padding: 12px 20px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 10px;
+  text-align: center;
+}
+
 .section-title {
   display: flex;
   align-items: center;
@@ -940,8 +1059,19 @@
 
   .stats-section,
   .achievements-section,
-  .activity-section {
+  .activity-section,
+  .level-section {
     padding: 20px;
+  }
+
+  .level-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .xp-header {
+    justify-content: center;
   }
 }
 
