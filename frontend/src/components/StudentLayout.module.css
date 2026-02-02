@@ -49,41 +49,25 @@
   background: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
   color: white;
   padding: 0;
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3), inset -1px 0 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
   position: fixed;
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.3s ease;
   z-index: 1000;
-  backdrop-filter: blur(10px);
   /* Скрыть скроллбар для всех браузеров */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE и Edge */
+  will-change: width;
 }
 
-.student-sidebar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.1) 0%, 
-    transparent 40%,
-    transparent 60%,
-    rgba(118, 75, 162, 0.1) 100%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
+/* Убран тяжёлый псевдоэлемент для оптимизации */
 
 .student-sidebar:hover {
   width: 280px;
-  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.4), inset -1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
 .student-sidebar.open {
@@ -98,11 +82,7 @@
 .student-sidebar-header {
   padding: 25px 25px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.15) 0%, 
-    rgba(118, 75, 162, 0.15) 100%
-  );
-  backdrop-filter: blur(10px);
+  background: rgba(102, 126, 234, 0.15);
   position: relative;
   z-index: 1;
 }
@@ -122,29 +102,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4), 
-              0 0 20px rgba(118, 75, 162, 0.2);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   margin: 0 auto;
   position: relative;
-  transition: transform 0.3s ease;
-}
-
-.sidebar-logo::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 12px;
-  padding: 2px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  opacity: 0.6;
-}
-
-.student-sidebar:hover .sidebar-logo {
-  transform: scale(1.05);
 }
 
 .logo-image {
@@ -238,10 +198,9 @@
   padding: 14px 16px;
   color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s ease, color 0.2s ease;
   border-radius: 12px;
   position: relative;
-  overflow: hidden;
 }
 
 .student-sidebar:hover .student-sidebar-menu a {
@@ -255,55 +214,28 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-  transform: translateX(-4px);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
-}
-
-.student-sidebar-menu a::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0) 0%, 
-    rgba(102, 126, 234, 0.1) 50%,
-    rgba(118, 75, 162, 0.15) 100%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  border-radius: 12px;
+  background: #667eea;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
 }
 
 .student-sidebar-menu a:hover {
   color: white;
-  transform: translateX(4px);
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .student-sidebar-menu a:hover::before {
-  transform: translateX(0);
-}
-
-.student-sidebar-menu a:hover::after {
-  opacity: 1;
+  transform: scaleX(1);
 }
 
 .student-sidebar-menu a.active {
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.25) 0%, 
-    rgba(118, 75, 162, 0.25) 100%
-  );
+  background: rgba(102, 126, 234, 0.25);
   color: white;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3),
-              inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
 }
 
 .student-sidebar-menu a.active::before {
-  transform: translateX(0);
-  box-shadow: 0 0 15px rgba(102, 126, 234, 0.8);
+  transform: scaleX(1);
 }
 
 .menu-icon {
@@ -314,23 +246,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: margin-right 0.2s ease;
   position: relative;
   z-index: 1;
 }
 
 .student-sidebar:hover .menu-icon {
   margin-right: 12px;
-}
-
-.student-sidebar-menu a:hover .menu-icon {
-  transform: scale(1.15) rotate(5deg);
-  filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.6));
-}
-
-.student-sidebar-menu a.active .menu-icon {
-  transform: scale(1.1);
-  filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.8));
 }
 
 /* Значок уведомлений */
@@ -356,12 +278,10 @@
 
 @keyframes pulse {
   0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.5);
+    opacity: 1;
   }
   50% {
-    transform: scale(1.1);
-    box-shadow: 0 2px 12px rgba(231, 76, 60, 0.8);
+    opacity: 0.7;
   }
 }
 
@@ -433,7 +353,6 @@
   padding: 15px;
   position: relative;
   z-index: 1;
-  transition: justify-content 0.3s ease;
 }
 
 .student-sidebar:hover .sidebar-user {
@@ -459,17 +378,9 @@
   font-size: 18px;
   color: white;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4),
-              0 0 0 3px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 1;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.sidebar-user-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6),
-              0 0 0 3px rgba(255, 255, 255, 0.2);
 }
 
 .sidebar-user-avatar img {
@@ -496,7 +407,7 @@
   opacity: 0;
   width: 0;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .student-sidebar:hover .sidebar-user-info {
@@ -531,16 +442,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s ease, opacity 0.2s ease;
   flex-shrink: 0;
   position: absolute;
   top: 50%;
   right: 15px;
-  transform: translate(0, -50%);
+  transform: translateY(-50%);
   z-index: 2;
   opacity: 0;
   pointer-events: none;
-  backdrop-filter: blur(10px);
 }
 
 .student-sidebar:hover .sidebar-logout-btn {
@@ -549,14 +459,11 @@
 }
 
 .sidebar-logout-btn:hover {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translate(0, -50%) scale(1.08) rotate(5deg);
-  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.5);
+  background: #e74c3c;
 }
 
 .sidebar-logout-btn:active {
-  transform: translate(0, -50%) scale(0.95) rotate(-5deg);
+  background: #c0392b;
 }
 
 .student-main-content {
@@ -564,7 +471,6 @@
   flex: 1;
   padding: 30px;
   width: calc(100% - 80px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-header {

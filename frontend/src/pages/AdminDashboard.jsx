@@ -20,6 +20,7 @@ import LayoutGameManagement from '../components/LayoutGameManagement';
 import JSGameManagement from '../components/JSGameManagement';
 import UserLevelsManagement from '../components/UserLevelsManagement';
 import MusicManagement from './admin/MusicManagement';
+import MoviesManagement from './admin/MoviesManagement';
 
 function AdminDashboard() {
   return (
@@ -45,6 +46,7 @@ function AdminDashboard() {
         <Route path="/js-game" element={<JSGameManagement />} />
         <Route path="/user-levels" element={<UserLevelsManagement />} />
         <Route path="/music" element={<MusicManagement />} />
+        <Route path="/movies" element={<MoviesManagement />} />
         {/* Здесь можно добавлять новые маршруты */}
       </Routes>
     </AdminLayout>

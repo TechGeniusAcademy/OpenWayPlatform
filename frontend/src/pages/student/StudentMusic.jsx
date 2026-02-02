@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useMusic } from '../../context/MusicContext';
 import { BASE_URL } from '../../utils/api';
 import api from '../../utils/api';
@@ -17,6 +17,48 @@ function StudentMusic() {
   const lyricsContentRef = useRef(null);
   
   const { currentTrack, isPlaying, playTrack, currentTime } = useMusic();
+
+  // Парсинг текста с таймкодами - вынесено наружу для переиспользования
+  // Парсинг текста с таймкодами - поддержка разных форматов
+  const parseLyrics = useCallback((lyricsText) => {
+    if (!lyricsText) return [];
+    
+    const lines = lyricsText.split('\n');
+    const parsed = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      // Убираем \r и лишние пробелы
+      const line = lines[i].replace(/\r/g, '').trim();
+      
+      // Ищем таймкод в разных форматах:
+      // [MM:SS.ms] или [M:SS.ms] или [MM:SS] или [M:SS]
+      const match = line.match(/^\[(\d{1,2}):(\d{2})(?:[.\:](\d{1,3}))?\](.*)$/);
+      if (match) {
+        const minutes = parseInt(match[1], 10);
+        const seconds = parseInt(match[2], 10);
+        const ms = match[3] ? parseInt(match[3], 10) / (match[3].length === 1 ? 10 : match[3].length === 2 ? 100 : 1000) : 0;
+        const time = minutes * 60 + seconds + ms;
+        const text = match[4].trim();
+        parsed.push({ index: i, time, text, hasTimecode: true });
+      } else {
+        // Строка без таймкода
+        parsed.push({ index: i, time: null, text: line, hasTimecode: false });
+      }
+    }
+    
+    return parsed;
+  }, []);
+
+  // Мемоизированный парсинг текста для текущего модального окна
+  const parsedLyrics = useMemo(() => {
+    if (!lyricsModal?.lyrics) return [];
+    return parseLyrics(lyricsModal.lyrics);
+  }, [lyricsModal?.lyrics, parseLyrics]);
+
+  // Строки с таймкодами
+  const lyricsWithTime = useMemo(() => {
+    return parsedLyrics.filter(l => l.hasTimecode && l.time !== null);
+  }, [parsedLyrics]);
 
   useEffect(() => {
     loadTracks();
@@ -109,72 +151,47 @@ function StudentMusic() {
     setCurrentLyricIndex(-1);
   };
 
-  // Парсинг текста с таймкодами: [MM:SS]текст или просто текст
-  const parseLyrics = (lyricsText) => {
-    if (!lyricsText) return [];
-    
-    const lines = lyricsText.split('\n');
-    const parsed = [];
-    
-    for (const line of lines) {
-      // Ищем таймкод в формате [MM:SS] или [M:SS]
-      const match = line.match(/^\[(\d{1,2}):(\d{2})\](.*)$/);
-      if (match) {
-        const minutes = parseInt(match[1], 10);
-        const seconds = parseInt(match[2], 10);
-        const time = minutes * 60 + seconds;
-        const text = match[3].trim();
-        parsed.push({ time, text, hasTimecode: true });
-      } else {
-        // Строка без таймкода
-        parsed.push({ time: null, text: line, hasTimecode: false });
-      }
-    }
-    
-    return parsed;
-  };
-
   // Определяем текущую строку по времени воспроизведения
   useEffect(() => {
+    // Проверяем, что открыто модальное окно и играет нужный трек
     if (!lyricsModal || !currentTrack || currentTrack.id !== lyricsModal.id) {
-      setCurrentLyricIndex(-1);
+      if (currentLyricIndex !== -1) {
+        setCurrentLyricIndex(-1);
+      }
       return;
     }
     
-    const parsedLyrics = parseLyrics(lyricsModal.lyrics);
-    const lyricsWithTime = parsedLyrics.filter(l => l.hasTimecode);
+    if (lyricsWithTime.length === 0) {
+      return;
+    }
     
-    if (lyricsWithTime.length === 0) return;
-    
-    // Находим текущую строку
-    let newIndex = -1;
+    // Находим текущую строку по времени
+    let foundIndex = -1;
     for (let i = lyricsWithTime.length - 1; i >= 0; i--) {
       if (currentTime >= lyricsWithTime[i].time) {
-        // Находим индекс в оригинальном массиве
-        newIndex = parsedLyrics.findIndex(l => l === lyricsWithTime[i]);
+        // Находим индекс в оригинальном массиве parsedLyrics
+        foundIndex = parsedLyrics.findIndex(l => l.index === lyricsWithTime[i].index);
         break;
       }
     }
     
-    setCurrentLyricIndex(prevIndex => {
-      if (newIndex !== prevIndex) {
-        // Автоскролл к текущей строке
-        if (newIndex >= 0 && lyricsContentRef.current) {
-          setTimeout(() => {
-            const lyricElements = lyricsContentRef.current?.querySelectorAll('[data-lyric-index]');
-            if (lyricElements && lyricElements[newIndex]) {
-              lyricElements[newIndex].scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center' 
-              });
-            }
-          }, 50);
-        }
-        return newIndex;
+    if (foundIndex !== currentLyricIndex) {
+      setCurrentLyricIndex(foundIndex);
+      
+      // Автоскролл к текущей строке
+      if (foundIndex >= 0 && lyricsContentRef.current) {
+        setTimeout(() => {
+          const lyricElements = lyricsContentRef.current?.querySelectorAll('[data-lyric-index]');
+          if (lyricElements && lyricElements[foundIndex]) {
+            lyricElements[foundIndex].scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+          }
+        }, 50);
       }
-      return prevIndex;
-    });
-  }, [currentTime, lyricsModal, currentTrack]);
+    }
+  }, [currentTime, lyricsModal, currentTrack, parsedLyrics, lyricsWithTime, currentLyricIndex]);
 
   if (loading) {
     return (
@@ -359,12 +376,12 @@ function StudentMusic() {
             {currentTrack?.id === lyricsModal.id && (
               <div className={styles.lyricsSyncIndicator}>
                 <span className={styles.syncDot}></span>
-                Синхронизация активна • {formatDuration(currentTime)}
+                Синхронизация активна
               </div>
             )}
             
             <div className={styles.lyricsContent} ref={lyricsContentRef}>
-              {parseLyrics(lyricsModal.lyrics).map((lyric, index) => {
+              {parsedLyrics.map((lyric, index) => {
                 const isCurrentLine = currentTrack?.id === lyricsModal.id && index === currentLyricIndex;
                 const isPastLine = currentTrack?.id === lyricsModal.id && lyric.hasTimecode && index < currentLyricIndex;
                 

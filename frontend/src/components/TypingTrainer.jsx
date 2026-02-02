@@ -274,12 +274,7 @@ function TypingTrainer() {
   if (!selectedLanguage) {
     return (
       <div className={styles.container}>
-        <motion.div 
-          className={styles.languageSelection}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <div className={styles.languageSelection}>
           <div className={styles.selectionHeader}>
             <FaKeyboard className={styles.selectionIcon} />
             <h1 className={styles.selectionTitle}>Выберите язык программирования</h1>
@@ -287,15 +282,10 @@ function TypingTrainer() {
           </div>
           
           <div className={styles.languageGrid}>
-            {languages.map((lang, index) => (
-              <motion.div
+            {languages.map((lang) => (
+              <div
                 key={lang.name}
                 className={styles.languageCard}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedLanguage(lang)}
                 style={{ 
                   borderColor: lang.color,
@@ -324,10 +314,10 @@ function TypingTrainer() {
                   {lang.name}
                 </h3>
                 <p className={styles.languageInfo}>{lang.words.length} слов</p>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
