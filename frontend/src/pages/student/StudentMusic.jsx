@@ -137,6 +137,7 @@ function StudentMusic() {
   // Определяем текущую строку по времени воспроизведения
   useEffect(() => {
     if (!lyricsModal || !currentTrack || currentTrack.id !== lyricsModal.id) {
+      setCurrentLyricIndex(-1);
       return;
     }
     
@@ -155,20 +156,24 @@ function StudentMusic() {
       }
     }
     
-    if (newIndex !== currentLyricIndex) {
-      setCurrentLyricIndex(newIndex);
-      
-      // Автоскролл к текущей строке
-      if (newIndex >= 0 && lyricsContentRef.current) {
-        const lyricElements = lyricsContentRef.current.querySelectorAll('[data-lyric-index]');
-        if (lyricElements[newIndex]) {
-          lyricElements[newIndex].scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
+    setCurrentLyricIndex(prevIndex => {
+      if (newIndex !== prevIndex) {
+        // Автоскролл к текущей строке
+        if (newIndex >= 0 && lyricsContentRef.current) {
+          setTimeout(() => {
+            const lyricElements = lyricsContentRef.current?.querySelectorAll('[data-lyric-index]');
+            if (lyricElements && lyricElements[newIndex]) {
+              lyricElements[newIndex].scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+              });
+            }
+          }, 50);
         }
+        return newIndex;
       }
-    }
+      return prevIndex;
+    });
   }, [currentTime, lyricsModal, currentTrack]);
 
   if (loading) {
@@ -335,10 +340,29 @@ function StudentMusic() {
                   <p className={styles.lyricsArtist}>{lyricsModal.artist || 'Неизвестный исполнитель'}</p>
                 </div>
               </div>
-              <button className={styles.lyricsCloseBtn} onClick={closeLyrics}>
-                <FaTimes />
-              </button>
+              <div className={styles.lyricsHeaderActions}>
+                {/* Кнопка воспроизведения */}
+                <button 
+                  className={styles.lyricsPlayBtn}
+                  onClick={() => handlePlayTrack(lyricsModal)}
+                  title={currentTrack?.id === lyricsModal.id && isPlaying ? 'Пауза' : 'Воспроизвести'}
+                >
+                  {currentTrack?.id === lyricsModal.id && isPlaying ? <FaPause /> : <FaPlay />}
+                </button>
+                <button className={styles.lyricsCloseBtn} onClick={closeLyrics}>
+                  <FaTimes />
+                </button>
+              </div>
             </div>
+            
+            {/* Индикатор синхронизации */}
+            {currentTrack?.id === lyricsModal.id && (
+              <div className={styles.lyricsSyncIndicator}>
+                <span className={styles.syncDot}></span>
+                Синхронизация активна • {formatDuration(currentTime)}
+              </div>
+            )}
+            
             <div className={styles.lyricsContent} ref={lyricsContentRef}>
               {parseLyrics(lyricsModal.lyrics).map((lyric, index) => {
                 const isCurrentLine = currentTrack?.id === lyricsModal.id && index === currentLyricIndex;
