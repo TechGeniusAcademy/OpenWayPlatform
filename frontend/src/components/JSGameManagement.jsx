@@ -21,6 +21,7 @@ function JSGameManagement() {
     description: '',
     difficulty: 1,
     points_reward: 10,
+    experience_reward: 0,
     task_description: '',
     initial_code: '// Напишите вашу функцию здесь\n\nfunction solution() {\n  \n}',
     solution_code: '',
@@ -53,6 +54,7 @@ function JSGameManagement() {
       description: '',
       difficulty: 1,
       points_reward: 10,
+      experience_reward: 0,
       task_description: '',
       initial_code: '// Напишите вашу функцию здесь\n\nfunction solution() {\n  \n}',
       solution_code: '',
@@ -77,6 +79,7 @@ function JSGameManagement() {
       description: level.description || '',
       difficulty: level.difficulty,
       points_reward: level.points_reward,
+      experience_reward: level.experience_reward || 0,
       task_description: level.task_description,
       initial_code: level.initial_code || '',
       solution_code: level.solution_code || '',
@@ -272,6 +275,7 @@ function JSGameManagement() {
                   <div className={styles.levelMeta}>
                     <span className={styles.danBadge} data-dan={level.difficulty}>{level.difficulty} Дан</span>
                     <span>+{level.points_reward} очков</span>
+                    {level.experience_reward > 0 && <span>+{level.experience_reward} XP</span>}
                     <span><FaVial /> {level.tests?.length || 0} тестов</span>
                     <span>👥 {level.completions} решений</span>
                   </div>
@@ -355,11 +359,11 @@ function JSGameManagement() {
                   </label>
 
                   <label>
-                    Порядок
+                    Опыт (XP)
                     <input
                       type="number"
-                      value={form.order_index}
-                      onChange={(e) => setForm(prev => ({ ...prev, order_index: parseInt(e.target.value) || 0 }))}
+                      value={form.experience_reward}
+                      onChange={(e) => setForm(prev => ({ ...prev, experience_reward: parseInt(e.target.value) || 0 }))}
                       min="0"
                     />
                   </label>

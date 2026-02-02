@@ -933,8 +933,9 @@ export const initDatabase = async () => {
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         description TEXT,
-        difficulty INT DEFAULT 1 CHECK (difficulty BETWEEN 1 AND 5),
+        difficulty INT DEFAULT 1 CHECK (difficulty BETWEEN 1 AND 8),
         points_reward INT DEFAULT 10,
+        experience_reward INT DEFAULT 0,
         task_description TEXT NOT NULL,
         initial_code TEXT DEFAULT '',
         solution_code TEXT,
@@ -966,6 +967,19 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_js_game_progress_user ON js_game_progress(user_id);
       CREATE INDEX IF NOT EXISTS idx_js_game_progress_level ON js_game_progress(level_id);
       CREATE INDEX IF NOT EXISTS idx_js_game_levels_order ON js_game_levels(order_index);
+    `);
+
+    // Миграция: добавление experience_reward если его нет
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'js_game_levels' AND column_name = 'experience_reward') THEN
+          ALTER TABLE js_game_levels ADD COLUMN experience_reward INT DEFAULT 0;
+        END IF;
+        -- Расширяем ограничение difficulty до 8
+        ALTER TABLE js_game_levels DROP CONSTRAINT IF EXISTS js_game_levels_difficulty_check;
+        ALTER TABLE js_game_levels ADD CONSTRAINT js_game_levels_difficulty_check CHECK (difficulty BETWEEN 1 AND 8);
+      END $$;
     `);
 
     // Таблица уровней пользователей

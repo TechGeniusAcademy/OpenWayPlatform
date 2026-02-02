@@ -136,8 +136,9 @@ router.post('/levels/:id/run', auth, async (req, res) => {
       allPassed ? new Date() : null
     ]);
 
-    // Начисляем очки если решено впервые
+    // Начисляем очки и опыт если решено впервые
     let pointsAwarded = 0;
+    let experienceAwarded = 0;
     if (allPassed) {
       const progressCheck = await pool.query(
         'SELECT points_awarded FROM js_game_progress WHERE user_id = $1 AND level_id = $2',
@@ -146,16 +147,26 @@ router.post('/levels/:id/run', auth, async (req, res) => {
       
       if (progressCheck.rows[0]?.points_awarded === 0) {
         pointsAwarded = level.points_reward;
+        experienceAwarded = level.experience_reward || 0;
         
         await pool.query(
           'UPDATE js_game_progress SET points_awarded = $1 WHERE user_id = $2 AND level_id = $3',
           [pointsAwarded, req.user.id, id]
         );
         
+        // Начисляем очки
         await pool.query(
           'UPDATE users SET points = points + $1 WHERE id = $2',
           [pointsAwarded, req.user.id]
         );
+        
+        // Начисляем опыт
+        if (experienceAwarded > 0) {
+          await pool.query(
+            'UPDATE users SET experience = experience + $1 WHERE id = $2',
+            [experienceAwarded, req.user.id]
+          );
+        }
       }
     }
 
@@ -165,8 +176,9 @@ router.post('/levels/:id/run', auth, async (req, res) => {
       totalCount: tests.length,
       results,
       pointsAwarded,
+      experienceAwarded,
       message: allPassed 
-        ? `🎉 Все тесты пройдены!${pointsAwarded > 0 ? ` +${pointsAwarded} очков` : ''}` 
+        ? `🎉 Все тесты пройдены!${pointsAwarded > 0 ? ` +${pointsAwarded} очков` : ''}${experienceAwarded > 0 ? ` +${experienceAwarded} XP` : ''}` 
         : `Пройдено ${passedCount} из ${tests.length} тестов`
     });
 
@@ -232,6 +244,7 @@ router.post('/admin/levels', auth, async (req, res) => {
       description,
       difficulty,
       points_reward,
+      experience_reward,
       task_description,
       initial_code,
       solution_code,
@@ -247,15 +260,16 @@ router.post('/admin/levels', auth, async (req, res) => {
 
     const result = await pool.query(`
       INSERT INTO js_game_levels 
-        (title, description, difficulty, points_reward, task_description, 
+        (title, description, difficulty, points_reward, experience_reward, task_description, 
          initial_code, solution_code, tests, hints, time_limit, order_index)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [
       title,
       description || '',
       difficulty || 1,
       points_reward || 10,
+      experience_reward || 0,
       task_description,
       initial_code || '',
       solution_code || '',
@@ -264,6 +278,18 @@ router.post('/admin/levels', auth, async (req, res) => {
       time_limit || 5000,
       order_index || 0
     ]);
+
+    // Автосортировка по difficulty и order_index
+    await pool.query(`
+      WITH sorted AS (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY difficulty ASC, order_index ASC, id ASC) - 1 as new_order
+        FROM js_game_levels
+      )
+      UPDATE js_game_levels l
+      SET order_index = s.new_order
+      FROM sorted s
+      WHERE l.id = s.id
+    `);
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -285,6 +311,7 @@ router.put('/admin/levels/:id', auth, async (req, res) => {
       description,
       difficulty,
       points_reward,
+      experience_reward,
       task_description,
       initial_code,
       solution_code,
@@ -301,22 +328,24 @@ router.put('/admin/levels/:id', auth, async (req, res) => {
         description = COALESCE($2, description),
         difficulty = COALESCE($3, difficulty),
         points_reward = COALESCE($4, points_reward),
-        task_description = COALESCE($5, task_description),
-        initial_code = COALESCE($6, initial_code),
-        solution_code = COALESCE($7, solution_code),
-        tests = COALESCE($8, tests),
-        hints = COALESCE($9, hints),
-        time_limit = COALESCE($10, time_limit),
-        order_index = COALESCE($11, order_index),
-        is_active = COALESCE($12, is_active),
+        experience_reward = COALESCE($5, experience_reward),
+        task_description = COALESCE($6, task_description),
+        initial_code = COALESCE($7, initial_code),
+        solution_code = COALESCE($8, solution_code),
+        tests = COALESCE($9, tests),
+        hints = COALESCE($10, hints),
+        time_limit = COALESCE($11, time_limit),
+        order_index = COALESCE($12, order_index),
+        is_active = COALESCE($13, is_active),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $13
+      WHERE id = $14
       RETURNING *
     `, [
       title,
       description,
       difficulty,
       points_reward,
+      experience_reward,
       task_description,
       initial_code,
       solution_code,
@@ -331,6 +360,18 @@ router.put('/admin/levels/:id', auth, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Уровень не найден' });
     }
+
+    // Автосортировка по difficulty и order_index
+    await pool.query(`
+      WITH sorted AS (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY difficulty ASC, order_index ASC, id ASC) - 1 as new_order
+        FROM js_game_levels
+      )
+      UPDATE js_game_levels l
+      SET order_index = s.new_order
+      FROM sorted s
+      WHERE l.id = s.id
+    `);
 
     res.json(result.rows[0]);
   } catch (error) {
