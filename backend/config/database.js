@@ -1103,6 +1103,123 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_music_likes_music ON music_likes(music_id);
     `);
 
+    // Таблицы курсов
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS courses (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        detailed_description TEXT,
+        thumbnail_url VARCHAR(500),
+        duration_hours INTEGER DEFAULT 0,
+        difficulty_level VARCHAR(50) DEFAULT 'beginner',
+        is_published BOOLEAN DEFAULT false,
+        required_level INTEGER DEFAULT 0,
+        price INTEGER DEFAULT 0,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_courses_published ON courses(is_published);
+      CREATE INDEX IF NOT EXISTS idx_courses_created_by ON courses(created_by);
+    `);
+
+    // Миграция: добавление required_level и price в courses если их нет
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'courses' AND column_name = 'required_level') THEN
+          ALTER TABLE courses ADD COLUMN required_level INTEGER DEFAULT 0;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'courses' AND column_name = 'price') THEN
+          ALTER TABLE courses ADD COLUMN price INTEGER DEFAULT 0;
+        END IF;
+      END $$;
+    `);
+
+    // Таблица категорий курсов
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS course_categories (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description TEXT,
+        icon VARCHAR(50),
+        order_number INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Связь курсов с категориями
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'courses' AND column_name = 'category_id') THEN
+          ALTER TABLE courses ADD COLUMN category_id INTEGER REFERENCES course_categories(id);
+        END IF;
+      END $$;
+    `);
+
+    // Таблица уроков курса
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS course_lessons (
+        id SERIAL PRIMARY KEY,
+        course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        content TEXT,
+        video_url VARCHAR(500),
+        order_number INTEGER NOT NULL,
+        duration_minutes INTEGER DEFAULT 0,
+        timecodes JSONB DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_course_lessons_course ON course_lessons(course_id);
+      CREATE INDEX IF NOT EXISTS idx_course_lessons_order ON course_lessons(order_number);
+    `);
+
+    // Миграция: добавление timecodes в course_lessons если их нет
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'course_lessons' AND column_name = 'timecodes') THEN
+          ALTER TABLE course_lessons ADD COLUMN timecodes JSONB DEFAULT '[]';
+        END IF;
+      END $$;
+    `);
+
+    // Таблица прогресса студентов
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS course_progress (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+        lesson_id INTEGER REFERENCES course_lessons(id) ON DELETE CASCADE,
+        completed BOOLEAN DEFAULT false,
+        started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP,
+        UNIQUE(user_id, lesson_id)
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_course_progress_user ON course_progress(user_id);
+      CREATE INDEX IF NOT EXISTS idx_course_progress_course ON course_progress(course_id);
+    `);
+
+    // Таблица записи на курсы
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS course_enrollments (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, course_id)
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_course_enrollments_user ON course_enrollments(user_id);
+      CREATE INDEX IF NOT EXISTS idx_course_enrollments_course ON course_enrollments(course_id);
+    `);
+
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {
     console.error('❌ Ошибка инициализации базы данных:', error);
