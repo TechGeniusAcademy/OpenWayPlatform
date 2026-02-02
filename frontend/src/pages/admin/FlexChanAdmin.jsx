@@ -354,6 +354,7 @@ function LevelModal({ level, onSave, onClose }) {
     targets: [],
     hint: '',
     points: 10,
+    experience_reward: 0,
     difficulty: 'medium',
     level_order: 1
   });
@@ -372,6 +373,7 @@ function LevelModal({ level, onSave, onClose }) {
           (typeof level.targets === 'string' ? JSON.parse(level.targets) : []),
         hint: level.hint || '',
         points: level.points || 10,
+        experience_reward: level.experience_reward || 0,
         difficulty: level.difficulty || 'medium',
         level_order: level.level_order || 1
       });
@@ -487,6 +489,16 @@ function LevelModal({ level, onSave, onClose }) {
                     onChange={(e) => handleChange('points', parseInt(e.target.value))}
                     min="1"
                     max="100"
+                  />
+                </div>
+                
+                <div className={styles.formGroup}>
+                  <label>Опыт за прохождение</label>
+                  <input
+                    type="number"
+                    value={form.experience_reward}
+                    onChange={(e) => handleChange('experience_reward', parseInt(e.target.value) || 0)}
+                    min="0"
                   />
                 </div>
                 
@@ -837,6 +849,11 @@ export default function FlexChanAdmin() {
                       <span className={styles.pointsBadge}>
                         <FaStar /> {level.points} баллов
                       </span>
+                      {level.experience_reward > 0 && (
+                        <span className={styles.xpBadge}>
+                          +{level.experience_reward} XP
+                        </span>
+                      )}
                     </div>
                   </div>
                   
@@ -937,6 +954,7 @@ export default function FlexChanAdmin() {
                     <th>Название</th>
                     <th>Сложность</th>
                     <th>Баллы</th>
+                    <th>XP</th>
                     <th>Попыток</th>
                     <th>Прошли</th>
                     <th>Ср. попыток</th>
@@ -956,6 +974,7 @@ export default function FlexChanAdmin() {
                         </span>
                       </td>
                       <td>{level.points}</td>
+                      <td>{level.experience_reward || 0}</td>
                       <td>{level.total_attempts || 0}</td>
                       <td>{level.completions || 0}</td>
                       <td>{level.avg_attempts || '-'}</td>

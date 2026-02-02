@@ -227,6 +227,18 @@
   color: #92400e;
 }
 
+.xpBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #dbeafe;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
 .levelDescription {
   margin: 0 0 12px;
   color: #6b7280;

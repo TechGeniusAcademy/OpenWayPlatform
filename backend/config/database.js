@@ -996,6 +996,16 @@ export const initDatabase = async () => {
       END $$;
     `);
 
+    // Миграция: добавление experience_reward для flexchan_levels если его нет
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'flexchan_levels' AND column_name = 'experience_reward') THEN
+          ALTER TABLE flexchan_levels ADD COLUMN experience_reward INT DEFAULT 0;
+        END IF;
+      END $$;
+    `);
+
     // Таблица уровней пользователей
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_levels (

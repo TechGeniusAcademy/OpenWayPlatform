@@ -50,14 +50,15 @@ router.post('/levels', authenticate, requireAdmin, async (req, res) => {
       targets,
       hint,
       points,
+      experience_reward,
       level_order,
       difficulty
     } = req.body;
     
     const result = await pool.query(`
       INSERT INTO flexchan_levels 
-      (title, description, initial_code, solution, items, targets, hint, points, level_order, difficulty)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      (title, description, initial_code, solution, items, targets, hint, points, experience_reward, level_order, difficulty)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `, [
       title,
@@ -68,6 +69,7 @@ router.post('/levels', authenticate, requireAdmin, async (req, res) => {
       JSON.stringify(targets),
       hint,
       points || 10,
+      experience_reward || 0,
       level_order,
       difficulty || 'medium'
     ]);
@@ -92,6 +94,7 @@ router.put('/levels/:id', authenticate, requireAdmin, async (req, res) => {
       targets,
       hint,
       points,
+      experience_reward,
       level_order,
       difficulty,
       is_active
@@ -100,10 +103,10 @@ router.put('/levels/:id', authenticate, requireAdmin, async (req, res) => {
     const result = await pool.query(`
       UPDATE flexchan_levels 
       SET title = $1, description = $2, initial_code = $3, solution = $4,
-          items = $5, targets = $6, hint = $7, points = $8, 
-          level_order = $9, difficulty = $10, is_active = $11,
+          items = $5, targets = $6, hint = $7, points = $8, experience_reward = $9,
+          level_order = $10, difficulty = $11, is_active = $12,
           updated_at = NOW()
-      WHERE id = $12
+      WHERE id = $13
       RETURNING *
     `, [
       title,
@@ -114,6 +117,7 @@ router.put('/levels/:id', authenticate, requireAdmin, async (req, res) => {
       JSON.stringify(targets),
       hint,
       points,
+      experience_reward || 0,
       level_order,
       difficulty,
       is_active !== false,
@@ -201,18 +205,21 @@ router.post('/progress', authenticate, async (req, res) => {
         RETURNING *
       `, [userId, level_id, completed, attempts || 1]);
       
-      // Если уровень пройден - начисляем баллы
+      // Если уровень пройден - начисляем баллы и опыт
       if (completed) {
         const levelResult = await pool.query(
-          'SELECT points FROM flexchan_levels WHERE id = $1',
+          'SELECT points, experience_reward FROM flexchan_levels WHERE id = $1',
           [level_id]
         );
         
         if (levelResult.rows.length > 0) {
           const points = levelResult.rows[0].points;
+          const experienceReward = levelResult.rows[0].experience_reward || 0;
+          
+          // Начисляем баллы и опыт
           await pool.query(
-            'UPDATE users SET points = points + $1 WHERE id = $2',
-            [points, userId]
+            'UPDATE users SET points = points + $1, experience = COALESCE(experience, 0) + $2 WHERE id = $3',
+            [points, experienceReward, userId]
           );
           
           // Записываем в историю баллов
@@ -268,6 +275,7 @@ router.get('/stats', authenticate, requireAdmin, async (req, res) => {
         fl.level_order,
         fl.difficulty,
         fl.points,
+        fl.experience_reward,
         COUNT(fp.id) as total_attempts,
         COUNT(CASE WHEN fp.completed THEN 1 END) as completions,
         ROUND(AVG(fp.attempts), 1) as avg_attempts
