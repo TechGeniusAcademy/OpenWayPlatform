@@ -1032,6 +1032,44 @@ export const initDatabase = async () => {
       END $$;
     `);
 
+    // Таблица достижений
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS achievements (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(100) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(100) NOT NULL,
+        icon VARCHAR(100) NOT NULL,
+        icon_color VARCHAR(50) DEFAULT '#667eea',
+        rarity VARCHAR(50) DEFAULT 'common',
+        points_reward INTEGER DEFAULT 0,
+        experience_reward INTEGER DEFAULT 0,
+        requirement_type VARCHAR(100),
+        requirement_value INTEGER DEFAULT 1,
+        is_secret BOOLEAN DEFAULT false,
+        order_index INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_achievements_category ON achievements(category);
+      CREATE INDEX IF NOT EXISTS idx_achievements_code ON achievements(code);
+    `);
+
+    // Таблица полученных достижений пользователей
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_achievements (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        achievement_id INTEGER NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
+        earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, achievement_id)
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_user_achievements_user ON user_achievements(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON user_achievements(achievement_id);
+    `);
+
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {
     console.error('❌ Ошибка инициализации базы данных:', error);

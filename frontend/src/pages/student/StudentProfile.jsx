@@ -18,11 +18,42 @@ import {
   AiOutlineExclamationCircle,
   AiOutlineArrowUp,
   AiOutlineArrowDown,
-  AiOutlineClose
+  AiOutlineClose,
+  AiOutlineAppstore,
+  AiOutlineEye,
+  AiOutlineFileText,
+  AiOutlineFileDone,
+  AiOutlineReload,
+  AiOutlineCheck,
+  AiOutlineHeart,
+  AiOutlineRocket,
+  AiOutlineWarning,
+  AiOutlineSchedule,
+  AiOutlineFileProtect,
+  AiOutlineDollar,
+  AiOutlinePlayCircle,
+  AiOutlineBook,
+  AiOutlineRead,
+  AiOutlineGlobal,
+  AiOutlineRobot,
+  AiOutlineCrown,
+  AiOutlineFunction,
+  AiOutlineFieldNumber,
+  AiOutlineShopping,
+  AiOutlineShoppingCart,
+  AiOutlineBorder,
+  AiOutlinePicture,
+  AiOutlineCompass,
+  AiOutlineOrderedList,
+  AiOutlineLock
 } from 'react-icons/ai';
-import { FaMedal, FaCrown, FaGem } from 'react-icons/fa';
+import { FaMedal, FaCrown, FaGem, FaCode, FaLaptopCode, FaUserTie, FaKeyboard, FaHtml5, FaCss3Alt, FaCoins, FaGamepad, FaFire, FaShieldAlt, FaGraduationCap, FaUniversity, FaRocket, FaChess, FaChessKing, FaChessQueen, FaChessKnight, FaChild } from 'react-icons/fa';
 import { SiJavascript } from 'react-icons/si';
-import { MdOutlineViewModule } from 'react-icons/md';
+import { MdOutlineViewModule, MdOutlineQuiz } from 'react-icons/md';
+import { BsGrid3X3Gap, BsGridFill, BsGrid1X2Fill, BsLightningChargeFill, BsMoonStars, BsSunrise, BsKeyboardFill } from 'react-icons/bs';
+import { GiBlackBelt, GiPokerHand, GiCardRandom, GiCardAceHearts, GiHearts, GiSpades, GiTwoCoins, GiPartyPopper } from 'react-icons/gi';
+import { IoGameController } from 'react-icons/io5';
+import { FaBrain } from 'react-icons/fa6';
 import '../../styles/UsernameStyles.css';
 import PointsHistory from '../../components/PointsHistory';
 
@@ -50,6 +81,12 @@ function StudentProfile() {
     streak: 0,
     rank: 0
   });
+  const [achievements, setAchievements] = useState([]);
+  const [achievementsTotal, setAchievementsTotal] = useState(0);
+  const [achievementsEarned, setAchievementsEarned] = useState(0);
+  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
+  const [achievementsLoading, setAchievementsLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     fetchUserPoints();
@@ -58,6 +95,7 @@ function StudentProfile() {
     fetchUserStats();
     fetchUserLevel();
     fetchRecentActivity();
+    fetchAchievements();
   }, []);
 
   useEffect(() => {
@@ -104,6 +142,158 @@ function StudentProfile() {
       console.error('Ошибка получения активности:', error);
     }
   };
+
+  const fetchAchievements = async () => {
+    try {
+      setAchievementsLoading(true);
+      
+      // Сначала проверяем новые достижения
+      await api.post('/achievements/check');
+      
+      // Затем загружаем все достижения
+      const response = await api.get('/achievements');
+      setAchievements(response.data.achievements || []);
+      setAchievementsTotal(response.data.total || 0);
+      setAchievementsEarned(response.data.earned || 0);
+    } catch (error) {
+      console.error('Ошибка получения достижений:', error);
+    } finally {
+      setAchievementsLoading(false);
+    }
+  };
+
+  // Маппинг иконок по имени
+  const iconMap = {
+    'AiOutlineCheckCircle': <AiOutlineCheckCircle />,
+    'AiOutlineStar': <AiOutlineStar />,
+    'AiOutlineCrown': <AiOutlineCrown />,
+    'AiOutlineThunderbolt': <AiOutlineThunderbolt />,
+    'AiOutlineTrophy': <AiOutlineTrophy />,
+    'AiOutlineCheck': <AiOutlineCheck />,
+    'AiOutlineClockCircle': <AiOutlineClockCircle />,
+    'AiOutlineReload': <AiOutlineReload />,
+    'AiOutlineFileText': <AiOutlineFileText />,
+    'AiOutlineFileDone': <AiOutlineFileDone />,
+    'AiOutlineFileProtect': <AiOutlineFileProtect />,
+    'AiOutlineSchedule': <AiOutlineSchedule />,
+    'AiOutlineWarning': <AiOutlineWarning />,
+    'AiOutlineRocket': <AiOutlineRocket />,
+    'AiOutlinePlayCircle': <AiOutlinePlayCircle />,
+    'AiOutlineEye': <AiOutlineEye />,
+    'AiOutlineBook': <AiOutlineBook />,
+    'AiOutlineRead': <AiOutlineRead />,
+    'AiOutlineAppstore': <AiOutlineAppstore />,
+    'AiOutlineRobot': <AiOutlineRobot />,
+    'AiOutlineGlobal': <AiOutlineGlobal />,
+    'AiOutlineHeart': <AiOutlineHeart />,
+    'AiOutlineCode': <AiOutlineCode />,
+    'AiOutlineFunction': <AiOutlineFunction />,
+    'AiOutlineFire': <AiOutlineFire />,
+    'AiOutlineRise': <AiOutlineRise />,
+    'AiOutlineLineChart': <AiOutlineLineChart />,
+    'AiOutlineDollar': <AiOutlineDollar />,
+    'AiOutlineWallet': <AiOutlineWallet />,
+    'AiOutlineShoppingCart': <AiOutlineShoppingCart />,
+    'AiOutlineShopping': <AiOutlineShopping />,
+    'AiOutlineBorder': <AiOutlineBorder />,
+    'AiOutlinePicture': <AiOutlinePicture />,
+    'AiOutlineCalendar': <AiOutlineCalendar />,
+    'AiOutlineOrderedList': <AiOutlineOrderedList />,
+    'AiOutlineFieldNumber': <AiOutlineFieldNumber />,
+    'AiOutlineCompass': <AiOutlineCompass />,
+    'FaMedal': <FaMedal />,
+    'FaCrown': <FaCrown />,
+    'FaGem': <FaGem />,
+    'FaCode': <FaCode />,
+    'FaLaptopCode': <FaLaptopCode />,
+    'FaUserTie': <FaUserTie />,
+    'FaKeyboard': <FaKeyboard />,
+    'FaHtml5': <FaHtml5 />,
+    'FaCss3Alt': <FaCss3Alt />,
+    'FaCoins': <FaCoins />,
+    'FaGamepad': <FaGamepad />,
+    'FaFire': <FaFire />,
+    'FaShieldAlt': <FaShieldAlt />,
+    'FaGraduationCap': <FaGraduationCap />,
+    'FaUniversity': <FaUniversity />,
+    'FaRocket': <FaRocket />,
+    'FaChess': <FaChess />,
+    'FaChessKing': <FaChessKing />,
+    'FaChessQueen': <FaChessQueen />,
+    'FaChessKnight': <FaChessKnight />,
+    'FaChild': <FaChild />,
+    'FaTrophy': <FaMedal />,
+    'FaBrain': <FaBrain />,
+    'SiJavascript': <SiJavascript />,
+    'MdOutlineViewModule': <MdOutlineViewModule />,
+    'MdOutlineQuiz': <MdOutlineQuiz />,
+    'BsGrid3X3Gap': <BsGrid3X3Gap />,
+    'BsGridFill': <BsGridFill />,
+    'BsGrid1X2Fill': <BsGrid1X2Fill />,
+    'BsLightningChargeFill': <BsLightningChargeFill />,
+    'BsMoonStars': <BsMoonStars />,
+    'BsSunrise': <BsSunrise />,
+    'BsKeyboardFill': <BsKeyboardFill />,
+    'GiBlackBelt': <GiBlackBelt />,
+    'GiPokerHand': <GiPokerHand />,
+    'GiCardRandom': <GiCardRandom />,
+    'GiCardAceHearts': <GiCardAceHearts />,
+    'GiHearts': <GiHearts />,
+    'GiSpades': <GiSpades />,
+    'GiTwoCoins': <GiTwoCoins />,
+    'GiPartyPopper': <GiPartyPopper />,
+    'IoGameController': <IoGameController />
+  };
+
+  const getAchievementIcon = (iconName) => {
+    return iconMap[iconName] || <AiOutlineTrophy />;
+  };
+
+  const categories = [
+    { id: 'all', name: 'Все', icon: <AiOutlineAppstore /> },
+    { id: 'tests', name: 'Тесты', icon: <AiOutlineCheckCircle /> },
+    { id: 'homework', name: 'Домашка', icon: <AiOutlineFileText /> },
+    { id: 'courses', name: 'Курсы', icon: <AiOutlineBook /> },
+    { id: 'chess', name: 'Шахматы', icon: <FaChess /> },
+    { id: 'flexchan', name: 'FlexChan', icon: <BsGridFill /> },
+    { id: 'jsgame', name: 'JavaScript', icon: <SiJavascript /> },
+    { id: 'layout', name: 'Верстка', icon: <FaHtml5 /> },
+    { id: 'quiz', name: 'Викторина', icon: <MdOutlineQuiz /> },
+    { id: 'poker', name: 'Покер', icon: <GiPokerHand /> },
+    { id: 'typing', name: 'Печать', icon: <FaKeyboard /> },
+    { id: 'shop', name: 'Магазин', icon: <AiOutlineShoppingCart /> },
+    { id: 'economy', name: 'Экономика', icon: <FaCoins /> },
+    { id: 'ranking', name: 'Рейтинг', icon: <FaMedal /> },
+    { id: 'streak', name: 'Серии', icon: <AiOutlineFire /> },
+    { id: 'games', name: 'Игры', icon: <IoGameController /> },
+    { id: 'secret', name: 'Секретные', icon: <AiOutlineLock /> }
+  ];
+
+  const getRarityStyle = (rarity) => {
+    const rarityStyles = {
+      common: { border: '2px solid #9e9e9e', boxShadow: '0 0 10px rgba(158,158,158,0.3)' },
+      rare: { border: '2px solid #2196F3', boxShadow: '0 0 10px rgba(33,150,243,0.4)' },
+      epic: { border: '2px solid #9C27B0', boxShadow: '0 0 15px rgba(156,39,176,0.5)' },
+      legendary: { border: '2px solid #FFD700', boxShadow: '0 0 20px rgba(255,215,0,0.6)' },
+      mythic: { border: '2px solid #E91E63', boxShadow: '0 0 25px rgba(233,30,99,0.7)', animation: 'glow 2s ease-in-out infinite' }
+    };
+    return rarityStyles[rarity] || rarityStyles.common;
+  };
+
+  const getRarityLabel = (rarity) => {
+    const labels = {
+      common: 'Обычное',
+      rare: 'Редкое',
+      epic: 'Эпическое',
+      legendary: 'Легендарное',
+      mythic: 'Мифическое'
+    };
+    return labels[rarity] || 'Обычное';
+  };
+
+  const filteredAchievements = selectedCategory === 'all' 
+    ? achievements 
+    : achievements.filter(a => a.category === selectedCategory);
 
   const fetchAllActivity = async (page = 1) => {
     try {
@@ -281,15 +471,6 @@ function StudentProfile() {
       setUploading(false);
     }
   };
-
-  const achievements = [
-    { icon: <FaCrown />, title: 'Первый проект', description: 'Создал первый проект', color: '#ffd700', earned: true },
-    { icon: <FaMedal />, title: 'Мастер кода', description: 'Написал 1000 строк кода', color: '#c0c0c0', earned: true },
-    { icon: <FaGem />, title: 'Неделя подряд', description: 'Учился 7 дней подряд', color: '#00bcd4', earned: true },
-    { icon: <AiOutlineStar />, title: 'Звезда группы', description: 'Стал первым в группе', color: '#ff6b6b', earned: false },
-    { icon: <AiOutlineTrophy />, title: 'Покоритель вершин', description: 'Завершил 50 заданий', color: '#4caf50', earned: false },
-    { icon: <AiOutlineThunderbolt />, title: 'Скоростник', description: 'Выполнил задание за 5 минут', color: '#ffeb3b', earned: false },
-  ];
 
   return (
     <div className={styles['student-page']}>
@@ -497,31 +678,60 @@ function StudentProfile() {
 
       {/* Достижения */}
       <div className={styles['achievements-section']}>
-        <h2 className={styles['section-title']}>
-          <AiOutlineTrophy /> Достижения
-        </h2>
-        <div className={styles['achievements-grid']}>
-          {achievements.map((achievement, index) => (
-            <div 
-              key={index} 
-              className={`${styles['achievement-card']} ${achievement.earned ? styles['earned'] : styles['locked']}`}
-            >
-              <div 
-                className={styles['achievement-icon']} 
-                style={{ color: achievement.earned ? achievement.color : '#ccc' }}
-              >
-                {achievement.icon}
-              </div>
-              <div className={styles['achievement-content']}>
-                <h3 className={styles['achievement-title']}>{achievement.title}</h3>
-                <p className={styles['achievement-description']}>{achievement.description}</p>
-              </div>
-              {achievement.earned && (
-                <div className={styles['achievement-badge']}>✓</div>
-              )}
-            </div>
-          ))}
+        <div className={styles['achievements-header']}>
+          <h2 className={styles['section-title']}>
+            <AiOutlineTrophy /> Достижения
+          </h2>
+          <div className={styles['achievements-stats']}>
+            <span className={styles['achievements-count']}>
+              {achievementsEarned} / {achievementsTotal}
+            </span>
+            <span className={styles['achievements-label']}>получено</span>
+          </div>
         </div>
+        
+        <div className={styles['achievements-preview-grid']}>
+          {achievementsLoading ? (
+            <div className={styles['achievements-loading']}>
+              <div className={styles['activity-spinner']}></div>
+              <p>Загрузка достижений...</p>
+            </div>
+          ) : achievements.filter(a => a.earned).length > 0 ? (
+            achievements.filter(a => a.earned).slice(0, 6).map((achievement) => (
+              <div 
+                key={achievement.id} 
+                className={styles['achievement-preview-card']}
+                style={getRarityStyle(achievement.rarity)}
+              >
+                <div 
+                  className={styles['achievement-icon']} 
+                  style={{ color: achievement.icon_color }}
+                >
+                  {getAchievementIcon(achievement.icon)}
+                </div>
+                <div className={styles['achievement-content']}>
+                  <h3 className={styles['achievement-title']}>{achievement.title}</h3>
+                  <span className={styles['achievement-rarity']} data-rarity={achievement.rarity}>
+                    {getRarityLabel(achievement.rarity)}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className={styles['no-achievements']}>
+              <AiOutlineTrophy />
+              <p>У вас пока нет достижений</p>
+              <span>Выполняйте задания, чтобы их получить!</span>
+            </div>
+          )}
+        </div>
+
+        <button 
+          className={styles['view-all-achievements-btn']}
+          onClick={() => setShowAchievementsModal(true)}
+        >
+          <AiOutlineAppstore /> Показать все достижения
+        </button>
       </div>
 
       {/* Последняя активность */}
@@ -661,6 +871,103 @@ function StudentProfile() {
                   <p>История активности пуста</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно всех достижений */}
+      {showAchievementsModal && (
+        <div className={styles['achievements-modal-overlay']} onClick={() => setShowAchievementsModal(false)}>
+          <div className={styles['achievements-modal']} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['achievements-modal-header']}>
+              <h2>
+                <AiOutlineTrophy /> Все достижения
+              </h2>
+              <div className={styles['achievements-modal-stats']}>
+                <span className={styles['earned-badge']}>{achievementsEarned}</span>
+                <span>/</span>
+                <span>{achievementsTotal}</span>
+              </div>
+              <button 
+                className={styles['modal-close-btn']}
+                onClick={() => setShowAchievementsModal(false)}
+              >
+                <AiOutlineClose />
+              </button>
+            </div>
+
+            <div className={styles['achievements-categories']}>
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  className={`${styles['category-btn']} ${selectedCategory === cat.id ? styles['active'] : ''}`}
+                  onClick={() => setSelectedCategory(cat.id)}
+                >
+                  {cat.icon}
+                  <span>{cat.name}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className={styles['achievements-modal-content']}>
+              <div className={styles['achievements-full-grid']}>
+                {filteredAchievements.map((achievement) => (
+                  <div 
+                    key={achievement.id} 
+                    className={`${styles['achievement-full-card']} ${achievement.earned ? styles['earned'] : styles['locked']}`}
+                    style={achievement.earned ? getRarityStyle(achievement.rarity) : {}}
+                  >
+                    <div 
+                      className={styles['achievement-full-icon']}
+                      style={{ 
+                        color: achievement.earned ? achievement.icon_color : '#555',
+                        opacity: achievement.earned ? 1 : 0.4
+                      }}
+                    >
+                      {achievement.is_secret && !achievement.earned ? (
+                        <AiOutlineLock />
+                      ) : (
+                        getAchievementIcon(achievement.icon)
+                      )}
+                    </div>
+                    <div className={styles['achievement-full-content']}>
+                      <h3 className={styles['achievement-full-title']}>
+                        {achievement.is_secret && !achievement.earned ? '???' : achievement.title}
+                      </h3>
+                      <p className={styles['achievement-full-description']}>
+                        {achievement.is_secret && !achievement.earned 
+                          ? 'Секретное достижение' 
+                          : achievement.description}
+                      </p>
+                      <div className={styles['achievement-full-meta']}>
+                        <span 
+                          className={styles['achievement-full-rarity']} 
+                          data-rarity={achievement.rarity}
+                        >
+                          {getRarityLabel(achievement.rarity)}
+                        </span>
+                        <div className={styles['achievement-full-rewards']}>
+                          {achievement.points_reward > 0 && (
+                            <span className={styles['reward-points']}>+{achievement.points_reward}</span>
+                          )}
+                          {achievement.experience_reward > 0 && (
+                            <span className={styles['reward-xp']}>+{achievement.experience_reward} XP</span>
+                          )}
+                        </div>
+                      </div>
+                      {achievement.earned && achievement.earned_at && (
+                        <div className={styles['achievement-earned-date']}>
+                          Получено: {new Date(achievement.earned_at).toLocaleDateString('ru-RU')}
+                        </div>
+                      )}
+                    </div>
+                    {achievement.earned && (
+                      <div className={styles['achievement-earned-badge']}>✓</div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

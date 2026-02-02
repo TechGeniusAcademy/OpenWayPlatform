@@ -36,6 +36,7 @@ import codeitFpsRoutes, { setupFpsSocket } from './routes/codeit-fps.js';
 import layoutGameRoutes from './routes/layout-game.js';
 import jsGameRoutes from './routes/js-game.js';
 import userLevelsRoutes from './routes/user-levels.js';
+import achievementsRoutes from './routes/achievements.js';
 
 dotenv.config();
 
@@ -114,6 +115,7 @@ app.use('/api/courses', coursesRoutes);
 app.use('/api/layout-game', layoutGameRoutes);
 app.use('/api/js-game', jsGameRoutes);
 app.use('/api/user-levels', userLevelsRoutes);
+app.use('/api/achievements', achievementsRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
