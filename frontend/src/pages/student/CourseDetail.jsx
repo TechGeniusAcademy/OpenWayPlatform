@@ -15,7 +15,11 @@ import {
   FaTag,
   FaListUl,
   FaLightbulb,
-  FaBullseye
+  FaBullseye,
+  FaCoins,
+  FaStar,
+  FaLock,
+  FaTimes
 } from 'react-icons/fa';
 import api, { BASE_URL } from '../../utils/api';
 import styles from './CourseDetail.module.css';
@@ -30,10 +34,27 @@ function CourseDetail() {
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [userLevel, setUserLevel] = useState(1);
+  const [userPoints, setUserPoints] = useState(0);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
     loadCourseDetails();
+    loadUserData();
   }, [id]);
+
+  const loadUserData = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      const user = response.data.user || response.data;
+      const exp = user.experience || 0;
+      setUserLevel(Math.floor(exp / 100) + 1);
+      setUserPoints(user.points || 0);
+    } catch (error) {
+      console.error('Ошибка загрузки данных пользователя:', error);
+    }
+  };
 
   const loadCourseDetails = async () => {
     try {
@@ -58,13 +79,40 @@ function CourseDetail() {
   };
 
   const handleEnroll = async () => {
+    // Проверяем требования по уровню
+    if (course.required_level && userLevel < course.required_level) {
+      alert(`Для этого курса требуется ${course.required_level} уровень. Ваш уровень: ${userLevel}`);
+      return;
+    }
+    
+    // Если курс платный - показываем модалку подтверждения
+    if (course.price && course.price > 0) {
+      setShowPurchaseModal(true);
+      return;
+    }
+    
+    // Бесплатный курс - сразу записываем
+    await enrollToCourse();
+  };
+
+  const enrollToCourse = async () => {
+    setPurchasing(true);
     try {
-      await api.post(`/courses/${id}/enroll`);
+      const response = await api.post(`/courses/${id}/enroll`);
       setEnrolled(true);
-      alert('Вы успешно записались на курс!');
+      setShowPurchaseModal(false);
+      
+      if (response.data.new_balance !== undefined) {
+        setUserPoints(response.data.new_balance);
+      }
+      
+      alert(response.data.message || 'Вы успешно записались на курс!');
     } catch (error) {
       console.error('Ошибка записи на курс:', error);
-      alert('Не удалось записаться на курс');
+      const errorMsg = error.response?.data?.error || 'Не удалось записаться на курс';
+      alert(errorMsg);
+    } finally {
+      setPurchasing(false);
     }
   };
 
@@ -172,13 +220,50 @@ function CourseDetail() {
                 <FaTag /> Категория: <strong>{course.category}</strong>
               </div>
             )}
+            
+            {/* Требования к курсу */}
+            {(course.required_level > 0 || course.price > 0) && !enrolled && (
+              <div className={styles.courseRequirements}>
+                {course.required_level > 0 && (
+                  <div className={`${styles.requirementItem} ${userLevel >= course.required_level ? styles.met : styles.notMet}`}>
+                    <FaStar /> 
+                    <span>Требуемый уровень: {course.required_level}</span>
+                    {userLevel >= course.required_level ? (
+                      <FaCheckCircle className={styles.checkIcon} />
+                    ) : (
+                      <span className={styles.yourLevel}>(Ваш: {userLevel})</span>
+                    )}
+                  </div>
+                )}
+                {course.price > 0 && (
+                  <div className={`${styles.requirementItem} ${userPoints >= course.price ? styles.met : styles.notMet}`}>
+                    <FaCoins /> 
+                    <span>Цена: {course.price} баллов</span>
+                    {userPoints >= course.price ? (
+                      <FaCheckCircle className={styles.checkIcon} />
+                    ) : (
+                      <span className={styles.yourLevel}>(У вас: {userPoints})</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
             {enrolled ? (
               <div className={styles.enrolledBadge}>
                 <FaCheckCircle /> Вы записаны на курс
               </div>
+            ) : course.required_level > 0 && userLevel < course.required_level ? (
+              <button className={`${styles.enrollButton} ${styles.lockedButton}`} disabled>
+                <FaLock /> Требуется {course.required_level} уровень
+              </button>
             ) : (
               <button className={styles.enrollButton} onClick={handleEnroll}>
-                <FaGraduationCap /> Записаться на курс
+                {course.price > 0 ? (
+                  <><FaCoins /> Купить за {course.price} баллов</>
+                ) : (
+                  <><FaGraduationCap /> Записаться на курс</>
+                )}
               </button>
             )}
           </div>
@@ -447,6 +532,58 @@ function CourseDetail() {
           </div>
         </aside>
       </div>
+
+      {/* Модалка подтверждения покупки */}
+      {showPurchaseModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowPurchaseModal(false)}>
+          <div className={styles.purchaseModal} onClick={e => e.stopPropagation()}>
+            <button className={styles.closeModal} onClick={() => setShowPurchaseModal(false)}>
+              <FaTimes />
+            </button>
+            <div className={styles.modalIcon}>
+              <FaGraduationCap />
+            </div>
+            <h2>Покупка курса</h2>
+            <p className={styles.modalCourseTitle}>{course.title}</p>
+            
+            <div className={styles.purchaseDetails}>
+              <div className={styles.purchaseRow}>
+                <span>Стоимость курса:</span>
+                <span className={styles.priceValue}><FaCoins /> {course.price}</span>
+              </div>
+              <div className={styles.purchaseRow}>
+                <span>Ваш баланс:</span>
+                <span className={userPoints >= course.price ? styles.balanceOk : styles.balanceNot}>
+                  <FaCoins /> {userPoints}
+                </span>
+              </div>
+              <div className={styles.purchaseRow}>
+                <span>После покупки:</span>
+                <span><FaCoins /> {userPoints - course.price}</span>
+              </div>
+            </div>
+            
+            {userPoints < course.price ? (
+              <div className={styles.notEnoughPoints}>
+                <FaLock /> Недостаточно баллов
+                <p>Вам не хватает {course.price - userPoints} баллов</p>
+              </div>
+            ) : (
+              <button 
+                className={styles.confirmPurchase}
+                onClick={enrollToCourse}
+                disabled={purchasing}
+              >
+                {purchasing ? 'Покупка...' : `Купить за ${course.price} баллов`}
+              </button>
+            )}
+            
+            <button className={styles.cancelPurchase} onClick={() => setShowPurchaseModal(false)}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

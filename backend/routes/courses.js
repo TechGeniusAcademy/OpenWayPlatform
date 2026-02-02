@@ -84,6 +84,7 @@ router.get('/', authenticate, async (req, res) => {
         const query = `
             SELECT c.id, c.title, c.description, c.thumbnail_url, 
                    c.difficulty_level, c.duration_hours, c.is_published,
+                   c.required_level, c.price,
                    c.created_at, c.created_by,
                    (SELECT COUNT(*) FROM course_lessons cl WHERE cl.course_id = c.id) as lesson_count,
                    (SELECT COUNT(*) FROM course_enrollments ce WHERE ce.course_id = c.id) as enrolled_count
@@ -235,7 +236,9 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
             instructor_name,
             category,
             language,
-            certificate_available
+            certificate_available,
+            required_level,
+            price
         } = req.body;
         
         if (!title || !description) {
@@ -247,8 +250,9 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
                 title, description, detailed_description, 
                 thumbnail_url, duration_hours, difficulty_level, 
                 is_published, created_by, requirements, learning_outcomes,
-                target_audience, instructor_name, category, language, certificate_available
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                target_audience, instructor_name, category, language, certificate_available,
+                required_level, price
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
             RETURNING *
         `;
         
@@ -267,7 +271,9 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
             instructor_name || '',
             category || '',
             language || 'Русский',
-            certificate_available || false
+            certificate_available || false,
+            required_level || 0,
+            price || 0
         ];
         
         const result = await pool.query(query, values);
@@ -295,7 +301,9 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
             instructor_name,
             category,
             language,
-            certificate_available
+            certificate_available,
+            required_level,
+            price
         } = req.body;
         
         const query = `
@@ -314,8 +322,10 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
                 category = $12,
                 language = $13,
                 certificate_available = $14,
+                required_level = $15,
+                price = $16,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $15
+            WHERE id = $17
             RETURNING *
         `;
         
@@ -334,6 +344,8 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
             category,
             language,
             certificate_available,
+            required_level || 0,
+            price || 0,
             id
         ];
         
@@ -578,15 +590,82 @@ router.post('/:id/enroll', authenticate, async (req, res) => {
             return res.status(404).json({ error: 'Курс не найден или недоступен' });
         }
         
+        const course = courseCheck.rows[0];
+        
+        // Получаем данные пользователя
+        const userResult = await pool.query(
+            'SELECT points, experience FROM users WHERE id = $1',
+            [req.user.id]
+        );
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+        
+        const user = userResult.rows[0];
+        const userLevel = Math.floor((user.experience || 0) / 100) + 1;
+        
+        // Проверяем требования по уровню
+        if (course.required_level && userLevel < course.required_level) {
+            return res.status(403).json({ 
+                error: `Требуется ${course.required_level} уровень. Ваш уровень: ${userLevel}`,
+                required_level: course.required_level,
+                user_level: userLevel
+            });
+        }
+        
+        // Проверяем, не куплен ли уже курс
+        const enrollmentCheck = await pool.query(
+            'SELECT * FROM course_enrollments WHERE user_id = $1 AND course_id = $2',
+            [req.user.id, id]
+        );
+        
+        if (enrollmentCheck.rows.length > 0) {
+            return res.status(400).json({ error: 'Вы уже записаны на этот курс' });
+        }
+        
+        // Проверяем баллы, если курс платный
+        if (course.price && course.price > 0) {
+            if ((user.points || 0) < course.price) {
+                return res.status(403).json({ 
+                    error: `Недостаточно баллов. Нужно: ${course.price}, у вас: ${user.points || 0}`,
+                    required_points: course.price,
+                    user_points: user.points || 0
+                });
+            }
+            
+            // Списываем баллы
+            await pool.query(
+                'UPDATE users SET points = points - $1 WHERE id = $2',
+                [course.price, req.user.id]
+            );
+            
+            // Записываем историю покупки
+            await pool.query(`
+                INSERT INTO points_history (user_id, amount, reason, type)
+                VALUES ($1, $2, $3, 'spend')
+            `, [req.user.id, -course.price, `Покупка курса: ${course.title}`]);
+        }
+        
+        // Записываем на курс
         const query = `
             INSERT INTO course_enrollments (user_id, course_id)
             VALUES ($1, $2)
-            ON CONFLICT (user_id, course_id) DO NOTHING
             RETURNING *
         `;
         
         await pool.query(query, [req.user.id, id]);
-        res.json({ message: 'Вы записались на курс' });
+        
+        // Получаем обновленные данные пользователя
+        const updatedUser = await pool.query(
+            'SELECT points FROM users WHERE id = $1',
+            [req.user.id]
+        );
+        
+        res.json({ 
+            message: course.price > 0 ? `Курс куплен за ${course.price} баллов` : 'Вы записались на курс',
+            new_balance: updatedUser.rows[0]?.points || 0
+        });
     } catch (error) {
         console.error('Ошибка записи на курс:', error);
         res.status(500).json({ error: 'Ошибка сервера' });

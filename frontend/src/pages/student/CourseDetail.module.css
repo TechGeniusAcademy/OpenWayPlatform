@@ -570,6 +570,233 @@
   margin-bottom: 1.5rem;
 }
 
+/* Course Requirements */
+.courseRequirements {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.requirementItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.requirementItem.met {
+  background: #d4edda;
+  color: #155724;
+}
+
+.requirementItem.notMet {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.requirementItem .checkIcon {
+  color: #28a745;
+  margin-left: auto;
+}
+
+.requirementItem .yourLevel {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.lockedButton {
+  background: #6c757d !important;
+  cursor: not-allowed;
+}
+
+.lockedButton:hover {
+  background: #6c757d !important;
+  transform: none;
+}
+
+/* Purchase Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.purchaseModal {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  animation: modalSlide 0.3s ease;
+}
+
+@keyframes modalSlide {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.closeModal {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+}
+
+.closeModal:hover {
+  color: #333;
+}
+
+.modalIcon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: white;
+  font-size: 28px;
+}
+
+.purchaseModal h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  color: #1a1a2e;
+}
+
+.modalCourseTitle {
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+
+.purchaseDetails {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.purchaseRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 15px;
+}
+
+.purchaseRow:not(:last-child) {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.priceValue {
+  font-weight: 700;
+  color: #f39c12;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.balanceOk {
+  color: #28a745;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.balanceNot {
+  color: #dc3545;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notEnoughPoints {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.notEnoughPoints p {
+  font-weight: 400;
+  font-size: 14px;
+  margin: 0;
+}
+
+.confirmPurchase {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+}
+
+.confirmPurchase:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.confirmPurchase:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cancelPurchase {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: #666;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cancelPurchase:hover {
+  color: #333;
+}
+
 @media (max-width: 768px) {
   .courseDetail {
     padding: 1rem;

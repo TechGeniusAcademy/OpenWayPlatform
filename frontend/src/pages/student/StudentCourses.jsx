@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaBook, FaClock, FaGraduationCap, FaArrowRight } from 'react-icons/fa';
+import { FaBook, FaClock, FaGraduationCap, FaArrowRight, FaCoins, FaStar, FaLock } from 'react-icons/fa';
 import api, { BASE_URL } from '../../utils/api';
 import styles from './StudentCourses.module.css';
 
 // Мемоизированная карточка курса для предотвращения лишних ре-рендеров
-const CourseCard = memo(({ course, onOpen, getDifficultyLabel }) => {
+const CourseCard = memo(({ course, onOpen, getDifficultyLabel, userLevel, userPoints }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  
+  const isLocked = course.required_level > 0 && userLevel < course.required_level;
+  const canAfford = !course.price || course.price === 0 || userPoints >= course.price;
 
   return (
     <div 
-      className={styles.courseCard}
-      onClick={() => onOpen(course.id)}
+      className={`${styles.courseCard} ${isLocked ? styles.locked : ''}`}
+      onClick={() => !isLocked && onOpen(course.id)}
     >
       <div className={styles.courseThumbnail}>
         {course.thumbnail_url && !imageError ? (
@@ -30,11 +33,29 @@ const CourseCard = memo(({ course, onOpen, getDifficultyLabel }) => {
         ) : (
           <FaBook />
         )}
+        {isLocked && (
+          <div className={styles.lockedOverlay}>
+            <FaLock />
+            <span>Уровень {course.required_level}</span>
+          </div>
+        )}
+        {course.price > 0 && (
+          <div className={`${styles.priceTag} ${!canAfford ? styles.cantAfford : ''}`}>
+            <FaCoins /> {course.price}
+          </div>
+        )}
       </div>
       <div className={styles.courseContent}>
-        <span className={`${styles.difficultyBadge} ${styles[course.difficulty_level]}`}>
-          {getDifficultyLabel(course.difficulty_level)}
-        </span>
+        <div className={styles.badgesRow}>
+          <span className={`${styles.difficultyBadge} ${styles[course.difficulty_level]}`}>
+            {getDifficultyLabel(course.difficulty_level)}
+          </span>
+          {course.required_level > 0 && (
+            <span className={`${styles.levelBadge} ${isLocked ? styles.lockedBadge : ''}`}>
+              <FaStar /> {course.required_level} ур.
+            </span>
+          )}
+        </div>
         <h3 className={styles.courseTitle}>{course.title}</h3>
         <p className={styles.courseDescription}>
           {course.description}
@@ -48,13 +69,20 @@ const CourseCard = memo(({ course, onOpen, getDifficultyLabel }) => {
           </div>
         </div>
         <button 
-          className={styles.openButton}
+          className={`${styles.openButton} ${isLocked ? styles.lockedBtn : ''}`}
           onClick={(e) => {
             e.stopPropagation();
-            onOpen(course.id);
+            if (!isLocked) onOpen(course.id);
           }}
+          disabled={isLocked}
         >
-          Открыть курс <FaArrowRight />
+          {isLocked ? (
+            <>Требуется {course.required_level} уровень</>
+          ) : course.price > 0 ? (
+            <><FaCoins /> Купить за {course.price}</>
+          ) : (
+            <>Открыть курс <FaArrowRight /></>
+          )}
         </button>
       </div>
     </div>
@@ -80,18 +108,28 @@ const SkeletonCard = () => (
 function StudentCourses() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userLevel, setUserLevel] = useState(1);
+  const [userPoints, setUserPoints] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadCourses();
+    loadData();
   }, []);
 
-  const loadCourses = async () => {
+  const loadData = async () => {
     try {
-      const response = await api.get('/courses?published=true&limit=20');
-      setCourses(response.data.courses || []);
+      const [coursesRes, profileRes] = await Promise.all([
+        api.get('/courses?published=true&limit=20'),
+        api.get('/auth/me')
+      ]);
+      setCourses(coursesRes.data.courses || []);
+      
+      const user = profileRes.data.user || profileRes.data;
+      const exp = user.experience || 0;
+      setUserLevel(Math.floor(exp / 100) + 1);
+      setUserPoints(user.points || 0);
     } catch (error) {
-      console.error('Ошибка загрузки курсов:', error);
+      console.error('Ошибка загрузки данных:', error);
     } finally {
       setLoading(false);
     }
@@ -150,6 +188,8 @@ function StudentCourses() {
               course={course}
               onOpen={handleOpenCourse}
               getDifficultyLabel={getDifficultyLabel}
+              userLevel={userLevel}
+              userPoints={userPoints}
             />
           ))}
         </div>

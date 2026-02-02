@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaPlus, FaBook, FaUsers, FaClock, FaEdit, FaTrash, 
-  FaTimes, FaGraduationCap, FaVideo, FaSave, FaList 
+  FaTimes, FaGraduationCap, FaVideo, FaSave, FaList,
+  FaCoins, FaStar
 } from 'react-icons/fa';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -32,7 +33,9 @@ function AdminCourses() {
     instructor_name: '',
     category: '',
     language: 'Русский',
-    certificate_available: false
+    certificate_available: false,
+    required_level: 0,
+    price: 0
   });
 
   useEffect(() => {
@@ -69,7 +72,9 @@ function AdminCourses() {
       instructor_name: '',
       category: '',
       language: 'Русский',
-      certificate_available: false
+      certificate_available: false,
+      required_level: 0,
+      price: 0
     });
     setShowModal(true);
   };
@@ -92,7 +97,9 @@ function AdminCourses() {
       instructor_name: course.instructor_name || '',
       category: course.category || '',
       language: course.language || 'Русский',
-      certificate_available: course.certificate_available || false
+      certificate_available: course.certificate_available || false,
+      required_level: course.required_level || 0,
+      price: course.price || 0
     });
     setShowModal(true);
   };
@@ -240,6 +247,16 @@ function AdminCourses() {
                   <div className={styles.courseStat}>
                     <FaClock /> {course.duration_hours || 0}ч
                   </div>
+                  {course.required_level > 0 && (
+                    <div className={styles.courseStat} title="Требуемый уровень">
+                      <FaStar /> {course.required_level} ур.
+                    </div>
+                  )}
+                  {course.price > 0 && (
+                    <div className={styles.courseStat} title="Цена">
+                      <FaCoins /> {course.price}
+                    </div>
+                  )}
                 </div>
                 <div className={styles.courseActions}>
                   <button 
@@ -444,6 +461,34 @@ function AdminCourses() {
                     <option value="intermediate">Средний</option>
                     <option value="advanced">Продвинутый</option>
                   </select>
+                </div>
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label><FaStar style={{color: '#f39c12'}} /> Требуемый уровень</label>
+                  <input
+                    type="number"
+                    name="required_level"
+                    value={formData.required_level}
+                    onChange={handleChange}
+                    min="0"
+                    placeholder="0 = без ограничений"
+                  />
+                  <small className={styles.fieldHint}>Минимальный уровень ученика для доступа (0 = для всех)</small>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label><FaCoins style={{color: '#f1c40f'}} /> Цена в баллах</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    min="0"
+                    placeholder="0 = бесплатно"
+                  />
+                  <small className={styles.fieldHint}>Стоимость курса в баллах (0 = бесплатный)</small>
                 </div>
               </div>
 

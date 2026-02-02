@@ -116,7 +116,30 @@
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.badgesRow {
+  display: flex;
+  gap: 8px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.levelBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fff3cd;
+  color: #856404;
+}
+
+.levelBadge.lockedBadge {
+  background: #f8d7da;
+  color: #721c24;
 }
 
 .difficultyBadge.beginner {
@@ -153,6 +176,69 @@
 
 .openButton:hover {
   background: #5568d3;
+}
+
+/* Locked course styles */
+.courseCard.locked {
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+.courseCard.locked:hover {
+  transform: none;
+}
+
+.lockedOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  gap: 8px;
+}
+
+.lockedOverlay svg {
+  font-size: 32px;
+}
+
+.lockedOverlay span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.priceTag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.priceTag.cantAfford {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.openButton.lockedBtn {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.openButton.lockedBtn:hover {
+  background: #999;
 }
 
 .emptyState {
