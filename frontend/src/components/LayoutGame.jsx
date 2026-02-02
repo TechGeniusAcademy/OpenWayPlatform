@@ -741,7 +741,14 @@ function LayoutGame({ onBack }) {
   const loadLevels = async () => {
     try {
       const response = await api.get('/layout-game/levels');
-      setLevels(response.data);
+      console.log('Loaded levels:', response.data);
+      // Преобразуем completed в boolean
+      const normalizedLevels = response.data.map(level => ({
+        ...level,
+        completed: level.completed === true || level.completed === 'true' || level.completed === 't'
+      }));
+      console.log('Normalized levels:', normalizedLevels);
+      setLevels(normalizedLevels);
     } catch (error) {
       console.error('Ошибка загрузки уровней:', error);
       toast.error('Не удалось загрузить уровни');
@@ -1432,15 +1439,14 @@ function LayoutGame({ onBack }) {
         ) : (
           <div className={styles.levelsGrid}>
             {levels.map((level, index) => {
-              // PostgreSQL может вернуть completed как строку "false" или boolean
-              const prevCompleted = index > 0 ? levels[index - 1].completed === true || levels[index - 1].completed === 'true' : true;
-              const isLocked = index > 0 && !prevCompleted;
-              const isCompleted = level.completed === true || level.completed === 'true';
+              // Теперь completed уже boolean после нормализации в loadLevels
+              const prevCompleted = index === 0 || levels[index - 1].completed;
+              const isLocked = !prevCompleted;
               
               return (
                 <div 
                   key={level.id}
-                  className={`${styles.levelCard} ${isCompleted ? styles.completed : ''} ${isLocked ? styles.locked : ''}`}
+                  className={`${styles.levelCard} ${level.completed ? styles.completed : ''} ${isLocked ? styles.locked : ''}`}
                   onClick={() => !isLocked && selectLevel(level)}
                 >
                   {isLocked && (
@@ -1465,13 +1471,13 @@ function LayoutGame({ onBack }) {
                       <span className={styles.points}>+{level.points_reward} очков</span>
                     </div>
                     
-                    {isCompleted && (
+                    {level.completed && (
                       <div className={styles.completedBadge}>
                         <FaCheck /> {parseFloat(level.best_accuracy).toFixed(1)}%
                       </div>
                     )}
                     
-                    {level.attempts > 0 && !isCompleted && (
+                    {level.attempts > 0 && !level.completed && (
                       <div className={styles.attemptsBadge}>
                         Попыток: {level.attempts}
                       </div>
