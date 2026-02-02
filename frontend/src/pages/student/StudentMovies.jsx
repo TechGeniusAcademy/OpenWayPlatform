@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BASE_URL } from '../../utils/api';
 import api from '../../utils/api';
 import styles from './StudentMovies.module.css';
-import { FaPlay, FaSearch, FaFilm, FaTimes, FaCalendarAlt, FaClock, FaExpand, FaCompress } from 'react-icons/fa';
+import { FaPlay, FaSearch, FaFilm, FaTimes, FaCalendarAlt, FaClock, FaExpand, FaCompress, FaTv, FaChevronRight } from 'react-icons/fa';
 import { MdMovie, MdVideoLibrary } from 'react-icons/md';
 
 function StudentMovies() {
@@ -11,8 +11,16 @@ function StudentMovies() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState('all');
+  const [selectedType, setSelectedType] = useState('all'); // all, movie, series
   const [watchingMovie, setWatchingMovie] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // Для сериалов
+  const [showSeriesModal, setShowSeriesModal] = useState(false);
+  const [selectedSeries, setSelectedSeries] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+  const [watchingEpisode, setWatchingEpisode] = useState(null);
 
   // Получить уникальные жанры
   const genres = ['all', ...new Set(movies.filter(m => m.genre).map(m => m.genre))];
@@ -23,7 +31,7 @@ function StudentMovies() {
 
   useEffect(() => {
     filterMovies();
-  }, [searchQuery, movies, selectedGenre]);
+  }, [searchQuery, movies, selectedGenre, selectedType]);
 
   const loadMovies = async () => {
     try {
@@ -38,6 +46,11 @@ function StudentMovies() {
 
   const filterMovies = () => {
     let filtered = movies;
+    
+    // Фильтр по типу
+    if (selectedType !== 'all') {
+      filtered = filtered.filter(movie => (movie.content_type || 'movie') === selectedType);
+    }
     
     if (selectedGenre !== 'all') {
       filtered = filtered.filter(movie => movie.genre === selectedGenre);
@@ -94,17 +107,82 @@ function StudentMovies() {
   };
 
   const openMovie = (movie) => {
-    setWatchingMovie(movie);
-    setIsFullscreen(false);
+    // Если это сериал - открываем модалку с сериями
+    if (movie.content_type === 'series') {
+      openSeriesModal(movie);
+    } else {
+      setWatchingMovie(movie);
+      setIsFullscreen(false);
+    }
   };
 
   const closeMovie = () => {
     setWatchingMovie(null);
+    setWatchingEpisode(null);
     setIsFullscreen(false);
   };
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
+  };
+
+  // Функции для сериалов
+  const openSeriesModal = async (series) => {
+    setSelectedSeries(series);
+    setShowSeriesModal(true);
+    setLoadingEpisodes(true);
+    
+    try {
+      const response = await api.get(`/movies/${series.id}/episodes`);
+      setEpisodes(response.data.episodes || []);
+    } catch (error) {
+      console.error('Ошибка загрузки эпизодов:', error);
+    } finally {
+      setLoadingEpisodes(false);
+    }
+  };
+
+  const closeSeriesModal = () => {
+    setShowSeriesModal(false);
+    setSelectedSeries(null);
+    setEpisodes([]);
+  };
+
+  const playEpisode = (episode) => {
+    setWatchingEpisode(episode);
+    setShowSeriesModal(false);
+    setIsFullscreen(false);
+  };
+
+  const closeEpisode = () => {
+    setWatchingEpisode(null);
+    setShowSeriesModal(true);
+  };
+
+  // Получить URL видео для эпизода
+  const getEpisodeVideoUrl = (episode) => {
+    if (episode.video_file) {
+      return `${BASE_URL}${episode.video_file}`;
+    }
+    return getEmbedUrl(episode.video_url);
+  };
+
+  // Проверить, локальный ли файл эпизода
+  const isLocalEpisode = (episode) => {
+    return !!episode.video_file;
+  };
+
+  // Группировка эпизодов по сезонам
+  const groupEpisodesBySeason = () => {
+    const grouped = {};
+    episodes.forEach(ep => {
+      const season = ep.season || 1;
+      if (!grouped[season]) {
+        grouped[season] = [];
+      }
+      grouped[season].push(ep);
+    });
+    return grouped;
   };
 
   if (loading) {
@@ -131,8 +209,12 @@ function StudentMovies() {
         
         <div className={styles.stats}>
           <div className={styles.statItem}>
-            <span className={styles.statValue}>{movies.length}</span>
+            <span className={styles.statValue}>{movies.filter(m => (m.content_type || 'movie') === 'movie').length}</span>
             <span className={styles.statLabel}>Фильмов</span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statValue}>{movies.filter(m => m.content_type === 'series').length}</span>
+            <span className={styles.statLabel}>Сериалов</span>
           </div>
           <div className={styles.statItem}>
             <span className={styles.statValue}>{genres.length - 1}</span>
@@ -142,6 +224,27 @@ function StudentMovies() {
       </div>
 
       <div className={styles.controls}>
+        <div className={styles.typeFilter}>
+          <button
+            className={`${styles.typeBtn} ${selectedType === 'all' ? styles.active : ''}`}
+            onClick={() => setSelectedType('all')}
+          >
+            Все
+          </button>
+          <button
+            className={`${styles.typeBtn} ${selectedType === 'movie' ? styles.active : ''}`}
+            onClick={() => setSelectedType('movie')}
+          >
+            <MdMovie /> Фильмы
+          </button>
+          <button
+            className={`${styles.typeBtn} ${selectedType === 'series' ? styles.active : ''}`}
+            onClick={() => setSelectedType('series')}
+          >
+            <FaTv /> Сериалы
+          </button>
+        </div>
+        
         <div className={styles.genres}>
           {genres.map(genre => (
             <button
@@ -188,16 +291,26 @@ function StudentMovies() {
                   />
                 ) : (
                   <div className={styles.noPoster}>
-                    <FaFilm />
+                    {movie.content_type === 'series' ? <FaTv /> : <FaFilm />}
                   </div>
                 )}
                 <div className={styles.playOverlay}>
-                  <FaPlay className={styles.playIcon} />
+                  {movie.content_type === 'series' ? (
+                    <FaTv className={styles.playIcon} />
+                  ) : (
+                    <FaPlay className={styles.playIcon} />
+                  )}
                 </div>
-                {movie.duration && (
+                {movie.content_type === 'series' && (
+                  <span className={styles.seriesBadge}>
+                    <FaTv /> Сериал
+                  </span>
+                )}
+                {movie.duration && movie.content_type !== 'series' && (
                   <span className={styles.duration}>
                     <FaClock /> {formatDuration(movie.duration)}
                   </span>
+                )}
                 )}
               </div>
               
@@ -267,6 +380,139 @@ function StudentMovies() {
                 <p>{watchingMovie.description}</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Модалка просмотра эпизода сериала */}
+      {watchingEpisode && selectedSeries && (
+        <div className={`${styles.playerOverlay} ${isFullscreen ? styles.fullscreen : ''}`} onClick={closeEpisode}>
+          <div className={styles.playerModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.playerHeader}>
+              <div className={styles.playerInfo}>
+                <h2>{selectedSeries.title}</h2>
+                <div className={styles.playerMeta}>
+                  <span className={styles.episodeTag}>S{watchingEpisode.season}E{watchingEpisode.episode}</span>
+                  <span>{watchingEpisode.title || `Эпизод ${watchingEpisode.episode}`}</span>
+                  {watchingEpisode.duration && (
+                    <span><FaClock /> {formatDuration(watchingEpisode.duration)}</span>
+                  )}
+                </div>
+              </div>
+              <div className={styles.playerActions}>
+                <button className={styles.fullscreenBtn} onClick={toggleFullscreen}>
+                  {isFullscreen ? <FaCompress /> : <FaExpand />}
+                </button>
+                <button className={styles.closeBtn} onClick={closeEpisode}>
+                  <FaTimes />
+                </button>
+              </div>
+            </div>
+            
+            <div className={styles.videoContainer}>
+              {isLocalEpisode(watchingEpisode) ? (
+                <video
+                  src={getEpisodeVideoUrl(watchingEpisode)}
+                  controls
+                  autoPlay
+                  className={styles.videoPlayer}
+                />
+              ) : (
+                <iframe
+                  src={getEmbedUrl(watchingEpisode.video_url)}
+                  title={watchingEpisode.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  className={styles.videoIframe}
+                />
+              )}
+            </div>
+            
+            {watchingEpisode.description && !isFullscreen && (
+              <div className={styles.movieDescription}>
+                <p>{watchingEpisode.description}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Модалка выбора серии */}
+      {showSeriesModal && selectedSeries && (
+        <div className={styles.seriesOverlay} onClick={closeSeriesModal}>
+          <div className={styles.seriesModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.seriesHeader}>
+              {selectedSeries.cover_url && (
+                <img 
+                  src={`${BASE_URL}${selectedSeries.cover_url}`} 
+                  alt={selectedSeries.title}
+                  className={styles.seriesCover}
+                />
+              )}
+              <div className={styles.seriesInfo}>
+                <div className={styles.seriesBadgeModal}>
+                  <FaTv /> Сериал
+                </div>
+                <h2>{selectedSeries.title}</h2>
+                <div className={styles.seriesMeta}>
+                  {selectedSeries.year && <span><FaCalendarAlt /> {selectedSeries.year}</span>}
+                  {selectedSeries.genre && <span><FaFilm /> {selectedSeries.genre}</span>}
+                  <span>{episodes.length} {episodes.length === 1 ? 'серия' : episodes.length < 5 ? 'серии' : 'серий'}</span>
+                </div>
+                {selectedSeries.description && (
+                  <p className={styles.seriesDescription}>{selectedSeries.description}</p>
+                )}
+              </div>
+              <button className={styles.closeSeriesBtn} onClick={closeSeriesModal}>
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div className={styles.episodesContainer}>
+              {loadingEpisodes ? (
+                <div className={styles.loadingEpisodes}>
+                  <FaTv className={styles.loadingIcon} />
+                  <p>Загрузка серий...</p>
+                </div>
+              ) : episodes.length === 0 ? (
+                <div className={styles.noEpisodes}>
+                  <FaTv />
+                  <p>Серии ещё не добавлены</p>
+                </div>
+              ) : (
+                Object.entries(groupEpisodesBySeason()).map(([season, seasonEpisodes]) => (
+                  <div key={season} className={styles.seasonBlock}>
+                    <h3 className={styles.seasonTitle}>Сезон {season}</h3>
+                    <div className={styles.episodesList}>
+                      {seasonEpisodes.map(ep => (
+                        <div 
+                          key={ep.id} 
+                          className={styles.episodeCard}
+                          onClick={() => playEpisode(ep)}
+                        >
+                          <div className={styles.episodeNumber}>
+                            {ep.episode}
+                          </div>
+                          <div className={styles.episodeDetails}>
+                            <h4>{ep.title || `Эпизод ${ep.episode}`}</h4>
+                            {ep.description && <p>{ep.description}</p>}
+                            {ep.duration && (
+                              <span className={styles.episodeDuration}>
+                                <FaClock /> {formatDuration(ep.duration)}
+                              </span>
+                            )}
+                          </div>
+                          <div className={styles.playEpisodeBtn}>
+                            <FaPlay />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

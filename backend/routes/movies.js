@@ -96,7 +96,7 @@ const uploadFields = multer({
   { name: 'video', maxCount: 1 }
 ]);
 
-// Инициализация таблицы
+// Инициализация таблиц
 const initMoviesTable = async () => {
   try {
     await pool.query(`
@@ -110,6 +110,7 @@ const initMoviesTable = async () => {
         year INTEGER,
         genre VARCHAR(100),
         duration INTEGER,
+        content_type VARCHAR(20) DEFAULT 'movie',
         is_active BOOLEAN DEFAULT true,
         created_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -122,9 +123,31 @@ const initMoviesTable = async () => {
       ALTER TABLE movies ADD COLUMN IF NOT EXISTS video_file TEXT
     `);
     
-    console.log('Таблица movies готова');
+    // Добавляем колонку content_type если её нет
+    await pool.query(`
+      ALTER TABLE movies ADD COLUMN IF NOT EXISTS content_type VARCHAR(20) DEFAULT 'movie'
+    `);
+    
+    // Таблица для эпизодов сериалов
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS movie_episodes (
+        id SERIAL PRIMARY KEY,
+        movie_id INTEGER REFERENCES movies(id) ON DELETE CASCADE,
+        season INTEGER DEFAULT 1,
+        episode INTEGER NOT NULL,
+        title VARCHAR(255),
+        description TEXT,
+        video_url TEXT,
+        video_file TEXT,
+        duration INTEGER,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    console.log('Таблицы movies и movie_episodes готовы');
   } catch (error) {
-    console.error('Ошибка создания таблицы movies:', error);
+    console.error('Ошибка создания таблиц movies:', error);
   }
 };
 
@@ -151,7 +174,7 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
 router.get('/library', authenticate, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, title, description, video_url, video_file, cover_url, year, genre, duration
+      SELECT id, title, description, video_url, video_file, cover_url, year, genre, duration, content_type
       FROM movies
       WHERE is_active = true
       ORDER BY created_at DESC
@@ -186,15 +209,18 @@ router.get('/:id', authenticate, async (req, res) => {
 // Создать фильм (только админ)
 router.post('/', authenticate, requireAdmin, uploadFields, async (req, res) => {
   try {
-    const { title, description, video_url, year, genre, duration } = req.body;
+    const { title, description, video_url, year, genre, duration, content_type } = req.body;
     
     if (!title) {
       return res.status(400).json({ error: 'Название обязательно' });
     }
     
-    // Проверяем наличие либо ссылки, либо файла
+    // Для сериалов не требуем видео (серии добавляются отдельно)
+    const isSeries = content_type === 'series';
+    
+    // Проверяем наличие либо ссылки, либо файла (только для фильмов)
     const videoFile = req.files?.video?.[0];
-    if (!video_url && !videoFile) {
+    if (!isSeries && !video_url && !videoFile) {
       return res.status(400).json({ error: 'Укажите ссылку на видео или загрузите файл' });
     }
     
@@ -212,8 +238,8 @@ router.post('/', authenticate, requireAdmin, uploadFields, async (req, res) => {
       : null;
     
     const result = await pool.query(`
-      INSERT INTO movies (title, description, video_url, video_file, cover_url, year, genre, duration, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO movies (title, description, video_url, video_file, cover_url, year, genre, duration, content_type, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `, [
       title, 
@@ -223,7 +249,8 @@ router.post('/', authenticate, requireAdmin, uploadFields, async (req, res) => {
       coverUrl, 
       year || null, 
       genre || null, 
-      duration || null, 
+      duration || null,
+      content_type || 'movie',
       req.user.id
     ]);
     
@@ -238,7 +265,7 @@ router.post('/', authenticate, requireAdmin, uploadFields, async (req, res) => {
 router.put('/:id', authenticate, requireAdmin, uploadFields, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, video_url, year, genre, duration, is_active } = req.body;
+    const { title, description, video_url, year, genre, duration, is_active, content_type } = req.body;
     
     // Получаем текущий фильм
     const currentMovie = await pool.query('SELECT * FROM movies WHERE id = $1', [id]);
@@ -292,8 +319,8 @@ router.put('/:id', authenticate, requireAdmin, uploadFields, async (req, res) =>
     const result = await pool.query(`
       UPDATE movies 
       SET title = $1, description = $2, video_url = $3, video_file = $4, cover_url = $5, 
-          year = $6, genre = $7, duration = $8, is_active = $9, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $10
+          year = $6, genre = $7, duration = $8, is_active = $9, content_type = $10, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $11
       RETURNING *
     `, [
       title || current.title,
@@ -305,6 +332,7 @@ router.put('/:id', authenticate, requireAdmin, uploadFields, async (req, res) =>
       genre || current.genre,
       duration || current.duration,
       is_active !== undefined ? is_active : current.is_active,
+      content_type || current.content_type || 'movie',
       id
     ]);
     
@@ -436,6 +464,161 @@ router.get('/stream/:filename', authenticate, async (req, res) => {
     }
   } catch (error) {
     console.error('Ошибка стриминга видео:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// ===== ЭПИЗОДЫ СЕРИАЛОВ =====
+
+// Получить эпизоды сериала
+router.get('/:movieId/episodes', authenticate, async (req, res) => {
+  try {
+    const { movieId } = req.params;
+    
+    const result = await pool.query(`
+      SELECT * FROM movie_episodes 
+      WHERE movie_id = $1 
+      ORDER BY season, episode
+    `, [movieId]);
+    
+    res.json({ episodes: result.rows });
+  } catch (error) {
+    console.error('Ошибка получения эпизодов:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Добавить эпизод (только админ)
+router.post('/:movieId/episodes', authenticate, requireAdmin, uploadFields, async (req, res) => {
+  try {
+    const { movieId } = req.params;
+    const { season, episode, title, description, video_url, duration } = req.body;
+    
+    if (!episode) {
+      return res.status(400).json({ error: 'Номер эпизода обязателен' });
+    }
+    
+    const videoFile = req.files?.video?.[0];
+    if (!video_url && !videoFile) {
+      return res.status(400).json({ error: 'Укажите ссылку на видео или загрузите файл' });
+    }
+    
+    const videoFilePath = videoFile 
+      ? (process.env.NODE_ENV === 'production'
+          ? `/storage/movies/videos/${videoFile.filename}`
+          : `/uploads/movies/videos/${videoFile.filename}`)
+      : null;
+    
+    const result = await pool.query(`
+      INSERT INTO movie_episodes (movie_id, season, episode, title, description, video_url, video_file, duration)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `, [
+      movieId,
+      season || 1,
+      episode,
+      title || `Эпизод ${episode}`,
+      description || null,
+      video_url || null,
+      videoFilePath,
+      duration || null
+    ]);
+    
+    res.status(201).json({ episode: result.rows[0] });
+  } catch (error) {
+    console.error('Ошибка добавления эпизода:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Обновить эпизод (только админ)
+router.put('/episodes/:episodeId', authenticate, requireAdmin, uploadFields, async (req, res) => {
+  try {
+    const { episodeId } = req.params;
+    const { season, episode, title, description, video_url, duration, is_active } = req.body;
+    
+    // Получаем текущий эпизод
+    const currentEpisode = await pool.query('SELECT * FROM movie_episodes WHERE id = $1', [episodeId]);
+    if (currentEpisode.rows.length === 0) {
+      return res.status(404).json({ error: 'Эпизод не найден' });
+    }
+    
+    const current = currentEpisode.rows[0];
+    let videoFilePath = current.video_file;
+    
+    const videoFile = req.files?.video?.[0];
+    
+    // Если загружено новое видео
+    if (videoFile) {
+      // Удаляем старое видео
+      if (videoFilePath) {
+        const oldVideoPath = process.env.NODE_ENV === 'production'
+          ? `/mnt${videoFilePath}`
+          : path.join(__dirname, '..', videoFilePath);
+        if (fs.existsSync(oldVideoPath)) {
+          fs.unlinkSync(oldVideoPath);
+        }
+      }
+      videoFilePath = process.env.NODE_ENV === 'production'
+        ? `/storage/movies/videos/${videoFile.filename}`
+        : `/uploads/movies/videos/${videoFile.filename}`;
+    }
+    
+    const finalVideoUrl = video_url || current.video_url;
+    const finalVideoFile = video_url ? null : videoFilePath;
+    
+    const result = await pool.query(`
+      UPDATE movie_episodes 
+      SET season = $1, episode = $2, title = $3, description = $4, video_url = $5, 
+          video_file = $6, duration = $7, is_active = $8
+      WHERE id = $9
+      RETURNING *
+    `, [
+      season || current.season,
+      episode || current.episode,
+      title || current.title,
+      description !== undefined ? description : current.description,
+      finalVideoUrl,
+      finalVideoFile,
+      duration || current.duration,
+      is_active !== undefined ? is_active : current.is_active,
+      episodeId
+    ]);
+    
+    res.json({ episode: result.rows[0] });
+  } catch (error) {
+    console.error('Ошибка обновления эпизода:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Удалить эпизод (только админ)
+router.delete('/episodes/:episodeId', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { episodeId } = req.params;
+    
+    // Получаем эпизод для удаления файлов
+    const episode = await pool.query('SELECT video_file FROM movie_episodes WHERE id = $1', [episodeId]);
+    
+    if (episode.rows.length === 0) {
+      return res.status(404).json({ error: 'Эпизод не найден' });
+    }
+    
+    // Удаляем видеофайл
+    if (episode.rows[0].video_file) {
+      const videoPath = process.env.NODE_ENV === 'production'
+        ? `/mnt${episode.rows[0].video_file}`
+        : path.join(__dirname, '..', episode.rows[0].video_file);
+      if (fs.existsSync(videoPath)) {
+        fs.unlinkSync(videoPath);
+      }
+    }
+    
+    await pool.query('DELETE FROM movie_episodes WHERE id = $1', [episodeId]);
+    
+    res.json({ message: 'Эпизод удален' });
+  } catch (error) {
+    console.error('Ошибка удаления эпизода:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
