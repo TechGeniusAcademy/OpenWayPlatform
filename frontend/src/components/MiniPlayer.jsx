@@ -1,7 +1,8 @@
+import { useState, useRef, useEffect } from 'react';
 import { useMusic } from '../context/MusicContext';
 import { BASE_URL } from '../utils/api';
 import styles from './MiniPlayer.module.css';
-import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaTimes, FaVolumeUp, FaVolumeMute, FaChevronDown, FaChevronUp, FaMusic } from 'react-icons/fa';
+import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaTimes, FaVolumeUp, FaVolumeMute, FaChevronDown, FaChevronUp, FaMusic, FaGripVertical } from 'react-icons/fa';
 
 function MiniPlayer() {
   const {
@@ -22,6 +23,63 @@ function MiniPlayer() {
     setIsMinimized,
     closePlayer
   } = useMusic();
+
+  // Drag functionality
+  const [position, setPosition] = useState({ x: null, y: null });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef(null);
+  const offsetRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      
+      const newX = e.clientX - offsetRef.current.x;
+      const newY = e.clientY - offsetRef.current.y;
+      
+      // Ограничиваем в пределах экрана
+      const playerWidth = isMinimized ? 120 : 400;
+      const playerHeight = isMinimized ? 50 : 80;
+      
+      const maxX = window.innerWidth - playerWidth;
+      const maxY = window.innerHeight - playerHeight;
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isMinimized]);
+
+  const handleDragStart = (e) => {
+    if (dragRef.current) {
+      const rect = dragRef.current.getBoundingClientRect();
+      offsetRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+      setIsDragging(true);
+      
+      // Если позиция ещё не установлена, установим текущую
+      if (position.x === null) {
+        setPosition({ x: rect.left, y: rect.top });
+      }
+    }
+  };
 
   if (!showPlayer || !currentTrack) {
     return null;
@@ -50,9 +108,26 @@ function MiniPlayer() {
     ? (currentTrack.cover_url.startsWith('http') ? currentTrack.cover_url : `${BASE_URL}${currentTrack.cover_url}`)
     : null;
 
+  const playerStyle = position.x !== null ? {
+    left: position.x,
+    top: position.y,
+    right: 'auto'
+  } : {};
+
   if (isMinimized) {
     return (
-      <div className={styles.miniPlayerMinimized}>
+      <div 
+        ref={dragRef}
+        className={`${styles.miniPlayerMinimized} ${isDragging ? styles.dragging : ''}`}
+        style={playerStyle}
+      >
+        <div 
+          className={styles.dragHandle} 
+          onMouseDown={handleDragStart}
+          title="Перетащить"
+        >
+          <FaGripVertical />
+        </div>
         <div className={styles.minimizedCover}>
           {coverUrl ? (
             <img src={coverUrl} alt={currentTrack.title} />
@@ -78,7 +153,18 @@ function MiniPlayer() {
   }
 
   return (
-    <div className={styles.miniPlayer}>
+    <div 
+      ref={dragRef}
+      className={`${styles.miniPlayer} ${isDragging ? styles.dragging : ''}`}
+      style={playerStyle}
+    >
+      <div 
+        className={styles.dragHandleBar} 
+        onMouseDown={handleDragStart}
+        title="Перетащить"
+      >
+        <FaGripVertical />
+      </div>
       <div className={styles.progressBar} onClick={handleProgressClick}>
         <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
       </div>
