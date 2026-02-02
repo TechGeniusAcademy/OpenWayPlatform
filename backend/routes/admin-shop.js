@@ -57,7 +57,7 @@ router.get('/items', authenticate, requireTesterOrTeacherOrAdmin, async (req, re
 // Создать новый предмет
 router.post('/items', authenticate, authorizeAdmin, upload.single('image'), async (req, res) => {
   try {
-    const { item_type, item_key, name, description, price } = req.body;
+    const { item_type, item_key, name, description, price, required_experience } = req.body;
     
     if (!item_type || !item_key || !name || !price) {
       return res.status(400).json({ error: 'Заполните все обязательные поля' });
@@ -70,10 +70,10 @@ router.post('/items', authenticate, authorizeAdmin, upload.single('image'), asyn
     const image_url = req.file ? '/uploads/shop/' + req.file.filename : null;
 
     const result = await pool.query(
-      `INSERT INTO shop_items (item_type, item_key, name, description, price, image_url)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO shop_items (item_type, item_key, name, description, price, required_experience, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [item_type, item_key, name, description, parseInt(price), image_url]
+      [item_type, item_key, name, description, parseInt(price), parseInt(required_experience) || 0, image_url]
     );
 
     res.json({ 
@@ -94,7 +94,7 @@ router.post('/items', authenticate, authorizeAdmin, upload.single('image'), asyn
 router.put('/items/:id', authenticate, authorizeAdmin, upload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { item_type, item_key, name, description, price } = req.body;
+    const { item_type, item_key, name, description, price, required_experience } = req.body;
 
     // Получаем текущий предмет
     const currentItem = await pool.query('SELECT * FROM shop_items WHERE id = $1', [id]);
@@ -119,10 +119,10 @@ router.put('/items/:id', authenticate, authorizeAdmin, upload.single('image'), a
 
     const result = await pool.query(
       `UPDATE shop_items 
-       SET item_type = $1, item_key = $2, name = $3, description = $4, price = $5, image_url = $6
-       WHERE id = $7
+       SET item_type = $1, item_key = $2, name = $3, description = $4, price = $5, required_experience = $6, image_url = $7
+       WHERE id = $8
        RETURNING *`,
-      [item_type, item_key, name, description, parseInt(price), image_url, id]
+      [item_type, item_key, name, description, parseInt(price), parseInt(required_experience) || 0, image_url, id]
     );
 
     res.json({ 

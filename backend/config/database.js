@@ -584,6 +584,7 @@ export const initDatabase = async () => {
         name VARCHAR(100) NOT NULL,
         description TEXT,
         price INTEGER NOT NULL,
+        required_experience INTEGER DEFAULT 0,
         image_url VARCHAR(255), -- URL загруженной картинки (для frame/banner)
         created_at TIMESTAMP DEFAULT NOW()
       );
@@ -598,6 +599,19 @@ export const initDatabase = async () => {
           WHERE table_name = 'shop_items' AND column_name = 'image_url'
         ) THEN
           ALTER TABLE shop_items ADD COLUMN image_url VARCHAR(255);
+        END IF;
+      END $$;
+    `);
+
+    // Добавить колонку required_experience если её нет
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'shop_items' AND column_name = 'required_experience'
+        ) THEN
+          ALTER TABLE shop_items ADD COLUMN required_experience INTEGER DEFAULT 0;
         END IF;
       END $$;
     `);

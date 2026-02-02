@@ -13,7 +13,8 @@ import {
   AiOutlineCheck, 
   AiOutlineCloseCircle,
   AiOutlineStar,
-  AiOutlineFilter
+  AiOutlineFilter,
+  AiOutlineLock
 } from 'react-icons/ai';
 import { MdFormatColorText } from 'react-icons/md';
 import { IoSparkles } from 'react-icons/io5';
@@ -26,6 +27,8 @@ function Shop() {
   const [shopItems, setShopItems] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [userPoints, setUserPoints] = useState(0);
+  const [userExperience, setUserExperience] = useState(0);
+  const [userLevels, setUserLevels] = useState([]);
   const [loading, setLoading] = useState(false);
   
   const [selectedType, setSelectedType] = useState('all');
@@ -38,6 +41,7 @@ function Shop() {
     fetchShopItems();
     fetchPurchases();
     refreshUserData();
+    fetchUserLevels();
   }, []);
 
   const refreshUserData = async () => {
@@ -45,6 +49,7 @@ function Shop() {
       const response = await api.get('/auth/me');
       if (response.data.user) {
         updateUser(response.data.user);
+        setUserExperience(response.data.user.experience || 0);
       }
     } catch (error) {
       console.error('Ошибка обновления данных пользователя:', error);
@@ -78,8 +83,32 @@ function Shop() {
     }
   };
 
-  const handlePurchase = async (itemKey, price) => {
+  const fetchUserLevels = async () => {
+    try {
+      const response = await api.get('/user-levels');
+      setUserLevels(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки уровней:', error);
+    }
+  };
+
+  // Функция для поиска уровня по требуемому опыту
+  const getRequiredLevel = (requiredExperience) => {
+    if (!requiredExperience || requiredExperience <= 0) return null;
+    // Ищем уровень, для которого требуемый опыт >= requiredExperience
+    const sortedLevels = [...userLevels].sort((a, b) => a.experience_required - b.experience_required);
+    for (const level of sortedLevels) {
+      if (level.experience_required >= requiredExperience) {
+        return level;
+      }
+    }
+    // Если не нашли, возвращаем последний уровень
+    return sortedLevels[sortedLevels.length - 1] || null;
+  };
+
+  const handlePurchase = async (itemKey, price, requiredExperience) => {
     if (userPoints < price) return;
+    if (requiredExperience > 0 && userExperience < requiredExperience) return;
     setLoading(true);
     try {
       const response = await api.post('/shop/purchase', { itemKey });
@@ -442,8 +471,36 @@ function Shop() {
               </div>
             )}
 
-            {filteredItems.map((item) => (
-              <div key={item.id} className={styles.itemCard}>
+            {filteredItems.map((item) => {
+              const isLocked = item.required_experience > 0 && userExperience < item.required_experience;
+              const requiredLevel = isLocked ? getRequiredLevel(item.required_experience) : null;
+              
+              return (
+              <div key={item.id} className={`${styles.itemCard} ${isLocked ? styles.lockedCard : ''}`}>
+                {/* Overlay для заблокированных товаров */}
+                {isLocked && (
+                  <div className={styles.lockedOverlay}>
+                    <div className={styles.lockedContent}>
+                      {requiredLevel?.image_url ? (
+                        <img 
+                          src={`${BASE_URL}${requiredLevel.image_url}`} 
+                          alt={`Уровень ${requiredLevel.level_number}`}
+                          className={styles.lockedLevelImage}
+                        />
+                      ) : (
+                        <AiOutlineLock className={styles.lockedIcon} />
+                      )}
+                      <span className={styles.lockedText}>
+                        {requiredLevel ? (
+                          <>Требуется {requiredLevel.rank_name || `Уровень ${requiredLevel.level_number}`}</>
+                        ) : (
+                          <>Требуется {item.required_experience} XP</>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
                 {item.item_type === 'frame' ? (
                   <div className={styles.cardPreview}>
                     <div className={styles.previewAvatar}>
@@ -550,11 +607,13 @@ function Shop() {
                       </button>
                     ) : (
                       <button 
-                        className={`${styles.btn} ${styles.btnBuy}`}
-                        onClick={() => handlePurchase(item.item_key, item.price)}
-                        disabled={loading || userPoints < item.price}
+                        className={`${styles.btn} ${styles.btnBuy} ${isLocked ? styles.btnLocked : ''}`}
+                        onClick={() => handlePurchase(item.item_key, item.price, item.required_experience)}
+                        disabled={loading || userPoints < item.price || isLocked}
                       >
-                        {userPoints < item.price ? (
+                        {isLocked ? (
+                          <><AiOutlineLock /> Заблокировано</>
+                        ) : userPoints < item.price ? (
                           <><AiOutlineCloseCircle /> Недостаточно</>
                         ) : (
                           <><AiOutlineShoppingCart /> Купить</>
@@ -564,7 +623,8 @@ function Shop() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {filteredItems.length === 0 && (

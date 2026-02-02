@@ -294,11 +294,76 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   border: 2px solid rgba(102, 126, 234, 0.1);
+  position: relative;
 }
 
 .itemCard:hover {
   box-shadow: 0 12px 24px rgba(102, 126, 234, 0.2);
   border-color: #667eea;
+}
+
+/* Locked Card Styles */
+.lockedCard {
+  opacity: 0.85;
+}
+
+.lockedCard:hover {
+  border-color: #94a3b8;
+}
+
+.lockedOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 14px;
+}
+
+.lockedContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 20px;
+}
+
+.lockedLevelImage {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.lockedIcon {
+  font-size: 48px;
+  color: #f59e0b;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.lockedText {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.btnLocked {
+  background: #64748b !important;
+  cursor: not-allowed;
+}
+
+.btnLocked:hover {
+  background: #64748b !important;
+  transform: none !important;
 }
 
 /* Preview Sections */

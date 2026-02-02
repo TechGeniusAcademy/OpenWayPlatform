@@ -12,7 +12,8 @@ function ShopManagement() {
     item_key: '',
     name: '',
     description: '',
-    price: 0
+    price: 0,
+    required_experience: 0
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -63,6 +64,7 @@ function ShopManagement() {
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('price', formData.price);
+      formDataToSend.append('required_experience', formData.required_experience);
       
       if (imageFile) {
         formDataToSend.append('image', imageFile);
@@ -97,7 +99,8 @@ function ShopManagement() {
       item_key: item.item_key,
       name: item.name,
       description: item.description,
-      price: item.price
+      price: item.price,
+      required_experience: item.required_experience || 0
     });
     setImagePreview(item.image_url ? `${BASE_URL}${item.image_url}` : null);
     setShowForm(true);
@@ -124,7 +127,8 @@ function ShopManagement() {
       item_key: '',
       name: '',
       description: '',
-      price: 0
+      price: 0,
+      required_experience: 0
     });
     setImageFile(null);
     setImagePreview(null);
@@ -236,6 +240,18 @@ function ShopManagement() {
               </div>
 
               <div className={styles['form-group']}>
+                <label>Требуемый опыт (XP)</label>
+                <input
+                  type="number"
+                  name="required_experience"
+                  value={formData.required_experience}
+                  onChange={handleInputChange}
+                  min="0"
+                />
+                <small>Минимальный опыт для покупки (0 = без ограничений)</small>
+              </div>
+
+              <div className={styles['form-group']}>
                 <label>Изображение {!editingItem && '*'}</label>
                 <input
                   type="file"
@@ -282,6 +298,9 @@ function ShopManagement() {
                 <div className={styles['item-meta']}>
                   <span className={styles['item-key']}><AiOutlineKey /> {item.item_key}</span>
                   <span className={styles['item-price']}><AiOutlineDollar /> {item.price}</span>
+                  {item.required_experience > 0 && (
+                    <span className={styles['item-xp']}>⭐ {item.required_experience} XP</span>
+                  )}
                 </div>
               </div>
               <div className={styles['item-actions']}>
@@ -321,6 +340,9 @@ function ShopManagement() {
                 <div className={styles['item-meta']}>
                   <span className={styles['item-key']}><AiOutlineKey /> {item.item_key}</span>
                   <span className={styles['item-price']}><AiOutlineDollar /> {item.price}</span>
+                  {item.required_experience > 0 && (
+                    <span className={styles['item-xp']}>⭐ {item.required_experience} XP</span>
+                  )}
                 </div>
               </div>
               <div className={styles['item-actions']}>

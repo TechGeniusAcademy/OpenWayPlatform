@@ -388,6 +388,15 @@
   font-size: 14px;
 }
 
+.item-xp {
+  color: #10b981;
+  font-weight: bold;
+  font-size: 14px;
+  background: #d1fae5;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
 .item-actions {
   display: flex;
   gap: 10px;
