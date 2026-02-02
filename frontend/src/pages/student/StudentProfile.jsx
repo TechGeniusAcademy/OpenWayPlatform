@@ -13,9 +13,16 @@ import {
   AiOutlineCheckCircle,
   AiOutlineStar,
   AiOutlineThunderbolt,
-  AiOutlineLineChart
+  AiOutlineLineChart,
+  AiOutlineClockCircle,
+  AiOutlineExclamationCircle,
+  AiOutlineArrowUp,
+  AiOutlineArrowDown,
+  AiOutlineClose
 } from 'react-icons/ai';
 import { FaMedal, FaCrown, FaGem } from 'react-icons/fa';
+import { SiJavascript } from 'react-icons/si';
+import { MdOutlineViewModule } from 'react-icons/md';
 import '../../styles/UsernameStyles.css';
 import PointsHistory from '../../components/PointsHistory';
 
@@ -31,6 +38,12 @@ function StudentProfile() {
   const [showHistory, setShowHistory] = useState(false);
   const [userLevel, setUserLevel] = useState(null);
   const [nextLevel, setNextLevel] = useState(null);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [allActivity, setAllActivity] = useState([]);
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityTotalPages, setActivityTotalPages] = useState(1);
+  const [loadingActivity, setLoadingActivity] = useState(false);
   const [userStats, setUserStats] = useState({
     completedTasks: 0,
     totalProjects: 0,
@@ -44,6 +57,7 @@ function StudentProfile() {
     fetchAppliedCosmetics();
     fetchUserStats();
     fetchUserLevel();
+    fetchRecentActivity();
   }, []);
 
   useEffect(() => {
@@ -79,6 +93,97 @@ function StudentProfile() {
       totalProjects: 15,
       streak: 7,
       rank: 5
+    });
+  };
+
+  const fetchRecentActivity = async () => {
+    try {
+      const response = await api.get('/points/activity?limit=5');
+      setRecentActivity(response.data.activities || []);
+    } catch (error) {
+      console.error('Ошибка получения активности:', error);
+    }
+  };
+
+  const fetchAllActivity = async (page = 1) => {
+    try {
+      setLoadingActivity(true);
+      const response = await api.get(`/points/activity?page=${page}&limit=10`);
+      setAllActivity(response.data.activities || []);
+      setActivityTotalPages(response.data.pagination?.totalPages || 1);
+      setActivityPage(page);
+    } catch (error) {
+      console.error('Ошибка получения активности:', error);
+    } finally {
+      setLoadingActivity(false);
+    }
+  };
+
+  const openActivityModal = () => {
+    setShowActivityModal(true);
+    fetchAllActivity(1);
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'test':
+        return <AiOutlineCheckCircle />;
+      case 'homework_done':
+        return <AiOutlineCode />;
+      case 'homework_late':
+        return <AiOutlineExclamationCircle />;
+      case 'flexchan':
+        return <MdOutlineViewModule />;
+      case 'jsgame':
+        return <SiJavascript />;
+      case 'rank_up':
+        return <AiOutlineArrowUp />;
+      case 'rank_down':
+        return <AiOutlineArrowDown />;
+      default:
+        return <AiOutlineCalendar />;
+    }
+  };
+
+  const getActivityColor = (type) => {
+    switch (type) {
+      case 'test':
+        return '#4CAF50';
+      case 'homework_done':
+        return '#2196F3';
+      case 'homework_late':
+        return '#f44336';
+      case 'flexchan':
+        return '#9C27B0';
+      case 'jsgame':
+        return '#F7DF1E';
+      case 'rank_up':
+        return '#4CAF50';
+      case 'rank_down':
+        return '#f44336';
+      default:
+        return '#667eea';
+    }
+  };
+
+  const formatActivityDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Только что';
+    if (minutes < 60) return `${minutes} мин. назад`;
+    if (hours < 24) return `${hours} ч. назад`;
+    if (days < 7) return `${days} дн. назад`;
+    
+    return date.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
     });
   };
 
@@ -184,13 +289,6 @@ function StudentProfile() {
     { icon: <AiOutlineStar />, title: 'Звезда группы', description: 'Стал первым в группе', color: '#ff6b6b', earned: false },
     { icon: <AiOutlineTrophy />, title: 'Покоритель вершин', description: 'Завершил 50 заданий', color: '#4caf50', earned: false },
     { icon: <AiOutlineThunderbolt />, title: 'Скоростник', description: 'Выполнил задание за 5 минут', color: '#ffeb3b', earned: false },
-  ];
-
-  const recentActivity = [
-    { type: 'project', title: 'Создал проект "ToDo App"', date: '2 часа назад', icon: <AiOutlineCode /> },
-    { type: 'achievement', title: 'Получил достижение "Мастер кода"', date: '5 часов назад', icon: <AiOutlineTrophy /> },
-    { type: 'points', title: 'Заработал 50 баллов', date: '1 день назад', icon: <AiOutlineWallet /> },
-    { type: 'task', title: 'Выполнил задание по JavaScript', date: '2 дня назад', icon: <AiOutlineCheckCircle /> },
   ];
 
   return (
@@ -432,19 +530,141 @@ function StudentProfile() {
           <AiOutlineCalendar /> Последняя активность
         </h2>
         <div className={styles['activity-timeline']}>
-          {recentActivity.map((activity, index) => (
-            <div key={index} className={styles['activity-item']}>
-              <div className={styles['activity-icon-wrapper']}>
-                <div className={styles['activity-type-icon']}>{activity.icon}</div>
+          {recentActivity.length > 0 ? (
+            recentActivity.map((activity, index) => (
+              <div key={index} className={styles['activity-item']}>
+                <div className={styles['activity-icon-wrapper']}>
+                  <div 
+                    className={styles['activity-type-icon']}
+                    style={{ background: getActivityColor(activity.type) }}
+                  >
+                    {getActivityIcon(activity.type)}
+                  </div>
+                </div>
+                <div className={styles['activity-details']}>
+                  <div className={styles['activity-title']}>{activity.message}</div>
+                  <div className={styles['activity-meta']}>
+                    <span className={styles['activity-date']}>
+                      <AiOutlineClockCircle /> {formatActivityDate(activity.created_at)}
+                    </span>
+                    {(activity.points > 0 || activity.experience > 0) && (
+                      <div className={styles['activity-rewards']}>
+                        {activity.points > 0 && (
+                          <span className={styles['activity-points']}>+{activity.points} баллов</span>
+                        )}
+                        {activity.experience > 0 && (
+                          <span className={styles['activity-xp']}>+{activity.experience} XP</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className={styles['activity-details']}>
-                <div className={styles['activity-title']}>{activity.title}</div>
-                <div className={styles['activity-date']}>{activity.date}</div>
-              </div>
+            ))
+          ) : (
+            <div className={styles['no-activity']}>
+              <AiOutlineCalendar />
+              <p>Пока нет активности</p>
             </div>
-          ))}
+          )}
         </div>
+        
+        <button 
+          className={styles['view-all-activity-btn']}
+          onClick={openActivityModal}
+        >
+          Посмотреть всю активность
+        </button>
       </div>
+
+      {/* Модальное окно всей активности */}
+      {showActivityModal && (
+        <div className={styles['activity-modal-overlay']} onClick={() => setShowActivityModal(false)}>
+          <div className={styles['activity-modal']} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['activity-modal-header']}>
+              <h2>
+                <AiOutlineHistory /> История активности
+              </h2>
+              <button 
+                className={styles['modal-close-btn']}
+                onClick={() => setShowActivityModal(false)}
+              >
+                <AiOutlineClose />
+              </button>
+            </div>
+            
+            <div className={styles['activity-modal-content']}>
+              {loadingActivity ? (
+                <div className={styles['activity-loading']}>
+                  <div className={styles['activity-spinner']}></div>
+                  <p>Загрузка...</p>
+                </div>
+              ) : allActivity.length > 0 ? (
+                <>
+                  <div className={styles['activity-list']}>
+                    {allActivity.map((activity, index) => (
+                      <div key={index} className={styles['activity-modal-item']}>
+                        <div 
+                          className={styles['activity-modal-icon']}
+                          style={{ background: getActivityColor(activity.type) }}
+                        >
+                          {getActivityIcon(activity.type)}
+                        </div>
+                        <div className={styles['activity-modal-info']}>
+                          <div className={styles['activity-modal-message']}>{activity.message}</div>
+                          <div className={styles['activity-modal-meta']}>
+                            <span className={styles['activity-modal-date']}>
+                              {formatActivityDate(activity.created_at)}
+                            </span>
+                            {(activity.points > 0 || activity.experience > 0) && (
+                              <div className={styles['activity-modal-rewards']}>
+                                {activity.points > 0 && (
+                                  <span className={styles['reward-badge-points']}>+{activity.points}</span>
+                                )}
+                                {activity.experience > 0 && (
+                                  <span className={styles['reward-badge-xp']}>+{activity.experience} XP</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Пагинация */}
+                  {activityTotalPages > 1 && (
+                    <div className={styles['activity-pagination']}>
+                      <button
+                        className={styles['pagination-btn']}
+                        onClick={() => fetchAllActivity(activityPage - 1)}
+                        disabled={activityPage <= 1}
+                      >
+                        ← Назад
+                      </button>
+                      <span className={styles['pagination-info']}>
+                        Страница {activityPage} из {activityTotalPages}
+                      </span>
+                      <button
+                        className={styles['pagination-btn']}
+                        onClick={() => fetchAllActivity(activityPage + 1)}
+                        disabled={activityPage >= activityTotalPages}
+                      >
+                        Вперед →
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className={styles['no-activity-modal']}>
+                  <AiOutlineCalendar />
+                  <p>История активности пуста</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <PointsHistory 
         isOpen={showHistory}

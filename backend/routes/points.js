@@ -342,4 +342,185 @@ router.get('/student/:id', async (req, res) => {
   }
 });
 
+// Получить активность пользователя
+router.get('/activity', async (req, res) => {
+  try {
+    const pool = (await import('../config/database.js')).default;
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const all = req.query.all === 'true';
+
+    // Собираем все типы активности из разных таблиц
+    const activities = [];
+
+    // 1. Прохождение тестов (test_attempts)
+    const testsQuery = await pool.query(`
+      SELECT 
+        ta.id,
+        'test' as type,
+        t.title as test_name,
+        ta.score as points,
+        ta.experience_earned as experience,
+        ta.completed_at as created_at
+      FROM test_attempts ta
+      JOIN tests t ON ta.test_id = t.id
+      WHERE ta.user_id = $1 AND ta.completed_at IS NOT NULL
+      ORDER BY ta.completed_at DESC
+    `, [userId]);
+    
+    testsQuery.rows.forEach(row => {
+      activities.push({
+        type: 'test',
+        message: `Прошел тест "${row.test_name}" и получил ${row.points || 0} баллов, ${row.experience || 0} опыта!`,
+        points: row.points || 0,
+        experience: row.experience || 0,
+        created_at: row.created_at
+      });
+    });
+
+    // 2. Домашние задания (homework_submissions)
+    const homeworkQuery = await pool.query(`
+      SELECT 
+        hs.id,
+        hs.status,
+        hs.submitted_at as created_at,
+        h.title as homework_title
+      FROM homework_submissions hs
+      LEFT JOIN homeworks h ON hs.homework_id = h.id
+      WHERE hs.user_id = $1
+      ORDER BY hs.submitted_at DESC
+    `, [userId]);
+    
+    homeworkQuery.rows.forEach(row => {
+      if (row.status === 'submitted' || row.status === 'graded') {
+        activities.push({
+          type: 'homework_done',
+          message: `Выполнил домашнее задание!`,
+          points: 0,
+          experience: 0,
+          created_at: row.created_at
+        });
+      } else if (row.status === 'late') {
+        activities.push({
+          type: 'homework_late',
+          message: `Просрочил домашнее задание`,
+          points: 0,
+          experience: 0,
+          created_at: row.created_at
+        });
+      }
+    });
+
+    // 3. FlexChan прогресс
+    const flexchanQuery = await pool.query(`
+      SELECT 
+        fp.id,
+        fp.completed,
+        fp.completed_at as created_at,
+        fl.level_order,
+        fl.points,
+        fl.experience_reward
+      FROM flexchan_progress fp
+      JOIN flexchan_levels fl ON fp.level_id = fl.id
+      WHERE fp.user_id = $1 AND fp.completed = true
+      ORDER BY fp.completed_at DESC
+    `, [userId]);
+    
+    flexchanQuery.rows.forEach(row => {
+      activities.push({
+        type: 'flexchan',
+        message: `Прошел уровень Flex Chan номер ${row.level_order} и получил ${row.points || 0} баллов, ${row.experience_reward || 0} опыта!`,
+        points: row.points || 0,
+        experience: row.experience_reward || 0,
+        created_at: row.created_at
+      });
+    });
+
+    // 4. JS Game прогресс
+    const jsGameQuery = await pool.query(`
+      SELECT 
+        jp.id,
+        jp.completed_at as created_at,
+        jl.title,
+        jl.points_reward,
+        jl.experience_reward
+      FROM js_game_progress jp
+      JOIN js_game_levels jl ON jp.level_id = jl.id
+      WHERE jp.user_id = $1 AND jp.completed = true
+      ORDER BY jp.completed_at DESC
+    `, [userId]);
+    
+    jsGameQuery.rows.forEach(row => {
+      activities.push({
+        type: 'jsgame',
+        message: `Прошел уровень JavaScript "${row.title}" и получил ${row.points_reward || 0} баллов, ${row.experience_reward || 0} опыта!`,
+        points: row.points_reward || 0,
+        experience: row.experience_reward || 0,
+        created_at: row.created_at
+      });
+    });
+
+    // 5. Изменения в топе (из points_history с определёнными reason)
+    const rankQuery = await pool.query(`
+      SELECT 
+        ph.id,
+        ph.points_change,
+        ph.reason,
+        ph.created_at
+      FROM points_history ph
+      WHERE ph.user_id = $1 
+        AND (ph.reason LIKE '%место в топе%' OR ph.reason LIKE '%топ%место%')
+      ORDER BY ph.created_at DESC
+    `, [userId]);
+    
+    rankQuery.rows.forEach(row => {
+      const rankMatch = row.reason.match(/(\d+)\s*место/);
+      if (rankMatch) {
+        const rank = rankMatch[1];
+        if (row.reason.toLowerCase().includes('занял') || row.points_change > 0) {
+          activities.push({
+            type: 'rank_up',
+            message: `Занял ${rank} место в топе!`,
+            points: row.points_change || 0,
+            experience: 0,
+            created_at: row.created_at
+          });
+        } else {
+          activities.push({
+            type: 'rank_down',
+            message: `Опустился до ${rank} места в топе`,
+            points: row.points_change || 0,
+            experience: 0,
+            created_at: row.created_at
+          });
+        }
+      }
+    });
+
+    // Сортируем по дате (сначала новые)
+    activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // Общее количество
+    const total = activities.length;
+
+    // Применяем пагинацию если не запрошена вся история
+    const paginatedActivities = all ? activities : activities.slice(offset, offset + limit);
+
+    res.json({
+      activities: paginatedActivities,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка получения активности:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 export default router;
