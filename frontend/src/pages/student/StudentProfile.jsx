@@ -313,6 +313,9 @@ function StudentProfile() {
                 <span className={styles['level-value']}>{userLevel?.level_number || 1}</span>
               </div>
             )}
+            {userLevel?.rank_name && (
+              <div className={styles['rank-name']}>{userLevel.rank_name}</div>
+            )}
           </div>
           
           <div className={styles['xp-section']}>

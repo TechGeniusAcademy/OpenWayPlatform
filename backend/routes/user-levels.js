@@ -63,7 +63,7 @@ router.get('/', authenticate, async (req, res) => {
 // Создать новый уровень
 router.post('/', authenticate, adminOnly, async (req, res) => {
   try {
-    const { level_number, experience_required, image_url } = req.body;
+    const { level_number, rank_name, experience_required, image_url } = req.body;
     
     // Проверка на дубликат номера уровня
     const existing = await pool.query(
@@ -76,10 +76,10 @@ router.post('/', authenticate, adminOnly, async (req, res) => {
     }
     
     const result = await pool.query(`
-      INSERT INTO user_levels (level_number, experience_required, image_url)
-      VALUES ($1, $2, $3)
+      INSERT INTO user_levels (level_number, rank_name, experience_required, image_url)
+      VALUES ($1, $2, $3, $4)
       RETURNING *
-    `, [level_number, experience_required || 0, image_url || null]);
+    `, [level_number, rank_name || null, experience_required || 0, image_url || null]);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -92,7 +92,7 @@ router.post('/', authenticate, adminOnly, async (req, res) => {
 router.put('/:id', authenticate, adminOnly, async (req, res) => {
   try {
     const { id } = req.params;
-    const { level_number, experience_required, image_url } = req.body;
+    const { level_number, rank_name, experience_required, image_url } = req.body;
     
     // Проверка на дубликат номера уровня (исключая текущий)
     const existing = await pool.query(
@@ -107,12 +107,13 @@ router.put('/:id', authenticate, adminOnly, async (req, res) => {
     const result = await pool.query(`
       UPDATE user_levels
       SET level_number = $1,
-          experience_required = $2,
-          image_url = $3,
+          rank_name = $2,
+          experience_required = $3,
+          image_url = $4,
           updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4
+      WHERE id = $5
       RETURNING *
-    `, [level_number, experience_required || 0, image_url || null, id]);
+    `, [level_number, rank_name || null, experience_required || 0, image_url || null, id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Уровень не найден' });

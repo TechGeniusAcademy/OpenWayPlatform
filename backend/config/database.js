@@ -973,6 +973,7 @@ export const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS user_levels (
         id SERIAL PRIMARY KEY,
         level_number INTEGER NOT NULL UNIQUE,
+        rank_name VARCHAR(100),
         experience_required INTEGER NOT NULL DEFAULT 0,
         image_url VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -981,6 +982,16 @@ export const initDatabase = async () => {
       
       CREATE INDEX IF NOT EXISTS idx_user_levels_number ON user_levels(level_number);
       CREATE INDEX IF NOT EXISTS idx_user_levels_xp ON user_levels(experience_required);
+    `);
+
+    // Миграция: добавление rank_name если его нет
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_levels' AND column_name = 'rank_name') THEN
+          ALTER TABLE user_levels ADD COLUMN rank_name VARCHAR(100);
+        END IF;
+      END $$;
     `);
 
     console.log('✅ База данных полностью инициализирована');

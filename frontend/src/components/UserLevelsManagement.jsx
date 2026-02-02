@@ -13,6 +13,7 @@ function UserLevelsManagement() {
   
   const [form, setForm] = useState({
     level_number: 1,
+    rank_name: '',
     experience_required: 0,
     image_url: ''
   });
@@ -80,6 +81,7 @@ function UserLevelsManagement() {
     setEditingLevel(level);
     setForm({
       level_number: level.level_number,
+      rank_name: level.rank_name || '',
       experience_required: level.experience_required,
       image_url: level.image_url || ''
     });
@@ -89,6 +91,7 @@ function UserLevelsManagement() {
   const resetForm = () => {
     setForm({
       level_number: levels.length > 0 ? Math.max(...levels.map(l => l.level_number)) + 1 : 1,
+      rank_name: '',
       experience_required: 0,
       image_url: ''
     });
@@ -179,6 +182,18 @@ function UserLevelsManagement() {
               </label>
               
               <label>
+                Название звания
+                <input
+                  type="text"
+                  value={form.rank_name}
+                  onChange={(e) => setForm(prev => ({ ...prev, rank_name: e.target.value }))}
+                  placeholder="Например: Новичок, Мастер..."
+                />
+              </label>
+            </div>
+            
+            <div className={styles.formRow}>
+              <label>
                 Требуемый опыт (XP)
                 <input
                   type="number"
@@ -268,6 +283,9 @@ function UserLevelsManagement() {
               </div>
               
               <div className={styles.levelInfo}>
+                {level.rank_name && (
+                  <span className={styles.rankName}>{level.rank_name}</span>
+                )}
                 <span className={styles.xpRequired}>
                   {level.experience_required.toLocaleString()} XP
                 </span>
