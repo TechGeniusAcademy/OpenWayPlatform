@@ -602,7 +602,7 @@
   display: flex;
   flex-direction: column;
   animation: modalSlideIn 0.3s ease;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .modal-xlarge {

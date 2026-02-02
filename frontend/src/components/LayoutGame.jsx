@@ -1432,12 +1432,15 @@ function LayoutGame({ onBack }) {
         ) : (
           <div className={styles.levelsGrid}>
             {levels.map((level, index) => {
-              const isLocked = index > 0 && !levels[index - 1].completed;
+              // PostgreSQL может вернуть completed как строку "false" или boolean
+              const prevCompleted = index > 0 ? levels[index - 1].completed === true || levels[index - 1].completed === 'true' : true;
+              const isLocked = index > 0 && !prevCompleted;
+              const isCompleted = level.completed === true || level.completed === 'true';
               
               return (
                 <div 
                   key={level.id}
-                  className={`${styles.levelCard} ${level.completed ? styles.completed : ''} ${isLocked ? styles.locked : ''}`}
+                  className={`${styles.levelCard} ${isCompleted ? styles.completed : ''} ${isLocked ? styles.locked : ''}`}
                   onClick={() => !isLocked && selectLevel(level)}
                 >
                   {isLocked && (
@@ -1462,13 +1465,13 @@ function LayoutGame({ onBack }) {
                       <span className={styles.points}>+{level.points_reward} очков</span>
                     </div>
                     
-                    {level.completed && (
+                    {isCompleted && (
                       <div className={styles.completedBadge}>
                         <FaCheck /> {parseFloat(level.best_accuracy).toFixed(1)}%
                       </div>
                     )}
                     
-                    {level.attempts > 0 && !level.completed && (
+                    {level.attempts > 0 && !isCompleted && (
                       <div className={styles.attemptsBadge}>
                         Попыток: {level.attempts}
                       </div>
