@@ -1131,10 +1131,15 @@ function LayoutGame({ onBack }) {
   // Отправка результата
   const submitResult = async (accuracy) => {
     try {
+      console.log('submitResult called with accuracy:', accuracy);
+      console.log('Sending to:', `/layout-game/levels/${selectedLevel.id}/check`);
+      
       const response = await api.post(`/layout-game/levels/${selectedLevel.id}/check`, {
         accuracy
       });
 
+      console.log('Check response:', response.data);
+      
       setLastResult(response.data);
 
       if (response.data.completed) {
@@ -1150,6 +1155,7 @@ function LayoutGame({ onBack }) {
       }
     } catch (error) {
       console.error('Ошибка сохранения:', error);
+      console.error('Error details:', error.response?.data || error.message);
       toast.error('Ошибка при сохранении результата');
     } finally {
       setIsChecking(false);

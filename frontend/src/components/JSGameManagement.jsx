@@ -270,7 +270,7 @@ function JSGameManagement() {
                   <h3>{level.title}</h3>
                   <p>{level.description}</p>
                   <div className={styles.levelMeta}>
-                    <span>⭐ {level.difficulty}</span>
+                    <span className={styles.danBadge} data-dan={level.difficulty}>{level.difficulty} Дан</span>
                     <span>+{level.points_reward} очков</span>
                     <span><FaVial /> {level.tests?.length || 0} тестов</span>
                     <span>👥 {level.completions} решений</span>
@@ -328,16 +328,19 @@ function JSGameManagement() {
 
                 <div className={styles.row}>
                   <label>
-                    Сложность
+                    Дан (сложность)
                     <select
                       value={form.difficulty}
                       onChange={(e) => setForm(prev => ({ ...prev, difficulty: parseInt(e.target.value) }))}
                     >
-                      <option value={1}>⭐ Легко</option>
-                      <option value={2}>⭐⭐ Нормально</option>
-                      <option value={3}>⭐⭐⭐ Сложно</option>
-                      <option value={4}>⭐⭐⭐⭐ Очень сложно</option>
-                      <option value={5}>⭐⭐⭐⭐⭐ Эксперт</option>
+                      <option value={1}>1 Дан - Начинающий</option>
+                      <option value={2}>2 Дан - Легко</option>
+                      <option value={3}>3 Дан - Нормально</option>
+                      <option value={4}>4 Дан - Средне</option>
+                      <option value={5}>5 Дан - Сложно</option>
+                      <option value={6}>6 Дан - Трудно</option>
+                      <option value={7}>7 Дан - Эксперт</option>
+                      <option value={8}>8 Дан - Мастер</option>
                     </select>
                   </label>
 

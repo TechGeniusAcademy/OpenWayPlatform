@@ -205,7 +205,51 @@
 }
 
 .difficulty {
-  color: #fbbf24;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Цвета для разных Данов */
+.difficulty[data-dan="1"] {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.difficulty[data-dan="2"] {
+  background: rgba(132, 204, 22, 0.2);
+  color: #84cc16;
+}
+
+.difficulty[data-dan="3"] {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+}
+
+.difficulty[data-dan="4"] {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+
+.difficulty[data-dan="5"] {
+  background: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+}
+
+.difficulty[data-dan="6"] {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.difficulty[data-dan="7"] {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
+.difficulty[data-dan="8"] {
+  background: rgba(236, 72, 153, 0.2);
+  color: #ec4899;
 }
 
 .points {
@@ -266,6 +310,50 @@
 
 .levelDifficulty {
   font-size: 0.9rem;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Цвета для разных Данов в заголовке */
+.levelDifficulty[data-dan="1"] {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.levelDifficulty[data-dan="2"] {
+  background: rgba(132, 204, 22, 0.2);
+  color: #84cc16;
+}
+
+.levelDifficulty[data-dan="3"] {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+}
+
+.levelDifficulty[data-dan="4"] {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+
+.levelDifficulty[data-dan="5"] {
+  background: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+}
+
+.levelDifficulty[data-dan="6"] {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.levelDifficulty[data-dan="7"] {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
+.levelDifficulty[data-dan="8"] {
+  background: rgba(236, 72, 153, 0.2);
+  color: #ec4899;
 }
 
 .toolbarActions {

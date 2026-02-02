@@ -210,8 +210,8 @@ function JSGame({ onBack }) {
                     <p>{level.description}</p>
                     
                     <div className={styles.levelMeta}>
-                      <span className={styles.difficulty}>
-                        {Array(level.difficulty).fill('⭐').join('')}
+                      <span className={styles.difficulty} data-dan={level.difficulty}>
+                        {level.difficulty} Дан
                       </span>
                       <span className={styles.points}>+{level.points_reward} очков</span>
                     </div>
@@ -251,8 +251,8 @@ function JSGame({ onBack }) {
         
         <div className={styles.levelTitle}>
           <h2>{selectedLevel.title}</h2>
-          <span className={styles.levelDifficulty}>
-            {Array(selectedLevel.difficulty).fill('⭐').join('')}
+          <span className={styles.levelDifficulty} data-dan={selectedLevel.difficulty}>
+            {selectedLevel.difficulty} Дан
           </span>
         </div>
         

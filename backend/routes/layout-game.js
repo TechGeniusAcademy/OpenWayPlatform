@@ -12,7 +12,8 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: 'Токен не предоставлен' });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    // JWT содержит userId, а не id
+    req.user = { ...decoded, id: decoded.userId };
     next();
   } catch (error) {
     res.status(401).json({ error: 'Недействительный токен' });
@@ -155,6 +156,8 @@ router.delete('/admin/levels/:id', auth, adminAuth, async (req, res) => {
 // Получить все активные уровни с прогрессом пользователя
 router.get('/levels', auth, async (req, res) => {
   try {
+    console.log('Loading levels for user:', req.user.id);
+    
     const result = await pool.query(`
       SELECT 
         l.id, l.title, l.description, l.difficulty, l.order_index, 
@@ -167,6 +170,8 @@ router.get('/levels', auth, async (req, res) => {
       WHERE l.is_active = true
       ORDER BY l.order_index ASC, l.id ASC
     `, [req.user.id]);
+    
+    console.log('Levels with progress:', result.rows.map(r => ({ id: r.id, title: r.title, completed: r.completed, attempts: r.attempts })));
     
     res.json(result.rows);
   } catch (error) {
@@ -208,6 +213,8 @@ router.post('/levels/:id/check', auth, async (req, res) => {
     const { id } = req.params;
     const { accuracy } = req.body;
     
+    console.log(`Check level ${id} for user ${req.user.id}, accuracy: ${accuracy}`);
+    
     if (accuracy === undefined || accuracy < 0 || accuracy > 100) {
       return res.status(400).json({ error: 'Неверное значение accuracy' });
     }
@@ -225,9 +232,13 @@ router.post('/levels/:id/check', auth, async (req, res) => {
       [req.user.id, id]
     );
     
+    console.log('Existing progress:', existingProgress.rows[0] || 'none');
+    
     const isCompleted = accuracy >= 95;
     let pointsAwarded = 0;
     let isNewCompletion = false;
+    
+    console.log('isCompleted (accuracy >= 95):', isCompleted);
     
     if (existingProgress.rows.length > 0) {
       const progress = existingProgress.rows[0];
@@ -252,6 +263,8 @@ router.post('/levels/:id/check', auth, async (req, res) => {
             updated_at = CURRENT_TIMESTAMP
         WHERE user_id = $3 AND level_id = $4
       `, [isCompleted || progress.completed, newBestAccuracy, req.user.id, id]);
+      
+      console.log('Updated existing progress, completed:', isCompleted || progress.completed);
     } else {
       if (isCompleted) {
         pointsAwarded = level.points_reward;
@@ -263,13 +276,25 @@ router.post('/levels/:id/check', auth, async (req, res) => {
         );
       }
       
-      await pool.query(`
+      console.log('Inserting new progress for user_id:', req.user.id, 'level_id:', id);
+      
+      const insertResult = await pool.query(`
         INSERT INTO layout_game_progress (user_id, level_id, completed, best_accuracy, attempts, completed_at)
         VALUES ($1, $2, $3, $4, 1, $5)
+        RETURNING *
       `, [req.user.id, id, isCompleted, accuracy, isCompleted ? new Date() : null]);
+      
+      console.log('Inserted new progress:', insertResult.rows[0]);
     }
     
-    res.json({
+    // Проверяем что данные реально сохранились
+    const verifyProgress = await pool.query(
+      'SELECT * FROM layout_game_progress WHERE user_id = $1 AND level_id = $2',
+      [req.user.id, id]
+    );
+    console.log('Verified progress in DB:', verifyProgress.rows[0]);
+    
+    const responseData = {
       success: true,
       accuracy,
       completed: isCompleted,
@@ -278,7 +303,11 @@ router.post('/levels/:id/check', auth, async (req, res) => {
       message: isCompleted 
         ? `Отлично! Уровень пройден с точностью ${accuracy.toFixed(1)}%` 
         : `Точность ${accuracy.toFixed(1)}%. Нужно минимум 95% для прохождения.`
-    });
+    };
+    
+    console.log('Sending response:', responseData);
+    
+    res.json(responseData);
   } catch (error) {
     console.error('Ошибка проверки верстки:', error);
     res.status(500).json({ error: 'Ошибка сервера' });

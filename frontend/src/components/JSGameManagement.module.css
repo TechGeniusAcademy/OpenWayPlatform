@@ -124,6 +124,53 @@
   gap: 4px;
 }
 
+/* Стили для бейджа Дана */
+.danBadge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.danBadge[data-dan="1"] {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.danBadge[data-dan="2"] {
+  background: rgba(132, 204, 22, 0.15);
+  color: #84cc16;
+}
+
+.danBadge[data-dan="3"] {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.danBadge[data-dan="4"] {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+}
+
+.danBadge[data-dan="5"] {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.danBadge[data-dan="6"] {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.danBadge[data-dan="7"] {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+.danBadge[data-dan="8"] {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ec4899;
+}
+
 .levelActions {
   display: flex;
   gap: 8px;
