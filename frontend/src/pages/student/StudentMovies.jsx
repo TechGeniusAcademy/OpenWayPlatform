@@ -311,7 +311,6 @@ function StudentMovies() {
                     <FaClock /> {formatDuration(movie.duration)}
                   </span>
                 )}
-                )}
               </div>
               
               <div className={styles.movieInfo}>
