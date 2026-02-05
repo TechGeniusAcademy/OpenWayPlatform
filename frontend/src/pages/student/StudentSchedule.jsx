@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
+import api, { BASE_URL } from '../../utils/api';
 import styles from './StudentSchedule.module.css';
-import { FiChevronLeft, FiChevronRight, FiClock, FiMapPin } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiClock, FiMapPin, FiX, FiUsers, FiFileText, FiMessageSquare } from 'react-icons/fi';
 
 const StudentSchedule = () => {
   const { user } = useAuth();
@@ -10,6 +10,9 @@ const StudentSchedule = () => {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('week'); // 'week' или 'month'
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [lessonDetails, setLessonDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   const daysOfWeek = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   const daysOfWeekFull = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
@@ -111,6 +114,26 @@ const StudentSchedule = () => {
     return time?.substring(0, 5) || '';
   };
 
+  const openLessonModal = async (lesson) => {
+    setSelectedLesson(lesson);
+    setLoadingDetails(true);
+    
+    try {
+      const response = await api.get(`/schedule/lesson-details/${lesson.id}/${lesson.event_date}`);
+      setLessonDetails(response.data);
+    } catch (error) {
+      console.error('Error loading lesson details:', error);
+      setLessonDetails(null);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const closeLessonModal = () => {
+    setSelectedLesson(null);
+    setLessonDetails(null);
+  };
+
   const getWeekRange = () => {
     const days = getWeekDays();
     const first = new Date(days[0].date);
@@ -172,14 +195,22 @@ const StudentSchedule = () => {
                   <div className={styles.noLessons}>Нет уроков</div>
                 ) : (
                   getLessonsForDate(day.date).map(lesson => (
-                    <div key={`${lesson.id}-${lesson.event_date}`} className={styles.lessonCard}>
+                    <div 
+                      key={`${lesson.id}-${lesson.event_date}`} 
+                      className={styles.lessonCard}
+                      onClick={() => openLessonModal(lesson)}
+                    >
                       <div className={styles.lessonTime}>
                         <FiClock />
                         <span>{formatTime(lesson.lesson_time)}</span>
                       </div>
                       <div className={styles.lessonTitle}>{lesson.title}</div>
                       {lesson.description && (
-                        <div className={styles.lessonDesc}>{lesson.description}</div>
+                        <div className={styles.lessonDesc}>
+                          {lesson.description.length > 50 
+                            ? lesson.description.substring(0, 50) + '...' 
+                            : lesson.description}
+                        </div>
                       )}
                       <div className={styles.lessonDuration}>
                         {lesson.duration_minutes} мин
@@ -208,7 +239,11 @@ const StudentSchedule = () => {
                     <span className={styles.monthDayNumber}>{dayData.day}</span>
                     <div className={styles.monthDayLessons}>
                       {getLessonsForDate(dayData.date).map(lesson => (
-                        <div key={`${lesson.id}-${lesson.event_date}`} className={styles.monthLessonItem}>
+                        <div 
+                          key={`${lesson.id}-${lesson.event_date}`} 
+                          className={styles.monthLessonItem}
+                          onClick={() => openLessonModal(lesson)}
+                        >
                           <span className={styles.monthLessonTime}>{formatTime(lesson.lesson_time)}</span>
                           <span className={styles.monthLessonTitle}>{lesson.title}</span>
                         </div>
@@ -225,6 +260,103 @@ const StudentSchedule = () => {
       {!user?.group_id && (
         <div className={styles.noGroup}>
           Вы не состоите в группе. Обратитесь к администратору для назначения в группу.
+        </div>
+      )}
+
+      {/* Модальное окно урока */}
+      {selectedLesson && (
+        <div className={styles.modalOverlay} onClick={closeLessonModal}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalHeaderInfo}>
+                <h2>{selectedLesson.title}</h2>
+                <div className={styles.modalMeta}>
+                  <span className={styles.modalDate}>
+                    <FiClock />
+                    {new Date(selectedLesson.event_date).toLocaleDateString('ru-RU', { 
+                      weekday: 'long', 
+                      day: 'numeric', 
+                      month: 'long' 
+                    })} в {formatTime(selectedLesson.lesson_time)}
+                  </span>
+                  <span className={styles.modalDuration}>
+                    {selectedLesson.duration_minutes} мин
+                  </span>
+                </div>
+              </div>
+              <button className={styles.modalClose} onClick={closeLessonModal}>
+                <FiX />
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              {loadingDetails ? (
+                <div className={styles.modalLoading}>Загрузка...</div>
+              ) : (
+                <>
+                  {/* Описание урока */}
+                  {selectedLesson.description && (
+                    <div className={styles.modalSection}>
+                      <h3><FiFileText /> Описание урока</h3>
+                      <p className={styles.modalDescription}>{selectedLesson.description}</p>
+                    </div>
+                  )}
+
+                  {/* Список учеников группы */}
+                  {lessonDetails?.students && lessonDetails.students.length > 0 && (
+                    <div className={styles.modalSection}>
+                      <h3><FiUsers /> Ученики группы ({lessonDetails.students.length})</h3>
+                      <div className={styles.studentsList}>
+                        {lessonDetails.students.map(student => (
+                          <div key={student.id} className={styles.studentItem}>
+                            {student.avatar_url ? (
+                              <img 
+                                src={`${BASE_URL}${student.avatar_url}`} 
+                                alt={student.username}
+                                className={styles.studentAvatar}
+                              />
+                            ) : (
+                              <div className={styles.studentAvatarPlaceholder}>
+                                {(student.full_name || student.username || 'U').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className={styles.studentName}>
+                              {student.full_name || student.username}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Примечания к уроку для текущего ученика */}
+                  {lessonDetails?.notes && lessonDetails.notes.length > 0 && (
+                    <div className={styles.modalSection}>
+                      <h3><FiMessageSquare /> Примечания для вас</h3>
+                      <div className={styles.notesList}>
+                        {lessonDetails.notes.map(note => (
+                          <div key={note.id} className={styles.noteItem}>
+                            <p>{note.note}</p>
+                            <span className={styles.noteDate}>
+                              {new Date(note.created_at).toLocaleDateString('ru-RU')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Если нет примечаний */}
+                  {lessonDetails && (!lessonDetails.notes || lessonDetails.notes.length === 0) && (
+                    <div className={styles.noNotes}>
+                      <FiMessageSquare />
+                      <p>Примечаний к этому уроку нет</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

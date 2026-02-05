@@ -610,6 +610,50 @@ router.get('/my-schedule', authenticate, async (req, res) => {
   }
 });
 
+// Получить детали урока для ученика (список одногруппников и примечания)
+router.get('/lesson-details/:lessonId/:date', authenticate, async (req, res) => {
+  try {
+    const { lessonId, date } = req.params;
+    const userId = req.user.id;
+
+    // Получаем урок
+    const lessonResult = await pool.query(
+      'SELECT * FROM schedule_lessons WHERE id = $1',
+      [lessonId]
+    );
+
+    if (lessonResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Урок не найден' });
+    }
+
+    const lesson = lessonResult.rows[0];
+
+    // Получаем одногруппников
+    const studentsResult = await pool.query(`
+      SELECT id, username, full_name, avatar_url 
+      FROM users 
+      WHERE group_id = $1 AND role = 'student'
+      ORDER BY full_name, username
+    `, [lesson.group_id]);
+
+    // Получаем примечания к этому уроку для текущего ученика
+    const notesResult = await pool.query(`
+      SELECT * FROM lesson_notes 
+      WHERE lesson_id = $1 AND lesson_date = $2 AND student_id = $3
+      ORDER BY created_at DESC
+    `, [lessonId, date, userId]);
+
+    res.json({
+      lesson,
+      students: studentsResult.rows,
+      notes: notesResult.rows
+    });
+  } catch (error) {
+    console.error('Error fetching lesson details:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 // Получить примечания ученика
 router.get('/my-notes', authenticate, async (req, res) => {
   try {
