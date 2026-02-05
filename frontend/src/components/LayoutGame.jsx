@@ -118,15 +118,25 @@ function LayoutGame({ onBack }) {
     
     const abbreviation = value.slice(abbrevStart, cursorPos);
     
+    // Определяем контекст для CSS - внутри селектора { } или снаружи
+    const textBefore = value.slice(0, cursorPos);
+    let braceDepth = 0;
+    for (let i = 0; i < textBefore.length; i++) {
+      if (textBefore[i] === '{') braceDepth++;
+      if (textBefore[i] === '}') braceDepth--;
+    }
+    const insideSelector = braceDepth > 0;
+    
     return {
       abbreviation,
       start: abbrevStart,
-      end: cursorPos
+      end: cursorPos,
+      insideSelector
     };
   }, []);
 
   // Улучшенный Emmet как в VS Code
-  const tryExpandEmmet = useCallback((abbreviation, isHtml) => {
+  const tryExpandEmmet = useCallback((abbreviation, isHtml, insideSelector = false) => {
     if (!abbreviation || abbreviation.length < 1) return null;
     
     // Быстрые сниппеты для HTML (мгновенное раскрытие)
@@ -363,6 +373,47 @@ function LayoutGame({ onBack }) {
       // Centering helpers
       'center': 'display: flex; justify-content: center; align-items: center;',
       'abs-center': 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);',
+      
+      // Full property names (для тех кто не помнит сокращения)
+      'display': 'display: |;',
+      'flex': 'display: flex;',
+      'grid': 'display: grid;',
+      'flex-direction': 'flex-direction: |;',
+      'flex-wrap': 'flex-wrap: |;',
+      'justify-content': 'justify-content: |;',
+      'align-items': 'align-items: |;',
+      'align-content': 'align-content: |;',
+      'gap': 'gap: |;',
+      'position': 'position: |;',
+      'top': 'top: |;',
+      'right': 'right: |;',
+      'bottom': 'bottom: |;',
+      'left': 'left: |;',
+      'z-index': 'z-index: |;',
+      'width': 'width: |;',
+      'height': 'height: |;',
+      'max-width': 'max-width: |;',
+      'max-height': 'max-height: |;',
+      'min-width': 'min-width: |;',
+      'min-height': 'min-height: |;',
+      'margin': 'margin: |;',
+      'padding': 'padding: |;',
+      'font-size': 'font-size: |;',
+      'font-weight': 'font-weight: |;',
+      'font-family': 'font-family: |;',
+      'line-height': 'line-height: |;',
+      'text-align': 'text-align: |;',
+      'color': 'color: |;',
+      'background': 'background: |;',
+      'background-color': 'background-color: |;',
+      'border': 'border: |;',
+      'border-radius': 'border-radius: |;',
+      'box-shadow': 'box-shadow: |;',
+      'overflow': 'overflow: |;',
+      'cursor': 'cursor: |;',
+      'transition': 'transition: |;',
+      'transform': 'transform: |;',
+      'opacity': 'opacity: |;',
     };
 
     if (isHtml) {
@@ -389,20 +440,9 @@ function LayoutGame({ onBack }) {
         // Не удалось развернуть
       }
     } else {
-      // CSS - проверяем сниппеты
+      // CSS - проверяем сниппеты (всегда работают внутри селектора)
       if (cssSnippets[abbreviation]) {
         return cssSnippets[abbreviation];
-      }
-      
-      // CSS селекторы: .class, #id, tag, .class.class2, tag.class и т.д.
-      // Раскрываем в формат с фигурными скобками на разных строках
-      const selectorMatch = abbreviation.match(/^([.#]?[a-zA-Z_-][a-zA-Z0-9_.-]*)$/);
-      if (selectorMatch && !abbreviation.includes(':')) {
-        const selector = selectorMatch[1];
-        // Проверяем что это похоже на селектор (начинается с . # или буквы)
-        if (/^[.#a-zA-Z]/.test(selector)) {
-          return `${selector} {\n  |\n}`;
-        }
       }
       
       // Числовые значения: m10 -> margin: 10px; p20 -> padding: 20px;
@@ -421,21 +461,46 @@ function LayoutGame({ onBack }) {
         return `${prop}: ${value}px;`;
       }
       
-      // Стандартный Emmet для CSS
-      try {
-        const expanded = emmet(abbreviation, {
-          type: 'stylesheet',
-          options: {
-            'output.indent': '  ',
-            'output.newline': '\n'
-          }
-        });
+      // Селекторы работают ТОЛЬКО если мы НЕ внутри { }
+      if (!insideSelector) {
+        // CSS селекторы: ТОЛЬКО .class, #id или явные HTML теги
+        const htmlTags = ['html', 'body', 'div', 'span', 'p', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+          'header', 'footer', 'main', 'nav', 'section', 'article', 'aside', 'figure', 'figcaption',
+          'form', 'input', 'button', 'label', 'select', 'option', 'textarea',
+          'table', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot',
+          'img', 'video', 'audio', 'canvas', 'svg', 'iframe',
+          'strong', 'em', 'b', 'i', 'u', 'small', 'big', 'sub', 'sup', 'code', 'pre', 'blockquote',
+          'br', 'hr'];
         
-        if (expanded && expanded !== abbreviation && expanded.length > abbreviation.length) {
-          return expanded;
+        // Для .class, #id
+        if (/^[.#]/.test(abbreviation)) {
+          const selectorMatch = abbreviation.match(/^([.#][a-zA-Z_-][a-zA-Z0-9_.-]*)$/);
+          if (selectorMatch) {
+            return `${selectorMatch[1]} {\n  |\n}`;
+          }
+        } else if (htmlTags.includes(abbreviation.toLowerCase())) {
+          // Это HTML тег как селектор
+          return `${abbreviation} {\n  |\n}`;
         }
-      } catch (err) {
-        // Не удалось развернуть
+      }
+      
+      // Стандартный Emmet для CSS (только внутри селектора)
+      if (insideSelector) {
+        try {
+          const expanded = emmet(abbreviation, {
+            type: 'stylesheet',
+            options: {
+              'output.indent': '  ',
+              'output.newline': '\n'
+            }
+          });
+          
+          if (expanded && expanded !== abbreviation && expanded.length > abbreviation.length) {
+            return expanded;
+          }
+        } catch (err) {
+          // Не удалось развернуть
+        }
       }
     }
     
@@ -445,9 +510,9 @@ function LayoutGame({ onBack }) {
   // Обработчик ввода для показа подсказок
   const handleEditorInput = useCallback((e, isHtml) => {
     const textarea = e.target;
-    const { abbreviation } = getAbbreviation(textarea);
+    const { abbreviation, insideSelector } = getAbbreviation(textarea);
     
-    const expanded = tryExpandEmmet(abbreviation, isHtml);
+    const expanded = tryExpandEmmet(abbreviation, isHtml, insideSelector);
     
     if (expanded) {
       // Вычисляем позицию подсказки относительно курсора
@@ -672,11 +737,11 @@ function LayoutGame({ onBack }) {
     
     // Tab без подсказки - попробовать развернуть Emmet или вставить отступ
     if (e.key === 'Tab' && !emmetSuggestion) {
-      const { abbreviation, start, end } = getAbbreviation(textarea);
+      const { abbreviation, start, end, insideSelector } = getAbbreviation(textarea);
       
       // Пробуем развернуть Emmet
       if (abbreviation && abbreviation.length >= 1) {
-        const expanded = tryExpandEmmet(abbreviation, isHtml);
+        const expanded = tryExpandEmmet(abbreviation, isHtml, insideSelector);
         
         if (expanded) {
           e.preventDefault();
