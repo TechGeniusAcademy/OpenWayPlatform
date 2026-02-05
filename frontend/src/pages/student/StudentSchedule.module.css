@@ -1,6 +1,6 @@
 .container {
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -9,39 +9,56 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 .header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #fff;
   margin: 0;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 32px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .viewToggle {
   display: flex;
-  background: #2a2a2a;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
   padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 .toggleBtn {
-  padding: 8px 16px;
+  padding: 10px 20px;
   background: transparent;
   border: none;
-  border-radius: 6px;
-  color: #888;
+  border-radius: 8px;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 14px;
 }
 
 .toggleBtn:hover {
-  color: #fff;
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
 }
 
 .toggleBtn.active {
-  background: #667eea;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .navigation {
@@ -53,60 +70,77 @@
 }
 
 .navBtn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #2a2a2a;
-  border: none;
-  border-radius: 8px;
-  color: #fff;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.95));
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  color: #667eea;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .navBtn:hover {
-  background: #3a3a3a;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 .dateTitle {
-  font-size: 18px;
-  font-weight: 600;
-  color: #fff;
-  min-width: 200px;
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  min-width: 220px;
   text-align: center;
 }
 
 .loading {
   text-align: center;
-  color: #888;
-  padding: 40px;
+  color: #64748b;
+  padding: 60px;
+  font-size: 16px;
 }
 
 /* Недельный вид */
 .weekView {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 
 .dayColumn {
-  background: #1e1e1e;
-  border-radius: 12px;
-  border: 1px solid #2a2a2a;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.95));
+  border-radius: 16px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
   overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.dayColumn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .dayColumn.today {
-  border-color: #667eea;
+  border: 2px solid #667eea;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
 }
 
 .dayHeader {
-  padding: 12px;
-  background: #252525;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
   text-align: center;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 .dayColumn.today .dayHeader {
@@ -116,8 +150,10 @@
 .dayName {
   display: block;
   font-size: 12px;
-  color: #888;
+  color: #64748b;
   text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .dayColumn.today .dayName {
@@ -126,30 +162,47 @@
 
 .dayNumber {
   display: block;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
-  color: #fff;
+  color: #1e293b;
   margin-top: 4px;
+}
+
+.dayColumn.today .dayNumber {
+  color: #fff;
 }
 
 .dayLessons {
   padding: 12px;
-  min-height: 200px;
+  min-height: 180px;
 }
 
 .noLessons {
-  color: #555;
+  color: #94a3b8;
   font-size: 13px;
   text-align: center;
-  padding: 20px 0;
+  padding: 30px 10px;
+  font-style: italic;
 }
 
 .lessonCard {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-  border: 1px solid rgba(102, 126, 234, 0.2);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 8px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.lessonCard:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.lessonCard:last-child {
+  margin-bottom: 0;
 }
 
 .lessonTime {
@@ -158,34 +211,46 @@
   gap: 6px;
   color: #667eea;
   font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.lessonTime svg {
+  font-size: 14px;
 }
 
 .lessonTitle {
-  color: #fff;
+  color: #1e293b;
   font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.4;
 }
 
 .lessonDesc {
-  color: #888;
+  color: #64748b;
   font-size: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 .lessonDuration {
-  color: #666;
-  font-size: 12px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
 }
 
 /* Месячный вид */
 .monthView {
-  background: #1e1e1e;
-  border-radius: 16px;
-  border: 1px solid #2a2a2a;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.95));
+  border-radius: 20px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .monthGrid {
@@ -194,20 +259,27 @@
 }
 
 .monthDayHeader {
-  padding: 12px;
+  padding: 16px;
   text-align: center;
-  font-weight: 600;
-  color: #888;
-  background: #252525;
-  border-bottom: 1px solid #2a2a2a;
+  font-weight: 700;
+  color: #64748b;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
   font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .monthDayCell {
-  min-height: 100px;
-  padding: 8px;
-  border-right: 1px solid #2a2a2a;
-  border-bottom: 1px solid #2a2a2a;
+  min-height: 120px;
+  padding: 10px;
+  border-right: 1px solid rgba(102, 126, 234, 0.08);
+  border-bottom: 1px solid rgba(102, 126, 234, 0.08);
+  transition: all 0.2s ease;
+}
+
+.monthDayCell:hover:not(.empty) {
+  background: rgba(102, 126, 234, 0.03);
 }
 
 .monthDayCell:nth-child(7n) {
@@ -215,30 +287,31 @@
 }
 
 .monthDayCell.empty {
-  background: #1a1a1a;
+  background: rgba(248, 250, 252, 0.5);
 }
 
 .monthDayCell.today {
-  background: rgba(102, 126, 234, 0.1);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
 }
 
 .monthDayNumber {
   font-size: 14px;
-  font-weight: 600;
-  color: #fff;
+  font-weight: 700;
+  color: #1e293b;
   margin-bottom: 8px;
   display: block;
 }
 
 .monthDayCell.today .monthDayNumber {
-  background: #667eea;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: #fff;
   border-radius: 50%;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .monthDayLessons {
@@ -248,43 +321,60 @@
 }
 
 .monthLessonItem {
-  padding: 4px 8px;
+  padding: 6px 10px;
   background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 11px;
   color: #fff;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+.monthLessonItem:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
 }
 
 .monthLessonTime {
-  font-weight: 600;
-  margin-right: 4px;
+  font-weight: 700;
+  margin-right: 6px;
 }
 
 .monthLessonTitle {
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .noGroup {
   text-align: center;
   padding: 40px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 12px;
-  color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 16px;
+  color: #b45309;
   margin-top: 20px;
+  font-weight: 500;
+}
+
+/* Мобильные стили */
+@media (max-width: 1100px) {
+  .weekView {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 @media (max-width: 900px) {
   .weekView {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .dayColumn {
     display: grid;
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 100px 1fr;
   }
 
   .dayHeader {
@@ -292,15 +382,17 @@
     flex-direction: column;
     justify-content: center;
     border-bottom: none;
-    border-right: 1px solid #2a2a2a;
+    border-right: 1px solid rgba(102, 126, 234, 0.1);
+    padding: 20px;
   }
 
   .dayLessons {
     min-height: auto;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
     align-items: flex-start;
+    padding: 16px;
   }
 
   .lessonCard {
@@ -310,15 +402,30 @@
   }
 
   .noLessons {
-    padding: 10px;
+    padding: 20px;
+    width: 100%;
   }
 }
 
 @media (max-width: 600px) {
+  .container {
+    padding: 12px;
+  }
+
   .header {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
+    padding: 16px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+    justify-content: center;
+  }
+
+  .viewToggle {
+    justify-content: center;
   }
 
   .monthGrid {
@@ -326,12 +433,25 @@
   }
 
   .monthDayCell {
-    min-height: 70px;
-    padding: 4px;
+    min-height: 80px;
+    padding: 6px;
+  }
+
+  .monthDayHeader {
+    padding: 10px 6px;
+    font-size: 11px;
   }
 
   .monthLessonItem {
     font-size: 10px;
-    padding: 2px 4px;
+    padding: 4px 6px;
+  }
+
+  .dayColumn {
+    grid-template-columns: 80px 1fr;
+  }
+
+  .dayNumber {
+    font-size: 20px;
   }
 }

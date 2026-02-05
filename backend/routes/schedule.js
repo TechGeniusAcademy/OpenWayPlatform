@@ -199,7 +199,7 @@ router.get('/lessons/calendar', authenticate, async (req, res) => {
 });
 
 // Создать урок
-router.post('/lessons', requireAdmin, async (req, res) => {
+router.post('/lessons', authenticate, requireAdmin, async (req, res) => {
   try {
     const { 
       group_id, title, description, lesson_date, lesson_time, 
@@ -245,7 +245,7 @@ router.post('/lessons', requireAdmin, async (req, res) => {
 });
 
 // Обновить урок
-router.put('/lessons/:id', requireAdmin, async (req, res) => {
+router.put('/lessons/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { 
@@ -286,7 +286,7 @@ router.put('/lessons/:id', requireAdmin, async (req, res) => {
 });
 
 // Удалить урок
-router.delete('/lessons/:id', requireAdmin, async (req, res) => {
+router.delete('/lessons/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -358,7 +358,7 @@ router.get('/attendance/:lessonId/:date', authenticate, async (req, res) => {
 });
 
 // Установить/обновить посещаемость
-router.post('/attendance', requireAdmin, async (req, res) => {
+router.post('/attendance', authenticate, requireAdmin, async (req, res) => {
   try {
     const { lesson_id, student_id, lesson_date, status, reason } = req.body;
 
@@ -413,7 +413,7 @@ router.get('/notes/:lessonId/:date', authenticate, async (req, res) => {
 });
 
 // Добавить примечание
-router.post('/notes', requireAdmin, async (req, res) => {
+router.post('/notes', authenticate, requireAdmin, async (req, res) => {
   try {
     const { lesson_id, student_id, lesson_date, note } = req.body;
 
@@ -435,7 +435,7 @@ router.post('/notes', requireAdmin, async (req, res) => {
 });
 
 // Удалить примечание
-router.delete('/notes/:id', requireAdmin, async (req, res) => {
+router.delete('/notes/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -487,7 +487,7 @@ router.get('/rewards/:lessonId/:date', authenticate, async (req, res) => {
 });
 
 // Выдать награду (баллы/опыт)
-router.post('/rewards', requireAdmin, async (req, res) => {
+router.post('/rewards', authenticate, requireAdmin, async (req, res) => {
   try {
     const { lesson_id, student_id, lesson_date, points_amount, experience_amount, reason } = req.body;
 
