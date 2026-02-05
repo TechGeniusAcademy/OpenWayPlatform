@@ -363,32 +363,27 @@ router.post('/add-experience', requireAdmin, async (req, res) => {
     const newExperience = Math.max(0, (user.experience || 0) + expAmount);
     const updatedUser = await User.update(userId, { experience: newExperience });
 
-    // Пересчитываем уровень на основе опыта
+    // Вычисляем текущий уровень на основе опыта (уровень не хранится в БД, вычисляется динамически)
     const pool = (await import('../config/database.js')).default;
     const levelResult = await pool.query(`
-      SELECT level_number FROM user_levels 
+      SELECT level_number, rank_name FROM user_levels 
       WHERE experience_required <= $1 
       ORDER BY experience_required DESC 
       LIMIT 1
     `, [newExperience]);
 
-    let newLevel = 1;
+    let currentLevel = null;
     if (levelResult.rows.length > 0) {
-      newLevel = levelResult.rows[0].level_number;
-    }
-
-    // Обновляем уровень если он изменился
-    if (newLevel !== user.level) {
-      await User.update(userId, { level: newLevel });
+      currentLevel = levelResult.rows[0];
     }
 
     res.json({
       message: `Опыт успешно ${expAmount > 0 ? 'добавлен' : 'списан'}`,
       user: {
         ...updatedUser,
-        experience: newExperience,
-        level: newLevel
+        experience: newExperience
       },
+      currentLevel: currentLevel,
       experienceChange: expAmount
     });
   } catch (error) {
