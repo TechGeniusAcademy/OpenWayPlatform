@@ -193,12 +193,30 @@ function LayoutGame({ onBack }) {
       'df': 'display: flex;',
       'dif': 'display: inline-flex;',
       'dg': 'display: grid;',
+      'dig': 'display: inline-grid;',
+      'dt': 'display: table;',
+      'dtc': 'display: table-cell;',
       
-      // Flexbox
+      // Flexbox - все варианты сокращений
       'fxd': 'flex-direction: |;',
+      'fd': 'flex-direction: |;',
       'fxdr': 'flex-direction: row;',
+      'fdr': 'flex-direction: row;',
       'fxdc': 'flex-direction: column;',
-      'fxw': 'flex-wrap: wrap;',
+      'fdc': 'flex-direction: column;',
+      'fxdrr': 'flex-direction: row-reverse;',
+      'fdrr': 'flex-direction: row-reverse;',
+      'fxdcr': 'flex-direction: column-reverse;',
+      'fdcr': 'flex-direction: column-reverse;',
+      'fxw': 'flex-wrap: |;',
+      'fw': 'flex-wrap: |;',
+      'fww': 'flex-wrap: wrap;',
+      'fwnw': 'flex-wrap: nowrap;',
+      'fwwr': 'flex-wrap: wrap-reverse;',
+      'fxf': 'flex-flow: |;',
+      'ff': 'flex-flow: |;',
+      
+      // Justify/Align - все варианты
       'jc': 'justify-content: |;',
       'jcc': 'justify-content: center;',
       'jcsb': 'justify-content: space-between;',
@@ -206,27 +224,82 @@ function LayoutGame({ onBack }) {
       'jcse': 'justify-content: space-evenly;',
       'jcfs': 'justify-content: flex-start;',
       'jcfe': 'justify-content: flex-end;',
+      'jcs': 'justify-content: start;',
+      'jce': 'justify-content: end;',
       'ai': 'align-items: |;',
       'aic': 'align-items: center;',
       'aifs': 'align-items: flex-start;',
       'aife': 'align-items: flex-end;',
       'ais': 'align-items: stretch;',
+      'aib': 'align-items: baseline;',
       'ac': 'align-content: |;',
       'acc': 'align-content: center;',
+      'acfs': 'align-content: flex-start;',
+      'acfe': 'align-content: flex-end;',
+      'acsb': 'align-content: space-between;',
+      'acsa': 'align-content: space-around;',
+      'as': 'align-self: |;',
+      'asc': 'align-self: center;',
+      'asfs': 'align-self: flex-start;',
+      'asfe': 'align-self: flex-end;',
+      'ass': 'align-self: stretch;',
+      'ji': 'justify-items: |;',
+      'jic': 'justify-items: center;',
+      'js': 'justify-self: |;',
+      'jsc': 'justify-self: center;',
+      'pi': 'place-items: |;',
+      'pic': 'place-items: center;',
+      'pc': 'place-content: |;',
+      'pcc': 'place-content: center;',
+      
+      // Flex item
       'fx': 'flex: |;',
       'fx1': 'flex: 1;',
+      'fx0': 'flex: 0;',
+      'fxa': 'flex: auto;',
+      'fxn': 'flex: none;',
       'fxg': 'flex-grow: |;',
+      'fxg1': 'flex-grow: 1;',
+      'fxg0': 'flex-grow: 0;',
+      'fg': 'flex-grow: |;',
+      'fg1': 'flex-grow: 1;',
       'fxs': 'flex-shrink: |;',
+      'fxs0': 'flex-shrink: 0;',
+      'fxs1': 'flex-shrink: 1;',
+      'fs': 'flex-shrink: |;',
       'fxb': 'flex-basis: |;',
+      'fxba': 'flex-basis: auto;',
+      'fb': 'flex-basis: |;',
+      'ord': 'order: |;',
+      'ord0': 'order: 0;',
+      'ord1': 'order: 1;',
+      'ord-1': 'order: -1;',
+      
+      // Gap
       'g': 'gap: |;',
+      'gap': 'gap: |;',
+      'rg': 'row-gap: |;',
+      'cg': 'column-gap: |;',
       
       // Grid
       'gtc': 'grid-template-columns: |;',
       'gtr': 'grid-template-rows: |;',
+      'gta': 'grid-template-areas: |;',
+      'gt': 'grid-template: |;',
       'ga': 'grid-area: |;',
       'gc': 'grid-column: |;',
+      'gcs': 'grid-column-start: |;',
+      'gce': 'grid-column-end: |;',
       'gr': 'grid-row: |;',
+      'grs': 'grid-row-start: |;',
+      'gre': 'grid-row-end: |;',
       'gg': 'grid-gap: |;',
+      'gac': 'grid-auto-columns: |;',
+      'gar': 'grid-auto-rows: |;',
+      'gaf': 'grid-auto-flow: |;',
+      'gafr': 'grid-auto-flow: row;',
+      'gafc': 'grid-auto-flow: column;',
+      'gafd': 'grid-auto-flow: dense;',
       
       // Position
       'pos': 'position: |;',
@@ -235,6 +308,10 @@ function LayoutGame({ onBack }) {
       'posa': 'position: absolute;',
       'posf': 'position: fixed;',
       'post': 'position: sticky;',
+      'rel': 'position: relative;',
+      'abs': 'position: absolute;',
+      'fix': 'position: fixed;',
+      'sti': 'position: sticky;',
       't': 'top: |;',
       'r': 'right: |;',
       'b': 'bottom: |;',
@@ -243,20 +320,41 @@ function LayoutGame({ onBack }) {
       'r0': 'right: 0;',
       'b0': 'bottom: 0;',
       'l0': 'left: 0;',
+      'inset': 'inset: |;',
+      'inset0': 'inset: 0;',
       'z': 'z-index: |;',
+      'z1': 'z-index: 1;',
+      'z10': 'z-index: 10;',
+      'z100': 'z-index: 100;',
+      'z999': 'z-index: 999;',
+      'z-1': 'z-index: -1;',
       
       // Размеры
       'w': 'width: |;',
       'w100': 'width: 100%;',
       'w100p': 'width: 100%;',
+      'w50': 'width: 50%;',
+      'wf': 'width: 100%;',
+      'wa': 'width: auto;',
+      'wfc': 'width: fit-content;',
+      'wmc': 'width: max-content;',
       'h': 'height: |;',
       'h100': 'height: 100%;',
       'h100p': 'height: 100%;',
+      'h50': 'height: 50%;',
+      'hf': 'height: 100%;',
+      'ha': 'height: auto;',
       'h100vh': 'height: 100vh;',
+      'hvh': 'height: 100vh;',
+      'hfc': 'height: fit-content;',
       'maw': 'max-width: |;',
+      'mxw': 'max-width: |;',
       'mah': 'max-height: |;',
+      'mxh': 'max-height: |;',
       'miw': 'min-width: |;',
+      'mnw': 'min-width: |;',
       'mih': 'min-height: |;',
+      'mnh': 'min-height: |;',
       
       // Margin/Padding
       'm': 'margin: |;',
@@ -266,17 +364,34 @@ function LayoutGame({ onBack }) {
       'mr': 'margin-right: |;',
       'mb': 'margin-bottom: |;',
       'ml': 'margin-left: |;',
+      'mt0': 'margin-top: 0;',
+      'mr0': 'margin-right: 0;',
+      'mb0': 'margin-bottom: 0;',
+      'ml0': 'margin-left: 0;',
+      'mta': 'margin-top: auto;',
+      'mra': 'margin-right: auto;',
+      'mba': 'margin-bottom: auto;',
+      'mla': 'margin-left: auto;',
       'mx': 'margin-left: |; margin-right: |;',
       'my': 'margin-top: |; margin-bottom: |;',
       'mxa': 'margin-left: auto; margin-right: auto;',
+      'mya': 'margin-top: auto; margin-bottom: auto;',
+      'mi': 'margin-inline: |;',
+      'mia': 'margin-inline: auto;',
+      'mb': 'margin-block: |;',
       'p': 'padding: |;',
       'p0': 'padding: 0;',
       'pt': 'padding-top: |;',
       'pr': 'padding-right: |;',
       'pb': 'padding-bottom: |;',
       'pl': 'padding-left: |;',
+      'pt0': 'padding-top: 0;',
+      'pr0': 'padding-right: 0;',
+      'pb0': 'padding-bottom: 0;',
+      'pl0': 'padding-left: 0;',
       'px': 'padding-left: |; padding-right: |;',
       'py': 'padding-top: |; padding-bottom: |;',
+      'pi': 'padding-inline: |;',
       
       // Typography
       'fz': 'font-size: |;',
@@ -373,6 +488,166 @@ function LayoutGame({ onBack }) {
       // Centering helpers
       'center': 'display: flex; justify-content: center; align-items: center;',
       'abs-center': 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);',
+      'flex-center': 'display: flex; justify-content: center; align-items: center;',
+      'grid-center': 'display: grid; place-items: center;',
+      
+      // Box sizing
+      'bxz': 'box-sizing: |;',
+      'bxzbb': 'box-sizing: border-box;',
+      'bxzcb': 'box-sizing: content-box;',
+      
+      // Object fit
+      'of': 'object-fit: |;',
+      'ofc': 'object-fit: cover;',
+      'ofct': 'object-fit: contain;',
+      'off': 'object-fit: fill;',
+      'ofn': 'object-fit: none;',
+      'op': 'object-position: |;',
+      'opc': 'object-position: center;',
+      
+      // Aspect ratio
+      'ar': 'aspect-ratio: |;',
+      'ar11': 'aspect-ratio: 1/1;',
+      'ar169': 'aspect-ratio: 16/9;',
+      'ar43': 'aspect-ratio: 4/3;',
+      
+      // Scroll
+      'sb': 'scroll-behavior: |;',
+      'sbs': 'scroll-behavior: smooth;',
+      'oss': 'overflow-scroll: |;',
+      'ws': 'word-spacing: |;',
+      'wb': 'word-break: |;',
+      'wbba': 'word-break: break-all;',
+      'wbbw': 'word-break: break-word;',
+      'ow': 'overflow-wrap: |;',
+      'owbw': 'overflow-wrap: break-word;',
+      'ww': 'overflow-wrap: break-word;',
+      
+      // Text overflow
+      'to': 'text-overflow: |;',
+      'toe': 'text-overflow: ellipsis;',
+      'toc': 'text-overflow: clip;',
+      
+      // Vertical align
+      'va': 'vertical-align: |;',
+      'vat': 'vertical-align: top;',
+      'vam': 'vertical-align: middle;',
+      'vab': 'vertical-align: bottom;',
+      'vabl': 'vertical-align: baseline;',
+      
+      // Float/Clear (legacy but still used)
+      'fl': 'float: |;',
+      'fll': 'float: left;',
+      'flr': 'float: right;',
+      'fln': 'float: none;',
+      'cl': 'clear: |;',
+      'clb': 'clear: both;',
+      'cll': 'clear: left;',
+      'clr': 'clear: right;',
+      
+      // List
+      'lis': 'list-style: |;',
+      'lisn': 'list-style: none;',
+      'list': 'list-style-type: |;',
+      'lisp': 'list-style-position: |;',
+      
+      // Table
+      'tbl': 'table-layout: |;',
+      'tblf': 'table-layout: fixed;',
+      'tbla': 'table-layout: auto;',
+      'bdc': 'border-collapse: |;',
+      'bdcc': 'border-collapse: collapse;',
+      'bdcs': 'border-collapse: separate;',
+      
+      // Filter
+      'fil': 'filter: |;',
+      'filb': 'filter: blur(|px);',
+      'filbr': 'filter: brightness(|);',
+      'filc': 'filter: contrast(|);',
+      'filg': 'filter: grayscale(|);',
+      
+      // Backdrop filter
+      'bf': 'backdrop-filter: |;',
+      'bfb': 'backdrop-filter: blur(|px);',
+      
+      // Mix blend mode
+      'mbm': 'mix-blend-mode: |;',
+      'mbmm': 'mix-blend-mode: multiply;',
+      'mbms': 'mix-blend-mode: screen;',
+      'mbmo': 'mix-blend-mode: overlay;',
+      
+      // Isolation
+      'iso': 'isolation: |;',
+      'isoi': 'isolation: isolate;',
+      
+      // Clip path
+      'cp': 'clip-path: |;',
+      
+      // Will change
+      'wc': 'will-change: |;',
+      'wct': 'will-change: transform;',
+      'wco': 'will-change: opacity;',
+      
+      // Columns
+      'col': 'columns: |;',
+      'colc': 'column-count: |;',
+      'colg': 'column-gap: |;',
+      'colr': 'column-rule: |;',
+      'colw': 'column-width: |;',
+      
+      // Border specific
+      'bdw': 'border-width: |;',
+      'bds': 'border-style: |;',
+      'bdss': 'border-style: solid;',
+      'bdsd': 'border-style: dashed;',
+      'bdsdt': 'border-style: dotted;',
+      'bdc': 'border-color: |;',
+      'bdtrs': 'border-top-right-radius: |;',
+      'bdtls': 'border-top-left-radius: |;',
+      'bdbrs': 'border-bottom-right-radius: |;',
+      'bdbls': 'border-bottom-left-radius: |;',
+      'br': 'border-radius: |;',
+      'br50': 'border-radius: 50%;',
+      
+      // Accent color
+      'acc': 'accent-color: |;',
+      
+      // Caret color
+      'cc': 'caret-color: |;',
+      
+      // Appearance
+      'app': 'appearance: |;',
+      'appn': 'appearance: none;',
+      
+      // Writing mode
+      'wm': 'writing-mode: |;',
+      'wmvrl': 'writing-mode: vertical-rl;',
+      'wmvlr': 'writing-mode: vertical-lr;',
+      
+      // Text shadow
+      'tsh': 'text-shadow: |;',
+      'tshn': 'text-shadow: none;',
+      
+      // Word wrap
+      'ww': 'word-wrap: |;',
+      'wwbw': 'word-wrap: break-word;',
+      
+      // Tab size
+      'tbs': 'tab-size: |;',
+      
+      // Touch action
+      'ta': 'touch-action: |;',
+      'tan': 'touch-action: none;',
+      'tam': 'touch-action: manipulation;',
+      
+      // Scroll snap
+      'sst': 'scroll-snap-type: |;',
+      'ssa': 'scroll-snap-align: |;',
+      
+      // Container queries
+      'ct': 'container-type: |;',
+      'cti': 'container-type: inline-size;',
+      'cn': 'container-name: |;',
       
       // Full property names (для тех кто не помнит сокращения)
       'display': 'display: |;',
@@ -414,6 +689,46 @@ function LayoutGame({ onBack }) {
       'transition': 'transition: |;',
       'transform': 'transform: |;',
       'opacity': 'opacity: |;',
+      'visibility': 'visibility: |;',
+      'outline': 'outline: |;',
+      'content': 'content: |;',
+      'filter': 'filter: |;',
+      'clip-path': 'clip-path: |;',
+      'animation': 'animation: |;',
+      'flex-grow': 'flex-grow: |;',
+      'flex-shrink': 'flex-shrink: |;',
+      'flex-basis': 'flex-basis: |;',
+      'order': 'order: |;',
+      'white-space': 'white-space: |;',
+      'text-decoration': 'text-decoration: |;',
+      'text-transform': 'text-transform: |;',
+      'letter-spacing': 'letter-spacing: |;',
+      'object-fit': 'object-fit: |;',
+      'aspect-ratio': 'aspect-ratio: |;',
+      'user-select': 'user-select: |;',
+      'pointer-events': 'pointer-events: |;',
+      'scroll-behavior': 'scroll-behavior: |;',
+      'backdrop-filter': 'backdrop-filter: |;',
+      'border-top': 'border-top: |;',
+      'border-right': 'border-right: |;',
+      'border-bottom': 'border-bottom: |;',
+      'border-left': 'border-left: |;',
+      'margin-top': 'margin-top: |;',
+      'margin-right': 'margin-right: |;',
+      'margin-bottom': 'margin-bottom: |;',
+      'margin-left': 'margin-left: |;',
+      'padding-top': 'padding-top: |;',
+      'padding-right': 'padding-right: |;',
+      'padding-bottom': 'padding-bottom: |;',
+      'padding-left': 'padding-left: |;',
+      'grid-template-columns': 'grid-template-columns: |;',
+      'grid-template-rows': 'grid-template-rows: |;',
+      'grid-column': 'grid-column: |;',
+      'grid-row': 'grid-row: |;',
+      'align-self': 'align-self: |;',
+      'justify-self': 'justify-self: |;',
+      'place-items': 'place-items: |;',
+      'place-content': 'place-content: |;',
     };
 
     if (isHtml) {
