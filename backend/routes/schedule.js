@@ -4,6 +4,20 @@ import { authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Вспомогательные функции для работы с датами без проблем с часовыми поясами
+const parseLocalDate = (dateStr) => {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatLocalDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Инициализация таблиц
 const initScheduleTables = async () => {
   try {
@@ -146,24 +160,32 @@ router.get('/lessons/calendar', authenticate, async (req, res) => {
 
     // Разворачиваем уроки для календаря
     const calendarEvents = [];
-    const startDateObj = new Date(start_date);
-    const endDateObj = new Date(end_date);
+    const startDateObj = parseLocalDate(start_date);
+    const endDateObj = parseLocalDate(end_date);
 
     for (const lesson of lessons) {
       if (lesson.is_recurring) {
         // Повторяющийся урок
-        const recurringStart = new Date(lesson.recurring_start_date);
-        const recurringEnd = lesson.recurring_end_date ? new Date(lesson.recurring_end_date) : endDateObj;
+        const recurringStartStr = lesson.recurring_start_date instanceof Date 
+          ? formatLocalDate(lesson.recurring_start_date) 
+          : lesson.recurring_start_date?.split('T')[0];
+        const recurringEndStr = lesson.recurring_end_date instanceof Date 
+          ? formatLocalDate(lesson.recurring_end_date) 
+          : lesson.recurring_end_date?.split('T')[0];
         
-        let currentDate = new Date(Math.max(startDateObj, recurringStart));
+        const recurringStart = parseLocalDate(recurringStartStr);
+        const recurringEnd = recurringEndStr ? parseLocalDate(recurringEndStr) : endDateObj;
         
-        while (currentDate <= Math.min(endDateObj, recurringEnd)) {
+        let currentDate = new Date(Math.max(startDateObj.getTime(), recurringStart.getTime()));
+        const loopEnd = new Date(Math.min(endDateObj.getTime(), recurringEnd.getTime()));
+        
+        while (currentDate <= loopEnd) {
           const dayOfWeek = currentDate.getDay();
           
           if (lesson.recurring_days.includes(dayOfWeek)) {
             calendarEvents.push({
               ...lesson,
-              event_date: currentDate.toISOString().split('T')[0],
+              event_date: formatLocalDate(currentDate),
               is_instance: true
             });
           }
@@ -172,11 +194,14 @@ router.get('/lessons/calendar', authenticate, async (req, res) => {
         }
       } else {
         // Одноразовый урок
-        const lessonDate = new Date(lesson.lesson_date);
+        const lessonDateStr = lesson.lesson_date instanceof Date 
+          ? formatLocalDate(lesson.lesson_date) 
+          : lesson.lesson_date?.split('T')[0];
+        const lessonDate = parseLocalDate(lessonDateStr);
         if (lessonDate >= startDateObj && lessonDate <= endDateObj) {
           calendarEvents.push({
             ...lesson,
-            event_date: lesson.lesson_date,
+            event_date: lessonDateStr,
             is_instance: false
           });
         }
@@ -186,7 +211,7 @@ router.get('/lessons/calendar', authenticate, async (req, res) => {
     // Сортируем по дате и времени
     calendarEvents.sort((a, b) => {
       if (a.event_date !== b.event_date) {
-        return new Date(a.event_date) - new Date(b.event_date);
+        return parseLocalDate(a.event_date) - parseLocalDate(b.event_date);
       }
       return a.lesson_time.localeCompare(b.lesson_time);
     });
@@ -561,23 +586,31 @@ router.get('/my-schedule', authenticate, async (req, res) => {
 
     const lessons = result.rows;
     const calendarEvents = [];
-    const startDateObj = new Date(start_date);
-    const endDateObj = new Date(end_date);
+    const startDateObj = parseLocalDate(start_date);
+    const endDateObj = parseLocalDate(end_date);
 
     for (const lesson of lessons) {
       if (lesson.is_recurring) {
-        const recurringStart = new Date(lesson.recurring_start_date);
-        const recurringEnd = lesson.recurring_end_date ? new Date(lesson.recurring_end_date) : endDateObj;
+        const recurringStartStr = lesson.recurring_start_date instanceof Date 
+          ? formatLocalDate(lesson.recurring_start_date) 
+          : lesson.recurring_start_date?.split('T')[0];
+        const recurringEndStr = lesson.recurring_end_date instanceof Date 
+          ? formatLocalDate(lesson.recurring_end_date) 
+          : lesson.recurring_end_date?.split('T')[0];
         
-        let currentDate = new Date(Math.max(startDateObj, recurringStart));
+        const recurringStart = parseLocalDate(recurringStartStr);
+        const recurringEnd = recurringEndStr ? parseLocalDate(recurringEndStr) : endDateObj;
         
-        while (currentDate <= Math.min(endDateObj, recurringEnd)) {
+        let currentDate = new Date(Math.max(startDateObj.getTime(), recurringStart.getTime()));
+        const loopEnd = new Date(Math.min(endDateObj.getTime(), recurringEnd.getTime()));
+        
+        while (currentDate <= loopEnd) {
           const dayOfWeek = currentDate.getDay();
           
           if (lesson.recurring_days.includes(dayOfWeek)) {
             calendarEvents.push({
               ...lesson,
-              event_date: currentDate.toISOString().split('T')[0],
+              event_date: formatLocalDate(currentDate),
               is_instance: true
             });
           }
@@ -585,11 +618,14 @@ router.get('/my-schedule', authenticate, async (req, res) => {
           currentDate.setDate(currentDate.getDate() + 1);
         }
       } else {
-        const lessonDate = new Date(lesson.lesson_date);
+        const lessonDateStr = lesson.lesson_date instanceof Date 
+          ? formatLocalDate(lesson.lesson_date) 
+          : lesson.lesson_date?.split('T')[0];
+        const lessonDate = parseLocalDate(lessonDateStr);
         if (lessonDate >= startDateObj && lessonDate <= endDateObj) {
           calendarEvents.push({
             ...lesson,
-            event_date: lesson.lesson_date,
+            event_date: lessonDateStr,
             is_instance: false
           });
         }
@@ -598,7 +634,7 @@ router.get('/my-schedule', authenticate, async (req, res) => {
 
     calendarEvents.sort((a, b) => {
       if (a.event_date !== b.event_date) {
-        return new Date(a.event_date) - new Date(b.event_date);
+        return parseLocalDate(a.event_date) - parseLocalDate(b.event_date);
       }
       return a.lesson_time.localeCompare(b.lesson_time);
     });
