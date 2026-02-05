@@ -442,8 +442,11 @@ const getUserStats = async (userId) => {
     );
     stats.chess_games_played = parseInt(chessResult.rows[0].count);
     
+    // Подсчёт побед в шахматах - победитель определяется через result и позицию игрока
     const chessWinsResult = await pool.query(
-      'SELECT COUNT(*) FROM chess_games WHERE winner_id = $1',
+      `SELECT COUNT(*) FROM chess_games 
+       WHERE (result = 'white' AND white_player_id = $1) 
+          OR (result = 'black' AND black_player_id = $1)`,
       [userId]
     );
     stats.chess_wins = parseInt(chessWinsResult.rows[0].count);
