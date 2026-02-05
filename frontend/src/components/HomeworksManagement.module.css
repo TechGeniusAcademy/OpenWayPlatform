@@ -823,3 +823,90 @@
     width: 100%;
   }
 }
+
+/* ==================== Submission Files ==================== */
+
+.submission-files {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 10px;
+  border: 1px solid #bae6fd;
+}
+
+.files-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0369a1;
+  margin: 0 0 12px 0;
+}
+
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e7ff;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.file-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  border-color: #93c5fd;
+  background: #f0f9ff;
+}
+
+.file-icon-large {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-name-admin {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e3a5f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size-admin {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.file-download-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: #3b82f6;
+  transition: transform 0.2s;
+}
+
+.file-card:hover .file-download-icon {
+  transform: translateY(2px);
+  color: #2563eb;
+}

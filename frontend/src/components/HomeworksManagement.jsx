@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiFileText, FiPlus, FiEdit2, FiTrash2, FiCheckSquare, FiClock, FiLock, FiUnlock, FiX, FiCheck, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
+import { FiFileText, FiPlus, FiEdit2, FiTrash2, FiCheckSquare, FiClock, FiLock, FiUnlock, FiX, FiCheck, FiAlertCircle, FiRefreshCw, FiDownload, FiPaperclip } from 'react-icons/fi';
 import api from '../utils/api';
 import QuillEditor from './QuillEditor';
 import styles from './HomeworksManagement.module.css';
@@ -174,6 +174,44 @@ function HomeworksManagement() {
     } catch (error) {
       console.error('Ошибка загрузки сдач:', error);
     }
+  };
+
+  // Форматирование размера файла
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Получить иконку по типу файла
+  const getFileIcon = (filename) => {
+    const ext = filename?.split('.').pop()?.toLowerCase();
+    const icons = {
+      pdf: '📄',
+      doc: '📝', docx: '📝',
+      xls: '📊', xlsx: '📊',
+      ppt: '📊', pptx: '📊',
+      zip: '📦', rar: '📦', '7z': '📦',
+      jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️',
+      html: '🌐', css: '🎨', js: '⚡',
+      txt: '📃', json: '📋'
+    };
+    return icons[ext] || '📎';
+  };
+
+  // Парсинг attachments
+  const parseAttachments = (attachments) => {
+    if (!attachments) return [];
+    if (typeof attachments === 'string') {
+      try {
+        return JSON.parse(attachments);
+      } catch {
+        return [];
+      }
+    }
+    return attachments;
   };
 
   const handleCheckSubmission = async (submissionId, status, reason, pointsEarned) => {
@@ -484,6 +522,32 @@ function HomeworksManagement() {
                       </div>
 
                     <div className={styles['submission-text']} dangerouslySetInnerHTML={{ __html: submission.submission_text }} />
+
+                    {/* Прикреплённые файлы */}
+                    {parseAttachments(submission.attachments).length > 0 && (
+                      <div className={styles['submission-files']}>
+                        <p className={styles['files-title']}><FiPaperclip /> Прикреплённые файлы:</p>
+                        <div className={styles['files-grid']}>
+                          {parseAttachments(submission.attachments).map((file, index) => (
+                            <a
+                              key={index}
+                              href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${file.path}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles['file-card']}
+                              download
+                            >
+                              <span className={styles['file-icon-large']}>{getFileIcon(file.originalName || file.filename)}</span>
+                              <div className={styles['file-info']}>
+                                <span className={styles['file-name-admin']}>{file.originalName || file.filename}</span>
+                                <span className={styles['file-size-admin']}>{formatFileSize(file.size)}</span>
+                              </div>
+                              <FiDownload className={styles['file-download-icon']} />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {submission.status !== 'pending' && (
                       <div className={styles['check-info']}>
