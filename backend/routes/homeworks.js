@@ -1,9 +1,56 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { authenticate, requireTeacherOrAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 import Homework from '../models/Homework.js';
 import HomeworkSubmission from '../models/HomeworkSubmission.js';
 
 const router = express.Router();
+
+// Настройка multer для загрузки файлов домашних заданий
+const homeworkStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/homeworks';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `homework-${req.params.id}-${req.user.id}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const uploadHomework = multer({
+  storage: homeworkStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB лимит
+  fileFilter: (req, file, cb) => {
+    // Разрешённые типы файлов
+    const allowedMimes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+      'text/plain', 'text/html', 'text/css', 'text/javascript',
+      'application/javascript',
+      'application/json',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ];
+    
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Неподдерживаемый тип файла'), false);
+    }
+  }
+});
 
 router.use(authenticate);
 
@@ -31,8 +78,8 @@ router.get('/student/assigned', async (req, res) => {
   }
 });
 
-// Сдать домашнее задание
-router.post('/:id/submit', async (req, res) => {
+// Сдать домашнее задание с файлами
+router.post('/:id/submit', uploadHomework.array('files', 10), async (req, res) => {
   try {
     const { submissionText } = req.body;
     
@@ -49,10 +96,20 @@ router.post('/:id/submit', async (req, res) => {
       return res.status(403).json({ error: 'Домашнее задание закрыто для сдачи' });
     }
 
+    // Собираем информацию о загруженных файлах
+    const attachments = req.files ? req.files.map(file => ({
+      filename: file.filename,
+      originalName: file.originalname,
+      path: `/uploads/homeworks/${file.filename}`,
+      size: file.size,
+      mimetype: file.mimetype
+    })) : [];
+
     const submission = await HomeworkSubmission.submit(
       req.params.id,
       req.user.id,
-      submissionText
+      submissionText,
+      attachments
     );
 
     res.json({ submission });

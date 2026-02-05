@@ -1,19 +1,38 @@
 import pool from '../config/database.js';
 
 class HomeworkSubmission {
-  // Сдать домашнее задание
-  static async submit(homeworkId, userId, submissionText) {
-    const result = await pool.query(
-      `INSERT INTO homework_submissions (homework_id, user_id, submission_text, status)
-       VALUES ($1, $2, $3, 'pending')
-       RETURNING *`,
-      [homeworkId, userId, submissionText]
+  // Сдать домашнее задание с файлами
+  static async submit(homeworkId, userId, submissionText, attachments = []) {
+    // Проверяем, есть ли уже сдача от этого пользователя
+    const existing = await pool.query(
+      'SELECT id FROM homework_submissions WHERE homework_id = $1 AND user_id = $2',
+      [homeworkId, userId]
     );
-    return result.rows[0];
+
+    if (existing.rows.length > 0) {
+      // Обновляем существующую сдачу
+      const result = await pool.query(
+        `UPDATE homework_submissions 
+         SET submission_text = $1, attachments = $2, submitted_at = NOW(), status = 'pending'
+         WHERE homework_id = $3 AND user_id = $4
+         RETURNING *`,
+        [submissionText, JSON.stringify(attachments), homeworkId, userId]
+      );
+      return result.rows[0];
+    } else {
+      // Создаём новую сдачу
+      const result = await pool.query(
+        `INSERT INTO homework_submissions (homework_id, user_id, submission_text, attachments, status)
+         VALUES ($1, $2, $3, $4, 'pending')
+         RETURNING *`,
+        [homeworkId, userId, submissionText, JSON.stringify(attachments)]
+      );
+      return result.rows[0];
+    }
   }
 
   // Получить сдачу студента
-  static async getByUserAndHomework(homeworkId, userId) {
+  static async getByUserAndHomework(userId, homeworkId) {
     const result = await pool.query(
       `SELECT * FROM homework_submissions 
        WHERE homework_id = $1 AND user_id = $2 
