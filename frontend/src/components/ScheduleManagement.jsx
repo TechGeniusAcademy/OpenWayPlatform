@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
+import api from '../utils/api';
 import styles from './ScheduleManagement.module.css';
 import { FiPlus, FiChevronLeft, FiChevronRight, FiClock, FiUsers, FiX, FiCheck, FiAlertCircle, FiMinusCircle, FiEdit, FiTrash2, FiMessageSquare, FiGift } from 'react-icons/fi';
 
