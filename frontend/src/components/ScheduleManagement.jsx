@@ -42,6 +42,14 @@ const ScheduleManagement = () => {
   const daysOfWeek = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   const daysOfWeekFull = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
 
+  // Форматирование даты без проблем с часовыми поясами
+  const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     loadGroups();
   }, []);
@@ -66,8 +74,8 @@ const ScheduleManagement = () => {
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
       
       const params = new URLSearchParams({
-        start_date: startOfMonth.toISOString().split('T')[0],
-        end_date: endOfMonth.toISOString().split('T')[0]
+        start_date: formatLocalDate(startOfMonth),
+        end_date: formatLocalDate(endOfMonth)
       });
       
       if (selectedGroup) {
@@ -103,7 +111,7 @@ const ScheduleManagement = () => {
       const date = new Date(year, month, i);
       days.push({ 
         day: i, 
-        date: date.toISOString().split('T')[0],
+        date: formatLocalDate(date),
         isToday: new Date().toDateString() === date.toDateString()
       });
     }

@@ -19,6 +19,14 @@ const StudentSchedule = () => {
   const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
                       'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
+  // Форматирование даты без проблем с часовыми поясами
+  const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     loadSchedule();
   }, [currentDate, viewMode]);
@@ -34,13 +42,13 @@ const StudentSchedule = () => {
         const monday = new Date(currentDate);
         monday.setDate(currentDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
         
-        startDate = monday.toISOString().split('T')[0];
+        startDate = formatLocalDate(monday);
         const sunday = new Date(monday);
         sunday.setDate(monday.getDate() + 6);
-        endDate = sunday.toISOString().split('T')[0];
+        endDate = formatLocalDate(sunday);
       } else {
-        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
-        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
+        startDate = formatLocalDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1));
+        endDate = formatLocalDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0));
       }
 
       const response = await api.get(`/schedule/my-schedule?start_date=${startDate}&end_date=${endDate}`);
@@ -62,7 +70,7 @@ const StudentSchedule = () => {
       const date = new Date(monday);
       date.setDate(monday.getDate() + i);
       days.push({
-        date: date.toISOString().split('T')[0],
+        date: formatLocalDate(date),
         dayName: daysOfWeek[date.getDay()],
         dayNumber: date.getDate(),
         isToday: new Date().toDateString() === date.toDateString()
@@ -88,7 +96,7 @@ const StudentSchedule = () => {
       const date = new Date(year, month, i);
       days.push({ 
         day: i, 
-        date: date.toISOString().split('T')[0],
+        date: formatLocalDate(date),
         isToday: new Date().toDateString() === date.toDateString()
       });
     }
