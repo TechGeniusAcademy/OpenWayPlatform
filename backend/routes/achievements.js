@@ -461,7 +461,7 @@ const getUserStats = async (userId) => {
     
     // Покупки в магазине
     const shopResult = await pool.query(
-      'SELECT COUNT(*) FROM user_inventory WHERE user_id = $1',
+      'SELECT COUNT(*) FROM user_purchases WHERE user_id = $1',
       [userId]
     );
     stats.shop_purchases = parseInt(shopResult.rows[0].count);
