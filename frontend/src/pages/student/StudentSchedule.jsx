@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import api from '../../utils/api';
 import styles from './StudentSchedule.module.css';
 import { FiChevronLeft, FiChevronRight, FiClock, FiMapPin } from 'react-icons/fi';
 
