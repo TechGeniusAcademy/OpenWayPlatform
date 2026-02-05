@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import QuillEditor from '../../components/QuillEditor';
 import api from '../../utils/api';
-import { FaBook, FaCalendar, FaTrophy, FaTimes, FaEdit, FaPen, FaEye, FaInbox, FaCoins, FaCheckCircle, FaHourglass, FaClock, FaPaperclip, FaFile, FaTrash, FaDownload } from 'react-icons/fa';
+import { FaBook, FaCalendar, FaTrophy, FaTimes, FaEdit, FaPen, FaEye, FaInbox, FaCoins, FaCheckCircle, FaHourglass, FaClock, FaPaperclip, FaFile, FaTrash, FaDownload, FaFilePdf, FaFileWord, FaFileExcel, FaFilePowerpoint, FaFileArchive, FaFileImage, FaFileCode, FaFileAlt, FaGlobe, FaPalette, FaBolt } from 'react-icons/fa';
 import styles from './StudentHomeworks.module.css';
 
 function StudentHomeworks() {
@@ -120,16 +120,28 @@ function StudentHomeworks() {
   const getFileIcon = (filename) => {
     const ext = filename.split('.').pop()?.toLowerCase();
     const icons = {
-      pdf: '📄',
-      doc: '📝', docx: '📝',
-      xls: '📊', xlsx: '📊',
-      ppt: '📊', pptx: '📊',
-      zip: '📦', rar: '📦', '7z': '📦',
-      jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️',
-      html: '🌐', css: '🎨', js: '⚡',
-      txt: '📃', json: '📋'
+      pdf: <FaFilePdf style={{ color: '#e74c3c' }} />,
+      doc: <FaFileWord style={{ color: '#2980b9' }} />, 
+      docx: <FaFileWord style={{ color: '#2980b9' }} />,
+      xls: <FaFileExcel style={{ color: '#27ae60' }} />, 
+      xlsx: <FaFileExcel style={{ color: '#27ae60' }} />,
+      ppt: <FaFilePowerpoint style={{ color: '#e67e22' }} />, 
+      pptx: <FaFilePowerpoint style={{ color: '#e67e22' }} />,
+      zip: <FaFileArchive style={{ color: '#9b59b6' }} />, 
+      rar: <FaFileArchive style={{ color: '#9b59b6' }} />, 
+      '7z': <FaFileArchive style={{ color: '#9b59b6' }} />,
+      jpg: <FaFileImage style={{ color: '#1abc9c' }} />, 
+      jpeg: <FaFileImage style={{ color: '#1abc9c' }} />, 
+      png: <FaFileImage style={{ color: '#1abc9c' }} />, 
+      gif: <FaFileImage style={{ color: '#1abc9c' }} />, 
+      webp: <FaFileImage style={{ color: '#1abc9c' }} />,
+      html: <FaGlobe style={{ color: '#e44d26' }} />, 
+      css: <FaPalette style={{ color: '#264de4' }} />, 
+      js: <FaBolt style={{ color: '#f7df1e' }} />,
+      txt: <FaFileAlt style={{ color: '#7f8c8d' }} />, 
+      json: <FaFileCode style={{ color: '#f39c12' }} />
     };
-    return icons[ext] || '📎';
+    return icons[ext] || <FaPaperclip style={{ color: '#95a5a6' }} />;
   };
 
   const handleSubmit = async () => {
