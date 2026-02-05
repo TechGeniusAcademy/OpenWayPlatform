@@ -369,6 +369,7 @@
 
 .btn-icon-avatar,
 .btn-icon-points,
+.btn-icon-exp,
 .btn-icon-edit,
 .btn-icon-delete {
   width: 34px;
@@ -392,6 +393,16 @@
 .btn-icon-avatar:hover {
   background: #f0f9ff;
   border-color: #0891b2;
+}
+
+.btn-icon-exp {
+  color: #9333ea;
+  border-color: #f3e8ff;
+}
+
+.btn-icon-exp:hover {
+  background: #faf5ff;
+  border-color: #9333ea;
 }
 
 .btn-icon-points {

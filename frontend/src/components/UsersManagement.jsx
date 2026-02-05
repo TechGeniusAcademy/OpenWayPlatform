@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   FiUsers, FiEdit2, FiTrash2, FiPlus, FiImage, 
-  FiUpload, FiX, FiCheck, FiAlertCircle, FiDollarSign, FiSearch 
+  FiUpload, FiX, FiCheck, FiAlertCircle, FiDollarSign, FiSearch, FiZap 
 } from 'react-icons/fi';
 import api, { BASE_URL } from '../utils/api';
 import styles from './UsersManagement.module.css';
@@ -33,6 +33,11 @@ function UsersManagement() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Для управления опытом
+  const [showExpModal, setShowExpModal] = useState(false);
+  const [selectedExpUser, setSelectedExpUser] = useState(null);
+  const [expAmount, setExpAmount] = useState(0);
 
   // Для поиска
   const [searchQuery, setSearchQuery] = useState('');
@@ -200,6 +205,40 @@ function UsersManagement() {
     setAvatarFile(null);
     setAvatarPreview(user.avatar_url ? `${BASE_URL}${user.avatar_url}` : null);
     setShowAvatarModal(true);
+  };
+
+  // Управление опытом
+  const openExpModal = (user) => {
+    setSelectedExpUser(user);
+    setExpAmount(0);
+    setShowExpModal(true);
+  };
+
+  const closeExpModal = () => {
+    setShowExpModal(false);
+    setSelectedExpUser(null);
+    setExpAmount(0);
+  };
+
+  const handleAddExp = async () => {
+    if (!expAmount || expAmount === 0) {
+      setError('Введите количество опыта');
+      return;
+    }
+
+    try {
+      await api.post('/users/add-experience', {
+        userId: selectedExpUser.id,
+        experience: parseInt(expAmount)
+      });
+      
+      setSuccess(`Опыт ${expAmount > 0 ? 'добавлен' : 'списан'} успешно`);
+      closeExpModal();
+      loadUsers();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.error || 'Ошибка при изменении опыта');
+    }
   };
 
   const closeAvatarModal = () => {
@@ -406,6 +445,13 @@ function UsersManagement() {
                             <FiImage />
                           </button>
                           <button 
+                            className={styles['btn-icon-exp']}
+                            onClick={() => openExpModal(user)}
+                            title="Управление опытом"
+                          >
+                            <FiZap />
+                          </button>
+                          <button 
                             className={styles['btn-icon-points']}
                             onClick={() => openPointsModal(user)}
                             title="Управление баллами"
@@ -580,6 +626,63 @@ function UsersManagement() {
                   Отмена
                 </button>
                 <button type="button" className={styles['btn-primary']} onClick={handleAddPoints}>
+                  <FiCheck />
+                  <span>Применить</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно для управления опытом */}
+      {showExpModal && selectedExpUser && (
+        <div className={styles['modal-overlay']} onClick={closeExpModal}>
+          <div className={`${styles.modal} ${styles['modal-small']}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles['modal-header']}>
+              <div className={styles['modal-title']}>
+                <FiZap className={styles['modal-icon']} />
+                <h2>Управление опытом</h2>
+              </div>
+              <button className={styles['close-btn']} onClick={closeExpModal}>
+                <FiX />
+              </button>
+            </div>
+
+            <div className={styles['modal-body']}>
+              <div className={styles['user-info-box']}>
+                <p><strong>Студент:</strong> {selectedExpUser.full_name || selectedExpUser.username}</p>
+                <p><strong>Текущий опыт:</strong> {selectedExpUser.experience || 0} XP</p>
+                <p><strong>Уровень:</strong> {selectedExpUser.level || 1}</p>
+              </div>
+
+              <div className={styles['form-group']}>
+                <label className={styles['form-label']}>Количество опыта</label>
+                <input
+                  type="number"
+                  className={styles['form-input']}
+                  value={expAmount}
+                  onChange={(e) => setExpAmount(e.target.value)}
+                  placeholder="Введите количество (отрицательное для списания)"
+                />
+                <small className={styles['form-hint']}>
+                  Положительное число для добавления, отрицательное для списания
+                </small>
+              </div>
+
+              <div className={styles['quick-buttons']}>
+                <button className={styles['btn-quick']} onClick={() => setExpAmount(10)}>+10</button>
+                <button className={styles['btn-quick']} onClick={() => setExpAmount(25)}>+25</button>
+                <button className={styles['btn-quick']} onClick={() => setExpAmount(50)}>+50</button>
+                <button className={styles['btn-quick']} onClick={() => setExpAmount(100)}>+100</button>
+                <button className={`${styles['btn-quick']} ${styles['btn-negative']}`} onClick={() => setExpAmount(-10)}>-10</button>
+              </div>
+
+              <div className={styles['form-actions']}>
+                <button type="button" className={styles['btn-secondary']} onClick={closeExpModal}>
+                  Отмена
+                </button>
+                <button type="button" className={styles['btn-primary']} onClick={handleAddExp}>
                   <FiCheck />
                   <span>Применить</span>
                 </button>

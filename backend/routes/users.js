@@ -340,4 +340,61 @@ router.delete('/:id/avatar', requireAdmin, async (req, res) => {
   }
 });
 
+// Добавить/списать опыт пользователю (только админы)
+router.post('/add-experience', requireAdmin, async (req, res) => {
+  try {
+    const { userId, experience } = req.body;
+
+    if (!userId || experience === undefined || experience === null) {
+      return res.status(400).json({ error: 'Укажите userId и experience' });
+    }
+
+    const expAmount = parseInt(experience);
+    if (isNaN(expAmount) || expAmount === 0) {
+      return res.status(400).json({ error: 'Введите корректное количество опыта' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    // Обновляем опыт пользователя
+    const newExperience = Math.max(0, (user.experience || 0) + expAmount);
+    const updatedUser = await User.update(userId, { experience: newExperience });
+
+    // Пересчитываем уровень на основе опыта
+    const pool = (await import('../config/database.js')).default;
+    const levelResult = await pool.query(`
+      SELECT level_number FROM user_levels 
+      WHERE experience_required <= $1 
+      ORDER BY experience_required DESC 
+      LIMIT 1
+    `, [newExperience]);
+
+    let newLevel = 1;
+    if (levelResult.rows.length > 0) {
+      newLevel = levelResult.rows[0].level_number;
+    }
+
+    // Обновляем уровень если он изменился
+    if (newLevel !== user.level) {
+      await User.update(userId, { level: newLevel });
+    }
+
+    res.json({
+      message: `Опыт успешно ${expAmount > 0 ? 'добавлен' : 'списан'}`,
+      user: {
+        ...updatedUser,
+        experience: newExperience,
+        level: newLevel
+      },
+      experienceChange: expAmount
+    });
+  } catch (error) {
+    console.error('Ошибка изменения опыта:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 export default router;
