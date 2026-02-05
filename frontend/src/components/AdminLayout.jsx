@@ -12,6 +12,7 @@ import { FaRegNoteSticky, FaQuestion } from "react-icons/fa6";
 import { LuBookOpenText } from "react-icons/lu";
 import { AiOutlineSend } from "react-icons/ai";
 import { IoGameControllerOutline } from "react-icons/io5";
+import { FiCalendar } from "react-icons/fi";
 
 function AdminLayout({ children }) {
   const { user, logout } = useAuth();
@@ -43,6 +44,7 @@ function AdminLayout({ children }) {
     {
       title: 'Обучение',
       items: [
+        { to: '/admin/schedule', icon: <FiCalendar />, text: 'Расписание' },
         { to: '/admin/courses', icon: <FaGraduationCap />, text: 'Курсы' },
         { to: '/admin/tests', icon: <FaRegNoteSticky />, text: 'Тесты' },
         { to: '/admin/homeworks', icon: <MdOutlineMapsHomeWork />, text: 'Домашние задания' },

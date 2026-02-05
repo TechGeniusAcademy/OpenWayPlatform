@@ -4,7 +4,7 @@ import { useNotifications } from '../context/NotificationContext';
 import { BASE_URL } from '../utils/api';
 import styles from './StudentLayout.module.css';
 import '../styles/UsernameStyles.css';
-import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart, AiOutlineBell, AiOutlineCode } from 'react-icons/ai';
+import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart, AiOutlineBell, AiOutlineCode, AiOutlineCalendar } from 'react-icons/ai';
 import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
 import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
@@ -112,6 +112,12 @@ function StudentLayout({ children }) {
               <NavLink to="/student/group" onClick={closeSidebar}>
                 <span className={styles['menu-icon']}><HiUserGroup /></span>
                 <span className={styles['menu-text']}>Моя группа</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/student/schedule" onClick={closeSidebar}>
+                <span className={styles['menu-icon']}><AiOutlineCalendar /></span>
+                <span className={styles['menu-text']}>Расписание</span>
               </NavLink>
             </li>
 

@@ -39,6 +39,7 @@ import userLevelsRoutes from './routes/user-levels.js';
 import achievementsRoutes from './routes/achievements.js';
 import musicRoutes from './routes/music.js';
 import moviesRoutes from './routes/movies.js';
+import scheduleRoutes from './routes/schedule.js';
 
 dotenv.config();
 
@@ -120,6 +121,7 @@ app.use('/api/user-levels', userLevelsRoutes);
 app.use('/api/achievements', achievementsRoutes);
 app.use('/api/music', musicRoutes);
 app.use('/api/movies', moviesRoutes);
+app.use('/api/schedule', scheduleRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

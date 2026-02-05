@@ -21,6 +21,7 @@ import JSGameManagement from '../components/JSGameManagement';
 import UserLevelsManagement from '../components/UserLevelsManagement';
 import MusicManagement from './admin/MusicManagement';
 import MoviesManagement from './admin/MoviesManagement';
+import ScheduleManagement from '../components/ScheduleManagement';
 
 function AdminDashboard() {
   return (
@@ -47,6 +48,7 @@ function AdminDashboard() {
         <Route path="/user-levels" element={<UserLevelsManagement />} />
         <Route path="/music" element={<MusicManagement />} />
         <Route path="/movies" element={<MoviesManagement />} />
+        <Route path="/schedule" element={<ScheduleManagement />} />
         {/* Здесь можно добавлять новые маршруты */}
       </Routes>
     </AdminLayout>

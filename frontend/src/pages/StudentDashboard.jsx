@@ -20,6 +20,7 @@ import StudentTechnicalSpecs from './student/StudentTechnicalSpecs';
 import StudentExtra from './student/StudentExtra';
 import StudentMusic from './student/StudentMusic';
 import StudentMovies from './student/StudentMovies';
+import StudentSchedule from './student/StudentSchedule';
 import styles from './StudentDashboard.module.css';
 
 function StudentDashboard() {
@@ -45,6 +46,7 @@ function StudentDashboard() {
       <Route path="extra" element={<StudentLayout><StudentExtra /></StudentLayout>} />
       <Route path="music" element={<StudentLayout><StudentMusic /></StudentLayout>} />
       <Route path="movies" element={<StudentLayout><StudentMovies /></StudentLayout>} />
+      <Route path="schedule" element={<StudentLayout><StudentSchedule /></StudentLayout>} />
     </Routes>
   );
 }

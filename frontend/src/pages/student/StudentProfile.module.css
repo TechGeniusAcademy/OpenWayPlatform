@@ -1917,3 +1917,117 @@
     gap: 12px;
   }
 }
+
+/* Секция примечаний с уроков */
+.notes-section {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08),
+              0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.note-item {
+  padding: 16px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.9) 0%, 
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  transition: all 0.3s ease;
+}
+
+.note-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.note-lesson {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.note-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.note-date {
+  font-size: 12px;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.note-attendance {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.note-text {
+  font-size: 14px;
+  color: #34495e;
+  line-height: 1.6;
+  margin: 0;
+  padding: 12px;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.no-notes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #94a3b8;
+}
+
+.no-notes svg {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.no-notes p {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .notes-section {
+    padding: 20px;
+  }
+
+  .note-header {
+    flex-direction: column;
+  }
+}

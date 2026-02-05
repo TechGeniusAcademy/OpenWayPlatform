@@ -87,6 +87,8 @@ function StudentProfile() {
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
   const [achievementsLoading, setAchievementsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [lessonNotes, setLessonNotes] = useState([]);
+  const [attendance, setAttendance] = useState([]);
 
   useEffect(() => {
     fetchUserPoints();
@@ -96,6 +98,8 @@ function StudentProfile() {
     fetchUserLevel();
     fetchRecentActivity();
     fetchAchievements();
+    fetchLessonNotes();
+    fetchAttendance();
   }, []);
 
   useEffect(() => {
@@ -159,6 +163,34 @@ function StudentProfile() {
       console.error('Ошибка получения достижений:', error);
     } finally {
       setAchievementsLoading(false);
+    }
+  };
+
+  const fetchLessonNotes = async () => {
+    try {
+      const response = await api.get('/schedule/my-notes');
+      setLessonNotes(response.data || []);
+    } catch (error) {
+      console.error('Ошибка получения примечаний:', error);
+    }
+  };
+
+  const fetchAttendance = async () => {
+    try {
+      const response = await api.get('/schedule/my-attendance');
+      setAttendance(response.data || []);
+    } catch (error) {
+      console.error('Ошибка получения посещаемости:', error);
+    }
+  };
+
+  const getAttendanceStatusLabel = (status) => {
+    switch (status) {
+      case 'present': return { label: 'Присутствовал', color: '#22c55e' };
+      case 'absent': return { label: 'Отсутствовал', color: '#ef4444' };
+      case 'late': return { label: 'Опоздал', color: '#f59e0b' };
+      case 'excused': return { label: 'Пропуск по причине', color: '#6b7280' };
+      default: return { label: 'Не отмечен', color: '#888' };
     }
   };
 
@@ -785,6 +817,45 @@ function StudentProfile() {
         >
           Посмотреть всю активность
         </button>
+      </div>
+
+      {/* Секция примечаний с уроков */}
+      <div className={styles['notes-section']}>
+        <h2 className={styles['section-title']}>
+          <AiOutlineFileText /> Примечания с уроков
+        </h2>
+        
+        <div className={styles['notes-list']}>
+          {lessonNotes.length > 0 ? (
+            lessonNotes.slice(0, 10).map((note) => (
+              <div key={note.id} className={styles['note-item']}>
+                <div className={styles['note-header']}>
+                  <div className={styles['note-lesson']}>
+                    <span className={styles['note-title']}>{note.lesson_title}</span>
+                    <span className={styles['note-date']}>
+                      {new Date(note.lesson_date).toLocaleDateString('ru-RU')} в {note.lesson_time?.substring(0, 5)}
+                    </span>
+                  </div>
+                  {note.attendance_status && (
+                    <span 
+                      className={styles['note-attendance']}
+                      style={{ color: getAttendanceStatusLabel(note.attendance_status).color }}
+                    >
+                      {getAttendanceStatusLabel(note.attendance_status).label}
+                      {note.attendance_reason && `: ${note.attendance_reason}`}
+                    </span>
+                  )}
+                </div>
+                <p className={styles['note-text']}>{note.note}</p>
+              </div>
+            ))
+          ) : (
+            <div className={styles['no-notes']}>
+              <AiOutlineFileText />
+              <p>Примечаний пока нет</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Модальное окно всей активности */}
