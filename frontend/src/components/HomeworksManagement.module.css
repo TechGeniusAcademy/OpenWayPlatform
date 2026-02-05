@@ -507,6 +507,7 @@
   padding: 24px;
   overflow-y: auto;
   flex: 1;
+  max-height: calc(90vh - 180px);
 }
 
 .modal-body::-webkit-scrollbar {
@@ -590,6 +591,27 @@
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.2s;
+  max-height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-wrapper :global(.quill) {
+  display: flex;
+  flex-direction: column;
+  max-height: 350px;
+}
+
+.editor-wrapper :global(.ql-container) {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 280px;
+}
+
+.editor-wrapper :global(.ql-editor) {
+  min-height: 150px;
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .editor-wrapper:focus-within {
