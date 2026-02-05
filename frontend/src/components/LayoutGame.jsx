@@ -396,13 +396,13 @@ function LayoutGame({ onBack }) {
       
       // Typography
       'fz': 'font-size: |;',
-      'ff': 'font-family: |;',
+      'ffa': 'font-family: |;',
       'ffs': 'font-family: serif;',
       'ffss': 'font-family: sans-serif;',
-      'fw': 'font-weight: |;',
+      'fwe': 'font-weight: |;',
       'fwb': 'font-weight: bold;',
       'fwn': 'font-weight: normal;',
-      'fs': 'font-style: |;',
+      'fst': 'font-style: |;',
       'fsi': 'font-style: italic;',
       'lh': 'line-height: |;',
       'ls': 'letter-spacing: |;',
