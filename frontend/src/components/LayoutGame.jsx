@@ -378,7 +378,7 @@ function LayoutGame({ onBack }) {
       'mya': 'margin-top: auto; margin-bottom: auto;',
       'mi': 'margin-inline: |;',
       'mia': 'margin-inline: auto;',
-      'mb': 'margin-block: |;',
+      'mbl': 'margin-block: |;',
       'p': 'padding: |;',
       'p0': 'padding: 0;',
       'pt': 'padding-top: |;',
@@ -391,7 +391,8 @@ function LayoutGame({ onBack }) {
       'pl0': 'padding-left: 0;',
       'px': 'padding-left: |; padding-right: |;',
       'py': 'padding-top: |; padding-bottom: |;',
-      'pi': 'padding-inline: |;',
+      'pil': 'padding-inline: |;',
+      'pbl': 'padding-block: |;',
       
       // Typography
       'fz': 'font-size: |;',
@@ -502,8 +503,8 @@ function LayoutGame({ onBack }) {
       'ofct': 'object-fit: contain;',
       'off': 'object-fit: fill;',
       'ofn': 'object-fit: none;',
-      'op': 'object-position: |;',
-      'opc': 'object-position: center;',
+      'objp': 'object-position: |;',
+      'objpc': 'object-position: center;',
       
       // Aspect ratio
       'ar': 'aspect-ratio: |;',
@@ -601,7 +602,7 @@ function LayoutGame({ onBack }) {
       'bdss': 'border-style: solid;',
       'bdsd': 'border-style: dashed;',
       'bdsdt': 'border-style: dotted;',
-      'bdc': 'border-color: |;',
+      'bdcol': 'border-color: |;',
       'bdtrs': 'border-top-right-radius: |;',
       'bdtls': 'border-top-left-radius: |;',
       'bdbrs': 'border-bottom-right-radius: |;',
@@ -610,8 +611,8 @@ function LayoutGame({ onBack }) {
       'br50': 'border-radius: 50%;',
       
       // Accent color
-      'acc': 'accent-color: |;',
-      
+      'accc': 'accent-color: |;',
+
       // Caret color
       'cc': 'caret-color: |;',
       
@@ -629,16 +630,16 @@ function LayoutGame({ onBack }) {
       'tshn': 'text-shadow: none;',
       
       // Word wrap
-      'ww': 'word-wrap: |;',
-      'wwbw': 'word-wrap: break-word;',
+      'wwrap': 'word-wrap: |;',
+      'wwrapbw': 'word-wrap: break-word;',
       
       // Tab size
       'tbs': 'tab-size: |;',
       
       // Touch action
-      'ta': 'touch-action: |;',
-      'tan': 'touch-action: none;',
-      'tam': 'touch-action: manipulation;',
+      'tcha': 'touch-action: |;',
+      'tchan': 'touch-action: none;',
+      'tcham': 'touch-action: manipulation;',
       
       // Scroll snap
       'sst': 'scroll-snap-type: |;',
@@ -658,7 +659,6 @@ function LayoutGame({ onBack }) {
       'justify-content': 'justify-content: |;',
       'align-items': 'align-items: |;',
       'align-content': 'align-content: |;',
-      'gap': 'gap: |;',
       'position': 'position: |;',
       'top': 'top: |;',
       'right': 'right: |;',
