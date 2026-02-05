@@ -53,7 +53,7 @@ const ScheduleManagement = () => {
   const loadGroups = async () => {
     try {
       const response = await api.get('/groups');
-      setGroups(response.data);
+      setGroups(response.data.groups || []);
     } catch (error) {
       console.error('Error loading groups:', error);
     }
