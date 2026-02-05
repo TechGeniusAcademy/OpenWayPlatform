@@ -450,6 +450,7 @@ export const initDatabase = async () => {
         homework_id INTEGER REFERENCES homeworks(id) ON DELETE CASCADE,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         submission_text TEXT, -- текст ответа студента
+        attachments JSONB DEFAULT '[]', -- прикреплённые файлы
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
         checked_by INTEGER REFERENCES users(id),
@@ -457,6 +458,12 @@ export const initDatabase = async () => {
         reason TEXT, -- причина принятия/отклонения
         points_earned INTEGER DEFAULT 0
       );
+    `);
+
+    // Добавляем колонку attachments если её нет (для существующих баз данных)
+    await pool.query(`
+      ALTER TABLE homework_submissions 
+      ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]';
     `);
 
     // 17. Создание таблицы результатов клавиатурного тренажера
