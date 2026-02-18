@@ -8,9 +8,7 @@ import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlin
 import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
 import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from 'react-icons/hi';
-import { FaTrophy, FaPlug, FaPalette, FaGamepad, FaPen, FaFileAlt, FaBriefcase, FaStar, FaMusic, FaFilm } from 'react-icons/fa';
-import { BiData } from 'react-icons/bi';
-import { VscFiles } from 'react-icons/vsc';
+import { FaTrophy, FaGamepad, FaPen, FaFileAlt, FaStar, FaMusic, FaFilm } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import FloatingChat from './FloatingChat';

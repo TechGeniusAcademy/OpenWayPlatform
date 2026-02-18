@@ -208,7 +208,7 @@ function StudentGroup() {
         </h2>
         <div className={styles['group-stats-grid']}>
           <div className={styles['group-stat-card']}>
-            <div className={styles['group-stat-icon']} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+            <div className={styles['group-stat-icon']} style={{ background: '#332929' }}>
               <AiOutlineWallet />
             </div>
             <div className={styles['group-stat-content']}>
@@ -218,7 +218,7 @@ function StudentGroup() {
           </div>
 
           <div className={styles['group-stat-card']}>
-            <div className={styles['group-stat-icon']} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+            <div className={styles['group-stat-icon']} style={{ background: '#332929' }}>
               <AiOutlineCode />
             </div>
             <div className={styles['group-stat-content']}>
@@ -228,7 +228,7 @@ function StudentGroup() {
           </div>
 
           <div className={styles['group-stat-card']}>
-            <div className={styles['group-stat-icon']} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
+            <div className={styles['group-stat-icon']} style={{ background: '#332929' }}>
               <AiOutlineCheckCircle />
             </div>
             <div className={styles['group-stat-content']}>
@@ -238,7 +238,7 @@ function StudentGroup() {
           </div>
 
           <div className={styles['group-stat-card']}>
-            <div className={styles['group-stat-icon']} style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
+            <div className={styles['group-stat-icon']} style={{ background: '#332929' }}>
               <AiOutlineStar />
             </div>
             <div className={styles['group-stat-content']}>
@@ -323,7 +323,7 @@ function StudentGroup() {
                 const frameImage = getFrameImage(student.avatar_frame);
                 const bannerImage = getBannerImage(student.profile_banner);
                 const defaultBanner = student.profile_banner === 'default' 
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                  ? '#332929'
                   : 'rgba(0, 0, 0, 0.05)';
 
                 return (
@@ -367,9 +367,9 @@ function StudentGroup() {
                       <div className={styles['student-name-wrapper']}>
                         {index < 3 && (
                           <span className={styles['rank-badge']} style={{
-                            background: index === 0 ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' :
-                                       index === 1 ? 'linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)' :
-                                       'linear-gradient(135deg, #cd7f32 0%, #d4a574 100%)'
+                            background: index === 0 ? '#332929' :
+                                       index === 1 ? '#332929' :
+                                       '#332929'
                           }}>
                             #{index + 1}
                           </span>

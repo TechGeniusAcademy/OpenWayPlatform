@@ -32,7 +32,7 @@ const uploadHomework = multer({
     const allowedMimes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp',
       'application/pdf',
-      'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+      'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed', 'application/x-zip-compressed', 'multipart/x-zip', 'application/x-7z-compressed',
       'text/plain', 'text/html', 'text/css', 'text/javascript',
       'application/javascript',
       'application/json',

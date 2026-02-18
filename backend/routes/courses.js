@@ -642,7 +642,7 @@ router.post('/:id/enroll', authenticate, async (req, res) => {
             
             // Записываем историю покупки
             await pool.query(`
-                INSERT INTO points_history (user_id, amount, reason, type)
+                INSERT INTO points_history (user_id, points_change, reason, type)
                 VALUES ($1, $2, $3, 'spend')
             `, [req.user.id, -course.price, `Покупка курса: ${course.title}`]);
         }

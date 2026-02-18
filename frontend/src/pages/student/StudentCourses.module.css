@@ -2,6 +2,19 @@
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .pageHeader {
@@ -44,7 +57,7 @@
 .courseThumbnail {
   width: 100%;
   height: 200px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,7 +120,7 @@
 }
 
 .courseStat svg {
-  color: #667eea;
+  color: #332929;
 }
 
 .difficultyBadge {
@@ -160,7 +173,7 @@
 .openButton {
   width: 100%;
   padding: 12px;
-  background: #667eea;
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -175,7 +188,8 @@
 }
 
 .openButton:hover {
-  background: #5568d3;
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
+  color: gray;
 }
 
 /* Locked course styles */
@@ -249,7 +263,7 @@
 .emptyIcon {
   font-size: 64px;
   margin-bottom: 16px;
-  color: #667eea;
+  color: #332929;
 }
 
 .emptyState h3 {

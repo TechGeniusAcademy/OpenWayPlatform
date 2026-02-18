@@ -2,6 +2,19 @@
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header {
@@ -9,7 +22,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   padding: 24px;
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -18,7 +31,7 @@
 
 .header h1 {
   margin: 0;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #fff;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -31,11 +44,12 @@
 
 .viewToggle {
   display: flex;
-  background: rgba(255, 255, 255, 0.9);
+  background: #fff;
   border-radius: 12px;
   padding: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(102, 126, 234, 0.1);
+  animation: fadeIn 0.4s ease;
 }
 
 .toggleBtn {
@@ -43,7 +57,7 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: #64748b;
+  color: #332929;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
@@ -51,12 +65,12 @@
 }
 
 .toggleBtn:hover {
-  color: #667eea;
+  color: #332929;
   background: rgba(102, 126, 234, 0.1);
 }
 
 .toggleBtn.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #332929;
   color: #fff;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
@@ -78,7 +92,7 @@
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.95));
   border: 1px solid rgba(102, 126, 234, 0.1);
   border-radius: 12px;
-  color: #667eea;
+  color: #332929;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 18px;
@@ -86,7 +100,7 @@
 }
 
 .navBtn:hover {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   color: #fff;
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
@@ -95,7 +109,7 @@
 .dateTitle {
   font-size: 20px;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -115,6 +129,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 16px;
+  animation: fadeIn 0.4s ease;
 }
 
 .dayColumn {
@@ -132,7 +147,7 @@
 }
 
 .dayColumn.today {
-  border: 2px solid #667eea;
+  border: 2px solid #332929;
   box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
 }
 
@@ -144,7 +159,7 @@
 }
 
 .dayColumn.today .dayHeader {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
 }
 
 .dayName {
@@ -209,7 +224,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #667eea;
+  color: #332929;
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 8px;
@@ -258,6 +273,7 @@
   border: 1px solid rgba(102, 126, 234, 0.1);
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.4s ease;
 }
 
 .monthGrid {
@@ -310,7 +326,7 @@
 }
 
 .monthDayCell.today .monthDayNumber {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   color: #fff;
   border-radius: 50%;
   width: 28px;
@@ -329,7 +345,7 @@
 
 .monthLessonItem {
   padding: 6px 10px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   border-radius: 6px;
   font-size: 11px;
   color: #fff;
@@ -506,7 +522,7 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 24px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   color: #fff;
 }
 
@@ -594,7 +610,7 @@
 }
 
 .modalSection h3 svg {
-  color: #667eea;
+  color: #332929;
   font-size: 18px;
 }
 
@@ -606,7 +622,7 @@
   padding: 16px;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
   border-radius: 12px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #332929;
 }
 
 /* Список учеников */
@@ -644,7 +660,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   color: #fff;
   display: flex;
   align-items: center;

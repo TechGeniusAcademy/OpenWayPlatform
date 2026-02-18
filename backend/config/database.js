@@ -650,6 +650,7 @@ export const initDatabase = async () => {
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         points_change INTEGER NOT NULL,
+        amount INTEGER,
         reason TEXT,
         admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

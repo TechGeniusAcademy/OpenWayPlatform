@@ -82,7 +82,7 @@
 .student-sidebar-header {
   padding: 25px 25px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(102, 126, 234, 0.15);
+  background: #332929;
   position: relative;
   z-index: 1;
 }
@@ -157,6 +157,7 @@
 .student-sidebar-menu {
   list-style: none;
   padding: 15px 10px;
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   flex: 1;
 }
 
@@ -222,7 +223,7 @@
 
 .student-sidebar-menu a:hover {
   color: white;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(1, 1, 1, 0.04);
 }
 
 .student-sidebar-menu a:hover::before {
@@ -335,10 +336,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(180deg, 
-    rgba(0, 0, 0, 0.3) 0%,
-    rgba(0, 0, 0, 0.5) 100%
-  );
   backdrop-filter: blur(5px);
   z-index: 0;
 }
@@ -557,8 +554,8 @@
   }
 
   .sidebar-avatar-frame {
-    width: 62px;
-    height: 62px;
+    width: 68px;
+    height: 52px;
   }
 
   .sidebar-user-name {

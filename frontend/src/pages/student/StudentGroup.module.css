@@ -6,21 +6,27 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .page-header {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.95) 0%, 
-    rgba(255, 255, 255, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.9) 100%);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 32px 40px;
   margin-bottom: 30px;
   box-shadow: 0 8px 32px rgba(102, 126, 234, 0.12),
-              0 2px 8px rgba(0, 0, 0, 0.05);
+    0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(102, 126, 234, 0.1);
   position: relative;
   overflow: hidden;
@@ -33,14 +39,14 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: #332929;
 }
 
 .page-header h1 {
   font-size: 28px;
   font-weight: 700;
   margin: 0 0 8px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #332929;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -78,16 +84,15 @@
 
 /* Статистика группы */
 .group-stats-section {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.95) 0%, 
-    rgba(255, 255, 255, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.9) 100%);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 28px;
   margin-bottom: 30px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08),
-              0 2px 8px rgba(0, 0, 0, 0.04);
+    0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
@@ -102,10 +107,9 @@
   align-items: center;
   gap: 16px;
   padding: 24px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.9) 0%, 
-    rgba(255, 255, 255, 0.8) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.8) 100%);
   border-radius: 12px;
   border: 1px solid rgba(102, 126, 234, 0.1);
   transition: all 0.3s ease;
@@ -141,7 +145,7 @@
 .group-stat-value {
   font-size: 28px;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #332929;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -158,16 +162,15 @@
 
 /* Топ студент */
 .top-student-section {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.95) 0%, 
-    rgba(255, 255, 255, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.9) 100%);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 28px;
   margin-bottom: 30px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08),
-              0 2px 8px rgba(0, 0, 0, 0.04);
+    0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
@@ -176,7 +179,27 @@
   align-items: center;
   gap: 24px;
   padding: 32px;
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  --sz: 20px;
+  --c0: #ffffff00;
+  --c1: #bdd0e1;
+  --c2: #809bb9;
+  --c3: #3e394a;
+  --ts: 50%/ calc(var(--sz) * 13.25) calc(var(--sz) * 11.7);
+  background:
+    repeating-conic-gradient(#3b354730 0.000001%, var(--c0) 0.00005%, var(--c0) 0.00035%, var(--c0) 0.00005%) var(--ts),
+    repeating-conic-gradient(#35638b59 0.00002%, var(--c0) 0.00008%, var(--c0) 0.0008%, var(--c0) 0.00008%) var(--ts),
+    repeating-linear-gradient(90deg, var(--c0) 0 24.33%, var(--c3) 0 25%) var(--ts),
+    linear-gradient(210deg, var(--c0) 0 80%, var(--c3) calc(80% + 1px) 80.5%, var(--c0) calc(80.5% + 1px) 100%) var(--ts),
+    conic-gradient(from -90deg at 49.75% 100%, var(--c1) 0 30deg, var(--c0) 0 150deg, var(--c2) 0 60deg) var(--ts),
+    conic-gradient(from -180deg at 24.5% 50.5%, var(--c1) 0 119deg, var(--c0) 0 100%) var(--ts),
+    conic-gradient(from 120deg at 74.5% 50%, var(--c3) 0 120deg, var(--c0) 0 100%) var(--ts),
+    conic-gradient(from 180deg at 49.5% 34%, var(--c2) 0 60deg, var(--c0) 0 100%) var(--ts),
+    conic-gradient(from -120deg at 50% 34%, var(--c3) 0 60deg, var(--c0) 0 100%) var(--ts),
+    conic-gradient(from 0deg at 74.5% 17.5%, var(--c2) 0 60deg, var(--c3) 0 121deg, var(--c0) 0 100%) var(--ts),
+    linear-gradient(150deg, var(--c0) 0 40%, var(--c3) calc(40% + 1px) 40.5%, var(--c0) calc(40.5% + 1px) 100%) var(--ts),
+    linear-gradient(90deg, var(--c0) 0 50%, var(--c2) 0 75%, var(--c0) 0 100%) var(--ts),
+    repeating-linear-gradient(90deg, var(--c1) 0 24.33%, var(--c3) 0 25%) var(--ts);
+
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3);
   position: relative;
@@ -195,8 +218,13 @@
 }
 
 @keyframes shimmer {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-25%, -25%); }
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-25%, -25%);
+  }
 }
 
 .top-badge {
@@ -211,7 +239,7 @@
   border-radius: 20px;
   font-size: 18px;
   font-weight: 700;
-  color: #ffd700;
+  color: #000000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -229,7 +257,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #332929, #262121);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -250,10 +278,10 @@
 .top-student-frame {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 48%;
   transform: translate(-50%, -50%);
-  width: 120px;
-  height: 120px;
+  width: 130px;
+  height: 101px;
   pointer-events: none;
 }
 
@@ -284,15 +312,14 @@
 }
 
 .group-info-card {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.95) 0%, 
-    rgba(255, 255, 255, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.9) 100%);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 30px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08),
-              0 2px 8px rgba(0, 0, 0, 0.04);
+    0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
@@ -333,7 +360,7 @@
   padding: 15px;
   background: rgba(102, 126, 234, 0.05);
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #332929;
 }
 
 .info-label {
@@ -342,8 +369,8 @@
 }
 
 .info-value {
-  color: #333;
-  font-weight: 500;
+  color: #332929;
+  font-weight: 600;
 }
 
 /* Список студентов */
@@ -393,7 +420,7 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #332929, #262121);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -415,7 +442,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 80px;
-  height: 80px;
+  height: 60px;
   pointer-events: none;
 }
 
@@ -491,8 +518,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .student-profile-modal {
@@ -513,6 +545,7 @@
     opacity: 0;
     transform: translateY(50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -891,9 +924,17 @@
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%, 100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 .transfer-actions {
@@ -977,10 +1018,9 @@
 .empty-state {
   text-align: center;
   padding: 80px 20px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.95) 0%, 
-    rgba(255, 255, 255, 0.9) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.9) 100%);
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }

@@ -4,11 +4,24 @@
   flex-direction: column;
   background: #f8fafc;
   overflow-y: auto;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Заголовок и поиск */
 .kb-header {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   color: white;
   padding: 32px 24px;
   margin-bottom: 24px;
@@ -157,13 +170,13 @@
 }
 
 .kb-category:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: #332929;
+  color: #332929;
 }
 
 .kb-category.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
+  border-color: #332929;
   color: white;
 }
 
@@ -205,14 +218,14 @@
 }
 
 .kb-subcategory:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: #332929;
+  color: #332929;
 }
 
 .kb-subcategory.active {
-  background: #3b82f6;
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   color: white;
-  border-color: #3b82f6;
+  border-color: #332929;
 }
 
 /* Сетка статей */
@@ -235,7 +248,7 @@
 
 .kb-article-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #3b82f6;
+  border-color: #332929;
 }
 
 .kb-article-header {
@@ -249,7 +262,7 @@
   font-size: 11px;
   font-weight: 700;
   color: white;
-  background: #3b82f6;
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   padding: 4px 10px;
   border-radius: 6px;
   text-transform: uppercase;
@@ -311,7 +324,7 @@
 .kb-article-link {
   font-size: 13px;
   font-weight: 600;
-  color: #3b82f6;
+  color: #332929;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -362,7 +375,7 @@
 /* Просмотр статьи */
 .kb-article-view {
   padding: 24px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
 }
@@ -411,7 +424,7 @@
   font-size: 11px;
   font-weight: 700;
   color: white;
-  background: #3b82f6;
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   padding: 6px 12px;
   border-radius: 6px;
   text-transform: uppercase;

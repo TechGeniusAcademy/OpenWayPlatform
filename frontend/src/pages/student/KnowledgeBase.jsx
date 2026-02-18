@@ -230,7 +230,7 @@ function KnowledgeBase() {
           {/* Статистика */}
           <div className={styles['kb-stats']}>
             <div className={styles['stat-card']}>
-              <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+              <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
                 <AiOutlineBook />
               </div>
               <div className={styles['stat-info']}>
@@ -240,7 +240,7 @@ function KnowledgeBase() {
             </div>
 
             <div className={styles['stat-card']}>
-              <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+              <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
                 <FaFolderOpen />
               </div>
               <div className={styles['stat-info']}>
@@ -250,7 +250,7 @@ function KnowledgeBase() {
             </div>
 
             <div className={styles['stat-card']}>
-              <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)' }}>
+              <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
                 <AiOutlineEye />
               </div>
               <div className={styles['stat-info']}>
@@ -260,7 +260,7 @@ function KnowledgeBase() {
             </div>
 
             <div className={styles['stat-card']}>
-              <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
+              <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
                 <AiOutlineFire />
               </div>
               <div className={styles['stat-info']}>

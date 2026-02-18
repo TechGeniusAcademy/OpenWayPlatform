@@ -54,7 +54,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 28px 32px;
-  background: linear-gradient(90deg, rgba(74, 144, 226, 0.1) 0%, rgba(138, 100, 255, 0.1) 100%);
+  background: #332929;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
 }
@@ -306,7 +306,7 @@
 }
 
 .item-date::before {
-  content: '🕐';
+  content: '';
   font-size: 11px;
 }
 

@@ -238,7 +238,7 @@ function StudentHomeworks() {
       {/* Статистика */}
       <div className={styles['stats-section']}>
         <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
             <FaBook />
           </div>
           <div className={styles['stat-content']}>
@@ -248,7 +248,7 @@ function StudentHomeworks() {
         </div>
 
         <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #f093fb, #f5576c)' }}>
+          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
             <FaClock />
           </div>
           <div className={styles['stat-content']}>
@@ -258,7 +258,7 @@ function StudentHomeworks() {
         </div>
 
         <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #4facfe, #00f2fe)' }}>
+          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
             <FaHourglass />
           </div>
           <div className={styles['stat-content']}>
@@ -268,7 +268,7 @@ function StudentHomeworks() {
         </div>
 
         <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #43e97b, #38f9d7)' }}>
+          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
             <FaCheckCircle />
           </div>
           <div className={styles['stat-content']}>
@@ -278,7 +278,7 @@ function StudentHomeworks() {
         </div>
 
         <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(135deg, #fa709a, #fee140)' }}>
+          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
             <FaTrophy />
           </div>
           <div className={styles['stat-content']}>
@@ -403,7 +403,7 @@ function StudentHomeworks() {
 
       {/* Submit Modal */}
       {showSubmitModal && (
-        <div className={styles['modal-overlay']} onClick={closeModal}>
+        <div className={styles['modal-overlay']} >
           <div className={`${styles['modal-content']} ${styles['modal-large']}`} onClick={(e) => e.stopPropagation()}>
             <h3>{selectedHomework?.title}</h3>
             

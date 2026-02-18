@@ -41,7 +41,7 @@
 }
 
 .sidebarCard h3 svg {
-  color: #4F46E5;
+  color: #332929;
 }
 
 .sidebarContent {
@@ -71,7 +71,7 @@
 
 .infoItem svg {
   font-size: 1.5rem;
-  color: #4F46E5;
+  color: #332929;
   flex-shrink: 0;
 }
 
@@ -110,8 +110,8 @@
 
 .backButton:hover {
   background: #f8f9fa;
-  border-color: #4F46E5;
-  color: #4F46E5;
+  border-color: #332929;
+  color: #332929;
 }
 
 .courseHeader {
@@ -208,12 +208,12 @@
 }
 
 .courseStat svg {
-  color: #4F46E5;
+  color: #332929;
 }
 
 .enrollButton {
   padding: 0.75rem 2rem;
-  background: #4F46E5;
+  background: #332929;
   color: white;
   border: none;
   border-radius: 8px;
@@ -227,7 +227,7 @@
 }
 
 .enrollButton:hover {
-  background: #4338CA;
+  background: #413333;
 }
 
 .enrollButton:disabled {
@@ -244,6 +244,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  margin-top: 20px;
 }
 
 .detailedDescription {
@@ -312,7 +313,7 @@
 }
 
 .categorySection:hover {
-  border-color: #4F46E5;
+  border-color: #332929;
 }
 
 .categoryHeader {
@@ -337,7 +338,7 @@
 }
 
 .categoryTitle svg {
-  color: #4F46E5;
+  color: #332929;
   font-size: 1.5rem;
 }
 
@@ -367,9 +368,9 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 2px solid #4F46E5;
+  border: 2px solid #332929;
   background: white;
-  color: #4F46E5;
+  color: #332929;
   font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
@@ -382,7 +383,7 @@
 }
 
 .toggleButton:hover {
-  background: #4F46E5;
+  background: #332929;
   color: white;
 }
 
@@ -412,7 +413,7 @@
 
 .lessonCard:hover {
   background: #e9ecef;
-  border-color: #4F46E5;
+  border-color: #332929;
   transform: translateX(5px);
 }
 
@@ -424,7 +425,7 @@
 .lessonNumber {
   width: 40px;
   height: 40px;
-  background: #4F46E5;
+  background: #332929;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -460,7 +461,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #4F46E5;
+  color: #332929;
   font-size: 1.2rem;
 }
 
@@ -492,7 +493,7 @@
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #4F46E5, #7c3aed);
+  background: linear-gradient(90deg, #332929, #7c3aed);
   border-radius: 4px;
   transition: width 0.3s;
 }
@@ -528,7 +529,7 @@
 
 .instructorInfo svg,
 .categoryInfo svg {
-  color: #4F46E5;
+  color: #332929;
 }
 
 .infoSection {
@@ -549,7 +550,7 @@
 }
 
 .infoSection h2 svg {
-  color: #4F46E5;
+  color: #332929;
 }
 
 .infoContent {
@@ -675,7 +676,7 @@
 .modalIcon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -762,7 +763,7 @@
 .confirmPurchase {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
   color: white;
   border: none;
   border-radius: 12px;
