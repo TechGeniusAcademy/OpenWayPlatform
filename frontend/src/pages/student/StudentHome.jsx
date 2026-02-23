@@ -1,5 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import api, { BASE_URL } from "../../utils/api";
+import { getFrameStyle } from "../../utils/frameUtils";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import styles from "../StudentDashboard.module.css";
@@ -156,35 +157,38 @@ function StudentHome() {
 
         {/* --- Аватар + имя --- */}
         <div className={styles["student-info-first"]}>
-          {user?.avatar_url ? (
-            <img
-              className={styles["dashboard-page-header-avatar"]}
-              src={`${BASE_URL}${user.avatar_url}`}
-              alt={user.username}
-            />
-          ) : (
-            <div
-              className={styles["dashboard-page-header-avatar"]}
-              style={{
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "clamp(28px, 3vw, 42px)",
-                color: "#fff",
-                fontWeight: 700,
-              }}
-            >
-              {(user?.full_name || user?.username || "U").charAt(0).toUpperCase()}
-            </div>
-          )}
-          {appliedFrame?.image_url && (
-            <img
-              className={styles["dashboard-page-header-frame"]}
-              src={`${BASE_URL}${appliedFrame.image_url}`}
-              alt="Frame"
-            />
-          )}
+          <div className={styles["avatar-frame-wrap"]}>
+            {user?.avatar_url ? (
+              <img
+                className={styles["dashboard-page-header-avatar"]}
+                src={`${BASE_URL}${user.avatar_url}`}
+                alt={user.username}
+              />
+            ) : (
+              <div
+                className={styles["dashboard-page-header-avatar"]}
+                style={{
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "clamp(28px, 3vw, 42px)",
+                  color: "#fff",
+                  fontWeight: 700,
+                }}
+              >
+                {(user?.full_name || user?.username || "U").charAt(0).toUpperCase()}
+              </div>
+            )}
+            {appliedFrame?.image_url && (
+              <img
+                className={styles["dashboard-page-header-frame"]}
+                src={`${BASE_URL}${appliedFrame.image_url}`}
+                alt="Frame"
+                style={getFrameStyle(appliedFrame, 'home')}
+              />
+            )}
+          </div>
 
           <div className={styles["dashboard-page-username"]}>
             <h1>{user?.full_name || user?.username}</h1>

@@ -96,6 +96,15 @@
   transition: background 0.3s ease;
 }
 
+/* Враппер аватар + рамка */
+.avatar-frame-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Аватар */
 .dashboard-page-header-avatar {
   width: clamp(90px, 11vw, 130px);

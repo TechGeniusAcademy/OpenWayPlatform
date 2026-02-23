@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import api, { BASE_URL } from '../utils/api';
+import { getFrameStyle } from '../utils/frameUtils';
 import '../styles/UsernameStyles.css';
 import styles from './OnlineChess.module.css';
 
@@ -63,6 +64,11 @@ const OnlineChess = () => {
     if (!frameKey || frameKey === 'none') return null;
     const frame = cosmetics.frames.find(f => f.item_key === frameKey);
     return frame?.image_url ? `${BASE_URL}${frame.image_url}` : null;
+  };
+
+  const getFrameItem = (frameKey) => {
+    if (!frameKey || frameKey === 'none') return null;
+    return cosmetics.frames.find(f => f.item_key === frameKey) || null;
   };
 
   const getBannerImage = (bannerKey) => {
@@ -562,6 +568,7 @@ const OnlineChess = () => {
                         };
                     
                     const frameImage = getFrameImage(opponent.frame);
+                    const frameItem  = getFrameItem(opponent.frame);
                     const avatarUrl = opponent.avatar ? `${BASE_URL}${opponent.avatar}` : '/default-avatar.png';
                     const bannerImage = getBannerImage(opponent.banner);
                     const defaultBanner = opponent.banner === 'default' 
@@ -595,6 +602,7 @@ const OnlineChess = () => {
                                 src={frameImage}
                                 alt="Frame"
                                 className={styles['opponent-avatar-frame']}
+                                style={getFrameStyle(frameItem, 'chess')}
                               />
                             )}
                           </div>
@@ -706,6 +714,7 @@ const OnlineChess = () => {
           <div className={styles['players-list']}>
             {availablePlayers.map((player) => {
               const frameImage = getFrameImage(player.avatar_frame);
+              const frameItem  = getFrameItem(player.avatar_frame);
               const avatarUrl = player.avatar_url ? `${BASE_URL}${player.avatar_url}` : '/default-avatar.png';
               const bannerImage = getBannerImage(player.profile_banner);
               const defaultBanner = player.profile_banner === 'default' 
@@ -738,6 +747,7 @@ const OnlineChess = () => {
                         src={frameImage}
                         alt="Frame"
                         className={styles['player-avatar-frame-small']}
+                        style={getFrameStyle(frameItem, 'chess')}
                       />
                     )}
                   </div>
@@ -821,6 +831,7 @@ const OnlineChess = () => {
                         src={getFrameImage(currentGame.white_player_frame)}
                         alt="Frame"
                         className={styles['chess-avatar-frame']}
+                        style={getFrameStyle(getFrameItem(currentGame.white_player_frame), 'chess')}
                       />
                     )}
                   </div>
@@ -848,6 +859,7 @@ const OnlineChess = () => {
                         src={getFrameImage(currentGame.black_player_frame)}
                         alt="Frame"
                         className={styles['chess-avatar-frame']}
+                        style={getFrameStyle(getFrameItem(currentGame.black_player_frame), 'chess')}
                       />
                     )}
                   </div>

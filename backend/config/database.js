@@ -623,6 +623,26 @@ export const initDatabase = async () => {
       END $$;
     `);
 
+    // Добавить колонку position_configs если её нет (настройки позиции рамки по контекстам)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'shop_items' AND column_name = 'position_configs'
+        ) THEN
+          ALTER TABLE shop_items ADD COLUMN position_configs JSONB DEFAULT '{
+            "profile":      {"inset": 6, "offsetX": 0, "offsetY": 0},
+            "home":         {"inset": 6, "offsetX": 0, "offsetY": 0},
+            "group_leader": {"inset": 6, "offsetX": 0, "offsetY": 0},
+            "group_list":   {"inset": 5, "offsetX": 0, "offsetY": 0},
+            "group_modal":  {"inset": 8, "offsetX": 0, "offsetY": 0},
+            "chess":        {"inset": 5, "offsetX": 0, "offsetY": 0}
+          }';
+        END IF;
+      END $$;
+    `);
+
     // Таблица 24: Покупки пользователей
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_purchases (

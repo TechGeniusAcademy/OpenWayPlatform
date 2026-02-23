@@ -127,3 +127,59 @@
   }
 }
 
+/* ── Планшет ── */
+@media (max-width: 1024px) {
+  .leftSide {
+    width: 10%;
+    min-width: 60px;
+  }
+
+  .formWrapper {
+    left: 80px;
+    width: 340px;
+  }
+}
+
+/* ── Мобильный ── */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: none;
+  }
+
+  .leftSide {
+    display: none;
+  }
+
+  .rightSideBanner {
+    display: none;
+  }
+
+  .formWrapper {
+    position: relative;
+    left: auto;
+    width: calc(100% - 40px);
+    max-width: 400px;
+    height: auto;
+  }
+
+  .form {
+    padding: 12px 20px 20px;
+  }
+}
+
+/* ── Маленький мобильный ── */
+@media (max-width: 400px) {
+  .formWrapper {
+    width: calc(100% - 24px);
+    padding: 12px;
+  }
+
+  .formWrapper > h2 {
+    padding: 12px;
+    font-size: 17px;
+  }
+}
+

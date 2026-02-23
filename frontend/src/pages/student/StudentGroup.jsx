@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
+import { getFrameStyle } from '../../utils/frameUtils';
 import '../../styles/UsernameStyles.css';
 import styles from './StudentGroup.module.css';
 import {
@@ -99,6 +100,11 @@ function StudentGroup() {
     if (!frameKey || frameKey === 'none') return null;
     const frame = cosmetics.frames.find(f => f.item_key === frameKey);
     return frame?.image_url ? `${BASE_URL}${frame.image_url}` : null;
+  };
+
+  const getFrameItem = (frameKey) => {
+    if (!frameKey || frameKey === 'none') return null;
+    return cosmetics.frames.find(f => f.item_key === frameKey) || null;
   };
 
   const getBannerImage = (bannerKey) => {
@@ -285,6 +291,7 @@ function StudentGroup() {
                       src={getFrameImage(topStudent.avatar_frame)}
                       alt="Frame"
                       className={styles['leader-frame']}
+                      style={getFrameStyle(getFrameItem(topStudent.avatar_frame), 'group_leader')}
                     />
                   )}
                   <span className={styles['leader-crown']}><FaMedal /></span>
@@ -323,6 +330,7 @@ function StudentGroup() {
               <ul className={styles['students-list']}>
                 {sortedStudents.map((student, index) => {
                   const frameImage = getFrameImage(student.avatar_frame);
+                  const frameItem  = getFrameItem(student.avatar_frame);
                   const bannerImage = getBannerImage(student.profile_banner);
                   const isMe = student.id === user.id;
 
@@ -353,7 +361,8 @@ function StudentGroup() {
                           )}
                         </div>
                         {frameImage && (
-                          <img src={frameImage} alt="Frame" className={styles['student-av-frame']} />
+                          <img src={frameImage} alt="Frame" className={styles['student-av-frame']}
+                            style={getFrameStyle(frameItem, 'group_list')} />
                         )}
                         <span className={styles['online-dot']} data-online={student.is_online ? 'true' : 'false'} />
                       </div>
@@ -418,6 +427,7 @@ function StudentGroup() {
                     src={getFrameImage(selectedStudent.avatar_frame)}
                     alt="Frame"
                     className={styles['modal-av-frame']}
+                    style={getFrameStyle(getFrameItem(selectedStudent.avatar_frame), 'group_modal')}
                   />
                 )}
               </div>

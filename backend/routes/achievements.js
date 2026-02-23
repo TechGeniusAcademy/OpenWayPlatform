@@ -395,109 +395,536 @@ router.post('/check', async (req, res) => {
 // Получить статистику пользователя для проверки достижений
 const getUserStats = async (userId) => {
   const stats = {};
-  
+
   try {
-    // Баллы и уровень
+    // ── Баллы, опыт, косметика ──────────────────────────────────
     const userResult = await pool.query(
-      'SELECT points, experience FROM users WHERE id = $1',
+      'SELECT points, experience, avatar_frame, profile_banner FROM users WHERE id = $1',
       [userId]
     );
     if (userResult.rows.length > 0) {
-      stats.total_points = userResult.rows[0].points || 0;
-      stats.experience = userResult.rows[0].experience || 0;
+      const u = userResult.rows[0];
+      stats.total_points   = u.points || 0;
+      stats.experience     = u.experience || 0;
+      stats.cosmetic_frame  = (u.avatar_frame  && u.avatar_frame  !== 'none')    ? 1 : 0;
+      stats.cosmetic_banner = (u.profile_banner && u.profile_banner !== 'default') ? 1 : 0;
     }
-    
-    // Тесты
-    const testsResult = await pool.query(
+
+    // Уровень пользователя
+    try {
+      const lvRes = await pool.query(
+        'SELECT level_number FROM user_levels WHERE experience_required <= $1 ORDER BY level_number DESC LIMIT 1',
+        [stats.experience || 0]
+      );
+      stats.user_level = lvRes.rows.length > 0 ? lvRes.rows[0].level_number : 1;
+      const maxLvRes = await pool.query('SELECT MAX(level_number) as mx FROM user_levels');
+      const maxLv = parseInt(maxLvRes.rows[0]?.mx || 999);
+      stats.user_level_max = stats.user_level >= maxLv ? 1 : 0;
+    } catch { stats.user_level = 1; stats.user_level_max = 0; }
+
+    // ── Тесты ────────────────────────────────────────────────────
+    const testsRes = await pool.query(
       'SELECT COUNT(*) FROM test_attempts WHERE user_id = $1 AND completed_at IS NOT NULL',
       [userId]
     );
-    stats.tests_completed = parseInt(testsResult.rows[0].count);
-    
-    // Домашние задания
-    const homeworkResult = await pool.query(
+    stats.tests_completed = parseInt(testsRes.rows[0].count);
+
+    try {
+      const perfRes = await pool.query(
+        'SELECT COUNT(*) FROM test_attempts WHERE user_id = $1 AND score = 100 AND completed_at IS NOT NULL',
+        [userId]
+      );
+      stats.test_perfect_score    = parseInt(perfRes.rows[0].count);
+      stats.test_first_try_perfect = stats.test_perfect_score;
+    } catch { stats.test_perfect_score = 0; stats.test_first_try_perfect = 0; }
+
+    try {
+      const spd60 = await pool.query(
+        'SELECT COUNT(*) FROM test_attempts WHERE user_id = $1 AND time_spent > 0 AND time_spent <= 60 AND completed_at IS NOT NULL',
+        [userId]
+      );
+      const spd30 = await pool.query(
+        'SELECT COUNT(*) FROM test_attempts WHERE user_id = $1 AND time_spent > 0 AND time_spent <= 30 AND completed_at IS NOT NULL',
+        [userId]
+      );
+      stats.test_speed_1min  = parseInt(spd60.rows[0].count);
+      stats.test_speed_30sec = parseInt(spd30.rows[0].count);
+    } catch { stats.test_speed_1min = 0; stats.test_speed_30sec = 0; }
+
+    try {
+      const todayRes = await pool.query(
+        "SELECT COUNT(*) FROM test_attempts WHERE user_id = $1 AND completed_at::date = CURRENT_DATE AND completed_at IS NOT NULL",
+        [userId]
+      );
+      stats.tests_daily = parseInt(todayRes.rows[0].count);
+    } catch { stats.tests_daily = 0; }
+
+    try {
+      const streakRows = await pool.query(
+        'SELECT score FROM test_attempts WHERE user_id = $1 AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 20',
+        [userId]
+      );
+      let cur = 0, best = 0;
+      for (const r of streakRows.rows) {
+        if (r.score === 100) { cur++; best = Math.max(best, cur); } else cur = 0;
+      }
+      stats.test_perfect_streak = best;
+    } catch { stats.test_perfect_streak = 0; }
+
+    try {
+      const retryRes = await pool.query(
+        'SELECT MAX(cnt) AS mx FROM (SELECT test_id, COUNT(*) AS cnt FROM test_attempts WHERE user_id = $1 AND completed_at IS NOT NULL GROUP BY test_id) t',
+        [userId]
+      );
+      stats.test_retries = parseInt(retryRes.rows[0]?.mx || 0);
+    } catch { stats.test_retries = 0; }
+
+    // ── Домашние задания ─────────────────────────────────────────
+    const hwRes = await pool.query(
       'SELECT COUNT(*) FROM homework_submissions WHERE user_id = $1',
       [userId]
     );
-    stats.homework_submitted = parseInt(homeworkResult.rows[0].count);
-    
-    // FlexChan
-    const flexchanResult = await pool.query(
-      'SELECT COUNT(*) FROM flexchan_progress WHERE user_id = $1 AND completed = true',
-      [userId]
-    );
-    stats.flexchan_levels = parseInt(flexchanResult.rows[0].count);
-    
-    // JS Game
-    const jsgameResult = await pool.query(
-      "SELECT COUNT(*) FROM js_game_progress WHERE user_id = $1 AND status = 'passed'",
-      [userId]
-    );
-    stats.jsgame_levels = parseInt(jsgameResult.rows[0].count);
-    
-    // Шахматы
-    const chessResult = await pool.query(
+    stats.homework_submitted = parseInt(hwRes.rows[0].count);
+
+    try {
+      const onTimeRes = await pool.query(`
+        SELECT COUNT(*) FROM homework_submissions hs
+        JOIN homeworks h ON hs.homework_id = h.id
+        WHERE hs.user_id = $1 AND h.deadline IS NOT NULL AND hs.submitted_at < h.deadline
+      `, [userId]);
+      stats.homework_on_time = parseInt(onTimeRes.rows[0].count);
+    } catch { stats.homework_on_time = 0; }
+
+    try {
+      const nightRes = await pool.query(
+        "SELECT COUNT(*) FROM homework_submissions WHERE user_id = $1 AND EXTRACT(HOUR FROM submitted_at) < 5",
+        [userId]
+      );
+      stats.homework_night = parseInt(nightRes.rows[0].count);
+    } catch { stats.homework_night = 0; }
+
+    try {
+      const earlyRes = await pool.query(
+        "SELECT COUNT(*) FROM homework_submissions WHERE user_id = $1 AND EXTRACT(HOUR FROM submitted_at) < 7",
+        [userId]
+      );
+      stats.homework_early = parseInt(earlyRes.rows[0].count);
+    } catch { stats.homework_early = 0; }
+
+    try {
+      const lastMinRes = await pool.query(`
+        SELECT COUNT(*) FROM homework_submissions hs
+        JOIN homeworks h ON hs.homework_id = h.id
+        WHERE hs.user_id = $1 AND h.deadline IS NOT NULL
+          AND hs.submitted_at < h.deadline
+          AND h.deadline - hs.submitted_at < interval '5 minutes'
+      `, [userId]);
+      stats.homework_last_minute = parseInt(lastMinRes.rows[0].count);
+    } catch { stats.homework_last_minute = 0; }
+
+    try {
+      const aheadRes = await pool.query(`
+        SELECT COUNT(*) FROM homework_submissions hs
+        JOIN homeworks h ON hs.homework_id = h.id
+        WHERE hs.user_id = $1 AND h.deadline IS NOT NULL
+          AND h.deadline - hs.submitted_at > interval '7 days'
+      `, [userId]);
+      stats.homework_week_early = parseInt(aheadRes.rows[0].count);
+    } catch { stats.homework_week_early = 0; }
+
+    try {
+      const lateRes = await pool.query(`
+        SELECT COUNT(*) FROM homework_submissions hs
+        JOIN homeworks h ON hs.homework_id = h.id
+        WHERE hs.user_id = $1 AND h.deadline IS NOT NULL AND hs.submitted_at > h.deadline
+      `, [userId]);
+      const lateCount = parseInt(lateRes.rows[0].count);
+      stats.homework_never_late = (lateCount === 0 && stats.homework_submitted >= 20) ? 1 : 0;
+    } catch { stats.homework_never_late = 0; }
+
+    // ── Курсы ────────────────────────────────────────────────────
+    try {
+      const enrollRes = await pool.query(
+        'SELECT COUNT(*) FROM course_enrollments WHERE user_id = $1',
+        [userId]
+      );
+      stats.course_started = parseInt(enrollRes.rows[0].count);
+    } catch { stats.course_started = 0; }
+
+    try {
+      const lessonsRes = await pool.query(
+        'SELECT COUNT(*) FROM course_progress WHERE user_id = $1 AND completed = true',
+        [userId]
+      );
+      stats.lessons_viewed = parseInt(lessonsRes.rows[0].count);
+    } catch { stats.lessons_viewed = 0; }
+
+    try {
+      const completedCoursesRes = await pool.query(`
+        SELECT COUNT(*) FROM (
+          SELECT ce.course_id FROM course_enrollments ce
+          WHERE ce.user_id = $1
+            AND EXISTS (SELECT 1 FROM course_lessons cl2 WHERE cl2.course_id = ce.course_id)
+            AND NOT EXISTS (
+              SELECT 1 FROM course_lessons cl
+              WHERE cl.course_id = ce.course_id
+                AND NOT EXISTS (
+                  SELECT 1 FROM course_progress cp
+                  WHERE cp.user_id = $1 AND cp.lesson_id = cl.id AND cp.completed = true
+                )
+            )
+        ) done
+      `, [userId]);
+      stats.courses_completed = parseInt(completedCoursesRes.rows[0].count);
+    } catch { stats.courses_completed = 0; }
+
+    // ── Шахматы ──────────────────────────────────────────────────
+    const chessAllRes = await pool.query(
       'SELECT COUNT(*) FROM chess_games WHERE (white_player_id = $1 OR black_player_id = $1)',
       [userId]
     );
-    stats.chess_games_played = parseInt(chessResult.rows[0].count);
-    
-    // Подсчёт побед в шахматах - победитель определяется через result и позицию игрока
-    const chessWinsResult = await pool.query(
-      `SELECT COUNT(*) FROM chess_games 
-       WHERE (result = 'white' AND white_player_id = $1) 
-          OR (result = 'black' AND black_player_id = $1)`,
+    stats.chess_games_played = parseInt(chessAllRes.rows[0].count);
+
+    const chessWinsRes = await pool.query(`
+      SELECT COUNT(*) FROM chess_games
+      WHERE (result = 'white' AND white_player_id = $1)
+         OR (result = 'black' AND black_player_id = $1)
+    `, [userId]);
+    stats.chess_wins        = parseInt(chessWinsRes.rows[0].count);
+    stats.chess_online_wins = stats.chess_wins; // все партии — онлайн
+
+    try {
+      const chessLast = await pool.query(`
+        SELECT result, white_player_id, black_player_id FROM chess_games
+        WHERE (white_player_id = $1 OR black_player_id = $1) AND status = 'finished'
+        ORDER BY COALESCE(ended_at, created_at) DESC LIMIT 20
+      `, [userId]);
+      let wstreak = 0, wmaxstreak = 0;
+      for (const r of chessLast.rows) {
+        const won = (r.result === 'white' && r.white_player_id === userId) ||
+                    (r.result === 'black' && r.black_player_id === userId);
+        if (won) { wstreak++; wmaxstreak = Math.max(wmaxstreak, wstreak); } else wstreak = 0;
+      }
+      stats.chess_win_streak = wmaxstreak;
+    } catch { stats.chess_win_streak = 0; }
+
+    try {
+      const qmRes = await pool.query(`
+        SELECT COUNT(*) FROM chess_games
+        WHERE ((result = 'white' AND white_player_id = $1) OR (result = 'black' AND black_player_id = $1))
+          AND end_reason = 'checkmate'
+          AND jsonb_array_length(move_history) < 20
+      `, [userId]);
+      stats.chess_quick_mate = parseInt(qmRes.rows[0].count);
+    } catch { stats.chess_quick_mate = 0; }
+
+    try {
+      const smRes = await pool.query(`
+        SELECT COUNT(*) FROM chess_games
+        WHERE ((result = 'white' AND white_player_id = $1) OR (result = 'black' AND black_player_id = $1))
+          AND end_reason = 'checkmate'
+          AND jsonb_array_length(move_history) <= 8
+      `, [userId]);
+      stats.chess_4_move_mate = parseInt(smRes.rows[0].count);
+    } catch { stats.chess_4_move_mate = 0; }
+
+    // Нет данных для AI hard win и comeback draw
+    stats.chess_ai_hard_win    = 0;
+    stats.chess_comeback_draw  = 0;
+
+    // ── FlexChan ─────────────────────────────────────────────────
+    const flexRes = await pool.query(
+      'SELECT COUNT(*) FROM flexchan_progress WHERE user_id = $1 AND completed = true',
       [userId]
     );
-    stats.chess_wins = parseInt(chessWinsResult.rows[0].count);
-    
-    // Typing
-    const typingResult = await pool.query(
-      'SELECT MAX(wpm) as max_wpm, COUNT(*) as sessions FROM typing_results WHERE user_id = $1',
+    stats.flexchan_levels = parseInt(flexRes.rows[0].count);
+
+    try {
+      const totalFlexRes = await pool.query('SELECT COUNT(*) FROM flexchan_levels WHERE is_active = true');
+      const totalFlex = parseInt(totalFlexRes.rows[0].count);
+      stats.flexchan_all_levels = (totalFlex > 0 && stats.flexchan_levels >= totalFlex) ? 1 : 0;
+    } catch { stats.flexchan_all_levels = 0; }
+
+    try {
+      const manyAttempts = await pool.query(
+        'SELECT COUNT(*) FROM flexchan_progress WHERE user_id = $1 AND completed = true AND attempts >= 10',
+        [userId]
+      );
+      stats.flexchan_many_attempts = parseInt(manyAttempts.rows[0].count);
+    } catch { stats.flexchan_many_attempts = 0; }
+
+    try {
+      const firstTryRes = await pool.query(
+        'SELECT COUNT(*) FROM flexchan_progress WHERE user_id = $1 AND completed = true AND attempts = 1',
+        [userId]
+      );
+      stats.flexchan_first_try = parseInt(firstTryRes.rows[0].count);
+    } catch { stats.flexchan_first_try = 0; }
+
+    stats.flexchan_speed = 0; // нет колонки времени в flexchan_progress
+
+    // ── JS Game ──────────────────────────────────────────────────
+    const jsRes = await pool.query(
+      "SELECT COUNT(*) FROM js_game_progress WHERE user_id = $1 AND status = 'passed'",
       [userId]
     );
-    stats.typing_wpm = typingResult.rows[0].max_wpm || 0;
-    stats.typing_sessions = parseInt(typingResult.rows[0].sessions);
-    
-    // Покупки в магазине
-    const shopResult = await pool.query(
+    stats.jsgame_levels = parseInt(jsRes.rows[0].count);
+
+    try {
+      const totalJsRes = await pool.query('SELECT COUNT(*) FROM js_game_levels WHERE is_active = true');
+      const totalJs = parseInt(totalJsRes.rows[0].count);
+      stats.jsgame_all_levels = (totalJs > 0 && stats.jsgame_levels >= totalJs) ? 1 : 0;
+    } catch { stats.jsgame_all_levels = 0; }
+
+    try {
+      const danRes = await pool.query(`
+        SELECT MAX(jl.difficulty) AS max_dan
+        FROM js_game_progress jp
+        JOIN js_game_levels jl ON jp.level_id = jl.id
+        WHERE jp.user_id = $1 AND jp.status = 'passed'
+      `, [userId]);
+      stats.jsgame_dan = parseInt(danRes.rows[0]?.max_dan || 0);
+    } catch { stats.jsgame_dan = 0; }
+
+    stats.jsgame_optimal   = 0; // нет данных
+    stats.jsgame_algorithm = 0; // нет данных
+
+    // ── Layout Game ──────────────────────────────────────────────
+    try {
+      const layoutRes = await pool.query(
+        'SELECT COUNT(*) FROM layout_game_progress WHERE user_id = $1 AND completed = true',
+        [userId]
+      );
+      stats.layout_completed = parseInt(layoutRes.rows[0].count);
+    } catch { stats.layout_completed = 0; }
+
+    try {
+      const layoutPerfRes = await pool.query(
+        'SELECT COUNT(*) FROM layout_game_progress WHERE user_id = $1 AND best_accuracy = 100',
+        [userId]
+      );
+      stats.layout_perfect = parseInt(layoutPerfRes.rows[0].count);
+    } catch { stats.layout_perfect = 0; }
+
+    stats.layout_perfect_streak = stats.layout_perfect >= 5 ? 5 : 0;
+    stats.layout_speed = 0; // нет колонки времени в layout_game_progress
+
+    // ── Quiz Battle ──────────────────────────────────────────────
+    try {
+      const quizParticipRes = await pool.query(
+        'SELECT COUNT(DISTINCT battle_id) FROM quiz_battle_players WHERE user_id = $1',
+        [userId]
+      );
+      stats.quiz_battles = parseInt(quizParticipRes.rows[0].count);
+    } catch { stats.quiz_battles = 0; }
+
+    try {
+      const quizWinsRes = await pool.query(`
+        SELECT COUNT(*) FROM (
+          SELECT qbp.battle_id FROM quiz_battle_players qbp
+          JOIN quiz_battles qb ON qbp.battle_id = qb.id
+          WHERE qbp.user_id = $1 AND qb.status = 'finished'
+            AND qbp.score = (
+              SELECT MAX(score) FROM quiz_battle_players WHERE battle_id = qbp.battle_id
+            )
+        ) wins
+      `, [userId]);
+      stats.quiz_wins = parseInt(quizWinsRes.rows[0].count);
+    } catch { stats.quiz_wins = 0; }
+
+    try {
+      const quickAnsRes = await pool.query(
+        'SELECT COUNT(*) FROM quiz_battle_answers WHERE user_id = $1 AND is_correct = true AND time_spent <= 2',
+        [userId]
+      );
+      stats.quiz_quick_answer = parseInt(quickAnsRes.rows[0].count);
+    } catch { stats.quiz_quick_answer = 0; }
+
+    stats.quiz_win_streak = 0; // требует последовательного анализа
+    stats.quiz_comeback   = 0; // требует данных о ходе игры
+
+    // ── Покер (не реализован) ────────────────────────────────────
+    stats.poker_hands      = 0;
+    stats.poker_bluff_win  = 0;
+    stats.poker_full_house = 0;
+    stats.poker_flush      = 0;
+    stats.poker_straight   = 0;
+    stats.poker_royal_flush = 0;
+    stats.poker_allin_win  = 0;
+    stats.poker_win_streak = 0;
+
+    // ── Клавиатурный тренажёр ────────────────────────────────────
+    const typingRes = await pool.query(
+      'SELECT MAX(wpm) AS max_wpm, COUNT(*) AS sessions FROM typing_results WHERE user_id = $1',
+      [userId]
+    );
+    stats.typing_wpm      = parseInt(typingRes.rows[0].max_wpm || 0);
+    stats.typing_sessions = parseInt(typingRes.rows[0].sessions);
+
+    try {
+      const typPerfRes = await pool.query(
+        'SELECT COUNT(*) FROM typing_results WHERE user_id = $1 AND accuracy = 100',
+        [userId]
+      );
+      stats.typing_perfect = parseInt(typPerfRes.rows[0].count);
+    } catch { stats.typing_perfect = 0; }
+
+    try {
+      const charsRes = await pool.query(
+        "SELECT COALESCE(SUM(text_length), 0) AS total FROM typing_results WHERE user_id = $1 AND created_at::date = CURRENT_DATE",
+        [userId]
+      );
+      stats.typing_chars_daily = parseInt(charsRes.rows[0].total);
+    } catch { stats.typing_chars_daily = 0; }
+
+    // ── Магазин ──────────────────────────────────────────────────
+    const shopRes = await pool.query(
       'SELECT COUNT(*) FROM user_purchases WHERE user_id = $1',
       [userId]
     );
-    stats.shop_purchases = parseInt(shopResult.rows[0].count);
-    
+    stats.shop_purchases = parseInt(shopRes.rows[0].count);
+
+    try {
+      const totalItemsRes = await pool.query('SELECT COUNT(*) FROM shop_items');
+      const totalItems = parseInt(totalItemsRes.rows[0].count);
+      stats.shop_all_items = (totalItems > 0 && stats.shop_purchases >= totalItems) ? 1 : 0;
+    } catch { stats.shop_all_items = 0; }
+
+    // ── Рейтинг в группе ─────────────────────────────────────────
+    try {
+      const groupRes = await pool.query('SELECT group_id FROM users WHERE id = $1', [userId]);
+      const groupId = groupRes.rows[0]?.group_id;
+      if (groupId) {
+        const rankRes = await pool.query(
+          'SELECT id FROM users WHERE group_id = $1 ORDER BY points DESC',
+          [groupId]
+        );
+        const rank = rankRes.rows.findIndex(r => r.id === userId) + 1;
+        stats.rank_top = rank > 0 ? rank : 999;
+      } else {
+        stats.rank_top = 999;
+      }
+    } catch { stats.rank_top = 999; }
+
+    stats.rank_week  = 0; // требует исторических данных
+    stats.rank_month = 0; // требует исторических данных
+
+    // ── Серии входа ──────────────────────────────────────────────
+    stats.login_streak = 0; // нет таблицы истории входов
+
+    // ── Игры (общее) ─────────────────────────────────────────────
+    const hasAnyGame = (stats.chess_games_played > 0 || stats.quiz_battles > 0 ||
+                        stats.jsgame_levels > 0 || stats.flexchan_levels > 0 ||
+                        stats.layout_completed > 0);
+    stats.games_played    = hasAnyGame ? 1 : 0;
+    stats.games_all_played = 0; // невозможно без явного трекинга
+    stats.games_hours      = 0;
+    stats.games_max_score  = 0;
+
+    // ── Секретные ────────────────────────────────────────────────
+    stats.secret_midnight   = 0;
+    stats.secret_birthday   = 0;
+    stats.secret_all_pages  = 0;
+
   } catch (error) {
     console.error('Ошибка получения статистики:', error);
   }
-  
+
   return stats;
 };
 
 // Проверить условие достижения
 const checkAchievementCondition = (achievement, stats) => {
   const { requirement_type, requirement_value } = achievement;
-  
+  const val = stats[requirement_type];
+
+  if (val === undefined || val === null) return false;
+
   switch (requirement_type) {
+    // ── Рейтинг: меньше = лучше ──────────────────────────────────
+    case 'rank_top':
+      return val <= requirement_value;
+
+    // ── Секреты: только ручная выдача ────────────────────────────
+    case 'secret_midnight':
+    case 'secret_birthday':
+    case 'secret_all_pages':
+      return false;
+
+    // ── Все остальные: значение >= порога ────────────────────────
     case 'tests_completed':
-      return stats.tests_completed >= requirement_value;
+    case 'tests_daily':
+    case 'test_perfect_score':
+    case 'test_first_try_perfect':
+    case 'test_perfect_streak':
+    case 'test_speed_1min':
+    case 'test_speed_30sec':
+    case 'test_retries':
     case 'homework_submitted':
-      return stats.homework_submitted >= requirement_value;
-    case 'flexchan_levels':
-      return stats.flexchan_levels >= requirement_value;
-    case 'jsgame_levels':
-      return stats.jsgame_levels >= requirement_value;
+    case 'homework_on_time':
+    case 'homework_night':
+    case 'homework_early':
+    case 'homework_last_minute':
+    case 'homework_week_early':
+    case 'homework_never_late':
+    case 'course_started':
+    case 'lessons_viewed':
+    case 'courses_completed':
     case 'chess_games_played':
-      return stats.chess_games_played >= requirement_value;
     case 'chess_wins':
-      return stats.chess_wins >= requirement_value;
-    case 'typing_wpm':
-      return stats.typing_wpm >= requirement_value;
+    case 'chess_online_wins':
+    case 'chess_win_streak':
+    case 'chess_quick_mate':
+    case 'chess_4_move_mate':
+    case 'chess_ai_hard_win':
+    case 'chess_comeback_draw':
+    case 'flexchan_levels':
+    case 'flexchan_all_levels':
+    case 'flexchan_first_try':
+    case 'flexchan_many_attempts':
+    case 'flexchan_speed':
+    case 'jsgame_levels':
+    case 'jsgame_all_levels':
+    case 'jsgame_dan':
+    case 'jsgame_optimal':
+    case 'jsgame_algorithm':
+    case 'layout_completed':
+    case 'layout_perfect':
+    case 'layout_perfect_streak':
+    case 'layout_speed':
+    case 'quiz_battles':
+    case 'quiz_wins':
+    case 'quiz_win_streak':
+    case 'quiz_quick_answer':
+    case 'quiz_comeback':
+    case 'poker_hands':
+    case 'poker_bluff_win':
+    case 'poker_full_house':
+    case 'poker_flush':
+    case 'poker_straight':
+    case 'poker_royal_flush':
+    case 'poker_allin_win':
+    case 'poker_win_streak':
     case 'typing_sessions':
-      return stats.typing_sessions >= requirement_value;
-    case 'total_points':
-      return stats.total_points >= requirement_value;
+    case 'typing_wpm':
+    case 'typing_perfect':
+    case 'typing_chars_daily':
     case 'shop_purchases':
-      return stats.shop_purchases >= requirement_value;
+    case 'shop_all_items':
+    case 'cosmetic_frame':
+    case 'cosmetic_banner':
+    case 'total_points':
+    case 'user_level':
+    case 'user_level_max':
+    case 'login_streak':
+    case 'games_played':
+    case 'games_all_played':
+    case 'games_hours':
+    case 'games_max_score':
+    case 'rank_week':
+    case 'rank_month':
+      return val >= requirement_value;
+
     default:
       return false;
   }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api, { BASE_URL } from "../../utils/api";
+import { getFrameStyle } from "../../utils/frameUtils";
 import styles from "./StudentProfile.module.css";
 import { AiOutlineWallet, AiOutlineHistory, AiOutlineTrophy, AiOutlineFire, AiOutlineRise, AiOutlineCalendar, AiOutlineCode, AiOutlineCheckCircle, AiOutlineStar, AiOutlineThunderbolt, AiOutlineLineChart, AiOutlineClockCircle, AiOutlineExclamationCircle, AiOutlineArrowUp, AiOutlineArrowDown, AiOutlineClose, AiOutlineAppstore, AiOutlineEye, AiOutlineFileText, AiOutlineFileDone, AiOutlineReload, AiOutlineCheck, AiOutlineHeart, AiOutlineRocket, AiOutlineWarning, AiOutlineSchedule, AiOutlineFileProtect, AiOutlineDollar, AiOutlinePlayCircle, AiOutlineBook, AiOutlineRead, AiOutlineGlobal, AiOutlineRobot, AiOutlineCrown, AiOutlineFunction, AiOutlineFieldNumber, AiOutlineShopping, AiOutlineShoppingCart, AiOutlineBorder, AiOutlinePicture, AiOutlineCompass, AiOutlineOrderedList, AiOutlineLock } from "react-icons/ai";
 import { FaMedal, FaCrown, FaGem, FaCode, FaLaptopCode, FaUserTie, FaKeyboard, FaHtml5, FaCss3Alt, FaCoins, FaGamepad, FaFire, FaShieldAlt, FaGraduationCap, FaUniversity, FaRocket, FaChess, FaChessKing, FaChessQueen, FaChessKnight, FaChild, FaUser, FaCalendarAlt } from "react-icons/fa";
@@ -482,7 +483,9 @@ function StudentProfile() {
                 : <span>{(user?.full_name || user?.username || "U").charAt(0).toUpperCase()}</span>}
             </div>
             {appliedFrame?.image_url && (
-              <img src={`${BASE_URL}${appliedFrame.image_url}`} alt="Frame" className={styles["hero-avatar-frame"]} />
+              <img src={`${BASE_URL}${appliedFrame.image_url}`} alt="Frame"
+                className={styles["hero-avatar-frame"]}
+                style={getFrameStyle(appliedFrame, 'profile')} />
             )}
             <label className={styles["avatar-change-btn"]} title="Сменить фото">
               <AiOutlineFileText style={{ display: "none" }} />
