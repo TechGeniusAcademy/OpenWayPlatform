@@ -1,400 +1,326 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useMusic } from '../../context/MusicContext';
-import { BASE_URL } from '../../utils/api';
-import api from '../../utils/api';
-import styles from './StudentMusic.module.css';
-import { FaPlay, FaPause, FaHeart, FaSearch, FaMusic, FaClock, FaHeadphones, FaAlignLeft, FaTimes } from 'react-icons/fa';
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useMusic } from "../../context/MusicContext";
+import { BASE_URL } from "../../utils/api";
+import api from "../../utils/api";
+import styles from "./StudentMusic.module.css";
+import {
+  FaPlay, FaPause, FaHeart, FaSearch, FaMusic,
+  FaClock, FaHeadphones, FaAlignLeft, FaTimes,
+  FaGuitar,
+} from "react-icons/fa";
+import { IoMusicalNotesOutline } from "react-icons/io5";
+import { MdOutlineLibraryMusic, MdFavoriteBorder, MdFavorite } from "react-icons/md";
 
-function StudentMusic() {
-  const [tracks, setTracks] = useState([]);
-  const [filteredTracks, setFilteredTracks] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'liked'
-  const [likedTracks, setLikedTracks] = useState([]);
-  const [lyricsModal, setLyricsModal] = useState(null); // трек для показа текста
-  const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
-  const lyricsContentRef = useRef(null);
-  
+export default function StudentMusic() {
+  const [tracks, setTracks]           = useState([]);
+  const [filteredTracks, setFiltered] = useState([]);
+  const [searchQuery, setSearch]      = useState("");
+  const [loading, setLoading]         = useState(true);
+  const [activeTab, setActiveTab]     = useState("all");
+  const [likedTracks, setLiked]       = useState([]);
+  const [lyricsModal, setLyricsModal] = useState(null);
+  const [currentLyricIdx, setLyricIdx] = useState(-1);
+  const lyricsRef = useRef(null);
+
   const { currentTrack, isPlaying, playTrack, currentTime } = useMusic();
 
-  // Парсинг текста с таймкодами - вынесено наружу для переиспользования
-  // Парсинг текста с таймкодами - поддержка разных форматов
-  const parseLyrics = useCallback((lyricsText) => {
-    if (!lyricsText) return [];
-    
-    const lines = lyricsText.split('\n');
-    const parsed = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-      // Убираем \r и лишние пробелы
-      const line = lines[i].replace(/\r/g, '').trim();
-      
-      // Ищем таймкод в разных форматах:
-      // [MM:SS.ms] или [M:SS.ms] или [MM:SS] или [M:SS]
-      const match = line.match(/^\[(\d{1,2}):(\d{2})(?:[.\:](\d{1,3}))?\](.*)$/);
+  /* ── Parse LRC ── */
+  const parseLyrics = useCallback((text) => {
+    if (!text) return [];
+    return text.split("\n").map((raw, i) => {
+      const line  = raw.replace(/\r/g, "").trim();
+      const match = line.match(/^\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\](.*)$/);
       if (match) {
-        const minutes = parseInt(match[1], 10);
-        const seconds = parseInt(match[2], 10);
-        const ms = match[3] ? parseInt(match[3], 10) / (match[3].length === 1 ? 10 : match[3].length === 2 ? 100 : 1000) : 0;
-        const time = minutes * 60 + seconds + ms;
-        const text = match[4].trim();
-        parsed.push({ index: i, time, text, hasTimecode: true });
-      } else {
-        // Строка без таймкода
-        parsed.push({ index: i, time: null, text: line, hasTimecode: false });
+        const ms  = match[3] ? parseInt(match[3]) / (match[3].length === 1 ? 10 : match[3].length === 2 ? 100 : 1000) : 0;
+        return { index: i, time: parseInt(match[1]) * 60 + parseInt(match[2]) + ms, text: match[4].trim(), timed: true };
       }
-    }
-    
-    return parsed;
+      return { index: i, time: null, text: line, timed: false };
+    });
   }, []);
 
-  // Мемоизированный парсинг текста для текущего модального окна
-  const parsedLyrics = useMemo(() => {
-    if (!lyricsModal?.lyrics) return [];
-    return parseLyrics(lyricsModal.lyrics);
-  }, [lyricsModal?.lyrics, parseLyrics]);
+  const parsedLyrics  = useMemo(() => parseLyrics(lyricsModal?.lyrics), [lyricsModal?.lyrics, parseLyrics]);
+  const timedLyrics   = useMemo(() => parsedLyrics.filter(l => l.timed && l.time != null), [parsedLyrics]);
 
-  // Строки с таймкодами
-  const lyricsWithTime = useMemo(() => {
-    return parsedLyrics.filter(l => l.hasTimecode && l.time !== null);
-  }, [parsedLyrics]);
-
-  useEffect(() => {
-    loadTracks();
-    loadLikedTracks();
-  }, []);
-
-  useEffect(() => {
-    filterTracks();
-  }, [searchQuery, tracks, activeTab, likedTracks]);
+  /* ── Load ── */
+  useEffect(() => { loadTracks(); loadLiked(); }, []);
+  useEffect(() => { filter(); }, [searchQuery, tracks, activeTab, likedTracks]);
 
   const loadTracks = async () => {
     try {
-      const response = await api.get('/music/user/library');
-      setTracks(response.data.tracks);
-    } catch (error) {
-      console.error('Ошибка загрузки треков:', error);
-    } finally {
-      setLoading(false);
-    }
+      const r = await api.get("/music/user/library");
+      setTracks(r.data.tracks || []);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   };
-
-  const loadLikedTracks = async () => {
+  const loadLiked = async () => {
     try {
-      const response = await api.get('/music/user/liked');
-      setLikedTracks(response.data.tracks);
-    } catch (error) {
-      console.error('Ошибка загрузки лайкнутых треков:', error);
-    }
+      const r = await api.get("/music/user/liked");
+      setLiked(r.data.tracks || []);
+    } catch (e) { console.error(e); }
   };
 
-  const filterTracks = () => {
-    let filtered = activeTab === 'liked' ? likedTracks : tracks;
-    
+  const filter = () => {
+    let base = activeTab === "liked" ? likedTracks : tracks;
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(track => 
-        track.title.toLowerCase().includes(query) ||
-        (track.artist && track.artist.toLowerCase().includes(query))
+      const q = searchQuery.toLowerCase();
+      base = base.filter(t =>
+        t.title.toLowerCase().includes(q) ||
+        (t.artist && t.artist.toLowerCase().includes(q))
       );
     }
-    
-    setFilteredTracks(filtered);
+    setFiltered(base);
   };
 
+  /* ── Like ── */
   const handleLike = async (e, trackId) => {
     e.stopPropagation();
-    
     try {
-      const response = await api.post(`/music/${trackId}/like`);
-      const { isLiked, likesCount } = response.data;
-      
-      // Обновляем состояние треков
-      setTracks(prev => prev.map(t => 
-        t.id === trackId ? { ...t, is_liked: isLiked, likes_count: likesCount } : t
-      ));
-      
-      // Обновляем лайкнутые треки
+      const { data } = await api.post(`/music/${trackId}/like`);
+      const { isLiked, likesCount } = data;
+      setTracks(p => p.map(t => t.id === trackId ? { ...t, is_liked: isLiked, likes_count: likesCount } : t));
       if (isLiked) {
         const track = tracks.find(t => t.id === trackId);
-        if (track) {
-          setLikedTracks(prev => [{ ...track, is_liked: true, likes_count: likesCount }, ...prev]);
-        }
+        if (track) setLiked(p => [{ ...track, is_liked: true, likes_count: likesCount }, ...p.filter(t => t.id !== trackId)]);
       } else {
-        setLikedTracks(prev => prev.filter(t => t.id !== trackId));
+        setLiked(p => p.filter(t => t.id !== trackId));
       }
-    } catch (error) {
-      console.error('Ошибка лайка:', error);
-    }
+    } catch (e) { console.error(e); }
   };
 
-  const formatDuration = (seconds) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const fmt = (s) => {
+    if (!s) return "--:--";
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   };
 
-  const handlePlayTrack = (track) => {
-    const tracksToPlay = activeTab === 'liked' ? likedTracks : tracks;
-    playTrack(track, tracksToPlay);
-  };
+  const handlePlay = (track) => playTrack(track, activeTab === "liked" ? likedTracks : tracks);
 
-  const openLyrics = (e, track) => {
-    e.stopPropagation();
-    setLyricsModal(track);
-  };
-
-  const closeLyrics = () => {
-    setLyricsModal(null);
-    setCurrentLyricIndex(-1);
-  };
-
-  // Определяем текущую строку по времени воспроизведения
+  /* ── Lyrics sync ── */
   useEffect(() => {
-    // Проверяем, что открыто модальное окно и играет нужный трек
-    if (!lyricsModal || !currentTrack || currentTrack.id !== lyricsModal.id) {
-      if (currentLyricIndex !== -1) {
-        setCurrentLyricIndex(-1);
-      }
+    if (!lyricsModal || !currentTrack || currentTrack.id !== lyricsModal.id || !timedLyrics.length) {
+      if (currentLyricIdx !== -1) setLyricIdx(-1);
       return;
     }
-    
-    if (lyricsWithTime.length === 0) {
-      return;
-    }
-    
-    // Находим текущую строку по времени
-    let foundIndex = -1;
-    for (let i = lyricsWithTime.length - 1; i >= 0; i--) {
-      if (currentTime >= lyricsWithTime[i].time) {
-        // Находим индекс в оригинальном массиве parsedLyrics
-        foundIndex = parsedLyrics.findIndex(l => l.index === lyricsWithTime[i].index);
+    let found = -1;
+    for (let i = timedLyrics.length - 1; i >= 0; i--) {
+      if (currentTime >= timedLyrics[i].time) {
+        found = parsedLyrics.findIndex(l => l.index === timedLyrics[i].index);
         break;
       }
     }
-    
-    if (foundIndex !== currentLyricIndex) {
-      setCurrentLyricIndex(foundIndex);
-      
-      // Автоскролл к текущей строке
-      if (foundIndex >= 0 && lyricsContentRef.current) {
+    if (found !== currentLyricIdx) {
+      setLyricIdx(found);
+      if (found >= 0 && lyricsRef.current) {
         setTimeout(() => {
-          const lyricElements = lyricsContentRef.current?.querySelectorAll('[data-lyric-index]');
-          if (lyricElements && lyricElements[foundIndex]) {
-            lyricElements[foundIndex].scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-          }
+          const els = lyricsRef.current?.querySelectorAll("[data-li]");
+          els?.[found]?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 50);
       }
     }
-  }, [currentTime, lyricsModal, currentTrack, parsedLyrics, lyricsWithTime, currentLyricIndex]);
+  }, [currentTime, lyricsModal, currentTrack, parsedLyrics, timedLyrics, currentLyricIdx]);
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <FaMusic className={styles.loadingIcon} />
-        <p>Загрузка музыки...</p>
-      </div>
-    );
-  }
+  const coverSrc = (url) => url ? (url.startsWith("http") ? url : `${BASE_URL}${url}`) : null;
+
+  /* ── Stats ── */
+  const totalDuration = tracks.reduce((s, t) => s + (t.duration || 0), 0);
+  const totalMin = Math.floor(totalDuration / 60);
+
+  if (loading) return (
+    <div className={styles.page}>
+      <div className={styles.loadWrap}><div className={styles.spinner} /><span>Загрузка музыки…</span></div>
+    </div>
+  );
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.headerIcon}>
-            <FaHeadphones />
-          </div>
-          <div className={styles.headerText}>
-            <h1>Музыка</h1>
-            <p>Слушай и наслаждайся</p>
+    <div className={styles.page}>
+
+      {/* ── Header ── */}
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderIcon}><FaHeadphones /></div>
+        <div>
+          <h1 className={styles.pageTitle}>Музыка</h1>
+          <p className={styles.pageSub}>Слушай любимые треки во время учёбы</p>
+        </div>
+      </div>
+
+      {/* ── Stat tiles ── */}
+      <div className={styles.stats}>
+        <div className={styles.statCard}>
+          <div className={styles.statIcon} style={{ background: "var(--accent-soft)", color: "var(--accent)" }}><MdOutlineLibraryMusic /></div>
+          <div>
+            <div className={styles.statVal}>{tracks.length}</div>
+            <div className={styles.statLbl}>Треков в библиотеке</div>
           </div>
         </div>
-        
-        <div className={styles.stats}>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>{tracks.length}</span>
-            <span className={styles.statLabel}>Треков</span>
+        <div className={styles.statCard}>
+          <div className={styles.statIcon} style={{ background: "#fce7f3", color: "#db2777" }}><FaHeart /></div>
+          <div>
+            <div className={styles.statVal}>{likedTracks.length}</div>
+            <div className={styles.statLbl}>В избранном</div>
           </div>
-          <div className={styles.statItem}>
-            <span className={styles.statValue}>{likedTracks.length}</span>
-            <span className={styles.statLabel}>Избранных</span>
+        </div>
+        <div className={styles.statCard}>
+          <div className={styles.statIcon} style={{ background: "#d1fae5", color: "#059669" }}><FaClock /></div>
+          <div>
+            <div className={styles.statVal}>{totalMin} мин</div>
+            <div className={styles.statLbl}>Общее время</div>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={styles.statIcon} style={{ background: "#fef3c7", color: "#d97706" }}><FaGuitar /></div>
+          <div>
+            <div className={styles.statVal}>{tracks.filter(t => t.lyrics).length}</div>
+            <div className={styles.statLbl}>Треков с текстом</div>
           </div>
         </div>
       </div>
 
+      {/* ── Controls ── */}
       <div className={styles.controls}>
         <div className={styles.tabs}>
-          <button 
-            className={`${styles.tab} ${activeTab === 'all' ? styles.active : ''}`}
-            onClick={() => setActiveTab('all')}
-          >
-            <FaMusic /> Все треки
+          <button className={`${styles.tab} ${activeTab === "all"   ? styles.tabActive : ""}`} onClick={() => setActiveTab("all")}>
+            <IoMusicalNotesOutline /> Все треки
           </button>
-          <button 
-            className={`${styles.tab} ${activeTab === 'liked' ? styles.active : ''}`}
-            onClick={() => setActiveTab('liked')}
-          >
-            <FaHeart /> Избранное
+          <button className={`${styles.tab} ${activeTab === "liked" ? styles.tabActive : ""}`} onClick={() => setActiveTab("liked")}>
+            <MdFavorite /> Избранное
           </button>
         </div>
-
-        <div className={styles.searchWrapper}>
-          <FaSearch className={styles.searchIcon} />
+        <div className={styles.searchWrap}>
+          <FaSearch className={styles.searchIco} />
           <input
             type="text"
-            placeholder="Поиск по названию или исполнителю..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
             className={styles.searchInput}
+            placeholder="Поиск по названию или исполнителю…"
+            value={searchQuery}
+            onChange={e => setSearch(e.target.value)}
           />
         </div>
       </div>
 
+      {/* ── Track list ── */}
       {filteredTracks.length === 0 ? (
         <div className={styles.empty}>
-          <FaMusic className={styles.emptyIcon} />
-          <h3>{activeTab === 'liked' ? 'Нет избранных треков' : 'Треки не найдены'}</h3>
-          <p>{activeTab === 'liked' ? 'Нажмите на сердечко, чтобы добавить трек в избранное' : 'Попробуйте изменить поисковый запрос'}</p>
+          <FaMusic />
+          <p>{activeTab === "liked" ? "Нет избранных треков" : "Ничего не найдено"}</p>
         </div>
       ) : (
-        <div className={styles.trackList}>
-          {filteredTracks.map((track, index) => {
-            const isCurrentTrack = currentTrack?.id === track.id;
-            const coverUrl = track.cover_url 
-              ? (track.cover_url.startsWith('http') ? track.cover_url : `${BASE_URL}${track.cover_url}`)
-              : null;
-            
+        <div className={styles.list}>
+          {/* Header row */}
+          <div className={styles.listHead}>
+            <span className={styles.colIdx}>#</span>
+            <span />
+            <span>Название</span>
+            <span className={styles.colDur}><FaClock /></span>
+            <span />
+          </div>
+
+          {filteredTracks.map((track, i) => {
+            const isCurrent = currentTrack?.id === track.id;
+            const cover     = coverSrc(track.cover_url);
             return (
-              <div 
-                key={track.id} 
-                className={`${styles.trackItem} ${isCurrentTrack ? styles.playing : ''}`}
-                onClick={() => handlePlayTrack(track)}
+              <div
+                key={track.id}
+                className={`${styles.row} ${isCurrent ? styles.rowActive : ""}`}
+                onClick={() => handlePlay(track)}
               >
-                <div className={styles.trackIndex}>
-                  {isCurrentTrack && isPlaying ? (
-                    <div className={styles.playingAnimation}>
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
+                {/* Index / animation */}
+                <div className={styles.colIdx}>
+                  {isCurrent && isPlaying ? (
+                    <div className={styles.bars}><span /><span /><span /></div>
                   ) : (
-                    <span className={styles.indexNumber}>{index + 1}</span>
+                    <span className={styles.rowNum}>{i + 1}</span>
                   )}
                 </div>
-                
-                <div className={styles.trackCover}>
-                  {coverUrl ? (
-                    <img src={coverUrl} alt={track.title} />
-                  ) : (
-                    <div className={styles.noCover}>
-                      <FaMusic />
-                    </div>
-                  )}
-                  <div className={styles.playOverlay}>
-                    {isCurrentTrack && isPlaying ? <FaPause /> : <FaPlay />}
+
+                {/* Cover */}
+                <div className={styles.cover}>
+                  {cover
+                    ? <img src={cover} alt={track.title} />
+                    : <div className={styles.coverFallback}><FaMusic /></div>
+                  }
+                  <div className={styles.coverOverlay}>
+                    {isCurrent && isPlaying ? <FaPause /> : <FaPlay />}
                   </div>
                 </div>
-                
-                <div className={styles.trackInfo}>
-                  <div className={styles.trackTitle}>{track.title}</div>
-                  <div className={styles.trackArtist}>{track.artist || 'Неизвестный исполнитель'}</div>
+
+                {/* Info */}
+                <div className={styles.info}>
+                  <span className={`${styles.trackTitle} ${isCurrent ? styles.trackTitleActive : ""}`}>{track.title}</span>
+                  <span className={styles.trackArtist}>{track.artist || "Неизвестный исполнитель"}</span>
                 </div>
-                
-                <div className={styles.trackDuration}>
-                  <FaClock className={styles.durationIcon} />
-                  {formatDuration(track.duration)}
-                </div>
-                
-                {track.lyrics && (
-                  <button 
-                    className={styles.lyricsBtn}
-                    onClick={(e) => openLyrics(e, track)}
-                    title="Показать текст"
-                  >
-                    <FaAlignLeft />
-                  </button>
-                )}
-                
-                <button 
-                  className={`${styles.likeBtn} ${track.is_liked ? styles.liked : ''}`}
-                  onClick={(e) => handleLike(e, track.id)}
-                >
-                  <FaHeart />
-                  {track.likes_count > 0 && (
-                    <span className={styles.likeCount}>{track.likes_count}</span>
+
+                {/* Duration */}
+                <div className={styles.colDur}>{fmt(track.duration)}</div>
+
+                {/* Actions */}
+                <div className={styles.actions}>
+                  {track.lyrics && (
+                    <button className={styles.actionBtn} title="Текст песни" onClick={e => { e.stopPropagation(); setLyricsModal(track); }}>
+                      <FaAlignLeft />
+                    </button>
                   )}
-                </button>
+                  <button
+                    className={`${styles.actionBtn} ${styles.likeBtn} ${track.is_liked ? styles.liked : ""}`}
+                    onClick={e => handleLike(e, track.id)}
+                  >
+                    {track.is_liked ? <MdFavorite /> : <MdFavoriteBorder />}
+                    {track.likes_count > 0 && <span className={styles.likeCnt}>{track.likes_count}</span>}
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Модальное окно с текстом песни */}
+      {/* ── Lyrics modal ── */}
       {lyricsModal && (
-        <div className={styles.lyricsOverlay} onClick={closeLyrics}>
-          <div className={styles.lyricsModal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.lyricsHeader}>
-              <div className={styles.lyricsTrackInfo}>
-                {lyricsModal.cover_url ? (
-                  <img 
-                    src={lyricsModal.cover_url.startsWith('http') ? lyricsModal.cover_url : `${BASE_URL}${lyricsModal.cover_url}`} 
-                    alt={lyricsModal.title}
-                    className={styles.lyricsCover}
-                  />
-                ) : (
-                  <div className={styles.lyricsNoCover}>
-                    <FaMusic />
-                  </div>
-                )}
+        <div className={styles.overlay} onClick={() => { setLyricsModal(null); setLyricIdx(-1); }}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTrack}>
+                {coverSrc(lyricsModal.cover_url)
+                  ? <img src={coverSrc(lyricsModal.cover_url)} className={styles.modalCover} alt="" />
+                  : <div className={styles.modalCoverFb}><FaMusic /></div>
+                }
                 <div>
-                  <h2 className={styles.lyricsTitle}>{lyricsModal.title}</h2>
-                  <p className={styles.lyricsArtist}>{lyricsModal.artist || 'Неизвестный исполнитель'}</p>
+                  <div className={styles.modalTitle}>{lyricsModal.title}</div>
+                  <div className={styles.modalArtist}>{lyricsModal.artist || "Неизвестный исполнитель"}</div>
                 </div>
               </div>
-              <div className={styles.lyricsHeaderActions}>
-                {/* Кнопка воспроизведения */}
-                <button 
-                  className={styles.lyricsPlayBtn}
-                  onClick={() => handlePlayTrack(lyricsModal)}
-                  title={currentTrack?.id === lyricsModal.id && isPlaying ? 'Пауза' : 'Воспроизвести'}
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.modalPlay}
+                  onClick={() => handlePlay(lyricsModal)}
                 >
                   {currentTrack?.id === lyricsModal.id && isPlaying ? <FaPause /> : <FaPlay />}
                 </button>
-                <button className={styles.lyricsCloseBtn} onClick={closeLyrics}>
+                <button className={styles.modalClose} onClick={() => { setLyricsModal(null); setLyricIdx(-1); }}>
                   <FaTimes />
                 </button>
               </div>
             </div>
-            
-            {/* Индикатор синхронизации */}
+
             {currentTrack?.id === lyricsModal.id && (
-              <div className={styles.lyricsSyncIndicator}>
-                <span className={styles.syncDot}></span>
-                Синхронизация активна
+              <div className={styles.syncBadge}>
+                <span className={styles.syncDot} />
+                Текст синхронизирован
               </div>
             )}
-            
-            <div className={styles.lyricsContent} ref={lyricsContentRef}>
-              {parsedLyrics.map((lyric, index) => {
-                const isCurrentLine = currentTrack?.id === lyricsModal.id && index === currentLyricIndex;
-                const isPastLine = currentTrack?.id === lyricsModal.id && lyric.hasTimecode && index < currentLyricIndex;
-                
-                return (
-                  <p 
-                    key={index} 
-                    data-lyric-index={index}
-                    className={`${styles.lyricsLine} ${isCurrentLine ? styles.currentLyric : ''} ${isPastLine ? styles.pastLyric : ''} ${lyric.hasTimecode ? styles.timedLyric : ''}`}
-                  >
-                    {lyric.text || <br />}
-                  </p>
-                );
-              })}
+
+            <div className={styles.lyricsBody} ref={lyricsRef}>
+              {parsedLyrics.map((l, idx) => (
+                <p
+                  key={idx}
+                  data-li={idx}
+                  className={[
+                    styles.lyricsLine,
+                    currentTrack?.id === lyricsModal.id && idx === currentLyricIdx ? styles.lyricsActive : "",
+                    currentTrack?.id === lyricsModal.id && l.timed && idx < currentLyricIdx ? styles.lyricsPast : "",
+                  ].join(" ")}
+                >
+                  {l.text || <br />}
+                </p>
+              ))}
             </div>
           </div>
         </div>
@@ -402,5 +328,3 @@ function StudentMusic() {
     </div>
   );
 }
-
-export default StudentMusic;

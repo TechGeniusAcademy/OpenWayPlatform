@@ -1,371 +1,364 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api, { BASE_URL } from '../../utils/api';
 import styles from './StudentSchedule.module.css';
-import { FiChevronLeft, FiChevronRight, FiClock, FiMapPin, FiX, FiUsers, FiFileText, FiMessageSquare } from 'react-icons/fi';
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiClock,
+  FiX,
+  FiUsers,
+  FiFileText,
+  FiMessageSquare,
+  FiCalendar,
+  FiList,
+  FiBookOpen,
+  FiActivity,
+} from 'react-icons/fi';
+import { AiOutlineClockCircle } from 'react-icons/ai';
+
+const DAYS_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+const MONTH_NAMES = [
+  'Январь','Февраль','Март','Апрель','Май','Июнь',
+  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь',
+];
+const MONTH_NAMES_GEN = [
+  'января','февраля','марта','апреля','мая','июня',
+  'июля','августа','сентября','октября','ноября','декабря',
+];
+
+const formatLocalDate = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const fmt = (time) => time?.substring(0, 5) || '';
+
+const todayStr = formatLocalDate(new Date());
 
 const StudentSchedule = () => {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('week'); // 'week' или 'month'
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [lessonDetails, setLessonDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  const daysOfWeek = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-  const daysOfWeekFull = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
-                      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-
-  // Форматирование даты без проблем с часовыми поясами
-  const formatLocalDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  useEffect(() => {
-    loadSchedule();
-  }, [currentDate, viewMode]);
+  useEffect(() => { loadSchedule(); }, [currentDate]);
 
   const loadSchedule = async () => {
     try {
       setLoading(true);
-      
-      let startDate, endDate;
-      
-      if (viewMode === 'week') {
-        const dayOfWeek = currentDate.getDay();
-        const monday = new Date(currentDate);
-        monday.setDate(currentDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
-        
-        startDate = formatLocalDate(monday);
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-        endDate = formatLocalDate(sunday);
-      } else {
-        startDate = formatLocalDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1));
-        endDate = formatLocalDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0));
-      }
-
-      const response = await api.get(`/schedule/my-schedule?start_date=${startDate}&end_date=${endDate}`);
-      setLessons(response.data);
-    } catch (error) {
-      console.error('Error loading schedule:', error);
+      const startDate = formatLocalDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1));
+      const endDate   = formatLocalDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0));
+      const res = await api.get(`/schedule/my-schedule?start_date=${startDate}&end_date=${endDate}`);
+      setLessons(res.data);
+    } catch (err) {
+      console.error('Error loading schedule:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getWeekDays = () => {
-    const dayOfWeek = currentDate.getDay();
-    const monday = new Date(currentDate);
-    monday.setDate(currentDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
-
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-      days.push({
-        date: formatLocalDate(date),
-        dayName: daysOfWeek[date.getDay()],
-        dayNumber: date.getDate(),
-        isToday: new Date().toDateString() === date.toDateString()
-      });
-    }
-    return days;
-  };
-
-  const getMonthDays = () => {
-    const year = currentDate.getFullYear();
+  const monthDays = useMemo(() => {
+    const year  = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    
-    const days = [];
-    const startPadding = firstDay.getDay();
-    
-    for (let i = 0; i < startPadding; i++) {
-      days.push({ day: null, date: null });
-    }
-    
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-      const date = new Date(year, month, i);
-      days.push({ 
-        day: i, 
-        date: formatLocalDate(date),
-        isToday: new Date().toDateString() === date.toDateString()
-      });
-    }
-    
-    return days;
-  };
+    const first = new Date(year, month, 1);
+    const last  = new Date(year, month + 1, 0);
+    const cells = [];
+    const startPad = (first.getDay() + 6) % 7;
+    for (let i = 0; i < startPad; i++) cells.push(null);
+    for (let d = 1; d <= last.getDate(); d++) cells.push(formatLocalDate(new Date(year, month, d)));
+    return cells;
+  }, [currentDate]);
 
-  const getLessonsForDate = (dateStr) => {
-    return lessons.filter(l => l.event_date === dateStr);
-  };
+  const getLessonsForDate = (dateStr) => lessons.filter(l => l.event_date === dateStr);
 
-  const navigate = (direction) => {
-    const newDate = new Date(currentDate);
-    if (viewMode === 'week') {
-      newDate.setDate(newDate.getDate() + (direction * 7));
-    } else {
-      newDate.setMonth(newDate.getMonth() + direction);
-    }
-    setCurrentDate(newDate);
-  };
+  const stats = useMemo(() => {
+    const totalLessons = lessons.length;
+    const totalMinutes = lessons.reduce((s, l) => s + (l.duration_minutes || 0), 0);
+    const totalHours   = Math.round(totalMinutes / 60 * 10) / 10;
+    const lessonDays   = new Set(lessons.map(l => l.event_date)).size;
+    return { totalLessons, totalHours, lessonDays };
+  }, [lessons]);
 
-  const formatTime = (time) => {
-    return time?.substring(0, 5) || '';
-  };
+  const upcomingLessons = useMemo(() => {
+    const week = new Date(); week.setDate(week.getDate() + 7);
+    return lessons
+      .filter(l => l.event_date >= todayStr && l.event_date <= formatLocalDate(week))
+      .sort((a, b) => a.event_date.localeCompare(b.event_date) || a.lesson_time.localeCompare(b.lesson_time));
+  }, [lessons]);
 
-  const openLessonModal = async (lesson) => {
+  const navigate = (dir) => setCurrentDate(prev => { const d = new Date(prev); d.setMonth(d.getMonth() + dir); return d; });
+
+  const openLessonModal = async (lesson, e) => {
+    e?.stopPropagation();
     setSelectedLesson(lesson);
     setLoadingDetails(true);
-    
     try {
-      const response = await api.get(`/schedule/lesson-details/${lesson.id}/${lesson.event_date}`);
-      setLessonDetails(response.data);
-    } catch (error) {
-      console.error('Error loading lesson details:', error);
-      setLessonDetails(null);
-    } finally {
-      setLoadingDetails(false);
-    }
+      const res = await api.get(`/schedule/lesson-details/${lesson.id}/${lesson.event_date}`);
+      setLessonDetails(res.data);
+    } catch { setLessonDetails(null); }
+    finally { setLoadingDetails(false); }
   };
 
-  const closeLessonModal = () => {
-    setSelectedLesson(null);
-    setLessonDetails(null);
+  const closeLessonModal = () => { setSelectedLesson(null); setLessonDetails(null); };
+
+  const formatDayLabel = (dateStr) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    if (dateStr === todayStr) return 'Сегодня';
+    const tom = new Date(); tom.setDate(tom.getDate() + 1);
+    if (dateStr === formatLocalDate(tom)) return 'Завтра';
+    return `${d.getDate()} ${MONTH_NAMES_GEN[d.getMonth()]}`;
   };
 
-  const getWeekRange = () => {
-    const days = getWeekDays();
-    const first = new Date(days[0].date);
-    const last = new Date(days[6].date);
-    
-    if (first.getMonth() === last.getMonth()) {
-      return `${first.getDate()} - ${last.getDate()} ${monthNames[first.getMonth()]}`;
-    }
-    return `${first.getDate()} ${monthNames[first.getMonth()].substring(0, 3)} - ${last.getDate()} ${monthNames[last.getMonth()].substring(0, 3)}`;
-  };
+  const selectedLessons  = getLessonsForDate(selectedDate);
+  const selectedDateObj  = selectedDate ? new Date(selectedDate + 'T00:00:00') : null;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Расписание</h1>
-        <div className={styles.viewToggle}>
-          <button 
-            className={`${styles.toggleBtn} ${viewMode === 'week' ? styles.active : ''}`}
-            onClick={() => setViewMode('week')}
-          >
-            Неделя
-          </button>
-          <button 
-            className={`${styles.toggleBtn} ${viewMode === 'month' ? styles.active : ''}`}
-            onClick={() => setViewMode('month')}
-          >
-            Месяц
-          </button>
+    <div className={styles.page}>
+
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderIcon}><FiCalendar /></div>
+        <div>
+          <h1 className={styles.pageTitle}>Расписание</h1>
+          <p className={styles.pageSub}>{MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}</p>
         </div>
       </div>
 
-      <div className={styles.navigation}>
-        <button onClick={() => navigate(-1)} className={styles.navBtn}>
-          <FiChevronLeft />
-        </button>
-        <span className={styles.dateTitle}>
-          {viewMode === 'week' 
-            ? getWeekRange()
-            : `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-          }
-        </span>
-        <button onClick={() => navigate(1)} className={styles.navBtn}>
-          <FiChevronRight />
-        </button>
+      <div className={styles.statsRow}>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><FiBookOpen /></span>
+          <span className={styles.statTileVal}>{stats.totalLessons}</span>
+          <span className={styles.statTileLabel}>Уроков в месяце</span>
+        </div>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><AiOutlineClockCircle /></span>
+          <span className={styles.statTileVal}>{stats.totalHours}</span>
+          <span className={styles.statTileLabel}>Часов обучения</span>
+        </div>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><FiActivity /></span>
+          <span className={styles.statTileVal}>{stats.lessonDays}</span>
+          <span className={styles.statTileLabel}>Учебных дней</span>
+        </div>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><FiList /></span>
+          <span className={styles.statTileVal}>{upcomingLessons.length}</span>
+          <span className={styles.statTileLabel}>Предстоит (7 дней)</span>
+        </div>
       </div>
 
-      {loading ? (
-        <div className={styles.loading}>Загрузка...</div>
-      ) : viewMode === 'week' ? (
-        <div className={styles.weekView}>
-          {getWeekDays().map((day) => (
-            <div key={day.date} className={`${styles.dayColumn} ${day.isToday ? styles.today : ''}`}>
-              <div className={styles.dayHeader}>
-                <span className={styles.dayName}>{day.dayName}</span>
-                <span className={styles.dayNumber}>{day.dayNumber}</span>
-              </div>
-              <div className={styles.dayLessons}>
-                {getLessonsForDate(day.date).length === 0 ? (
-                  <div className={styles.noLessons}>Нет уроков</div>
-                ) : (
-                  getLessonsForDate(day.date).map(lesson => (
-                    <div 
-                      key={`${lesson.id}-${lesson.event_date}`} 
-                      className={styles.lessonCard}
-                      onClick={() => openLessonModal(lesson)}
-                    >
-                      <div className={styles.lessonTime}>
-                        <FiClock />
-                        <span>{formatTime(lesson.lesson_time)}</span>
-                      </div>
-                      <div className={styles.lessonTitle}>{lesson.title}</div>
-                      {lesson.description && (
-                        <div className={styles.lessonDesc}>
-                          {lesson.description.length > 50 
-                            ? lesson.description.substring(0, 50) + '...' 
-                            : lesson.description}
-                        </div>
-                      )}
-                      <div className={styles.lessonDuration}>
-                        {lesson.duration_minutes} мин
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.monthView}>
-          <div className={styles.monthGrid}>
-            {daysOfWeek.map(day => (
-              <div key={day} className={styles.monthDayHeader}>{day}</div>
+      <div className={styles.mainGrid}>
+
+        <div className={styles.calendarCard}>
+          <div className={styles.calNav}>
+            <button className={styles.navBtn} onClick={() => navigate(-1)}><FiChevronLeft /></button>
+            <span className={styles.calNavTitle}>{MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}</span>
+            <button className={styles.navBtn} onClick={() => navigate(1)}><FiChevronRight /></button>
+          </div>
+
+          <div className={styles.calGrid}>
+            {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d => (
+              <div key={d} className={styles.calDayHeader}>{d}</div>
             ))}
-            
-            {getMonthDays().map((dayData, index) => (
-              <div 
-                key={index} 
-                className={`${styles.monthDayCell} ${dayData.isToday ? styles.today : ''} ${!dayData.day ? styles.empty : ''}`}
-              >
-                {dayData.day && (
-                  <>
-                    <span className={styles.monthDayNumber}>{dayData.day}</span>
-                    <div className={styles.monthDayLessons}>
-                      {getLessonsForDate(dayData.date).map(lesson => (
-                        <div 
-                          key={`${lesson.id}-${lesson.event_date}`} 
-                          className={styles.monthLessonItem}
-                          onClick={() => openLessonModal(lesson)}
-                        >
-                          <span className={styles.monthLessonTime}>{formatTime(lesson.lesson_time)}</span>
-                          <span className={styles.monthLessonTitle}>{lesson.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+
+            {loading ? (
+              <div className={styles.calLoading}><div className={styles.spinner} /></div>
+            ) : (
+              monthDays.map((dateStr, i) => {
+                if (!dateStr) return <div key={`pad-${i}`} className={styles.calCellEmpty} />;
+                const dayLessons = getLessonsForDate(dateStr);
+                const isToday    = dateStr === todayStr;
+                const isSelected = dateStr === selectedDate;
+                const d          = new Date(dateStr + 'T00:00:00');
+                const isWeekend  = d.getDay() === 0 || d.getDay() === 6;
+                return (
+                  <div
+                    key={dateStr}
+                    className={[
+                      styles.calCell,
+                      isToday    ? styles.calCellToday    : '',
+                      isSelected ? styles.calCellSelected : '',
+                      isWeekend  ? styles.calCellWeekend  : '',
+                    ].join(' ')}
+                    onClick={() => setSelectedDate(dateStr)}
+                  >
+                    <span className={styles.calDayNum}>{d.getDate()}</span>
+                    {dayLessons.length > 0 && (
+                      <div className={styles.calDots}>
+                        {dayLessons.slice(0, 3).map((_, idx) => <span key={idx} className={styles.calDot} />)}
+                        {dayLessons.length > 3 && <span className={styles.calDotMore}>+{dayLessons.length - 3}</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
-      )}
 
-      {!user?.group_id && (
-        <div className={styles.noGroup}>
-          Вы не состоите в группе. Обратитесь к администратору для назначения в группу.
+        <div className={styles.dayPanel}>
+          <div className={styles.dayPanelHeader}>
+            <span className={styles.dayPanelIcon}><FiCalendar /></span>
+            <span className={styles.dayPanelTitle}>
+              {selectedDateObj
+                ? `${DAYS_SHORT[selectedDateObj.getDay()]}, ${selectedDateObj.getDate()} ${MONTH_NAMES_GEN[selectedDateObj.getMonth()]}`
+                : 'Выберите день'}
+            </span>
+            {selectedDate === todayStr && <span className={styles.todayChip}>Сегодня</span>}
+          </div>
+
+          {selectedLessons.length === 0 ? (
+            <div className={styles.dayEmpty}>
+              <FiCalendar className={styles.dayEmptyIcon} />
+              <p>Уроков нет</p>
+            </div>
+          ) : (
+            <ul className={styles.dayLessonList}>
+              {[...selectedLessons]
+                .sort((a, b) => a.lesson_time.localeCompare(b.lesson_time))
+                .map(lesson => (
+                  <li key={`${lesson.id}-${lesson.event_date}`} className={styles.dayLessonItem}
+                      onClick={(e) => openLessonModal(lesson, e)}>
+                    <div className={styles.dayLessonTime}>
+                      <FiClock />{fmt(lesson.lesson_time)}
+                    </div>
+                    <div className={styles.dayLessonBody}>
+                      <span className={styles.dayLessonTitle}>{lesson.title}</span>
+                      {lesson.description && (
+                        <span className={styles.dayLessonDesc}>
+                          {lesson.description.length > 70 ? lesson.description.substring(0, 70) + '…' : lesson.description}
+                        </span>
+                      )}
+                      <div className={styles.dayLessonMeta}><span><FiClock /> {lesson.duration_minutes} мин</span></div>
+                    </div>
+                    <FiChevronRight className={styles.dayLessonArrow} />
+                  </li>
+                ))}
+            </ul>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Модальное окно урока */}
+      <div className={styles.upcomingCard}>
+        <div className={styles.cardHeader}>
+          <span className={styles.cardHeaderIcon}><FiList /></span>
+          Предстоящие уроки — ближайшие 7 дней
+          <span className={styles.upcomingCount}>{upcomingLessons.length}</span>
+        </div>
+
+        {upcomingLessons.length === 0 ? (
+          <div className={styles.upcomingEmpty}><FiCalendar /><p>На ближайшие 7 дней уроков нет</p></div>
+        ) : (
+          <div className={styles.upcomingList}>
+            {upcomingLessons.map((lesson, idx) => {
+              const prev = upcomingLessons[idx - 1];
+              const showDivider = idx === 0 || prev?.event_date !== lesson.event_date;
+              return (
+                <div key={`${lesson.id}-${lesson.event_date}`}>
+                  {showDivider && (
+                    <div className={styles.upcomingDateDivider}><span>{formatDayLabel(lesson.event_date)}</span></div>
+                  )}
+                  <div className={styles.upcomingItem} onClick={() => openLessonModal(lesson)}>
+                    <div className={styles.upcomingTimeCol}>
+                      <span className={styles.upcomingTime}>{fmt(lesson.lesson_time)}</span>
+                      <span className={styles.upcomingDur}>{lesson.duration_minutes} мин</span>
+                    </div>
+                    <div className={styles.upcomingBar} />
+                    <div className={styles.upcomingBody}>
+                      <span className={styles.upcomingTitle}>{lesson.title}</span>
+                      {lesson.description && (
+                        <span className={styles.upcomingDesc}>
+                          {lesson.description.length > 90 ? lesson.description.substring(0, 90) + '…' : lesson.description}
+                        </span>
+                      )}
+                    </div>
+                    <FiChevronRight className={styles.upcomingArrow} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {selectedLesson && (
         <div className={styles.modalOverlay} onClick={closeLessonModal}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalHeaderInfo}>
+            <div className={styles.modalBanner}>
+              <div className={styles.modalBannerOverlay} />
+              <button className={styles.modalClose} onClick={closeLessonModal}><FiX /></button>
+            </div>
+            <div className={styles.modalHead}>
+              <div className={styles.modalTitleBlock}>
                 <h2>{selectedLesson.title}</h2>
                 <div className={styles.modalMeta}>
-                  <span className={styles.modalDate}>
+                  <span>
                     <FiClock />
-                    {new Date(selectedLesson.event_date).toLocaleDateString('ru-RU', { 
-                      weekday: 'long', 
-                      day: 'numeric', 
-                      month: 'long' 
-                    })} в {formatTime(selectedLesson.lesson_time)}
+                    {new Date(selectedLesson.event_date + 'T00:00:00').toLocaleDateString('ru-RU', {
+                      weekday: 'long', day: 'numeric', month: 'long'
+                    })} в {fmt(selectedLesson.lesson_time)}
                   </span>
-                  <span className={styles.modalDuration}>
-                    {selectedLesson.duration_minutes} мин
-                  </span>
+                  <span className={styles.modalDurChip}>{selectedLesson.duration_minutes} мин</span>
                 </div>
               </div>
-              <button className={styles.modalClose} onClick={closeLessonModal}>
-                <FiX />
-              </button>
             </div>
-
             <div className={styles.modalBody}>
               {loadingDetails ? (
-                <div className={styles.modalLoading}>Загрузка...</div>
+                <div className={styles.modalLoading}><div className={styles.spinner} /></div>
               ) : (
                 <>
-                  {/* Описание урока */}
                   {selectedLesson.description && (
                     <div className={styles.modalSection}>
-                      <h3><FiFileText /> Описание урока</h3>
-                      <p className={styles.modalDescription}>{selectedLesson.description}</p>
+                      <h3 className={styles.modalSectionTitle}><FiFileText /> Описание</h3>
+                      <p className={styles.modalDesc}>{selectedLesson.description}</p>
                     </div>
                   )}
-
-                  {/* Список учеников группы */}
                   {lessonDetails?.students && lessonDetails.students.length > 0 && (
                     <div className={styles.modalSection}>
-                      <h3><FiUsers /> Ученики группы ({lessonDetails.students.length})</h3>
-                      <div className={styles.studentsList}>
-                        {lessonDetails.students.map(student => (
-                          <div key={student.id} className={styles.studentItem}>
-                            {student.avatar_url ? (
-                              <img 
-                                src={`${BASE_URL}${student.avatar_url}`} 
-                                alt={student.username}
-                                className={styles.studentAvatar}
-                              />
-                            ) : (
-                              <div className={styles.studentAvatarPlaceholder}>
-                                {(student.full_name || student.username || 'U').charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                            <span className={styles.studentName}>
-                              {student.full_name || student.username}
-                            </span>
+                      <h3 className={styles.modalSectionTitle}><FiUsers /> Ученики ({lessonDetails.students.length})</h3>
+                      <div className={styles.modalStudents}>
+                        {lessonDetails.students.map(s => (
+                          <div key={s.id} className={styles.modalStudent}>
+                            {s.avatar_url
+                              ? <img src={`${BASE_URL}${s.avatar_url}`} alt={s.username} className={styles.modalStudentAv} />
+                              : <div className={styles.modalStudentAvPh}>{(s.full_name || s.username || 'U').charAt(0).toUpperCase()}</div>
+                            }
+                            <span>{s.full_name || s.username}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
-
-                  {/* Примечания к уроку для текущего ученика */}
-                  {lessonDetails?.notes && lessonDetails.notes.length > 0 && (
+                  {lessonDetails?.notes && lessonDetails.notes.length > 0 ? (
                     <div className={styles.modalSection}>
-                      <h3><FiMessageSquare /> Примечания для вас</h3>
-                      <div className={styles.notesList}>
+                      <h3 className={styles.modalSectionTitle}><FiMessageSquare /> Примечания</h3>
+                      <div className={styles.modalNotes}>
                         {lessonDetails.notes.map(note => (
-                          <div key={note.id} className={styles.noteItem}>
+                          <div key={note.id} className={styles.modalNote}>
                             <p>{note.note}</p>
-                            <span className={styles.noteDate}>
-                              {new Date(note.created_at).toLocaleDateString('ru-RU')}
-                            </span>
+                            <span className={styles.modalNoteDate}>{new Date(note.created_at).toLocaleDateString('ru-RU')}</span>
                           </div>
                         ))}
                       </div>
                     </div>
-                  )}
-
-                  {/* Если нет примечаний */}
-                  {lessonDetails && (!lessonDetails.notes || lessonDetails.notes.length === 0) && (
-                    <div className={styles.noNotes}>
-                      <FiMessageSquare />
-                      <p>Примечаний к этому уроку нет</p>
-                    </div>
+                  ) : lessonDetails && (
+                    <div className={styles.noNotes}><FiMessageSquare /><p>Примечаний нет</p></div>
                   )}
                 </>
               )}
             </div>
           </div>
         </div>
+      )}
+
+      {!user?.group_id && (
+        <div className={styles.noGroup}>Вы не состоите в группе. Обратитесь к администратору.</div>
       )}
     </div>
   );

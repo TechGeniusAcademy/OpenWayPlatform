@@ -1,22 +1,11 @@
-import { useState } from 'react';
-import { FiX, FiUpload, FiCheck, FiArrowLeft, FiFileText, FiCheckCircle } from 'react-icons/fi';
-import styles from './BulkTestEditor.module.css';
+import { useState } from "react";
+import {
+  FiX, FiUpload, FiCheck, FiArrowLeft, FiFileText,
+  FiCheckCircle, FiAlertCircle, FiInfo, FiClock, FiAward,
+} from "react-icons/fi";
+import styles from "./BulkTestEditor.module.css";
 
-function BulkTestEditor({ onImport, onClose }) {
-  const [bulkText, setBulkText] = useState('');
-  const [testSettings, setTestSettings] = useState({
-    title: '',
-    description: '',
-    type: 'choice',
-    timeLimit: 0,
-    pointsCorrect: 1,
-    pointsWrong: 0,
-    canRetry: false
-  });
-  const [previewQuestions, setPreviewQuestions] = useState([]);
-  const [showPreview, setShowPreview] = useState(false);
-
-  const exampleText = `1. Что такое переменная в JavaScript?
+const EXAMPLE = `1. Что такое переменная в JavaScript?
    a) Контейнер для данных [✓]
    b) Функция
    c) Объект
@@ -40,291 +29,204 @@ function BulkTestEditor({ onImport, onClose }) {
    c) object
    d) undefined`;
 
-  const parseBulkText = (text) => {
-    const questions = [];
-    const questionBlocks = text.split(/\n(?=\d+\.)/);
-    
-    questionBlocks.forEach(block => {
-      if (!block.trim()) return;
-      
-      const lines = block.trim().split('\n');
-      const questionLine = lines[0];
-      const optionLines = lines.slice(1);
-      
-      // Извлекаем номер и текст вопроса
-      const questionMatch = questionLine.match(/^\d+\.\s*(.+)/);
-      if (!questionMatch) return;
-      
-      const questionText = questionMatch[1];
-      const options = [];
-      
-      optionLines.forEach(line => {
-        const optionMatch = line.trim().match(/^[a-z]\)\s*(.+?)(\s*\[✓\])?$/i);
-        if (optionMatch) {
-          const optionText = optionMatch[1].trim();
-          const isCorrect = !!optionMatch[2];
-          options.push({ option_text: optionText, is_correct: isCorrect });
-        }
-      });
-      
-      if (options.length > 0) {
-        questions.push({
-          question_text: questionText,
-          question_type: 'choice',
-          options: options,
-          code_template: '',
-          code_solution: '',
-          code_language: 'javascript'
-        });
-      }
+function parseBulkText(text) {
+  const questions = [];
+  const blocks = text.split(/\n(?=\d+\.)/);
+  blocks.forEach(block => {
+    if (!block.trim()) return;
+    const lines = block.trim().split("\n");
+    const qMatch = lines[0].match(/^\d+\.\s*(.+)/);
+    if (!qMatch) return;
+    const opts = [];
+    lines.slice(1).forEach(line => {
+      const m = line.trim().match(/^[a-z]\)\s*(.+?)(\s*\[✓\])?$/i);
+      if (m) opts.push({ option_text: m[1].trim(), is_correct: !!m[2] });
     });
-    
-    return questions;
-  };
+    if (opts.length > 0) questions.push({ question_text: qMatch[1], question_type: "choice", options: opts, code_template: "", code_solution: "", code_language: "javascript" });
+  });
+  return questions;
+}
+
+export default function BulkTestEditor({ onImport, onClose }) {
+  const [bulkText, setBulkText] = useState("");
+  const [settings, setSettings] = useState({ title: "", description: "", type: "choice", timeLimit: 0, pointsCorrect: 1, pointsWrong: 0, canRetry: false });
+  const [preview,  setPreview]  = useState([]);
+  const [step,     setStep]     = useState("edit"); // "edit" | "preview"
+  const [err,      setErr]      = useState("");
+
+  const upd = (field, val) => setSettings(s => ({ ...s, [field]: val }));
 
   const handlePreview = () => {
-    if (!bulkText.trim()) {
-      alert('Введите текст для парсинга');
-      return;
-    }
-    
-    const questions = parseBulkText(bulkText);
-    if (questions.length === 0) {
-      alert('Не удалось распознать вопросы. Проверьте формат.');
-      return;
-    }
-    
-    setPreviewQuestions(questions);
-    setShowPreview(true);
+    setErr("");
+    if (!bulkText.trim()) { setErr("Введите текст с вопросами"); return; }
+    const q = parseBulkText(bulkText);
+    if (q.length === 0) { setErr("Не удалось распознать вопросы. Проверьте формат."); return; }
+    setPreview(q); setStep("preview");
   };
 
   const handleImport = () => {
-    if (!testSettings.title.trim()) {
-      alert('Введите название теста');
-      return;
-    }
-    
-    if (previewQuestions.length === 0) {
-      alert('Нет вопросов для импорта');
-      return;
-    }
-    
-    onImport({
-      ...testSettings,
-      questions: previewQuestions
-    });
+    setErr("");
+    if (!settings.title.trim()) { setErr("Введите название теста"); return; }
+    if (preview.length === 0)   { setErr("Нет вопросов для импорта"); return; }
+    onImport({ ...settings, questions: preview });
   };
 
   const loadExample = () => {
-    setBulkText(exampleText);
-    setTestSettings(prev => ({
-      ...prev,
-      title: 'Основы JavaScript',
-      description: 'Тест на знание основ JavaScript'
-    }));
+    setBulkText(EXAMPLE);
+    setSettings(s => ({ ...s, title: "Основы JavaScript", description: "Тест на знание основ JavaScript" }));
   };
 
   return (
-    <div className={styles['modal-overlay']} onClick={onClose}>
-      <div className={`${styles.modal} ${styles['modal-xlarge']}`} onClick={(e) => e.stopPropagation()}>
-        <div className={styles['modal-header']}>
-          <div className={styles['header-title']}>
-            <div className={styles['header-icon']}>
-              <FiUpload />
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={`${styles.modal} ${styles.modalXl}`} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className={styles.modalHead}>
+          <div className={styles.modalTitle}>
+            {step === "preview" && (
+              <button className={styles.backBtn} onClick={() => setStep("edit")}><FiArrowLeft /></button>
+            )}
+            <div className={styles.modalIcon}><FiUpload /></div>
+            <div>
+              <h2 className={styles.titleText}>
+                {step === "edit" ? "Массовое создание теста" : "Предварительный просмотр"}
+              </h2>
+              {step === "preview" && <p className={styles.titleSub}>{preview.length} вопросов распознано</p>}
             </div>
-            <h2>Массовое создание теста</h2>
           </div>
-          <button className={styles['close-btn']} onClick={onClose}>
-            <FiX />
-          </button>
+          <button className={styles.closeBtn} onClick={onClose}><FiX /></button>
         </div>
 
-        <div className={styles['modal-body']}>
-        {!showPreview ? (
-          <>
-            {/* Настройки теста */}
-            <div className={styles['settings-section']}>
-              <h3 className={styles['section-title']}>Настройки теста</h3>
-              <div className={styles['settings-grid']}>
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>Название теста *</label>
-                  <input
-                    type="text"
-                    className={styles['form-input']}
-                    value={testSettings.title}
-                    onChange={(e) => setTestSettings(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Введите название теста"
-                  />
-                </div>
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>Время (минут)</label>
-                  <input
-                    type="number"
-                    className={styles['form-input']}
-                    value={testSettings.timeLimit}
-                    onChange={(e) => setTestSettings(prev => ({ ...prev, timeLimit: parseInt(e.target.value) || 0 }))}
-                    min="0"
-                  />
-                </div>
-              </div>
-              
-              <div className={styles['form-group']}>
-                <label className={styles['form-label']}>Описание</label>
-                <textarea
-                  className={styles['form-textarea']}
-                  value={testSettings.description}
-                  onChange={(e) => setTestSettings(prev => ({ ...prev, description: e.target.value }))}
-                  rows="2"
-                  placeholder="Введите описание теста"
-                />
-              </div>
+        {/* Error banner */}
+        {err && (
+          <div className={styles.errBanner}>
+            <FiAlertCircle /><span>{err}</span>
+            <button onClick={() => setErr("")}><FiX /></button>
+          </div>
+        )}
 
-              <div className={styles['settings-grid']}>
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>Баллы за правильный</label>
-                  <input
-                    type="number"
-                    className={styles['form-input']}
-                    value={testSettings.pointsCorrect}
-                    onChange={(e) => setTestSettings(prev => ({ ...prev, pointsCorrect: parseInt(e.target.value) || 1 }))}
-                    min="0"
-                  />
-                </div>
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>Баллы за неправильный</label>
-                  <input
-                    type="number"
-                    className={styles['form-input']}
-                    value={testSettings.pointsWrong}
-                    onChange={(e) => setTestSettings(prev => ({ ...prev, pointsWrong: parseInt(e.target.value) || 0 }))}
-                  />
-                </div>
-                <div className={styles['form-group']}>
-                  <label className={styles['checkbox-label']}>
-                    <input
-                      type="checkbox"
-                      checked={testSettings.canRetry}
-                      onChange={(e) => setTestSettings(prev => ({ ...prev, canRetry: e.target.checked }))}
-                    />
-                    Можно перепройти
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Инструкция по формату */}
-            <div className={styles['instruction-section']}>
-              <h3 className={styles['section-title']}>
-                <FiFileText />
-                <span>Формат ввода вопросов</span>
-              </h3>
-              <div className={styles['instruction-content']}>
-                <p className={styles['instruction-text']}>Используйте следующий формат:</p>
-                <pre className={styles['code-block']}>{`1. Текст вопроса?
-   a) Вариант ответа 1
-   b) Правильный ответ [✓]
-   c) Еще один вариант
-   d) Последний вариант [✓]
-
-2. Следующий вопрос?
-   a) Ответ 1
-   b) Правильный ответ [✓]`}</pre>
-                <div className={styles['rules-box']}>
-                  <p className={styles['rules-title']}><strong>Правила форматирования:</strong></p>
-                  <ul className={styles['rules-list']}>
-                    <li>Нумеруйте вопросы: 1., 2., 3...</li>
-                    <li>Варианты ответов: a), b), c), d)</li>
-                    <li>Отмечайте правильные ответы: [✓]</li>
-                    <li>Можно отмечать несколько правильных ответов</li>
-                    <li>Пустая строка между вопросами</li>
-                  </ul>
-                </div>
-                <button className={styles['btn-example']} onClick={loadExample}>
-                  <FiFileText />
-                  <span>Загрузить пример</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Текстовое поле для ввода */}
-            <div className={styles['input-section']}>
-              <h3 className={styles['section-title']}>Введите вопросы</h3>
-              <textarea
-                value={bulkText}
-                onChange={(e) => setBulkText(e.target.value)}
-                placeholder="Вставьте или введите вопросы в указанном формате..."
-                rows="15"
-                className={styles['bulk-textarea']}
-              />
-            </div>
-
-            <div className={styles['modal-footer']}>
-              <button className={styles['btn-secondary']} onClick={onClose}>
-                <FiX />
-                <span>Отмена</span>
-              </button>
-              <button className={styles['btn-primary']} onClick={handlePreview}>
-                <FiFileText />
-                <span>Предварительный просмотр</span>
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Предварительный просмотр */}
-            <div className={styles['preview-section']}>
-              <div className={styles['preview-header']}>
-                <h3 className={styles['section-title']}>
-                  <FiFileText />
-                  <span>Предварительный просмотр</span>
-                </h3>
-                <div className={styles['questions-count']}>
-                  {previewQuestions.length} {previewQuestions.length === 1 ? 'вопрос' : 'вопросов'}
-                </div>
-              </div>
-              
-              <div className={styles['preview-questions']}>
-                {previewQuestions.map((question, index) => (
-                  <div key={index} className={styles['preview-question']}>
-                    <div className={styles['question-number']}>Вопрос {index + 1}</div>
-                    <p className={styles['question-text']}>{question.question_text}</p>
-                    <div className={styles['preview-options']}>
-                      {question.options.map((option, optIndex) => (
-                        <div 
-                          key={optIndex} 
-                          className={`${styles['preview-option']} ${option.is_correct ? styles['option-correct'] : ''}`}
-                        >
-                          <span className={styles['option-letter']}>{String.fromCharCode(97 + optIndex)})</span>
-                          <span className={styles['option-text']}>{option.option_text}</span>
-                          {option.is_correct && (
-                            <span className={styles['correct-mark']}>
-                              <FiCheckCircle />
-                            </span>
-                          )}
+        <div className={styles.modalBody}>
+          {step === "edit" ? (
+            <div className={styles.twoCol}>
+              {/* Left — settings + input */}
+              <div className={styles.leftCol}>
+                {/* Settings */}
+                <div className={styles.section}>
+                  <h3 className={styles.sectionTitle}>Настройки теста</h3>
+                  <div className={styles.formGrid}>
+                    <div className={`${styles.formGroup} ${styles.spanFull}`}>
+                      <label className={styles.formLabel}>Название *</label>
+                      <input className={styles.formInput} value={settings.title} onChange={e => upd("title", e.target.value)} placeholder="Например: Основы JavaScript" />
+                    </div>
+                    <div className={`${styles.formGroup} ${styles.spanFull}`}>
+                      <label className={styles.formLabel}>Описание</label>
+                      <textarea className={styles.formInput} rows={2} value={settings.description} onChange={e => upd("description", e.target.value)} placeholder="Краткое описание" />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}><FiClock /> Лимит (мин)</label>
+                      <input type="number" className={styles.formInput} value={settings.timeLimit} onChange={e => upd("timeLimit", +e.target.value)} min="0" />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}><FiAward /> Правильный</label>
+                      <input type="number" className={styles.formInput} value={settings.pointsCorrect} onChange={e => upd("pointsCorrect", +e.target.value)} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}><FiAward /> Неправильный</label>
+                      <input type="number" className={styles.formInput} value={settings.pointsWrong} onChange={e => upd("pointsWrong", +e.target.value)} />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Повтор</label>
+                      <div className={styles.toggleRow}>
+                        <div className={`${styles.toggle} ${settings.canRetry ? styles.toggleOn : ""}`} onClick={() => upd("canRetry", !settings.canRetry)}>
+                          <div className={styles.toggleKnob} />
                         </div>
-                      ))}
+                        <span className={styles.toggleLabel}>{settings.canRetry ? "Разрешён" : "Запрещён"}</span>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Textarea */}
+                <div className={styles.section}>
+                  <h3 className={styles.sectionTitle}>Вопросы</h3>
+                  <textarea
+                    className={styles.bulkTextarea}
+                    value={bulkText}
+                    onChange={e => setBulkText(e.target.value)}
+                    placeholder={"1. Текст вопроса?\n   a) Вариант 1\n   b) Правильный ответ [✓]\n   c) Вариант 3\n\n2. Следующий вопрос?..."}
+                    rows={14}
+                  />
+                </div>
               </div>
 
-              <div className={styles['modal-footer']}>
-                <button className={styles['btn-secondary']} onClick={() => setShowPreview(false)}>
-                  <FiArrowLeft />
-                  <span>Вернуться к редактированию</span>
-                </button>
-                <button className={styles['btn-success']} onClick={handleImport}>
-                  <FiCheck />
-                  <span>Создать тест</span>
-                </button>
+              {/* Right — instructions */}
+              <div className={styles.rightCol}>
+                <div className={`${styles.section} ${styles.sectionInfo}`}>
+                  <h3 className={styles.sectionTitle}><FiInfo /> Формат</h3>
+                  <pre className={styles.codeBlock}>{`1. Текст вопроса?
+   a) Вариант 1
+   b) Правильный [✓]
+   c) Вариант 3
+   d) Вариант 4
+
+2. Второй вопрос?
+   a) Вариант 1
+   b) Правильный [✓]`}</pre>
+                  <ul className={styles.rulesList}>
+                    <li>Нумеруйте вопросы: 1., 2., 3.</li>
+                    <li>Варианты: a), b), c), d)</li>
+                    <li>Правильный ответ: <code>[✓]</code></li>
+                    <li>Можно отмечать несколько правильных</li>
+                    <li>Пустая строка между вопросами</li>
+                  </ul>
+                  <button className={styles.btnExample} onClick={loadExample}>
+                    <FiFileText /><span>Загрузить пример</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </>
-        )}
+          ) : (
+            /* Preview */
+            <div className={styles.previewWrap}>
+              {preview.map((q, qi) => (
+                <div key={qi} className={styles.previewQ}>
+                  <div className={styles.previewQHead}>
+                    <span className={styles.previewQNum}>Вопрос {qi + 1}</span>
+                    <span className={styles.previewQCorrect}>
+                      {q.options.filter(o => o.is_correct).length} правильных
+                    </span>
+                  </div>
+                  <p className={styles.previewQText}>{q.question_text}</p>
+                  <div className={styles.previewOpts}>
+                    {q.options.map((opt, oi) => (
+                      <div key={oi} className={`${styles.previewOpt} ${opt.is_correct ? styles.previewOptCorrect : ""}`}>
+                        <span className={styles.previewOptLetter}>{String.fromCharCode(97 + oi)})</span>
+                        <span className={styles.previewOptText}>{opt.option_text}</span>
+                        {opt.is_correct && <FiCheckCircle className={styles.previewOptIcon} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className={styles.modalFoot}>
+          {step === "edit" ? (
+            <>
+              <button className={styles.btnSec} onClick={onClose}><FiX /><span>Отмена</span></button>
+              <button className={styles.btnPrimary} onClick={handlePreview}><FiFileText /><span>Предпросмотр</span></button>
+            </>
+          ) : (
+            <>
+              <button className={styles.btnSec} onClick={() => setStep("edit")}><FiArrowLeft /><span>Назад</span></button>
+              <button className={styles.btnSuccess} onClick={handleImport}><FiCheck /><span>Создать тест ({preview.length} вопросов)</span></button>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-export default BulkTestEditor;

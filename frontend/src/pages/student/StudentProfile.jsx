@@ -461,430 +461,386 @@ function StudentProfile() {
   };
 
   return (
-    <div className={styles["student-page"]}>
-      <div className={styles["page-header"]}>
-        <h1>Мой профиль</h1>
-        <div className={styles["header-actions"]}>
-          <button className={styles["history-btn"]} onClick={() => setShowHistory(true)} title="История транзакций">
-            <AiOutlineHistory />
-            <span>История баллов</span>
-          </button>
-          <div className={styles["user-points"]}>
-            <span className={styles["points-icon"]}>
+    <div className={styles["profile-page"]}>
+
+      {/* ── HERO BANNER ── */}
+      <div
+        className={styles["hero"]}
+        style={{
+          backgroundImage: appliedBanner?.image_url
+            ? `url(${BASE_URL}${appliedBanner.image_url})`
+            : undefined,
+        }}
+      >
+        <div className={styles["hero-overlay"]} />
+        <div className={styles["hero-body"]}>
+          {/* Avatar */}
+          <div className={styles["hero-avatar-wrap"]}>
+            <div className={styles["hero-avatar"]}>
+              {preview || user?.avatar_url
+                ? <img src={preview || `${BASE_URL}${user.avatar_url}`} alt={user.username} />
+                : <span>{(user?.full_name || user?.username || "U").charAt(0).toUpperCase()}</span>}
+            </div>
+            {appliedFrame?.image_url && (
+              <img src={`${BASE_URL}${appliedFrame.image_url}`} alt="Frame" className={styles["hero-avatar-frame"]} />
+            )}
+            <label className={styles["avatar-change-btn"]} title="Сменить фото">
+              <AiOutlineFileText style={{ display: "none" }} />
+              <FaUser style={{ fontSize: 13 }} />
+              <input type="file" accept="image/*" onChange={handleAvatarChange} disabled={uploading} style={{ display: "none" }} />
+            </label>
+          </div>
+
+          {/* Identity */}
+          <div className={styles["hero-identity"]}>
+            <div className={styles["hero-name-row"]}>
+              <span className={`styled-username ${user?.username_style || "username-none"}`}>
+                {user?.username}
+              </span>
+              {userLevel?.rank_name && (
+                <span className={styles["hero-rank-badge"]}>{userLevel.rank_name}</span>
+              )}
+            </div>
+            <div className={styles["hero-fullname"]}>{user?.full_name || user?.email}</div>
+
+            {/* XP bar inside hero */}
+            <div className={styles["hero-xp-row"]}>
+              <span className={styles["hero-level-chip"]}>
+                {userLevel?.image_url
+                  ? <img src={userLevel.image_url.startsWith("http") ? userLevel.image_url : `${BASE_URL}${userLevel.image_url}`} alt="" />
+                  : <span>Ур. {userLevel?.level_number || 1}</span>}
+              </span>
+              <div className={styles["hero-xp-bar-wrap"]}>
+                <div
+                  className={styles["hero-xp-bar-fill"]}
+                  style={{ width: nextLevel ? `${Math.min(100, (userExperience / nextLevel.experience_required) * 100)}%` : "100%" }}
+                />
+              </div>
+              <span className={styles["hero-xp-text"]}>
+                {userExperience.toLocaleString()} {nextLevel ? `/ ${nextLevel.experience_required.toLocaleString()}` : ""} XP
+              </span>
+            </div>
+          </div>
+
+          {/* Hero actions */}
+          <div className={styles["hero-actions"]}>
+            {preview && (
+              <button className={styles["btn-save-avatar"]} onClick={handleAvatarUpload} disabled={uploading}>
+                {uploading ? "Сохранение..." : "Сохранить фото"}
+              </button>
+            )}
+            <button className={styles["btn-ghost"]} onClick={() => setShowHistory(true)}>
+              <AiOutlineHistory /> История баллов
+            </button>
+            <div className={styles["hero-points-chip"]}>
               <AiOutlineWallet />
-            </span>
-            <span className={styles["dashboard-points-value"]}>{userPoints}</span>
-            <span className={styles["points-label"]}>баллов</span>
+              <strong>{userPoints}</strong>
+              <span>баллов</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className={styles["profile-card"]}>
-        <div
-          className={styles["profile-avatar-section"]}
-          style={{
-            backgroundImage: appliedBanner?.image_url ? `url(${BASE_URL}${appliedBanner.image_url})` : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <div className={styles["avatar-wrapper"]}>
-            {preview || user?.avatar_url ? <img src={preview || `${BASE_URL}${user.avatar_url}`} alt={user.username} className={styles["profile-avatar"]} /> : <div className={styles["profile-avatar-placeholder"]}>{(user?.full_name || user?.username || "U").charAt(0).toUpperCase()}</div>}
-            {appliedFrame?.image_url && <img src={`${BASE_URL}${appliedFrame.image_url}`} alt="Frame" className={styles["avatar-frame-overlay"]} />}
-          </div>
+      {/* ── MAIN GRID ── */}
+      <div className={styles["main-grid"]}>
 
-          <div className={styles["avatar-upload"]}>
-            <label className={styles["avatar-upload-btn"]}>
-              {uploading ? "Загрузка..." : "Выбрать фото"}
-              <input type="file" accept="image/*" onChange={handleAvatarChange} disabled={uploading} style={{ display: "none" }} />
-            </label>
-            {preview && (
-              <button className={styles["avatar-upload-confirm"]} onClick={handleAvatarUpload} disabled={uploading}>
-                Сохранить
-              </button>
-            )}
-          </div>
-        </div>
+        {/* LEFT COLUMN */}
+        <div className={styles["left-col"]}>
 
-        <div className={styles["profile-flex-container"]}>
-          <div className={styles["profile-info-section"]}>
-            <h2 className={styles["section-title"]}>
-              <CiUser /> Информация о профиле
-            </h2>
-            <div className={styles["profile-info-container"]}>
+          {/* Profile info card */}
+          <div className={styles["card"]}>
+            <div className={styles["card-header"]}>
+              <FaUser className={styles["card-header-icon"]} />
+              <h3>Информация</h3>
+            </div>
+            <div className={styles["info-list"]}>
               <div className={styles["info-row"]}>
-                <span className={styles["info-label"]}>
-                  <FaUser /> Имя пользователя:
-                </span>
-                <span className={`${styles["info-value"]} styled-username ${user?.username_style || "username-none"}`}>{user?.username}</span>
+                <span className={styles["info-key"]}><FaUser /> Ник</span>
+                <span className={`${styles["info-val"]} styled-username ${user?.username_style || "username-none"}`}>{user?.username}</span>
               </div>
               <div className={styles["info-row"]}>
-                <span className={styles["info-label"]}>
-                  <MdMail /> Email:
-                </span>
-                <span className={styles["info-value"]}>{user?.email}</span>
+                <span className={styles["info-key"]}><MdMail /> Email</span>
+                <span className={styles["info-val"]}>{user?.email}</span>
               </div>
               <div className={styles["info-row"]}>
-                <span className={styles["info-label"]}>
-                  <SiNamesilo /> ФИО:
-                </span>
-                <span className={styles["info-value"]}>{user?.full_name || "Не указано"}</span>
+                <span className={styles["info-key"]}><SiNamesilo /> ФИО</span>
+                <span className={styles["info-val"]}>{user?.full_name || "Не указано"}</span>
               </div>
               <div className={styles["info-row"]}>
-                <span className={styles["info-label"]}>
-                  <FaCalendarAlt /> Дата рождения:
-                </span>
-                <span className={styles["info-value"]}>{new Date(user?.created_at).toLocaleDateString("ru-RU")}</span>
+                <span className={styles["info-key"]}><FaCalendarAlt /> Дата регистрации</span>
+                <span className={styles["info-val"]}>{new Date(user?.created_at).toLocaleDateString("ru-RU")}</span>
               </div>
             </div>
           </div>
-          {/* Уровень и опыт */}
-          <div className={styles["level-section"]}>
-            <h2 className={styles["section-title"]}>
-              <AiOutlineStar /> Уровень и опыт
-            </h2>
-            <div className={styles["level-card"]}>
-              <div className={styles["level-info"]}>
-                {userLevel?.image_url ? (
-                  <img src={userLevel.image_url.startsWith("http") ? userLevel.image_url : `${BASE_URL}${userLevel.image_url}`} alt={`Уровень ${userLevel.level_number}`} className={styles["level-image"]} />
-                ) : (
-                  <div className={styles["level-number"]}>
-                    <span className={styles["level-label"]}>Уровень</span>
-                    <span className={styles["level-value"]}>{userLevel?.level_number || 1}</span>
-                  </div>
-                )}
-                {userLevel?.rank_name && <div className={styles["rank-name"]}>{userLevel.rank_name}</div>}
-              </div>
 
-              <div className={styles["xp-section"]}>
-                <div className={styles["xp-header"]}>
+          {/* Level card */}
+          <div className={styles["card"]}>
+            <div className={styles["card-header"]}>
+              <AiOutlineStar className={styles["card-header-icon"]} />
+              <h3>Уровень и опыт</h3>
+            </div>
+            <div className={styles["level-hero"]}>
+              <div className={styles["level-badge"]}>
+                {userLevel?.image_url
+                  ? <img src={userLevel.image_url.startsWith("http") ? userLevel.image_url : `${BASE_URL}${userLevel.image_url}`} alt={`Уровень ${userLevel.level_number}`} />
+                  : <span>{userLevel?.level_number || 1}</span>}
+              </div>
+              <div className={styles["level-info"]}>
+                <div className={styles["level-name"]}>{userLevel?.rank_name || `Уровень ${userLevel?.level_number || 1}`}</div>
+                <div className={styles["xp-numbers"]}>
                   <span className={styles["xp-current"]}>{userExperience.toLocaleString()} XP</span>
                   {nextLevel && <span className={styles["xp-next"]}>/ {nextLevel.experience_required.toLocaleString()} XP</span>}
                 </div>
-
                 {nextLevel && (
-                  <>
-                    <div className={styles["xp-bar"]}>
-                      <div
-                        className={styles["xp-fill"]}
-                        style={{
-                          width: `${Math.min(100, (userExperience / nextLevel.experience_required) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <div className={styles["xp-remaining"]}>До следующего уровня: {(nextLevel.experience_required - userExperience).toLocaleString()} XP</div>
-                  </>
+                  <div className={styles["xp-track"]}>
+                    <div className={styles["xp-track-fill"]} style={{ width: `${Math.min(100, (userExperience / nextLevel.experience_required) * 100)}%` }} />
+                  </div>
                 )}
-
-                {!nextLevel && userLevel && <div className={styles["max-level"]}>Максимальный уровень достигнут! {userLevel?.level_number || 1}</div>}
+                {nextLevel
+                  ? <div className={styles["xp-hint"]}>До следующего уровня: {(nextLevel.experience_required - userExperience).toLocaleString()} XP</div>
+                  : <div className={styles["xp-hint"]}>Максимальный уровень достигнут!</div>}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Статистика профиля */}
-      <div className={styles["stats-section"]}>
-        <h2 className={styles["section-title"]}>
-          <AiOutlineLineChart /> Моя статистика
-        </h2>
-        <div className={styles["stats-grid"]}>
-          <div className={styles["stat-card"]}>
-            <div className={styles["stat-icon"]} style={{ background: "linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)" }}>
-              <AiOutlineCheckCircle />
-            </div>
-            <div className={styles["stat-content"]}>
-              <div className={styles["stat-value"]}>{userStats.completedTasks}</div>
-              <div className={styles["stat-label"]}>Выполнено заданий</div>
-            </div>
-          </div>
-
-          <div className={styles["stat-card"]}>
-            <div className={styles["stat-icon"]} style={{ background: "linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)" }}>
-              <AiOutlineCode />
-            </div>
-            <div className={styles["stat-content"]}>
-              <div className={styles["stat-value"]}>{userStats.totalProjects}</div>
-              <div className={styles["stat-label"]}>Создано проектов</div>
-            </div>
-          </div>
-
-          <div className={styles["stat-card"]}>
-            <div className={styles["stat-icon"]} style={{ background: "linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)" }}>
-              <AiOutlineFire />
-            </div>
-            <div className={styles["stat-content"]}>
-              <div className={styles["stat-value"]}>{userStats.streak}</div>
-              <div className={styles["stat-label"]}>Дней подряд</div>
-            </div>
-          </div>
-
-          <div className={styles["stat-card"]}>
-            <div className={styles["stat-icon"]} style={{ background: "linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)" }}>
-              <AiOutlineRise />
-            </div>
-            <div className={styles["stat-content"]}>
-              <div className={styles["stat-value"]}>#{userStats.rank}</div>
-              <div className={styles["stat-label"]}>Место в рейтинге</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Достижения */}
-      <div className={styles["achievements-section"]}>
-        <div className={styles["achievements-header"]}>
-          <h2 className={styles["section-title"]}>
-            <AiOutlineTrophy /> Достижения
-          </h2>
-          <div className={styles["achievements-stats"]}>
-            <span className={styles["achievements-count"]}>
-              {achievementsEarned} / {achievementsTotal}
-            </span>
-            <span className={styles["achievements-label"]}>получено</span>
-          </div>
-        </div>
-
-        <div className={styles["achievements-preview-grid"]}>
-          {achievementsLoading ? (
-            <div className={styles["achievements-loading"]}>
-              <div className={styles["activity-spinner"]}></div>
-              <p>Загрузка достижений...</p>
-            </div>
-          ) : achievements.filter((a) => a.earned).length > 0 ? (
-            achievements
-              .filter((a) => a.earned)
-              .slice(0, 6)
-              .map((achievement) => (
-                <div key={achievement.id} className={styles["achievement-preview-card"]} style={getRarityStyle(achievement.rarity)}>
-                  <div className={styles["achievement-icon"]} style={{ color: achievement.icon_color }}>
-                    {getAchievementIcon(achievement.icon)}
+            {nextLevel && (
+              <div className={styles["next-level-preview"]}>
+                <div className={styles["next-level-label"]}>Следующий уровень</div>
+                <div className={styles["next-level-body"]}>
+                  <div className={styles["next-level-badge"]}>
+                    {nextLevel.image_url
+                      ? <img src={nextLevel.image_url.startsWith("http") ? nextLevel.image_url : `${BASE_URL}${nextLevel.image_url}`} alt={`Уровень ${nextLevel.level_number}`} />
+                      : <span>{nextLevel.level_number}</span>}
                   </div>
-                  <div className={styles["achievement-content"]}>
-                    <h3 className={styles["achievement-title"]}>{achievement.title}</h3>
-                    <span className={styles["achievement-rarity"]} data-rarity={achievement.rarity}>
-                      {getRarityLabel(achievement.rarity)}
-                    </span>
-                  </div>
-                </div>
-              ))
-          ) : (
-            <div className={styles["no-achievements"]}>
-              <AiOutlineTrophy />
-              <p>У вас пока нет достижений</p>
-              <span>Выполняйте задания, чтобы их получить!</span>
-            </div>
-          )}
-        </div>
-
-        <button className={styles["view-all-achievements-btn"]} onClick={() => setShowAchievementsModal(true)}>
-          <AiOutlineAppstore /> Показать все достижения
-        </button>
-      </div>
-
-      {/* Последняя активность */}
-      <div className={styles["activity-section"]}>
-        <h2 className={styles["section-title"]}>
-          <AiOutlineCalendar /> Последняя активность
-        </h2>
-        <div className={styles["activity-timeline"]}>
-          {recentActivity.length > 0 ? (
-            recentActivity.map((activity, index) => (
-              <div key={index} className={styles["activity-item"]}>
-                <div className={styles["activity-icon-wrapper"]}>
-                  <div className={styles["activity-type-icon"]} style={{ background: getActivityColor(activity.type) }}>
-                    {getActivityIcon(activity.type)}
-                  </div>
-                </div>
-                <div className={styles["activity-details"]}>
-                  <div className={styles["activity-title"]}>{activity.message}</div>
-                  <div className={styles["activity-meta"]}>
-                    <span className={styles["activity-date"]}>
-                      <AiOutlineClockCircle /> {formatActivityDate(activity.created_at)}
-                    </span>
-                    {(activity.points > 0 || activity.experience > 0) && (
-                      <div className={styles["activity-rewards"]}>
-                        {activity.points > 0 && <span className={styles["activity-points"]}>+{activity.points} баллов</span>}
-                        {activity.experience > 0 && <span className={styles["activity-xp"]}>+{activity.experience} XP</span>}
+                  <div className={styles["next-level-info"]}>
+                    <div className={styles["next-level-name"]}>{nextLevel.rank_name || `Уровень ${nextLevel.level_number}`}</div>
+                    <div className={styles["next-level-req"]}>
+                      Требуется <strong>{nextLevel.experience_required.toLocaleString()} XP</strong>
+                    </div>
+                    {(nextLevel.points_reward > 0 || nextLevel.experience_reward > 0) && (
+                      <div className={styles["next-level-rewards"]}>
+                        {nextLevel.points_reward > 0 && (
+                          <span className={styles["chip-pts"]}>+{nextLevel.points_reward} баллов</span>
+                        )}
+                        {nextLevel.experience_reward > 0 && (
+                          <span className={styles["chip-xp"]}>+{nextLevel.experience_reward} XP</span>
+                        )}
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className={styles["no-activity"]}>
-              <AiOutlineCalendar />
-              <p>Пока нет активности</p>
-            </div>
-          )}
-        </div>
-
-        <button className={styles["view-all-activity-btn"]} onClick={openActivityModal}>
-          Посмотреть всю активность
-        </button>
-      </div>
-
-      {/* Секция примечаний с уроков */}
-      <div className={styles["notes-section"]}>
-        <h2 className={styles["section-title"]}>
-          <AiOutlineFileText /> Примечания с уроков
-        </h2>
-
-        <div className={styles["notes-list"]}>
-          {lessonNotes.length > 0 ? (
-            lessonNotes.slice(0, 10).map((note) => (
-              <div key={note.id} className={styles["note-item"]}>
-                <div className={styles["note-header"]}>
-                  <div className={styles["note-lesson"]}>
-                    <span className={styles["note-title"]}>{note.lesson_title}</span>
-                    <span className={styles["note-date"]}>
-                      {new Date(note.lesson_date).toLocaleDateString("ru-RU")} в {note.lesson_time?.substring(0, 5)}
-                    </span>
+                  <div className={styles["next-level-progress-wrap"]}>
+                    <div className={styles["next-level-percent"]}>
+                      {Math.round((userExperience / nextLevel.experience_required) * 100)}%
+                    </div>
                   </div>
-                  {note.attendance_status && (
-                    <span className={styles["note-attendance"]} style={{ color: getAttendanceStatusLabel(note.attendance_status).color }}>
-                      {getAttendanceStatusLabel(note.attendance_status).label}
-                      {note.attendance_reason && `: ${note.attendance_reason}`}
-                    </span>
-                  )}
                 </div>
-                <p className={styles["note-text"]}>{note.note}</p>
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className={styles["right-col"]}>
+
+          {/* Stats row */}
+          <div className={styles["stats-row"]}>
+            {[
+              { icon: <AiOutlineCheckCircle />, value: userStats.completedTasks, label: "Заданий", color: "#22c55e" },
+              { icon: <AiOutlineCode />, value: userStats.totalProjects, label: "Проектов", color: "#3b82f6" },
+              { icon: <AiOutlineFire />, value: userStats.streak, label: "Дней подряд", color: "#f97316" },
+              { icon: <AiOutlineRise />, value: `#${userStats.rank}`, label: "Рейтинг", color: "#a855f7" },
+            ].map((s, i) => (
+              <div key={i} className={styles["stat-tile"]}>
+                <div className={styles["stat-tile-icon"]} style={{ color: s.color, background: `${s.color}18` }}>{s.icon}</div>
+                <div className={styles["stat-tile-val"]}>{s.value}</div>
+                <div className={styles["stat-tile-label"]}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Recent activity */}
+          <div className={styles["card"]}>
+            <div className={styles["card-header"]}>
+              <AiOutlineCalendar className={styles["card-header-icon"]} />
+              <h3>Последняя активность</h3>
+              <button className={styles["card-header-btn"]} onClick={openActivityModal}>Все →</button>
+            </div>
+            <div className={styles["activity-feed"]}>
+              {recentActivity.length > 0 ? recentActivity.map((a, i) => (
+                <div key={i} className={styles["feed-row"]}>
+                  <div className={styles["feed-dot"]} style={{ background: getActivityColor(a.type) }}>
+                    {getActivityIcon(a.type)}
+                  </div>
+                  <div className={styles["feed-body"]}>
+                    <div className={styles["feed-msg"]}>{a.message}</div>
+                    <div className={styles["feed-meta"]}>
+                      <span><AiOutlineClockCircle /> {formatActivityDate(a.created_at)}</span>
+                      {(a.points > 0 || a.experience > 0) && (
+                        <span className={styles["feed-rewards"]}>
+                          {a.points > 0 && <span className={styles["chip-pts"]}>+{a.points}</span>}
+                          {a.experience > 0 && <span className={styles["chip-xp"]}>+{a.experience} XP</span>}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div className={styles["empty-state"]}><AiOutlineCalendar /><p>Пока нет активности</p></div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ── ACHIEVEMENTS ── */}
+      <div className={`${styles["card"]} ${styles["card-full"]}`}>
+        <div className={styles["card-header"]}>
+          <AiOutlineTrophy className={styles["card-header-icon"]} />
+          <h3>Достижения</h3>
+          <span className={styles["achiev-count-badge"]}>{achievementsEarned} / {achievementsTotal}</span>
+          <button className={styles["card-header-btn"]} onClick={() => setShowAchievementsModal(true)}>
+            <AiOutlineAppstore /> Все
+          </button>
+        </div>
+        <div className={styles["achiev-grid"]}>
+          {achievementsLoading ? (
+            <div className={styles["empty-state"]}><div className={styles["spinner"]} /><p>Загрузка...</p></div>
+          ) : achievements.filter((a) => a.earned).length > 0 ? (
+            achievements.filter((a) => a.earned).slice(0, 6).map((ach) => (
+              <div key={ach.id} className={styles["achiev-tile"]} style={getRarityStyle(ach.rarity)}>
+                <div className={styles["achiev-tile-icon"]} style={{ color: ach.icon_color }}>
+                  {getAchievementIcon(ach.icon)}
+                </div>
+                <div className={styles["achiev-tile-name"]}>{ach.title}</div>
+                <span className={styles["achiev-tile-rarity"]} data-rarity={ach.rarity}>{getRarityLabel(ach.rarity)}</span>
               </div>
             ))
           ) : (
-            <div className={styles["no-notes"]}>
-              <AiOutlineFileText />
-              <p>Примечаний пока нет</p>
+            <div className={styles["empty-state"]} style={{ gridColumn: "1/-1" }}>
+              <AiOutlineTrophy /><p>Выполняйте задания, чтобы получить достижения</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Модальное окно всей активности */}
-      {showActivityModal && (
-        <div className={styles["activity-modal-overlay"]} onClick={() => setShowActivityModal(false)}>
-          <div className={styles["activity-modal"]} onClick={(e) => e.stopPropagation()}>
-            <div className={styles["activity-modal-header"]}>
-              <h2>
-                <AiOutlineHistory /> История активности
-              </h2>
-              <button className={styles["modal-close-btn"]} onClick={() => setShowActivityModal(false)}>
-                <AiOutlineClose />
-              </button>
-            </div>
-
-            <div className={styles["activity-modal-content"]}>
-              {loadingActivity ? (
-                <div className={styles["activity-loading"]}>
-                  <div className={styles["activity-spinner"]}></div>
-                  <p>Загрузка...</p>
+      {/* ── LESSON NOTES ── */}
+      <div className={`${styles["card"]} ${styles["card-full"]}`}>
+        <div className={styles["card-header"]}>
+          <AiOutlineFileText className={styles["card-header-icon"]} />
+          <h3>Примечания с уроков</h3>
+        </div>
+        <div className={styles["notes-list"]}>
+          {lessonNotes.length > 0 ? lessonNotes.slice(0, 10).map((note) => (
+            <div key={note.id} className={styles["note-item"]}>
+              <div className={styles["note-top"]}>
+                <div>
+                  <span className={styles["note-lesson-title"]}>{note.lesson_title}</span>
+                  <span className={styles["note-date"]}>
+                    {new Date(note.lesson_date).toLocaleDateString("ru-RU")} · {note.lesson_time?.substring(0, 5)}
+                  </span>
                 </div>
+                {note.attendance_status && (
+                  <span className={styles["note-status"]} style={{ color: getAttendanceStatusLabel(note.attendance_status).color }}>
+                    {getAttendanceStatusLabel(note.attendance_status).label}
+                    {note.attendance_reason && ` · ${note.attendance_reason}`}
+                  </span>
+                )}
+              </div>
+              <p className={styles["note-body"]}>{note.note}</p>
+            </div>
+          )) : (
+            <div className={styles["empty-state"]}><AiOutlineFileText /><p>Примечаний пока нет</p></div>
+          )}
+        </div>
+      </div>
+
+      {/* ── ACTIVITY MODAL ── */}
+      {showActivityModal && (
+        <div className={styles["modal-overlay"]} onClick={() => setShowActivityModal(false)}>
+          <div className={styles["modal"]} onClick={(e) => e.stopPropagation()}>
+            <div className={styles["modal-head"]}>
+              <h2><AiOutlineHistory /> История активности</h2>
+              <button className={styles["modal-close"]} onClick={() => setShowActivityModal(false)}><AiOutlineClose /></button>
+            </div>
+            <div className={styles["modal-body"]}>
+              {loadingActivity ? (
+                <div className={styles["empty-state"]}><div className={styles["spinner"]} /><p>Загрузка...</p></div>
               ) : allActivity.length > 0 ? (
                 <>
-                  <div className={styles["activity-list"]}>
-                    {allActivity.map((activity, index) => (
-                      <div key={index} className={styles["activity-modal-item"]}>
-                        <div className={styles["activity-modal-icon"]} style={{ background: getActivityColor(activity.type) }}>
-                          {getActivityIcon(activity.type)}
+                  <div className={styles["activity-feed"]}>
+                    {allActivity.map((a, i) => (
+                      <div key={i} className={styles["feed-row"]}>
+                        <div className={styles["feed-dot"]} style={{ background: getActivityColor(a.type) }}>
+                          {getActivityIcon(a.type)}
                         </div>
-                        <div className={styles["activity-modal-info"]}>
-                          <div className={styles["activity-modal-message"]}>{activity.message}</div>
-                          <div className={styles["activity-modal-meta"]}>
-                            <span className={styles["activity-modal-date"]}>{formatActivityDate(activity.created_at)}</span>
-                            {(activity.points > 0 || activity.experience > 0) && (
-                              <div className={styles["activity-modal-rewards"]}>
-                                {activity.points > 0 && <span className={styles["reward-badge-points"]}>+{activity.points}</span>}
-                                {activity.experience > 0 && <span className={styles["reward-badge-xp"]}>+{activity.experience} XP</span>}
-                              </div>
+                        <div className={styles["feed-body"]}>
+                          <div className={styles["feed-msg"]}>{a.message}</div>
+                          <div className={styles["feed-meta"]}>
+                            <span>{formatActivityDate(a.created_at)}</span>
+                            {(a.points > 0 || a.experience > 0) && (
+                              <span className={styles["feed-rewards"]}>
+                                {a.points > 0 && <span className={styles["chip-pts"]}>+{a.points}</span>}
+                                {a.experience > 0 && <span className={styles["chip-xp"]}>+{a.experience} XP</span>}
+                              </span>
                             )}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  {/* Пагинация */}
                   {activityTotalPages > 1 && (
-                    <div className={styles["activity-pagination"]}>
-                      <button className={styles["pagination-btn"]} onClick={() => fetchAllActivity(activityPage - 1)} disabled={activityPage <= 1}>
-                        ← Назад
-                      </button>
-                      <span className={styles["pagination-info"]}>
-                        Страница {activityPage} из {activityTotalPages}
-                      </span>
-                      <button className={styles["pagination-btn"]} onClick={() => fetchAllActivity(activityPage + 1)} disabled={activityPage >= activityTotalPages}>
-                        Вперед →
-                      </button>
+                    <div className={styles["pagination"]}>
+                      <button className={styles["page-btn"]} onClick={() => fetchAllActivity(activityPage - 1)} disabled={activityPage <= 1}>← Назад</button>
+                      <span>{activityPage} / {activityTotalPages}</span>
+                      <button className={styles["page-btn"]} onClick={() => fetchAllActivity(activityPage + 1)} disabled={activityPage >= activityTotalPages}>Вперед →</button>
                     </div>
                   )}
                 </>
               ) : (
-                <div className={styles["no-activity-modal"]}>
-                  <AiOutlineCalendar />
-                  <p>История активности пуста</p>
-                </div>
+                <div className={styles["empty-state"]}><AiOutlineCalendar /><p>История пуста</p></div>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Модальное окно всех достижений */}
+      {/* ── ACHIEVEMENTS MODAL ── */}
       {showAchievementsModal && (
-        <div className={styles["achievements-modal-overlay"]} onClick={() => setShowAchievementsModal(false)}>
-          <div className={styles["achievements-modal"]} onClick={(e) => e.stopPropagation()}>
-            <div className={styles["achievements-modal-header"]}>
-              <h2>
-                <AiOutlineTrophy /> Все достижения
-              </h2>
-              <div className={styles["achievements-modal-stats"]}>
-                <span className={styles["earned-badge"]}>{achievementsEarned}</span>
-                <span>/</span>
-                <span>{achievementsTotal}</span>
-              </div>
-              <button className={styles["modal-close-btn"]} onClick={() => setShowAchievementsModal(false)}>
-                <AiOutlineClose />
-              </button>
+        <div className={styles["modal-overlay"]} onClick={() => setShowAchievementsModal(false)}>
+          <div className={styles["modal"]} style={{ maxWidth: 800 }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles["modal-head"]}>
+              <h2><AiOutlineTrophy /> Все достижения</h2>
+              <span className={styles["achiev-count-badge"]}>{achievementsEarned} / {achievementsTotal}</span>
+              <button className={styles["modal-close"]} onClick={() => setShowAchievementsModal(false)}><AiOutlineClose /></button>
             </div>
-
-            <div className={styles["achievements-categories"]}>
+            <div className={styles["achiev-cats"]}>
               {categories.map((cat) => (
-                <button key={cat.id} className={`${styles["category-btn"]} ${selectedCategory === cat.id ? styles["active"] : ""}`} onClick={() => setSelectedCategory(cat.id)}>
-                  {cat.icon}
-                  <span>{cat.name}</span>
+                <button key={cat.id} className={`${styles["cat-btn"]} ${selectedCategory === cat.id ? styles["cat-btn--active"] : ""}`} onClick={() => setSelectedCategory(cat.id)}>
+                  {cat.icon}<span>{cat.name}</span>
                 </button>
               ))}
             </div>
-
-            <div className={styles["achievements-modal-content"]}>
-              <div className={styles["achievements-full-grid"]}>
-                {filteredAchievements.map((achievement) => (
-                  <div key={achievement.id} className={`${styles["achievement-full-card"]} ${achievement.earned ? styles["earned"] : styles["locked"]}`} style={achievement.earned ? getRarityStyle(achievement.rarity) : {}}>
-                    <div
-                      className={styles["achievement-full-icon"]}
-                      style={{
-                        color: achievement.earned ? achievement.icon_color : "#555",
-                        opacity: achievement.earned ? 1 : 0.4,
-                      }}
-                    >
-                      {achievement.is_secret && !achievement.earned ? <AiOutlineLock /> : getAchievementIcon(achievement.icon)}
+            <div className={styles["modal-body"]}>
+              <div className={styles["achiev-full-grid"]}>
+                {filteredAchievements.map((ach) => (
+                  <div key={ach.id} className={`${styles["achiev-full-card"]} ${ach.earned ? styles["achiev-earned"] : styles["achiev-locked"]}`} style={ach.earned ? getRarityStyle(ach.rarity) : {}}>
+                    <div className={styles["achiev-full-icon"]} style={{ color: ach.earned ? ach.icon_color : undefined, opacity: ach.earned ? 1 : 0.35 }}>
+                      {ach.is_secret && !ach.earned ? <AiOutlineLock /> : getAchievementIcon(ach.icon)}
                     </div>
-                    <div className={styles["achievement-full-content"]}>
-                      <h3 className={styles["achievement-full-title"]}>{achievement.is_secret && !achievement.earned ? "???" : achievement.title}</h3>
-                      <p className={styles["achievement-full-description"]}>{achievement.is_secret && !achievement.earned ? "Секретное достижение" : achievement.description}</p>
-                      <div className={styles["achievement-full-meta"]}>
-                        <span className={styles["achievement-full-rarity"]} data-rarity={achievement.rarity}>
-                          {getRarityLabel(achievement.rarity)}
-                        </span>
-                        <div className={styles["achievement-full-rewards"]}>
-                          {achievement.points_reward > 0 && <span className={styles["reward-points"]}>+{achievement.points_reward}</span>}
-                          {achievement.experience_reward > 0 && <span className={styles["reward-xp"]}>+{achievement.experience_reward} XP</span>}
+                    <div className={styles["achiev-full-info"]}>
+                      <div className={styles["achiev-full-name"]}>{ach.is_secret && !ach.earned ? "???" : ach.title}</div>
+                      <div className={styles["achiev-full-desc"]}>{ach.is_secret && !ach.earned ? "Секретное достижение" : ach.description}</div>
+                      <div className={styles["achiev-full-meta"]}>
+                        <span className={styles["achiev-tile-rarity"]} data-rarity={ach.rarity}>{getRarityLabel(ach.rarity)}</span>
+                        <div>
+                          {ach.points_reward > 0 && <span className={styles["chip-pts"]}>+{ach.points_reward}</span>}
+                          {ach.experience_reward > 0 && <span className={styles["chip-xp"]}>+{ach.experience_reward} XP</span>}
                         </div>
                       </div>
-                      {achievement.earned && achievement.earned_at && <div className={styles["achievement-earned-date"]}>Получено: {new Date(achievement.earned_at).toLocaleDateString("ru-RU")}</div>}
+                      {ach.earned && ach.earned_at && <div className={styles["achiev-earned-at"]}>Получено: {new Date(ach.earned_at).toLocaleDateString("ru-RU")}</div>}
                     </div>
-                    {achievement.earned && <div className={styles["achievement-earned-badge"]}>✓</div>}
+                    {ach.earned && <div className={styles["achiev-check"]}>✓</div>}
                   </div>
                 ))}
               </div>

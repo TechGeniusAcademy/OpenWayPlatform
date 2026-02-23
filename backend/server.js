@@ -78,7 +78,7 @@ app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/shop', express.static(path.join(__dirname, 'uploads', 'shop')));
 
-// Делаем io доступным в маршрутах
+// io доступным в маршрутах
 app.set('io', io);
 
 // Логирование запросов
@@ -140,14 +140,14 @@ app.use((err, req, res, next) => {
 });
 
 // WebSocket обработка
-const activeUsers = new Map(); // userId -> socketId
+const activeUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log('👤 Пользователь подключился:', socket.id);
+  console.log('Пользователь подключился:', socket.id);
 
   // Регистрация пользователя
   socket.on('register', async (userId) => {
-    console.log(`🔔 Получен запрос register от пользователя ${userId}, socket: ${socket.id}`);
+    console.log(`Получен запрос register от пользователя ${userId}, socket: ${socket.id}`);
     
     // Удаляем старое подключение если оно было И это другой сокет
     const oldSocketId = activeUsers.get(userId);
@@ -159,7 +159,7 @@ io.on('connection', (socket) => {
         oldSocket.disconnect(true);
       }
     } else if (oldSocketId === socket.id) {
-      console.log(`✅ Пользователь ${userId} уже зарегистрирован с этим сокетом ${socket.id}`);
+      console.log(`Пользователь ${userId} уже зарегистрирован с этим сокетом ${socket.id}`);
       // Не выходим, а просто проверяем что пользователь в комнате
     }
     
@@ -169,9 +169,9 @@ io.on('connection', (socket) => {
     // Присоединяем к персональной комнате для уведомлений
     socket.join(`user-${userId}`);
     
-    console.log(`✅ Пользователь ${userId} присоединился к комнате user-${userId}, socket: ${socket.id}`);
-    console.log(`👥 Активных пользователей: ${activeUsers.size}`);
-    console.log(`📋 Комнаты сокета ${socket.id}:`, Array.from(socket.rooms));
+    console.log(`Пользователь ${userId} присоединился к комнате user-${userId}, socket: ${socket.id}`);
+    console.log(`Активных пользователей: ${activeUsers.size}`);
+    console.log(`Комнаты сокета ${socket.id}:`, Array.from(socket.rooms));
     
     // Обновляем статус пользователя на "онлайн" в БД
     try {
@@ -182,7 +182,7 @@ io.on('connection', (socket) => {
       
       // Уведомляем всех о том, что пользователь онлайн
       io.emit('user-online', { userId, socketId: socket.id });
-      console.log(`✅ Пользователь ${userId} зарегистрирован и онлайн в комнате user-${userId}`);
+      console.log(`Пользователь ${userId} зарегистрирован и онлайн в комнате user-${userId}`);
     } catch (error) {
       console.error('Ошибка обновления онлайн статуса:', error);
     }

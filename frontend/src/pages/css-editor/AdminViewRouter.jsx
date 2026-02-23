@@ -7,12 +7,10 @@ import Leaderboard from '../../components/Leaderboard';
 import AdminChat from '../../components/AdminChat';
 import TestsManagement from '../../components/TestsManagement';
 import HomeworksManagement from '../../components/HomeworksManagement';
-import TypingManagement from '../../components/TypingManagement';
 import GameManagement from '../../components/GameManagement';
 import ShopManagement from '../../components/ShopManagement';
 import KnowledgeBaseManagement from '../../components/KnowledgeBaseManagement';
 import UpdatesManagement from '../../components/UpdatesManagement';
-import AdminSubmissions from '../admin/AdminSubmissions';
 import './ViewPage.css';
 
 function AdminViewRouter() {
@@ -32,12 +30,10 @@ function AdminViewRouter() {
               <Route path="chat" element={<AdminChat />} />
               <Route path="tests" element={<TestsManagement />} />
               <Route path="homeworks" element={<HomeworksManagement />} />
-              <Route path="typing" element={<TypingManagement />} />
               <Route path="game" element={<GameManagement />} />
               <Route path="shop" element={<ShopManagement />} />
               <Route path="knowledge" element={<KnowledgeBaseManagement />} />
               <Route path="updates" element={<UpdatesManagement />} />
-              <Route path="submissions" element={<AdminSubmissions />} />
             </Routes>
           </AdminLayout>
         </ReadOnlyWrapper>

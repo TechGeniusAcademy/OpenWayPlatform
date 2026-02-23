@@ -1,7 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import QuillEditor from '../../components/QuillEditor';
 import api from '../../utils/api';
-import { FaBook, FaCalendar, FaTrophy, FaTimes, FaEdit, FaPen, FaEye, FaInbox, FaCoins, FaCheckCircle, FaHourglass, FaClock, FaPaperclip, FaFile, FaTrash, FaDownload, FaFilePdf, FaFileWord, FaFileExcel, FaFilePowerpoint, FaFileArchive, FaFileImage, FaFileCode, FaFileAlt, FaGlobe, FaPalette, FaBolt } from 'react-icons/fa';
+import {
+  FaBook, FaCalendar, FaTrophy, FaTimes, FaEdit, FaPen, FaEye,
+  FaInbox, FaCoins, FaCheckCircle, FaHourglass, FaClock, FaPaperclip,
+  FaTrash, FaDownload, FaFilePdf, FaFileWord, FaFileExcel,
+  FaFilePowerpoint, FaFileArchive, FaFileImage, FaFileCode, FaFileAlt,
+  FaGlobe, FaPalette, FaBolt, FaFilter,
+} from 'react-icons/fa';
+import {
+  AiOutlineCheckCircle, AiOutlineClockCircle, AiOutlineExclamationCircle,
+  AiOutlineInbox, AiOutlineStar,
+} from 'react-icons/ai';
+import { MdAssignment, MdOutlinePendingActions } from 'react-icons/md';
+import { HiOutlineDocumentText } from 'react-icons/hi';
 import styles from './StudentHomeworks.module.css';
 
 function StudentHomeworks() {
@@ -11,37 +23,39 @@ function StudentHomeworks() {
   const [userSubmission, setUserSubmission] = useState(null);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, active, submitted, accepted, rejected
+  const [pageLoading, setPageLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [existingAttachments, setExistingAttachments] = useState([]);
   const fileInputRef = useRef(null);
 
   const quillModules = {
     toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'font': [] }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      [{ font: [] }],
+      [{ size: ['small', false, 'large', 'huge'] }],
       ['bold', 'italic', 'underline', 'strike'],
       ['blockquote', 'code-block'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ indent: '-1' }, { indent: '+1' }],
+      [{ color: [] }, { background: [] }],
+      [{ align: [] }],
       ['link', 'image', 'video'],
-      ['clean']
-    ]
+      ['clean'],
+    ],
   };
 
-  useEffect(() => {
-    fetchHomeworks();
-  }, []);
+  useEffect(() => { fetchHomeworks(); }, []);
 
   const fetchHomeworks = async () => {
     try {
+      setPageLoading(true);
       const response = await api.get('/homeworks/student/assigned');
       setHomeworks(response.data.homeworks || []);
     } catch (error) {
       console.error('Ошибка загрузки домашних заданий:', error);
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -52,24 +66,20 @@ function StudentHomeworks() {
     setUserSubmission(null);
     setSelectedFiles([]);
     setExistingAttachments([]);
-
-    // Проверяем, есть ли уже отправленная работа
     try {
       const response = await api.get(`/homeworks/${homework.id}/submission`);
       if (response.data) {
         setUserSubmission(response.data);
         setSubmissionText(response.data.submission_text);
-        // Загружаем существующие прикреплённые файлы
         if (response.data.attachments) {
-          const attachments = typeof response.data.attachments === 'string' 
-            ? JSON.parse(response.data.attachments) 
+          const attachments = typeof response.data.attachments === 'string'
+            ? JSON.parse(response.data.attachments)
             : response.data.attachments;
           setExistingAttachments(attachments || []);
         }
       }
-    } catch (error) {
-      // Нет отправленной работы - это нормально
-      console.log('Работа еще не отправлена');
+    } catch {
+      // no submission yet
     }
   };
 
@@ -82,64 +92,53 @@ function StudentHomeworks() {
     setExistingAttachments([]);
   };
 
-  // Обработка выбора файлов
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    
+    const maxSize = 50 * 1024 * 1024;
     const validFiles = files.filter(file => {
       if (file.size > maxSize) {
-        alert(`Файл "${file.name}" слишком большой. Максимальный размер: 50MB`);
+        alert(`Файл "${file.name}" слишком большой. Максимум 50MB`);
         return false;
       }
       return true;
     });
-
     setSelectedFiles(prev => [...prev, ...validFiles]);
-    // Сбрасываем input для повторного выбора тех же файлов
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Удалить выбранный файл
-  const removeFile = (index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeFile = (index) => setSelectedFiles(prev => prev.filter((_, i) => i !== index));
 
-  // Форматирование размера файла
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 B';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  // Получить иконку по типу файла
   const getFileIcon = (filename) => {
     const ext = filename.split('.').pop()?.toLowerCase();
     const icons = {
       pdf: <FaFilePdf style={{ color: '#e74c3c' }} />,
-      doc: <FaFileWord style={{ color: '#2980b9' }} />, 
+      doc: <FaFileWord style={{ color: '#2980b9' }} />,
       docx: <FaFileWord style={{ color: '#2980b9' }} />,
-      xls: <FaFileExcel style={{ color: '#27ae60' }} />, 
+      xls: <FaFileExcel style={{ color: '#27ae60' }} />,
       xlsx: <FaFileExcel style={{ color: '#27ae60' }} />,
-      ppt: <FaFilePowerpoint style={{ color: '#e67e22' }} />, 
+      ppt: <FaFilePowerpoint style={{ color: '#e67e22' }} />,
       pptx: <FaFilePowerpoint style={{ color: '#e67e22' }} />,
-      zip: <FaFileArchive style={{ color: '#9b59b6' }} />, 
-      rar: <FaFileArchive style={{ color: '#9b59b6' }} />, 
+      zip: <FaFileArchive style={{ color: '#9b59b6' }} />,
+      rar: <FaFileArchive style={{ color: '#9b59b6' }} />,
       '7z': <FaFileArchive style={{ color: '#9b59b6' }} />,
-      jpg: <FaFileImage style={{ color: '#1abc9c' }} />, 
-      jpeg: <FaFileImage style={{ color: '#1abc9c' }} />, 
-      png: <FaFileImage style={{ color: '#1abc9c' }} />, 
-      gif: <FaFileImage style={{ color: '#1abc9c' }} />, 
+      jpg: <FaFileImage style={{ color: '#1abc9c' }} />,
+      jpeg: <FaFileImage style={{ color: '#1abc9c' }} />,
+      png: <FaFileImage style={{ color: '#1abc9c' }} />,
+      gif: <FaFileImage style={{ color: '#1abc9c' }} />,
       webp: <FaFileImage style={{ color: '#1abc9c' }} />,
-      html: <FaGlobe style={{ color: '#e44d26' }} />, 
-      css: <FaPalette style={{ color: '#264de4' }} />, 
+      html: <FaGlobe style={{ color: '#e44d26' }} />,
+      css: <FaPalette style={{ color: '#264de4' }} />,
       js: <FaBolt style={{ color: '#f7df1e' }} />,
-      txt: <FaFileAlt style={{ color: '#7f8c8d' }} />, 
-      json: <FaFileCode style={{ color: '#f39c12' }} />
+      txt: <FaFileAlt style={{ color: '#7f8c8d' }} />,
+      json: <FaFileCode style={{ color: '#f39c12' }} />,
     };
     return icons[ext] || <FaPaperclip style={{ color: '#95a5a6' }} />;
   };
@@ -149,67 +148,32 @@ function StudentHomeworks() {
       alert('Пожалуйста, введите ответ или прикрепите файлы');
       return;
     }
-
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append('submissionText', submissionText);
-      
-      // Добавляем новые файлы
-      selectedFiles.forEach(file => {
-        formData.append('files', file);
-      });
-
+      selectedFiles.forEach(file => formData.append('files', file));
       await api.post(`/homeworks/${selectedHomework.id}/submit`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
       alert('Работа успешно отправлена!');
       closeModal();
       fetchHomeworks();
     } catch (error) {
-      console.error('Ошибка отправки работы:', error);
       alert(error.response?.data?.error || 'Ошибка отправки работы');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      active: { text: 'Активно', class: styles['badge-active'] },
-      closed: { text: 'Закрыто', class: styles['badge-closed'] },
-      expired: { text: 'Просрочено', class: styles['badge-expired'] }
-    };
-    const badge = badges[status] || badges.active;
-    return <span className={`${styles['badge']} ${badge.class}`}>{badge.text}</span>;
-  };
-
-  const getSubmissionStatusBadge = (status) => {
-    if (!status) return <span className={`${styles['status-badge']} ${styles['status-not-submitted']}`}>Не сдано</span>;
-    
-    const badges = {
-      pending: { text: 'На проверке', class: styles['status-pending'] },
-      accepted: { text: 'Принято', class: styles['status-accepted'] },
-      rejected: { text: 'Отклонено', class: styles['status-rejected'] }
-    };
-    const badge = badges[status] || badges.pending;
-    return <span className={`${styles['status-badge']} ${badge.class}`}>{badge.text}</span>;
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('ru-RU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleString('ru-RU', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
-  };
 
-  // Фильтрация домашних заданий
+  const isOverdue = (deadline) => new Date(deadline) < new Date();
+
   const filteredHomeworks = homeworks.filter(hw => {
     if (filter === 'all') return true;
     if (filter === 'active') return hw.status === 'active' && !hw.submission_status;
@@ -219,344 +183,360 @@ function StudentHomeworks() {
     return true;
   });
 
-  // Статистика
   const stats = {
     total: homeworks.length,
     active: homeworks.filter(hw => hw.status === 'active' && !hw.submission_status).length,
     submitted: homeworks.filter(hw => hw.submission_status === 'pending').length,
     accepted: homeworks.filter(hw => hw.submission_status === 'accepted').length,
     rejected: homeworks.filter(hw => hw.submission_status === 'rejected').length,
-    totalPoints: homeworks.filter(hw => hw.submission_status === 'accepted').reduce((sum, hw) => sum + (hw.points_earned || 0), 0)
+    totalPoints: homeworks
+      .filter(hw => hw.submission_status === 'accepted')
+      .reduce((sum, hw) => sum + (hw.points_earned || 0), 0),
   };
 
+  const getSubmissionChip = (sub_status) => {
+    if (!sub_status) return null;
+    const map = {
+      pending:  { label: 'На проверке', cls: styles.chipPending },
+      accepted: { label: 'Принято',     cls: styles.chipAccepted },
+      rejected: { label: 'Отклонено',   cls: styles.chipRejected },
+    };
+    const s = map[sub_status];
+    if (!s) return null;
+    return <span className={`${styles.chip} ${s.cls}`}>{s.label}</span>;
+  };
+
+  // Loading
+  if (pageLoading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.spinnerWrap}>
+          <div className={styles.spinner} />
+          <p>Загрузка заданий...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={styles['student-homeworks']}>
-      <div className={styles.header}>
-        <h2><FaBook /> Домашние задания</h2>
-      </div>
+    <div className={styles.page}>
 
-      {/* Статистика */}
-      <div className={styles['stats-section']}>
-        <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
-            <FaBook />
-          </div>
-          <div className={styles['stat-content']}>
-            <div className={styles['stat-value']}>{stats.total}</div>
-            <div className={styles['stat-label']}>Всего заданий</div>
-          </div>
-        </div>
-
-        <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
-            <FaClock />
-          </div>
-          <div className={styles['stat-content']}>
-            <div className={styles['stat-value']}>{stats.active}</div>
-            <div className={styles['stat-label']}>Активные</div>
-          </div>
-        </div>
-
-        <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
-            <FaHourglass />
-          </div>
-          <div className={styles['stat-content']}>
-            <div className={styles['stat-value']}>{stats.submitted}</div>
-            <div className={styles['stat-label']}>На проверке</div>
-          </div>
-        </div>
-
-        <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
-            <FaCheckCircle />
-          </div>
-          <div className={styles['stat-content']}>
-            <div className={styles['stat-value']}>{stats.accepted}</div>
-            <div className={styles['stat-label']}>Принято</div>
-          </div>
-        </div>
-
-        <div className={styles['stat-card']}>
-          <div className={styles['stat-icon']} style={{ background: 'linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%)' }}>
-            <FaTrophy />
-          </div>
-          <div className={styles['stat-content']}>
-            <div className={styles['stat-value']}>{stats.totalPoints}</div>
-            <div className={styles['stat-label']}>Получено баллов</div>
-          </div>
+      {/* Page header */}
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderIcon}><MdAssignment /></div>
+        <div>
+          <h1 className={styles.pageTitle}>Домашние задания</h1>
+          <p className={styles.pageSub}>Выполняйте задания и получайте баллы</p>
         </div>
       </div>
 
-      {/* Фильтры */}
-      <div className={styles['filters-section']}>
-        <button 
-          className={filter === 'all' ? styles['filter-active'] : styles['filter-btn']}
-          onClick={() => setFilter('all')}
-        >
-          Все ({stats.total})
-        </button>
-        <button 
-          className={filter === 'active' ? styles['filter-active'] : styles['filter-btn']}
-          onClick={() => setFilter('active')}
-        >
-          Активные ({stats.active})
-        </button>
-        <button 
-          className={filter === 'submitted' ? styles['filter-active'] : styles['filter-btn']}
-          onClick={() => setFilter('submitted')}
-        >
-          На проверке ({stats.submitted})
-        </button>
-        <button 
-          className={filter === 'accepted' ? styles['filter-active'] : styles['filter-btn']}
-          onClick={() => setFilter('accepted')}
-        >
-          Принято ({stats.accepted})
-        </button>
-        <button 
-          className={filter === 'rejected' ? styles['filter-active'] : styles['filter-btn']}
-          onClick={() => setFilter('rejected')}
-        >
-          Отклонено ({stats.rejected})
-        </button>
+      {/* Stat tiles */}
+      <div className={styles.statsRow}>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><FaBook /></span>
+          <span className={styles.statTileVal}>{stats.total}</span>
+          <span className={styles.statTileLabel}>Всего</span>
+        </div>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><AiOutlineClockCircle /></span>
+          <span className={styles.statTileVal}>{stats.active}</span>
+          <span className={styles.statTileLabel}>Активные</span>
+        </div>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><MdOutlinePendingActions /></span>
+          <span className={styles.statTileVal}>{stats.submitted}</span>
+          <span className={styles.statTileLabel}>На проверке</span>
+        </div>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><AiOutlineCheckCircle /></span>
+          <span className={styles.statTileVal}>{stats.accepted}</span>
+          <span className={styles.statTileLabel}>Принято</span>
+        </div>
+        <div className={styles.statTile}>
+          <span className={styles.statTileIcon}><FaTrophy /></span>
+          <span className={styles.statTileVal}>{stats.totalPoints}</span>
+          <span className={styles.statTileLabel}>Баллов</span>
+        </div>
       </div>
 
-      <div className={styles['homeworks-grid']}>
-        {filteredHomeworks.map((homework) => (
-          <div key={homework.id} className={styles['homework-card']}>
-            <div className={styles['card-header']}>
-              <h3>{homework.title}</h3>
-              <div className={styles.badges}>
-                {getStatusBadge(homework.status)}
-                {getSubmissionStatusBadge(homework.submission_status)}
-              </div>
-            </div>
-
-            <div className={styles['card-body']}>
-              <div 
-                className={styles['homework-description']} 
-                dangerouslySetInnerHTML={{ __html: homework.description }}
-              />
-              
-              <div className={styles['homework-info']}>
-                <div className={styles['info-item']}>
-                  <span className={styles.label}><FaCalendar /> Дедлайн:</span>
-                  <span className={styles.value}>{formatDate(homework.deadline)}</span>
-                </div>
-                <div className={styles['info-item']}>
-                  <span className={styles.label}><FaCoins /> Баллы:</span>
-                  <span className={styles.value}>{homework.points}</span>
-                </div>
-                {homework.submission_status === 'accepted' && homework.points_earned !== null && (
-                  <div className={`${styles['info-item']} ${styles['info-item-earned']}`}>
-                    <span className={styles.label}><FaTrophy /> Получено баллов:</span>
-                    <span className={styles.value}>{homework.points_earned}</span>
-                  </div>
-                )}
-              </div>
-
-              {homework.submission_status === 'rejected' && homework.reason && (
-                <div className={styles['rejection-reason']}>
-                  <strong><FaTimes /> Причина отклонения:</strong>
-                  <p>{homework.reason}</p>
-                </div>
-              )}
-            </div>
-
-            <div className={styles['card-footer']}>
-              {homework.status === 'active' && (
-                <button 
-                  className={styles['btn-submit']}
-                  onClick={() => openSubmitModal(homework)}
-                >
-                  {homework.submission_status ? <><FaEdit /> Изменить ответ</> : <><FaPen /> Сдать работу</>}
-                </button>
-              )}
-              {homework.status !== 'active' && !homework.submission_status && (
-                <span className={styles['text-muted']}>Время сдачи истекло</span>
-              )}
-              {homework.submission_status && (
-                <button 
-                  className={styles['btn-view']}
-                  onClick={() => openSubmitModal(homework)}
-                >
-                  <FaEye /> Посмотреть ответ
-                </button>
-              )}
-            </div>
-          </div>
+      {/* Filter chips */}
+      <div className={styles.filterBar}>
+        {[
+          { key: 'all',       label: `Все (${stats.total})` },
+          { key: 'active',    label: `Активные (${stats.active})` },
+          { key: 'submitted', label: `На проверке (${stats.submitted})` },
+          { key: 'accepted',  label: `Принято (${stats.accepted})` },
+          { key: 'rejected',  label: `Отклонено (${stats.rejected})` },
+        ].map(f => (
+          <button
+            key={f.key}
+            className={`${styles.filterChip} ${filter === f.key ? styles.filterChipActive : ''}`}
+            onClick={() => setFilter(f.key)}
+          >
+            {f.label}
+          </button>
         ))}
       </div>
 
-      {filteredHomeworks.length === 0 && homeworks.length > 0 && (
-        <div className={styles['empty-state']}>
-          <p><FaInbox /> Нет заданий с выбранным фильтром</p>
+      {/* Grid */}
+      {filteredHomeworks.length === 0 ? (
+        <div className={styles.emptyState}>
+          <AiOutlineInbox className={styles.emptyIcon} />
+          <h3>Нет заданий</h3>
+          <p>{homeworks.length === 0 ? 'Преподаватель ещё не назначил задания' : 'Нет заданий с выбранным фильтром'}</p>
+        </div>
+      ) : (
+        <div className={styles.hwGrid}>
+          {filteredHomeworks.map(hw => {
+            const overdue = isOverdue(hw.deadline) && hw.status === 'active' && !hw.submission_status;
+            const statusStrip = hw.submission_status === 'accepted' ? styles.stripAccepted
+              : hw.submission_status === 'rejected' ? styles.stripRejected
+              : hw.submission_status === 'pending' ? styles.stripPending
+              : overdue ? styles.stripOverdue
+              : styles.stripActive;
+
+            return (
+              <div key={hw.id} className={styles.hwCard}>
+                <div className={`${styles.hwStrip} ${statusStrip}`} />
+                <div className={styles.hwCardInner}>
+                  <div className={styles.hwCardHead}>
+                    <h3 className={styles.hwTitle}>{hw.title}</h3>
+                    <div className={styles.hwBadges}>
+                      {hw.status !== 'active' && (
+                        <span className={styles.chipClosed}>Закрыто</span>
+                      )}
+                      {overdue && <span className={styles.chipOverdue}>Просрочено</span>}
+                      {getSubmissionChip(hw.submission_status)}
+                    </div>
+                  </div>
+
+                  <div
+                    className={styles.hwDesc}
+                    dangerouslySetInnerHTML={{ __html: hw.description }}
+                  />
+
+                  <div className={styles.hwMeta}>
+                    <span className={styles.hwMetaItem}>
+                      <FaCalendar />
+                      <span>Дедлайн: <strong>{formatDate(hw.deadline)}</strong></span>
+                    </span>
+                    <span className={styles.hwMetaItem}>
+                      <FaCoins />
+                      <span>{hw.points} баллов</span>
+                    </span>
+                    {hw.submission_status === 'accepted' && hw.points_earned !== null && (
+                      <span className={`${styles.hwMetaItem} ${styles.hwMetaEarned}`}>
+                        <FaTrophy />
+                        <span>Получено: <strong>{hw.points_earned}</strong></span>
+                      </span>
+                    )}
+                  </div>
+
+                  {hw.submission_status === 'rejected' && hw.reason && (
+                    <div className={styles.rejectionNote}>
+                      <FaTimes /> <span><strong>Причина:</strong> {hw.reason}</span>
+                    </div>
+                  )}
+
+                  <div className={styles.hwCardFooter}>
+                    {hw.status === 'active' && (
+                      <button className={styles.btnSubmit} onClick={() => openSubmitModal(hw)}>
+                        {hw.submission_status
+                          ? <><FaEdit /> Изменить ответ</>
+                          : <><FaPen /> Сдать работу</>}
+                      </button>
+                    )}
+                    {hw.status !== 'active' && !hw.submission_status && (
+                      <span className={styles.textMuted}>Время сдачи истекло</span>
+                    )}
+                    {hw.submission_status && (
+                      <button className={styles.btnView} onClick={() => openSubmitModal(hw)}>
+                        <FaEye /> Посмотреть ответ
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {homeworks.length === 0 && (
-        <div className={styles['empty-state']}>
-          <p><FaInbox /> Пока нет домашних заданий</p>
-        </div>
-      )}
-
-      {/* Submit Modal */}
+      {/* Submit / View Modal */}
       {showSubmitModal && (
-        <div className={styles['modal-overlay']} >
-          <div className={`${styles['modal-content']} ${styles['modal-large']}`} onClick={(e) => e.stopPropagation()}>
-            <h3>{selectedHomework?.title}</h3>
-            
-            <div className={styles['homework-description-modal']}>
-              <h4>Задание:</h4>
-              <div dangerouslySetInnerHTML={{ __html: selectedHomework?.description }} />
+        <div className={styles.modalOverlay} onClick={closeModal}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+
+            {/* Modal header */}
+            <div className={styles.modalHeader}>
+              <div className={styles.modalHeaderLeft}>
+                <div className={styles.modalHeaderIcon}><HiOutlineDocumentText /></div>
+                <div>
+                  <h3 className={styles.modalTitle}>{selectedHomework?.title}</h3>
+                  {userSubmission && (
+                    <div className={styles.modalSubStatus}>
+                      {getSubmissionChip(userSubmission.status)}
+                      {userSubmission.status === 'accepted' && (
+                        <span className={styles.modalPoints}>
+                          <FaTrophy /> +{userSubmission.points_earned} баллов
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button className={styles.modalClose} onClick={closeModal}><FaTimes /></button>
             </div>
 
-            {userSubmission && (
-              <div className={styles['submission-info']}>
-                <h4>Статус: {getSubmissionStatusBadge(userSubmission.status)}</h4>
-                {userSubmission.status === 'accepted' && (
-                  <p className={styles['points-info']}><FaTrophy /> Получено баллов: <strong>{userSubmission.points_earned}</strong></p>
-                )}
-                {userSubmission.status === 'rejected' && userSubmission.reason && (
-                  <div className={styles['rejection-info']}>
-                    <strong><FaTimes /> Причина отклонения:</strong>
-                    <p>{userSubmission.reason}</p>
-                  </div>
-                )}
-                <p className={styles['submitted-at']}>
-                  Отправлено: {formatDate(userSubmission.submitted_at)}
-                </p>
-                {userSubmission.checked_at && (
-                  <p className={styles['checked-at']}>
-                    Проверено: {formatDate(userSubmission.checked_at)}
-                  </p>
-                )}
+            <div className={styles.modalBody}>
+              {/* Task description */}
+              <div className={styles.modalSection}>
+                <div className={styles.modalSectionTitle}><FaBook /> Задание</div>
+                <div
+                  className={styles.taskDescBody}
+                  dangerouslySetInnerHTML={{ __html: selectedHomework?.description }}
+                />
               </div>
-            )}
 
-            {selectedHomework?.status === 'active' ? (
-              <>
-                <div className={styles['form-group']}>
-                  <label>Ваш ответ:</label>
-                  <QuillEditor
-                    value={submissionText}
-                    onChange={setSubmissionText}
-                    modules={quillModules}
-                    placeholder="Напишите ваш ответ здесь..."
-                  />
-                </div>
-
-                {/* Секция прикрепления файлов */}
-                <div className={styles['form-group']}>
-                  <label><FaPaperclip /> Прикрепить файлы (до 10 файлов, макс. 50MB каждый):</label>
-                  
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
-                    multiple
-                    style={{ display: 'none' }}
-                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.zip,.rar,.7z,.txt,.html,.css,.js,.json,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                  />
-                  
-                  <button 
-                    type="button" 
-                    className={styles['btn-attach']}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <FaPaperclip /> Выбрать файлы
-                  </button>
-
-                  {/* Список уже прикреплённых файлов (если есть) */}
-                  {existingAttachments.length > 0 && (
-                    <div className={styles['files-list']}>
-                      <p className={styles['files-label']}>Ранее прикреплённые файлы:</p>
-                      {existingAttachments.map((file, index) => (
-                        <div key={`existing-${index}`} className={styles['file-item']}>
-                          <span className={styles['file-icon']}>{getFileIcon(file.originalName || file.filename)}</span>
-                          <span className={styles['file-name']}>{file.originalName || file.filename}</span>
-                          <span className={styles['file-size']}>{formatFileSize(file.size)}</span>
-                          <a 
-                            href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${file.path}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles['file-download']}
-                          >
-                            <FaDownload />
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Список новых выбранных файлов */}
-                  {selectedFiles.length > 0 && (
-                    <div className={styles['files-list']}>
-                      <p className={styles['files-label']}>Новые файлы для отправки:</p>
-                      {selectedFiles.map((file, index) => (
-                        <div key={`new-${index}`} className={styles['file-item']}>
-                          <span className={styles['file-icon']}>{getFileIcon(file.name)}</span>
-                          <span className={styles['file-name']}>{file.name}</span>
-                          <span className={styles['file-size']}>{formatFileSize(file.size)}</span>
-                          <button 
-                            type="button"
-                            className={styles['file-remove']}
-                            onClick={() => removeFile(index)}
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles['form-actions']}>
-                  <button type="button" onClick={closeModal}>Отмена</button>
-                  <button 
-                    className={styles['btn-primary']} 
-                    onClick={handleSubmit}
-                    disabled={loading || (!submissionText.trim() && selectedFiles.length === 0 && existingAttachments.length === 0)}
-                  >
-                    {loading ? 'Отправка...' : (userSubmission ? 'Обновить ответ' : 'Отправить')}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className={styles['submitted-answer']}>
-                  <h4>Ваш ответ:</h4>
-                  <div dangerouslySetInnerHTML={{ __html: submissionText }} />
-                </div>
-
-                {/* Показываем прикреплённые файлы для просмотра */}
-                {existingAttachments.length > 0 && (
-                  <div className={styles['files-list']}>
-                    <p className={styles['files-label']}><FaPaperclip /> Прикреплённые файлы:</p>
-                    {existingAttachments.map((file, index) => (
-                      <div key={index} className={styles['file-item']}>
-                        <span className={styles['file-icon']}>{getFileIcon(file.originalName || file.filename)}</span>
-                        <span className={styles['file-name']}>{file.originalName || file.filename}</span>
-                        <span className={styles['file-size']}>{formatFileSize(file.size)}</span>
-                        <a 
-                          href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${file.path}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles['file-download']}
-                        >
-                          <FaDownload />
-                        </a>
-                      </div>
-                    ))}
+              {/* Submission info (if exists) */}
+              {userSubmission && (
+                <div className={styles.modalSection}>
+                  <div className={styles.modalSectionTitle}>
+                    <AiOutlineClockCircle /> Информация о сдаче
                   </div>
-                )}
-
-                <div className={styles['form-actions']}>
-                  <button type="button" onClick={closeModal}>Закрыть</button>
+                  <div className={styles.submissionMeta}>
+                    <span>Отправлено: <strong>{formatDate(userSubmission.submitted_at)}</strong></span>
+                    {userSubmission.checked_at && (
+                      <span>Проверено: <strong>{formatDate(userSubmission.checked_at)}</strong></span>
+                    )}
+                  </div>
+                  {userSubmission.status === 'rejected' && userSubmission.reason && (
+                    <div className={styles.rejectionNote}>
+                      <FaTimes /> <span><strong>Причина отклонения:</strong> {userSubmission.reason}</span>
+                    </div>
+                  )}
                 </div>
-              </>
-            )}
+              )}
+
+              {selectedHomework?.status === 'active' ? (
+                <>
+                  {/* Answer editor */}
+                  <div className={styles.modalSection}>
+                    <div className={styles.modalSectionTitle}><FaPen /> Ваш ответ</div>
+                    <QuillEditor
+                      value={submissionText}
+                      onChange={setSubmissionText}
+                      modules={quillModules}
+                      placeholder="Напишите ваш ответ здесь..."
+                    />
+                  </div>
+
+                  {/* File attachments */}
+                  <div className={styles.modalSection}>
+                    <div className={styles.modalSectionTitle}>
+                      <FaPaperclip /> Файлы (до 10, макс. 50MB каждый)
+                    </div>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      multiple
+                      style={{ display: 'none' }}
+                      accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.zip,.rar,.7z,.txt,.html,.css,.js,.json,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                    />
+                    <button
+                      type="button"
+                      className={styles.btnAttach}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <FaPaperclip /> Выбрать файлы
+                    </button>
+
+                    {existingAttachments.length > 0 && (
+                      <div className={styles.filesList}>
+                        <p className={styles.filesLabel}>Ранее прикреплённые:</p>
+                        {existingAttachments.map((file, i) => (
+                          <div key={`ex-${i}`} className={styles.fileItem}>
+                            <span className={styles.fileIcon}>{getFileIcon(file.originalName || file.filename)}</span>
+                            <span className={styles.fileName}>{file.originalName || file.filename}</span>
+                            <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+                            <a
+                              href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${file.path}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className={styles.fileAction}
+                            ><FaDownload /></a>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {selectedFiles.length > 0 && (
+                      <div className={styles.filesList}>
+                        <p className={styles.filesLabel}>Новые файлы:</p>
+                        {selectedFiles.map((file, i) => (
+                          <div key={`nw-${i}`} className={styles.fileItem}>
+                            <span className={styles.fileIcon}>{getFileIcon(file.name)}</span>
+                            <span className={styles.fileName}>{file.name}</span>
+                            <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+                            <button
+                              type="button"
+                              className={styles.fileAction}
+                              onClick={() => removeFile(i)}
+                            ><FaTrash /></button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={styles.modalFooter}>
+                    <button className={styles.btnGhost} onClick={closeModal}>Отмена</button>
+                    <button
+                      className={styles.btnPrimary}
+                      onClick={handleSubmit}
+                      disabled={loading || (!submissionText.trim() && selectedFiles.length === 0 && existingAttachments.length === 0)}
+                    >
+                      {loading ? 'Отправка...' : userSubmission ? 'Обновить ответ' : 'Отправить'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* View-only answer */}
+                  {submissionText && (
+                    <div className={styles.modalSection}>
+                      <div className={styles.modalSectionTitle}><FaEye /> Ваш ответ</div>
+                      <div className={styles.taskDescBody} dangerouslySetInnerHTML={{ __html: submissionText }} />
+                    </div>
+                  )}
+
+                  {existingAttachments.length > 0 && (
+                    <div className={styles.modalSection}>
+                      <div className={styles.modalSectionTitle}><FaPaperclip /> Прикреплённые файлы</div>
+                      <div className={styles.filesList}>
+                        {existingAttachments.map((file, i) => (
+                          <div key={i} className={styles.fileItem}>
+                            <span className={styles.fileIcon}>{getFileIcon(file.originalName || file.filename)}</span>
+                            <span className={styles.fileName}>{file.originalName || file.filename}</span>
+                            <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+                            <a
+                              href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${file.path}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className={styles.fileAction}
+                            ><FaDownload /></a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={styles.modalFooter}>
+                    <button className={styles.btnGhost} onClick={closeModal}>Закрыть</button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

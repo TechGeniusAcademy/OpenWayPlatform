@@ -1,254 +1,129 @@
-﻿.rainbowBackground {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  z-index: -1;
-}
-
-.rainbow {
-  position: absolute;
-  top: 0;
-  width: 0;
-  height: 100vh;
-  transform: rotate(10deg);
-  transform-origin: top right;
-  animation: slide 45s linear infinite;
-}
-
-/* Полноэкранные радуги */
-.rainbow1  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -1s; }
-.rainbow2  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(94,234,212), 50px 0 50px 25px rgb(96,165,250), 130px 0 80px 40px white; animation-delay: -2s; }
-.rainbow3  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94,234,212), 0 0 50px 25px rgb(232,121,249), 50px 0 50px 25px rgb(96,165,250), 130px 0 80px 40px white; animation-delay: -3s; }
-.rainbow4  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94,234,212), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(232,121,249), 130px 0 80px 40px white; animation-delay: -4s; }
-.rainbow5  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96,165,250), 0 0 50px 25px rgb(94,234,212), 50px 0 50px 25px rgb(232,121,249), 130px 0 80px 40px white; animation-delay: -5s; }
-.rainbow6  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96,165,250), 0 0 50px 25px rgb(232,121,249), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -6s; }
-.rainbow7  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -7s; }
-.rainbow8  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(94,234,212), 50px 0 50px 25px rgb(96,165,250), 130px 0 80px 40px white; animation-delay: -8s; }
-.rainbow9  { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94,234,212), 0 0 50px 25px rgb(232,121,249), 50px 0 50px 25px rgb(96,165,250), 130px 0 80px 40px white; animation-delay: -9s; }
-.rainbow10 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94,234,212), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(232,121,249), 130px 0 80px 40px white; animation-delay: -10s; }
-.rainbow11 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96,165,250), 0 0 50px 25px rgb(94,234,212), 50px 0 50px 25px rgb(232,121,249), 130px 0 80px 40px white; animation-delay: -11s; }
-.rainbow12 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96,165,250), 0 0 50px 25px rgb(232,121,249), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -12s; }
-.rainbow13 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -13s; }
-.rainbow14 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(94,234,212), 50px 0 50px 25px rgb(96,165,250), 130px 0 80px 40px white; animation-delay: -14s; }
-.rainbow15 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94,234,212), 0 0 50px 25px rgb(232,121,249), 50px 0 50px 25px rgb(96,165,250), 130px 0 80px 40px white; animation-delay: -15s; }
-.rainbow16 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94,234,212), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(232,121,249), 130px 0 80px 40px white; animation-delay: -16s; }
-.rainbow17 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96,165,250), 0 0 50px 25px rgb(94,234,212), 50px 0 50px 25px rgb(232,121,249), 130px 0 80px 40px white; animation-delay: -17s; }
-.rainbow18 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96,165,250), 0 0 50px 25px rgb(232,121,249), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -18s; }
-.rainbow19 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -19s; }
-.rainbow20 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(94,234,212), 50px 0 50px 25px rgb(96,165,250), 130px 0 80px 40px white; animation-delay: -20s; }
-.rainbow21 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94,234,212), 0 0 50px 25px rgb(232,121,249), 50px 0 50px 25px rgb(96,165,250), 130px 0 80px 40px white; animation-delay: -21s; }
-.rainbow22 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(94,234,212), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(232,121,249), 130px 0 80px 40px white; animation-delay: -22s; }
-.rainbow23 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96,165,250), 0 0 50px 25px rgb(94,234,212), 50px 0 50px 25px rgb(232,121,249), 130px 0 80px 40px white; animation-delay: -23s; }
-.rainbow24 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(96,165,250), 0 0 50px 25px rgb(232,121,249), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -24s; }
-.rainbow25 { box-shadow: -130px 0 80px 40px white, -50px 0 50px 25px rgb(232,121,249), 0 0 50px 25px rgb(96,165,250), 50px 0 50px 25px rgb(94,234,212), 130px 0 80px 40px white; animation-delay: -25s; }
-
-
-@keyframes slide {
-  from { right: -25vw; }
-  to { right: 125vw; }
-}
-
-.h {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100vw;
-  height: 0;
-  box-shadow: 0 0 50vh 40vh white;
-}
-
-.v {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 100vh;
-  box-shadow: 0 0 35vw 25vw white;
-}
-
-/* === Контейнер и фон === */
-.container {
+﻿.container {
   max-width: 1920px;
   width: 100%;
   height: 100vh;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: 'Inter', sans-serif;
-}
 
-/* Радужный фон */
-.rainbowBackground {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  z-index: -1;
-}
-
-.rainbow {
-  position: absolute;
-  top: 0;
-  width: 0;
-  height: 100vh;
-  transform: rotate(10deg);
-  transform-origin: top right;
-  animation: slide 45s linear infinite;
-}
-
-@keyframes slide {
-  from { right: -25vw; }
-  to { right: 125vw; }
-}
-
-.h {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100vw;
-  height: 0;
-  box-shadow: 0 0 50vh 40vh white;
-}
-
-.v {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 100vh;
-  box-shadow: 0 0 35vw 25vw white;
-}
-
-/* === Форма === */
-.formWrapper {
-  width: 380px;
-  max-width: 90%;
-  padding: 40px 30px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
-  border: 2px solid #333;
-  border-radius: 16px;
-  box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
-}
-
-/* Логотип */
-.logo h1 {
-  color: #fff;
-  font-size: 2.2rem;
-  font-weight: 700;
-  margin-bottom: 30px;
-  letter-spacing: 2px;
-  text-align: center;
-}
-
-/* Форма и поля */
-.form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.inputGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.label {
-  display: flex;
-  align-items: center;
-  color: #fff;
-  font-weight: 500;
-  font-size: 0.95rem;
-  gap: 8px;
-}
-
-.labelIcon {
-  color: white;
-  font-size: 1.1rem;
-}
-
-.input {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid #555;
-  background-color: #111;
-  color: #fff;
-  font-size: 1rem;
-  transition: 0.3s;
-}
-
-.input:focus {
-  outline: none;
-  border-color: white;
-  box-shadow: 0 0 10px white;
-}
-
-.input::placeholder {
-  color: #888;
-}
-
-/* Обёртка пароля с возможностью иконки */
-.passwordWrapper {
   position: relative;
-  display: flex;
-  align-items: center;
+
+  border: 5px solid #F8F8FA;
 }
 
-/* Кнопка отправки */
-.submitBtn {
-  width: 100%;
-  padding: 14px 0;
-  border: none;
-  border-radius: 12px;
+.leftSide {
+  background: #22282E;
+
+  height: 100%;
+  width: 20%;
+}
+
+.formWrapper {
+  position: absolute;
+  left: 150px;
+
+  width: 380px;
+  height: 350px;
+
   background: white;
-  color: #000;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: 0.3s;
+  border-radius: 8px;
+
+  box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+
+  padding: 20px;
+
+  > h2 {
+    padding: 20px;
+    color: #444;
+    font-weight: 500;
+    font-size: 20px;
+  }
 }
 
-.submitBtn:hover {
-  background: #332929;
+.form {
+  padding: 20px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 20px;
+
+  > input {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+  }
+}
+
+.submitBtn {
+  opacity: 1;
+  outline: 0;
   color: #fff;
-}
-
-.submitBtn:disabled {
-  background: #555;
-  cursor: not-allowed;
-}
-
-/* Ошибка */
-.error {
-  color: #ff5555;
-  font-size: 0.9rem;
+  line-height: 40px;
+  position: relative;
   text-align: center;
+  letter-spacing: 1px;
+  display: inline-block;
+  text-decoration: none;
+  font-family: 'Open Sans', sans-serif;
+  text-transform: uppercase;
+  border: none;
+
+  margin-top: 20px;
 }
 
-/* Адаптив */
-@media (max-width: 768px) {
-  .formWrapper {
-    width: 90%;
-    padding: 30px 20px;
-  }
+.submitBtn:hover::after {
+  opacity: 1;
+  transform: translateY(0) rotateX(0);
+}
 
-  .logo h1 {
-    font-size: 1.8rem;
-  }
+.submitBtn:hover::before {
+  opacity: 0;
+  transform: translateY(50%) rotateX(90deg);
+}
 
-  .submitBtn {
-    font-size: 0.95rem;
+.submitBtn::after {
+  top: 0;
+  left: 0;
+  opacity: 0;
+  width: 100%;
+  color: #323237;
+  display: block;
+  transition: 0.5s;
+  position: absolute;
+  background: #adadaf;
+  content: attr(data-back);
+  transform: translateY(-50%) rotateX(90deg);
+}
+
+.submitBtn::before {
+  top: 0;
+  left: 0;
+  opacity: 1;
+  color: #adadaf;
+  display: block;
+  padding: 0 30px;
+  line-height: 40px;
+  transition: 0.5s;
+  position: relative;
+  background: #323237;
+  content: attr(data-front);
+  transform: translateY(0) rotateX(0);
+}
+
+.rightSideBanner {
+  width: 80%;
+  overflow: hidden;
+
+  > img {
+    width: 100%;
+    height: 100%;
   }
 }
+

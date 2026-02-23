@@ -1,40 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  FaArrowLeft, 
-  FaBook, 
-  FaClock, 
-  FaUsers, 
-  FaGraduationCap,
-  FaCheckCircle,
-  FaVideo,
-  FaFileAlt,
-  FaCertificate,
-  FaGlobe,
-  FaUserTie,
-  FaTag,
-  FaListUl,
-  FaLightbulb,
-  FaBullseye,
-  FaCoins,
-  FaStar,
-  FaLock,
-  FaTimes
-} from 'react-icons/fa';
-import api, { BASE_URL } from '../../utils/api';
-import styles from './CourseDetail.module.css';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  FaArrowLeft, FaArrowRight, FaBook, FaClock, FaUsers, FaGraduationCap, FaCheckCircle,
+  FaVideo, FaFileAlt, FaCertificate, FaGlobe, FaUserTie, FaTag,
+  FaListUl, FaLightbulb, FaBullseye, FaCoins, FaStar, FaLock, FaTimes,
+  FaChevronDown, FaChevronRight,
+} from "react-icons/fa";
+import { MdOutlineSchool } from "react-icons/md";
+import { AiOutlineArrowLeft } from "react-icons/ai";
+import api, { BASE_URL } from "../../utils/api";
+import styles from "./CourseDetail.module.css";
 
 function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [course, setCourse] = useState(null);
+  const [course, setCourse]   = useState(null);
   const [lessons, setLessons] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [enrolled, setEnrolled] = useState(false);
-  const [progress, setProgress] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState({});
-  const [userLevel, setUserLevel] = useState(1);
+  const [enrolled, setEnrolled]     = useState(false);
+  const [progress, setProgress]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [expandedCats, setExpandedCats] = useState({});
+  const [userLevel, setUserLevel]   = useState(1);
   const [userPoints, setUserPoints] = useState(0);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
@@ -46,258 +33,249 @@ function CourseDetail() {
 
   const loadUserData = async () => {
     try {
-      const response = await api.get('/auth/me');
-      const user = response.data.user || response.data;
-      const exp = user.experience || 0;
-      setUserLevel(Math.floor(exp / 100) + 1);
+      const res = await api.get("/auth/me");
+      const user = res.data.user || res.data;
+      setUserLevel(Math.floor((user.experience || 0) / 100) + 1);
       setUserPoints(user.points || 0);
-    } catch (error) {
-      console.error('Ошибка загрузки данных пользователя:', error);
-    }
+    } catch {}
   };
 
   const loadCourseDetails = async () => {
     try {
-      const response = await api.get(`/courses/${id}`);
-      setCourse(response.data.course);
-      setLessons(response.data.lessons || []);
-      setCategories(response.data.categories || []);
-      setEnrolled(response.data.enrolled || false);
-      setProgress(response.data.progress || []);
-      
-      // Автоматически раскрыть все категории
-      const expanded = {};
-      response.data.categories?.forEach(cat => {
-        expanded[cat.id] = true;
-      });
-      setExpandedCategories(expanded);
-    } catch (error) {
-      console.error('Ошибка загрузки курса:', error);
+      const res = await api.get(`/courses/${id}`);
+      setCourse(res.data.course);
+      setLessons(res.data.lessons || []);
+      setCategories(res.data.categories || []);
+      setEnrolled(res.data.enrolled || false);
+      setProgress(res.data.progress || []);
+      const exp = {};
+      res.data.categories?.forEach(c => { exp[c.id] = true; });
+      setExpandedCats(exp);
+    } catch (err) {
+      console.error("Ошибка загрузки курса:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleEnroll = async () => {
-    // Проверяем требования по уровню
     if (course.required_level && userLevel < course.required_level) {
-      alert(`Для этого курса требуется ${course.required_level} уровень. Ваш уровень: ${userLevel}`);
+      alert(`Требуется уровень ${course.required_level}. Ваш уровень: ${userLevel}`);
       return;
     }
-    
-    // Если курс платный - показываем модалку подтверждения
-    if (course.price && course.price > 0) {
-      setShowPurchaseModal(true);
-      return;
-    }
-    
-    // Бесплатный курс - сразу записываем
+    if (course.price > 0) { setShowPurchaseModal(true); return; }
     await enrollToCourse();
   };
 
   const enrollToCourse = async () => {
     setPurchasing(true);
     try {
-      const response = await api.post(`/courses/${id}/enroll`);
-      setEnrolled(true);
+      const res = await api.post(`/courses/${id}/enroll`);
+      if (res.data.new_balance !== undefined) setUserPoints(res.data.new_balance);
       setShowPurchaseModal(false);
-      
-      if (response.data.new_balance !== undefined) {
-        setUserPoints(response.data.new_balance);
+      // Re-fetch course data so enrolled state is always in sync with server
+      await refreshEnrollment();
+    } catch (err) {
+      const msg = err.response?.data?.error || "";
+      // If already enrolled (e.g. previous purchase went through), just refresh UI
+      if (msg.includes("уже записаны") || msg.includes("already enrolled")) {
+        setShowPurchaseModal(false);
+        await refreshEnrollment();
+      } else {
+        alert(msg || "Не удалось записаться на курс");
       }
-      
-      alert(response.data.message || 'Вы успешно записались на курс!');
-    } catch (error) {
-      console.error('Ошибка записи на курс:', error);
-      const errorMsg = error.response?.data?.error || 'Не удалось записаться на курс';
-      alert(errorMsg);
     } finally {
       setPurchasing(false);
     }
   };
 
+  const refreshEnrollment = async () => {
+    try {
+      const res = await api.get(`/courses/${id}`);
+      setEnrolled(res.data.enrolled || false);
+      setProgress(res.data.progress || []);
+      if (res.data.course) setCourse(res.data.course);
+    } catch {}
+  };
+
   const handleOpenLesson = (lessonId) => {
-    if (!enrolled) {
-      alert('Запишитесь на курс, чтобы просматривать уроки');
-      return;
-    }
+    if (!enrolled) { alert("Запишитесь на курс, чтобы просматривать уроки"); return; }
     navigate(`/student/courses/${id}/lessons/${lessonId}`);
   };
 
-  const getDifficultyLabel = (level) => {
-    const labels = {
-      beginner: 'Начальный',
-      intermediate: 'Средний',
-      advanced: 'Продвинутый'
-    };
-    return labels[level] || level;
+  const getDiffLabel = (l) =>
+    ({ beginner: "Начальный", intermediate: "Средний", advanced: "Продвинутый" }[l] || l);
+
+  const isCompleted = (lessonId) => progress.some(p => p.lesson_id === lessonId && p.completed);
+
+  const calcProgress = () => {
+    if (!lessons.length) return 0;
+    return Math.round(lessons.filter(l => isCompleted(l.id)).length / lessons.length * 100);
   };
 
-  const isLessonCompleted = (lessonId) => {
-    return progress.some(p => p.lesson_id === lessonId && p.completed);
-  };
+  const getLessonsByCat = (catId) => lessons.filter(l => l.category_id === catId);
+  const getLessonsNoCat = () => lessons.filter(l => !l.category_id);
 
-  const calculateProgress = () => {
-    if (lessons.length === 0) return 0;
-    const completed = lessons.filter(l => isLessonCompleted(l.id)).length;
-    return Math.round((completed / lessons.length) * 100);
-  };
+  const DIFF_CLS = { beginner: styles.diffEasy, intermediate: styles.diffMid, advanced: styles.diffHard };
 
-  const toggleCategory = (categoryId) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
-  };
-
-  const getLessonsByCategory = (categoryId) => {
-    return lessons.filter(l => l.category_id === categoryId);
-  };
-
-  const getLessonsWithoutCategory = () => {
-    return lessons.filter(l => !l.category_id);
-  };
+  const renderLessonRow = (lesson, index) => (
+    <div
+      key={lesson.id}
+      className={`${styles.lessonRow} ${isCompleted(lesson.id) ? styles.lessonCompleted : ""} ${!enrolled ? styles.lessonLocked : ""}`}
+      onClick={() => handleOpenLesson(lesson.id)}
+    >
+      <div className={styles.lessonNum}>{index + 1}</div>
+      <div className={styles.lessonInfo}>
+        <span className={styles.lessonTitle}>{lesson.title}</span>
+        {lesson.duration_minutes && (
+          <span className={styles.lessonDur}><FaClock /> {lesson.duration_minutes} мин</span>
+        )}
+      </div>
+      <div className={styles.lessonStatusIcon}>
+        {isCompleted(lesson.id)
+          ? <FaCheckCircle className={styles.iconDone} />
+          : lesson.video_url ? <FaVideo /> : <FaFileAlt />}
+      </div>
+    </div>
+  );
 
   if (loading) {
-    return <div className={styles.loading}>Загрузка...</div>;
+    return (
+      <div className={styles.page}>
+        <div className={styles.spinnerWrap}>
+          <div className={styles.spinner} />
+          <p>Загрузка курса...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!course) {
     return (
-      <div className={styles.courseDetail}>
+      <div className={styles.page}>
+        <button className={styles.backBtn} onClick={() => navigate("/student/courses")}>
+          <AiOutlineArrowLeft /> Назад к курсам
+        </button>
         <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>
-            <FaBook />
-          </div>
+          <FaBook className={styles.emptyIcon} />
           <h3>Курс не найден</h3>
         </div>
       </div>
     );
   }
 
+  const isLocked   = course.required_level > 0 && userLevel < course.required_level;
+  const canAfford  = !course.price || userPoints >= course.price;
+  const pct         = calcProgress();
+
   return (
-    <div className={styles.courseDetail}>
-      <button className={styles.backButton} onClick={() => navigate('/student/courses')}>
-        <FaArrowLeft /> Назад к курсам
+    <div className={styles.page}>
+      <button className={styles.backBtn} onClick={() => navigate("/student/courses")}>
+        <AiOutlineArrowLeft /> Назад к курсам
       </button>
 
-      <div className={styles.courseHeader}>
-        <div className={styles.courseHeaderTop}>
-          <div className={styles.courseHeaderContent}>
-            <span className={`${styles.difficultyBadge} ${styles[course.difficulty_level]}`}>
-              {getDifficultyLabel(course.difficulty_level)}
+      {/* Hero */}
+      <div className={styles.hero}>
+        <div className={styles.heroLeft}>
+          <div className={styles.heroTopBadges}>
+            <span className={`${styles.diffBadge} ${DIFF_CLS[course.difficulty_level] || ""}`}>
+              {getDiffLabel(course.difficulty_level)}
             </span>
-            <h1 className={styles.courseTitle}>{course.title}</h1>
-            <p className={styles.courseDescription}>{course.description}</p>
-            <div className={styles.courseStats}>
-              <div className={styles.courseStat}>
-                <FaBook /> {lessons.length} уроков
-              </div>
-              <div className={styles.courseStat}>
-                <FaClock /> {course.duration_hours}ч
-              </div>
-              <div className={styles.courseStat}>
-                <FaUsers /> {course.enrolled_count || 0} студентов
-              </div>
-              {course.language && (
-                <div className={styles.courseStat}>
-                  <FaGlobe /> {course.language}
-                </div>
-              )}
-              {course.certificate_available && (
-                <div className={styles.courseStat}>
-                  <FaCertificate /> Сертификат
-                </div>
-              )}
-            </div>
-            {course.instructor_name && (
-              <div className={styles.instructorInfo}>
-                <FaUserTie /> Преподаватель: <strong>{course.instructor_name}</strong>
-              </div>
-            )}
             {course.category && (
-              <div className={styles.categoryInfo}>
-                <FaTag /> Категория: <strong>{course.category}</strong>
-              </div>
-            )}
-            
-            {/* Требования к курсу */}
-            {(course.required_level > 0 || course.price > 0) && !enrolled && (
-              <div className={styles.courseRequirements}>
-                {course.required_level > 0 && (
-                  <div className={`${styles.requirementItem} ${userLevel >= course.required_level ? styles.met : styles.notMet}`}>
-                    <FaStar /> 
-                    <span>Требуемый уровень: {course.required_level}</span>
-                    {userLevel >= course.required_level ? (
-                      <FaCheckCircle className={styles.checkIcon} />
-                    ) : (
-                      <span className={styles.yourLevel}>(Ваш: {userLevel})</span>
-                    )}
-                  </div>
-                )}
-                {course.price > 0 && (
-                  <div className={`${styles.requirementItem} ${userPoints >= course.price ? styles.met : styles.notMet}`}>
-                    <FaCoins /> 
-                    <span>Цена: {course.price} баллов</span>
-                    {userPoints >= course.price ? (
-                      <FaCheckCircle className={styles.checkIcon} />
-                    ) : (
-                      <span className={styles.yourLevel}>(У вас: {userPoints})</span>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {enrolled ? (
-              <div className={styles.enrolledBadge}>
-                <FaCheckCircle /> Вы записаны на курс
-              </div>
-            ) : course.required_level > 0 && userLevel < course.required_level ? (
-              <button className={`${styles.enrollButton} ${styles.lockedButton}`} disabled>
-                <FaLock /> Требуется {course.required_level} уровень
-              </button>
-            ) : (
-              <button className={styles.enrollButton} onClick={handleEnroll}>
-                {course.price > 0 ? (
-                  <><FaCoins /> Купить за {course.price} баллов</>
-                ) : (
-                  <><FaGraduationCap /> Записаться на курс</>
-                )}
-              </button>
+              <span className={styles.catBadge}><FaTag /> {course.category}</span>
             )}
           </div>
-          <div className={styles.courseThumbnail}>
-            {course.thumbnail_url ? (
-              <img src={`${BASE_URL}${course.thumbnail_url}`} alt={course.title} />
-            ) : (
-              <FaBook />
-            )}
+          <h1 className={styles.heroTitle}>{course.title}</h1>
+          <p className={styles.heroDesc}>{course.description}</p>
+
+          <div className={styles.heroStats}>
+            <span><FaBook /> {lessons.length} уроков</span>
+            <span><FaClock /> {course.duration_hours || 0}ч</span>
+            <span><FaUsers /> {course.enrolled_count || 0} студентов</span>
+            {course.language && <span><FaGlobe /> {course.language}</span>}
+            {course.certificate_available && <span><FaCertificate /> Сертификат</span>}
           </div>
+
+          {course.instructor_name && (
+            <div className={styles.instructorRow}>
+              <FaUserTie /> <span>Преподаватель: <strong>{course.instructor_name}</strong></span>
+            </div>
+          )}
+
+          {/* Requirements */}
+          {(isLocked || (course.price > 0 && !enrolled)) && (
+            <div className={styles.reqRow}>
+              {course.required_level > 0 && (
+                <div className={`${styles.reqItem} ${userLevel >= course.required_level ? styles.reqMet : styles.reqNot}`}>
+                  <FaStar />
+                  <span>Уровень {course.required_level}</span>
+                  {userLevel >= course.required_level
+                    ? <FaCheckCircle />
+                    : <span className={styles.reqYours}>(ваш: {userLevel})</span>}
+                </div>
+              )}
+              {course.price > 0 && (
+                <div className={`${styles.reqItem} ${canAfford ? styles.reqMet : styles.reqNot}`}>
+                  <FaCoins />
+                  <span>{course.price} баллов</span>
+                  {canAfford
+                    ? <FaCheckCircle />
+                    : <span className={styles.reqYours}>(у вас: {userPoints})</span>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Enroll button / status */}
+          {enrolled ? (
+            <div className={styles.enrolledBadge}><FaCheckCircle /> Вы записаны на курс</div>
+          ) : isLocked ? (
+            <button className={`${styles.enrollBtn} ${styles.enrollBtnLocked}`} disabled>
+              <FaLock /> Требуется уровень {course.required_level}
+            </button>
+          ) : (
+            <button className={styles.enrollBtn} onClick={handleEnroll}>
+              {course.price > 0
+                ? <><FaCoins /> Купить за {course.price} баллов</>
+                : <><FaGraduationCap /> Записаться на курс</>}
+            </button>
+          )}
         </div>
-        
-        {enrolled && lessons.length > 0 && (
-          <div className={styles.progressBar}>
-            <div className={styles.progressLabel}>
-              <span>Прогресс прохождения</span>
-              <span>{calculateProgress()}%</span>
-            </div>
-            <div className={styles.progressTrack}>
-              <div 
-                className={styles.progressFill} 
-                style={{ width: `${calculateProgress()}%` }}
-              />
-            </div>
-          </div>
-        )}
+
+        {/* Thumbnail */}
+        <div className={styles.heroThumb}>
+          {course.thumbnail_url ? (
+            <img src={`${BASE_URL}${course.thumbnail_url}`} alt={course.title} />
+          ) : (
+            <div className={styles.heroThumbFallback}><FaBook /></div>
+          )}
+        </div>
       </div>
 
-      <div className={styles.contentGrid}>
-        <div className={styles.mainContent}>
+      {/* Progress bar */}
+      {enrolled && lessons.length > 0 && (
+        <div className={styles.progressCard}>
+          <div className={styles.progressLbl}>
+            <span>Прогресс прохождения</span>
+            <span className={styles.progressPct}>{pct}%</span>
+          </div>
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{ width: `${pct}%` }} />
+          </div>
+          <div className={styles.progressSub}>
+            {lessons.filter(l => isCompleted(l.id)).length} из {lessons.length} уроков пройдено
+          </div>
+        </div>
+      )}
+
+      {/* Main 2-col grid */}
+      <div className={styles.mainGrid}>
+        {/* Left: content */}
+        <div className={styles.mainCol}>
           {course.detailed_description && (
-            <div className={styles.detailedDescription}>
-              <h2>О курсе</h2>
-              <div 
+            <div className={styles.contentCard}>
+              <div className={styles.cardHeader}><MdOutlineSchool /> О курсе</div>
+              <div
                 className="ql-editor"
                 dangerouslySetInnerHTML={{ __html: course.detailed_description }}
               />
@@ -305,282 +283,164 @@ function CourseDetail() {
           )}
 
           {course.learning_outcomes && (
-            <div className={styles.infoSection}>
-              <h2><FaLightbulb /> Чему вы научитесь</h2>
-              <div className={styles.infoContent}>
-                {course.learning_outcomes.split('\n').map((item, index) => (
-                  item.trim() && <p key={index}>✓ {item}</p>
+            <div className={styles.contentCard}>
+              <div className={styles.cardHeader}><FaLightbulb /> Чему вы научитесь</div>
+              <div className={styles.outcomesGrid}>
+                {course.learning_outcomes.split("\n").filter(s => s.trim()).map((item, i) => (
+                  <div key={i} className={styles.outcomeItem}>
+                    <FaCheckCircle className={styles.outcomeCheck} />
+                    <span>{item}</span>
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className={styles.lessonsSection}>
-            <h2>Уроки курса</h2>
-        {lessons.length === 0 ? (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>
-              <FaFileAlt />
-            </div>
-            <p>Уроки пока не добавлены</p>
-          </div>
-        ) : (
-          <>
-            {categories.length > 0 ? (
+          {/* Lessons */}
+          <div className={styles.contentCard}>
+            <div className={styles.cardHeader}><FaBook /> Уроки курса</div>
+            {lessons.length === 0 ? (
+              <div className={styles.emptyState}>
+                <FaFileAlt className={styles.emptyIcon} />
+                <p>Уроки пока не добавлены</p>
+              </div>
+            ) : categories.length > 0 ? (
               <>
-                {categories.map((category) => {
-                  const categoryLessons = getLessonsByCategory(category.id);
-                  if (categoryLessons.length === 0) return null;
-                  
+                {categories.map(cat => {
+                  const catLessons = getLessonsByCat(cat.id);
+                  if (!catLessons.length) return null;
+                  const open = expandedCats[cat.id];
                   return (
-                    <div key={category.id} className={styles.categorySection}>
-                      <div 
-                        className={styles.categoryHeader}
-                        onClick={() => toggleCategory(category.id)}
+                    <div key={cat.id} className={styles.catSection}>
+                      <div
+                        className={styles.catHeader}
+                        onClick={() => setExpandedCats(p => ({ ...p, [cat.id]: !p[cat.id] }))}
                       >
-                        <div className={styles.categoryTitle}>
-                          <FaBook />
-                          <h3>{category.title}</h3>
-                          <span className={styles.categoryCount}>
-                            {categoryLessons.length} {categoryLessons.length === 1 ? 'урок' : 'уроков'}
-                          </span>
+                        <div className={styles.catHeaderLeft}>
+                          {open ? <FaChevronDown /> : <FaChevronRight />}
+                          <strong>{cat.title}</strong>
+                          <span className={styles.catCount}>{catLessons.length} уроков</span>
                         </div>
-                        <button className={styles.toggleButton}>
-                          {expandedCategories[category.id] ? '−' : '+'}
-                        </button>
                       </div>
-                      {category.description && (
-                        <p className={styles.categoryDescription}>{category.description}</p>
-                      )}
-                      {expandedCategories[category.id] && (
+                      {cat.description && <p className={styles.catDesc}>{cat.description}</p>}
+                      {open && (
                         <div className={styles.lessonsList}>
-                          {categoryLessons.map((lesson, index) => (
-                            <div 
-                              key={lesson.id}
-                              className={`${styles.lessonCard} ${isLessonCompleted(lesson.id) ? styles.completed : ''}`}
-                              onClick={() => handleOpenLesson(lesson.id)}
-                            >
-                              <div className={styles.lessonNumber}>{index + 1}</div>
-                              <div className={styles.lessonContent}>
-                                <div className={styles.lessonTitle}>{lesson.title}</div>
-                                {lesson.duration_minutes && (
-                                  <div className={styles.lessonDuration}>
-                                    <FaClock /> {lesson.duration_minutes} мин
-                                  </div>
-                                )}
-                              </div>
-                              <div className={styles.lessonIcon}>
-                                {isLessonCompleted(lesson.id) ? (
-                                  <FaCheckCircle />
-                                ) : lesson.video_url ? (
-                                  <FaVideo />
-                                ) : (
-                                  <FaFileAlt />
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                          {catLessons.map((l, i) => renderLessonRow(l, i))}
                         </div>
                       )}
                     </div>
                   );
                 })}
-                
-                {getLessonsWithoutCategory().length > 0 && (
-                  <div className={styles.categorySection}>
-                    <div className={styles.categoryHeader}>
-                      <div className={styles.categoryTitle}>
-                        <FaBook />
-                        <h3>Дополнительные уроки</h3>
-                        <span className={styles.categoryCount}>
-                          {getLessonsWithoutCategory().length} {getLessonsWithoutCategory().length === 1 ? 'урок' : 'уроков'}
-                        </span>
+                {getLessonsNoCat().length > 0 && (
+                  <div className={styles.catSection}>
+                    <div className={styles.catHeader} style={{ cursor: "default" }}>
+                      <div className={styles.catHeaderLeft}>
+                        <strong>Дополнительные уроки</strong>
+                        <span className={styles.catCount}>{getLessonsNoCat().length} уроков</span>
                       </div>
                     </div>
                     <div className={styles.lessonsList}>
-                      {getLessonsWithoutCategory().map((lesson, index) => (
-                        <div 
-                          key={lesson.id}
-                          className={`${styles.lessonCard} ${isLessonCompleted(lesson.id) ? styles.completed : ''}`}
-                          onClick={() => handleOpenLesson(lesson.id)}
-                        >
-                          <div className={styles.lessonNumber}>{index + 1}</div>
-                          <div className={styles.lessonContent}>
-                            <div className={styles.lessonTitle}>{lesson.title}</div>
-                            {lesson.duration_minutes && (
-                              <div className={styles.lessonDuration}>
-                                <FaClock /> {lesson.duration_minutes} мин
-                              </div>
-                            )}
-                          </div>
-                          <div className={styles.lessonIcon}>
-                            {isLessonCompleted(lesson.id) ? (
-                              <FaCheckCircle />
-                            ) : lesson.video_url ? (
-                              <FaVideo />
-                            ) : (
-                              <FaFileAlt />
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                      {getLessonsNoCat().map((l, i) => renderLessonRow(l, i))}
                     </div>
                   </div>
                 )}
               </>
             ) : (
               <div className={styles.lessonsList}>
-                {lessons.map((lesson, index) => (
-                  <div 
-                    key={lesson.id}
-                    className={`${styles.lessonCard} ${isLessonCompleted(lesson.id) ? styles.completed : ''}`}
-                    onClick={() => handleOpenLesson(lesson.id)}
-                  >
-                    <div className={styles.lessonNumber}>{index + 1}</div>
-                    <div className={styles.lessonContent}>
-                      <div className={styles.lessonTitle}>{lesson.title}</div>
-                      {lesson.duration_minutes && (
-                        <div className={styles.lessonDuration}>
-                          <FaClock /> {lesson.duration_minutes} мин
-                        </div>
-                      )}
-                    </div>
-                    <div className={styles.lessonIcon}>
-                      {isLessonCompleted(lesson.id) ? (
-                        <FaCheckCircle />
-                      ) : lesson.video_url ? (
-                        <FaVideo />
-                      ) : (
-                        <FaFileAlt />
-                      )}
-                    </div>
-                  </div>
-                ))}
+                {lessons.map((l, i) => renderLessonRow(l, i))}
               </div>
             )}
-          </>
-        )}
           </div>
         </div>
 
-        <aside className={styles.sidebar}>
+        {/* Right: sidebar */}
+        <aside className={styles.sideCol}>
+          <div className={styles.infoCard}>
+            <div className={styles.cardHeader}>Информация о курсе</div>
+            <div className={styles.infoList}>
+              <div className={styles.infoRow}>
+                <FaBook />
+                <div><strong>Уроков</strong><p>{lessons.length}</p></div>
+              </div>
+              <div className={styles.infoRow}>
+                <FaClock />
+                <div><strong>Длительность</strong><p>{course.duration_hours} ч</p></div>
+              </div>
+              <div className={styles.infoRow}>
+                <FaUsers />
+                <div><strong>Студентов</strong><p>{course.enrolled_count || 0}</p></div>
+              </div>
+              {course.language && (
+                <div className={styles.infoRow}>
+                  <FaGlobe />
+                  <div><strong>Язык</strong><p>{course.language}</p></div>
+                </div>
+              )}
+              {course.certificate_available && (
+                <div className={styles.infoRow}>
+                  <FaCertificate />
+                  <div><strong>Сертификат</strong><p>Доступен</p></div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {course.requirements && (
-            <div className={styles.sidebarCard}>
-              <h3><FaListUl /> Требования</h3>
-              <div className={styles.sidebarContent}>
-                {course.requirements.split('\n').map((item, index) => (
-                  item.trim() && <p key={index}>• {item}</p>
+            <div className={styles.infoCard}>
+              <div className={styles.cardHeader}><FaListUl /> Требования</div>
+              <div className={styles.sideList}>
+                {course.requirements.split("\n").filter(s => s.trim()).map((item, i) => (
+                  <p key={i} style={{display:'flex',alignItems:'flex-start',gap:'6px'}}><FaChevronRight style={{marginTop:'3px',flexShrink:0,color:'var(--accent)'}} />{item}</p>
                 ))}
               </div>
             </div>
           )}
 
           {course.target_audience && (
-            <div className={styles.sidebarCard}>
-              <h3><FaBullseye /> Для кого этот курс</h3>
-              <div className={styles.sidebarContent}>
-                {course.target_audience.split('\n').map((item, index) => (
-                  item.trim() && <p key={index}>→ {item}</p>
+            <div className={styles.infoCard}>
+              <div className={styles.cardHeader}><FaBullseye /> Для кого курс</div>
+              <div className={styles.sideList}>
+                {course.target_audience.split("\n").filter(s => s.trim()).map((item, i) => (
+                  <p key={i} style={{display:'flex',alignItems:'flex-start',gap:'6px'}}><FaArrowRight style={{marginTop:'3px',flexShrink:0,color:'var(--accent)'}} />{item}</p>
                 ))}
               </div>
             </div>
           )}
-
-          <div className={styles.sidebarCard}>
-            <h3>Информация о курсе</h3>
-            <div className={styles.courseInfo}>
-              <div className={styles.infoItem}>
-                <FaBook />
-                <div>
-                  <strong>Уроков</strong>
-                  <p>{lessons.length}</p>
-                </div>
-              </div>
-              <div className={styles.infoItem}>
-                <FaClock />
-                <div>
-                  <strong>Длительность</strong>
-                  <p>{course.duration_hours} часов</p>
-                </div>
-              </div>
-              <div className={styles.infoItem}>
-                <FaUsers />
-                <div>
-                  <strong>Студентов</strong>
-                  <p>{course.enrolled_count || 0}</p>
-                </div>
-              </div>
-              {course.language && (
-                <div className={styles.infoItem}>
-                  <FaGlobe />
-                  <div>
-                    <strong>Язык</strong>
-                    <p>{course.language}</p>
-                  </div>
-                </div>
-              )}
-              {course.certificate_available && (
-                <div className={styles.infoItem}>
-                  <FaCertificate />
-                  <div>
-                    <strong>Сертификат</strong>
-                    <p>Доступен</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
         </aside>
       </div>
 
-      {/* Модалка подтверждения покупки */}
+      {/* Purchase modal */}
       {showPurchaseModal && (
         <div className={styles.modalOverlay} onClick={() => setShowPurchaseModal(false)}>
-          <div className={styles.purchaseModal} onClick={e => e.stopPropagation()}>
-            <button className={styles.closeModal} onClick={() => setShowPurchaseModal(false)}>
-              <FaTimes />
-            </button>
-            <div className={styles.modalIcon}>
-              <FaGraduationCap />
-            </div>
-            <h2>Покупка курса</h2>
-            <p className={styles.modalCourseTitle}>{course.title}</p>
-            
-            <div className={styles.purchaseDetails}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <button className={styles.modalClose} onClick={() => setShowPurchaseModal(false)}><FaTimes /></button>
+            <div className={styles.modalIcon}><FaGraduationCap /></div>
+            <h2 className={styles.modalTitle}>Покупка курса</h2>
+            <p className={styles.modalCourseName}>{course.title}</p>
+            <div className={styles.purchaseRows}>
               <div className={styles.purchaseRow}>
-                <span>Стоимость курса:</span>
-                <span className={styles.priceValue}><FaCoins /> {course.price}</span>
+                <span>Стоимость курса</span>
+                <span className={styles.purchaseVal}><FaCoins /> {course.price}</span>
               </div>
               <div className={styles.purchaseRow}>
-                <span>Ваш баланс:</span>
-                <span className={userPoints >= course.price ? styles.balanceOk : styles.balanceNot}>
-                  <FaCoins /> {userPoints}
-                </span>
+                <span>Ваш баланс</span>
+                <span className={canAfford ? styles.balOk : styles.balNot}><FaCoins /> {userPoints}</span>
               </div>
-              <div className={styles.purchaseRow}>
-                <span>После покупки:</span>
+              <div className={`${styles.purchaseRow} ${styles.purchaseRowTotal}`}>
+                <span>После покупки</span>
                 <span><FaCoins /> {userPoints - course.price}</span>
               </div>
             </div>
-            
-            {userPoints < course.price ? (
-              <div className={styles.notEnoughPoints}>
-                <FaLock /> Недостаточно баллов
-                <p>Вам не хватает {course.price - userPoints} баллов</p>
+            {!canAfford ? (
+              <div className={styles.notEnough}>
+                <FaLock /> Недостаточно баллов (не хватает {course.price - userPoints})
               </div>
             ) : (
-              <button 
-                className={styles.confirmPurchase}
-                onClick={enrollToCourse}
-                disabled={purchasing}
-              >
-                {purchasing ? 'Покупка...' : `Купить за ${course.price} баллов`}
+              <button className={styles.confirmBtn} onClick={enrollToCourse} disabled={purchasing}>
+                {purchasing ? "Покупка..." : `Купить за ${course.price} баллов`}
               </button>
             )}
-            
-            <button className={styles.cancelPurchase} onClick={() => setShowPurchaseModal(false)}>
-              Отмена
-            </button>
+            <button className={styles.cancelBtn} onClick={() => setShowPurchaseModal(false)}>Отмена</button>
           </div>
         </div>
       )}

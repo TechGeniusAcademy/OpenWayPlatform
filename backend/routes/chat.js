@@ -182,6 +182,15 @@ router.post('/group', authenticate, async (req, res) => {
     }
 
     const chat = await Chat.getOrCreateGroupChat(groupId);
+
+    // Ensure the requesting user is a participant (handles late-added students)
+    await pool.query(
+      `INSERT INTO chat_participants (chat_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (chat_id, user_id) DO NOTHING`,
+      [chat.id, req.user.id]
+    );
+
     res.json({ chat });
   } catch (error) {
     console.error('Ошибка создания группового чата:', error);

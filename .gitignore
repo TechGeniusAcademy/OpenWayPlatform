@@ -33,12 +33,11 @@ pm2-*.log
 *.sw?
 
 # Uploads
-backend/uploads/chat-files/*
-!backend/uploads/chat-files/.gitkeep
-backend/uploads/avatars/*
-!backend/uploads/avatars/.gitkeep
-backend/uploads/cards/*
-!backend/uploads/cards/.gitkeep
+/backend/uploads/*
+!/backend/uploads/.gitkeep
+/frontend/uploads/*
+!/frontend/uploads/.gitkeep
+
 
 # OS files
 Thumbs.db

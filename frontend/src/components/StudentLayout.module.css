@@ -1,96 +1,98 @@
+/* ================================
+   LAYOUT ROOT
+================================ */
 .student-layout {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef3 100%);
+  background: var(--bg-main);
 }
 
-/* Кнопка мобильного меню */
+/* ================================
+   MOBILE MENU BUTTON
+================================ */
 .mobile-menu-btn {
   display: none;
   position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1001;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  width: 50px;
-  height: 50px;
-  font-size: 24px;
+  top: 14px;
+  left: 14px;
+  z-index: 1002;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  font-size: 20px;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
+  box-shadow: var(--card-shadow);
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
 }
 
 .mobile-menu-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .mobile-menu-btn:active {
-  transform: translateY(0);
+  transform: scale(0.95);
 }
 
-/* Оверлей для мобильных */
+/* ================================
+   SIDEBAR OVERLAY (mobile)
+================================ */
 .sidebar-overlay {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0,0,0,0.45);
   z-index: 999;
+  backdrop-filter: blur(2px);
 }
 
+/* ================================
+   SIDEBAR
+================================ */
 .student-sidebar {
-  width: 80px;
-  background: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-  color: white;
-  padding: 0;
-  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
+  width: 68px;
   position: fixed;
+  top: 0;
+  left: 0;
   height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
-  z-index: 1000;
-  /* Скрыть скроллбар для всех браузеров */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE и Edge */
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-color);
+  box-shadow: 2px 0 16px rgba(0,0,0,0.06);
+  transition: width 0.28s cubic-bezier(0.4,0,0.2,1), background 0.3s, border-color 0.3s;
+  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   will-change: width;
 }
 
-/* Убран тяжёлый псевдоэлемент для оптимизации */
+.student-sidebar::-webkit-scrollbar { display: none; }
 
-.student-sidebar:hover {
-  width: 280px;
-}
+.student-sidebar:hover { width: 264px; }
 
-.student-sidebar.open {
-  transform: translateX(0);
-}
+.student-sidebar.open { transform: translateX(0); }
 
-/* Скрыть скроллбар для Webkit браузеров (Chrome, Safari, Edge) */
-.student-sidebar::-webkit-scrollbar {
-  display: none;
-}
-
+/* ================================
+   SIDEBAR HEADER
+================================ */
 .student-sidebar-header {
-  padding: 25px 25px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: #332929;
-  position: relative;
-  z-index: 1;
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  transition: border-color 0.3s;
 }
 
 .sidebar-header-content {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   overflow: hidden;
 }
 
@@ -99,12 +101,11 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
+  overflow: hidden;
+  background: var(--accent-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  margin: 0 auto;
-  position: relative;
 }
 
 .logo-image {
@@ -115,241 +116,231 @@
 }
 
 .logo-circle {
-  /* Оставлено для обратной совместимости */
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 18px;
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  color: var(--accent);
 }
 
 .sidebar-title {
   white-space: nowrap;
   overflow: hidden;
   opacity: 0;
-  padding-right: 10px;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.22s ease;
+  flex-shrink: 0;
 }
 
-.student-sidebar:hover .sidebar-title {
-  opacity: 1;
-}
+.student-sidebar:hover .sidebar-title { opacity: 1; }
 
 .sidebar-title h2 {
-  font-size: 22px;
-  margin: 0 0 4px 0;
-  color: white;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 2px;
+  line-height: 1.2;
 }
 
 .sidebar-title p {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  color: var(--text-secondary);
   margin: 0;
+}
+
+/* ================================
+   NAV MENU
+================================ */
+.student-sidebar > nav {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .student-sidebar-menu {
   list-style: none;
-  padding: 15px 10px;
-  background: linear-gradient(180deg, #332929 0%, #262121 50%, #210D0D 100%);
+  padding: 10px 8px;
+  margin: 0;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  background: transparent;
 }
+
+.student-sidebar-menu::-webkit-scrollbar { display: none; }
 
 .student-sidebar-menu li {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
-/* Заголовки категорий */
 .menu-category-title {
-  padding: 12px 16px 8px 16px;
-  font-size: 12px;
+  padding: 14px 10px 6px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 8px;
-  margin-bottom: 4px;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.22s ease;
+  user-select: none;
+  margin-top: 4px;
+  margin-bottom: 2px;
 }
 
-.student-sidebar:hover .menu-category-title {
-  opacity: 1;
-}
+.student-sidebar:hover .menu-category-title { opacity: 1; }
 
-/* Разделители */
 .menu-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  margin: 12px 10px;
+  background: var(--border-color);
+  margin: 8px 4px;
 }
 
+/* ================================
+   NAV LINKS
+================================ */
 .student-sidebar-menu a {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 16px;
-  color: rgba(255, 255, 255, 0.75);
+  padding: 11px 12px;
+  border-radius: 10px;
+  color: var(--text-secondary);
   text-decoration: none;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  border-radius: 12px;
+  transition: background 0.15s, color 0.15s;
   position: relative;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .student-sidebar:hover .student-sidebar-menu a {
   justify-content: flex-start;
 }
 
-.student-sidebar-menu a::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: #667eea;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.2s ease;
-}
-
 .student-sidebar-menu a:hover {
-  color: white;
-  background: rgba(1, 1, 1, 0.04);
-}
-
-.student-sidebar-menu a:hover::before {
-  transform: scaleX(1);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .student-sidebar-menu a.active {
-  background: rgba(102, 126, 234, 0.25);
-  color: white;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
-.student-sidebar-menu a.active::before {
-  transform: scaleX(1);
+.student-sidebar-menu a.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
 }
 
+/* ================================
+   ICON + BADGE + TEXT
+================================ */
 .menu-icon {
-  margin-right: 0;
-  font-size: 20px;
+  font-size: 18px;
   flex-shrink: 0;
-  width: 24px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: margin-right 0.2s ease;
   position: relative;
-  z-index: 1;
+  transition: margin-right 0.22s;
+  margin-right: 0;
 }
 
 .student-sidebar:hover .menu-icon {
-  margin-right: 12px;
+  margin-right: 10px;
 }
 
-/* Значок уведомлений */
 .notification-badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  color: white;
-  font-size: 10px;
+  top: -5px;
+  right: -6px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
   font-weight: 700;
-  padding: 2px 5px;
-  border-radius: 10px;
-  min-width: 18px;
-  height: 18px;
+  padding: 1px 4px;
+  border-radius: 99px;
+  min-width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.5);
-  animation: pulse 2s infinite;
-  z-index: 10;
+  box-shadow: 0 1px 6px rgba(239,68,68,0.5);
+  animation: badgePulse 2s infinite;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+@keyframes badgePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
 }
 
 .menu-text {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 500;
+  color: inherit;
   white-space: nowrap;
   overflow: hidden;
   opacity: 0;
-  width: 0;
-  transition: all 0.3s ease;
+  max-width: 0;
+  transition: opacity 0.22s, max-width 0.22s;
 }
 
 .student-sidebar:hover .menu-text {
   opacity: 1;
-  width: auto;
+  max-width: 200px;
 }
 
-/* Футер сайдбара с пользователем */
+/* ================================
+   FOOTER
+================================ */
 .sidebar-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin-top: auto;
-  position: relative;
-  overflow: hidden;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  height: 90px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
 }
 
-.sidebar-footer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.2) 0%, 
-    rgba(118, 75, 162, 0.2) 100%
-  );
-  opacity: 0.3;
-  z-index: 0;
-}
-
-/* Оверлей для улучшения читаемости */
 .sidebar-footer-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  backdrop-filter: blur(5px);
+  inset: 0;
+  backdrop-filter: blur(6px);
+  background: var(--card-bg);
+  opacity: 0.88;
   z-index: 0;
+  transition: background 0.3s;
 }
 
 .sidebar-user {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-  padding: 15px;
-  position: relative;
-  z-index: 1;
+  gap: 10px;
+  padding: 12px 14px;
+  min-height: 68px;
 }
 
 .student-sidebar:hover .sidebar-user {
@@ -358,24 +349,25 @@
 
 .sidebar-user-avatar-wrapper {
   position: relative;
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
 }
 
 .sidebar-user-avatar {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 18px;
-  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
   position: relative;
   z-index: 1;
 }
@@ -392,8 +384,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   pointer-events: none;
   z-index: 2;
 }
@@ -401,53 +393,53 @@
 .sidebar-user-info {
   flex: 1;
   min-width: 0;
-  opacity: 0;
-  width: 0;
   overflow: hidden;
-  transition: opacity 0.2s ease;
+  opacity: 0;
+  max-width: 0;
+  transition: opacity 0.22s, max-width 0.22s;
 }
 
 .student-sidebar:hover .sidebar-user-info {
   opacity: 1;
-  width: auto;
+  max-width: 200px;
 }
 
 .sidebar-user-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-color);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 2px;
 }
 
 .sidebar-user-role {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  margin-top: 2px;
 }
 
 .sidebar-logout-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  font-size: 20px;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 17px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
-  flex-shrink: 0;
-  position: absolute;
-  top: 50%;
-  right: 15px;
-  transform: translateY(-50%);
-  z-index: 2;
   opacity: 0;
   pointer-events: none;
+  transition: background 0.15s, color 0.15s, opacity 0.22s, border-color 0.15s;
 }
 
 .student-sidebar:hover .sidebar-logout-btn {
@@ -456,286 +448,62 @@
 }
 
 .sidebar-logout-btn:hover {
-  background: #e74c3c;
+  background: rgba(239,68,68,0.1);
+  color: #ef4444;
+  border-color: rgba(239,68,68,0.3);
 }
 
-.sidebar-logout-btn:active {
-  background: #c0392b;
-}
-
+/* ================================
+   MAIN CONTENT
+================================ */
 .student-main-content {
-  margin-left: 80px;
+  margin-left: 68px;
   flex: 1;
-  padding: 30px;
-  width: calc(100% - 80px);
+  width: calc(100% - 68px);
+  background: var(--bg-main);
+  min-height: 100vh;
+  transition: background 0.3s, margin-left 0.28s, width 0.28s;
 }
 
-.page-header {
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e0e0e0;
+/* ================================
+   RESPONSIVE
+================================ */
+@media (min-width: 1440px) {
+  .student-sidebar { width: 72px; }
+  .student-sidebar:hover { width: 280px; }
+  .student-main-content { margin-left: 72px; width: calc(100% - 72px); }
 }
 
-.page-header h1 {
-  font-size: 32px;
-  color: #2c3e50;
-  margin-bottom: 5px;
-  font-weight: 700;
-}
-
-.page-header p {
-  color: #7f8c8d;
-  font-size: 16px;
-}
-
-/* Адаптивность для FullHD и больше */
-@media (min-width: 1920px) {
-  .student-sidebar {
-    width: 90px;
-  }
-
-  .student-sidebar:hover {
-    width: 300px;
-  }
-
-  .student-sidebar-header {
-    padding: 30px 20px;
-  }
-
-  .sidebar-logo {
-    width: 45px;
-    height: 45px;
-  }
-
-  .logo-image {
-    width: 100%;
-    height: 100%;
-  }
-
-  .sidebar-title h2 {
-    font-size: 24px;
-  }
-
-  .sidebar-title p {
-    font-size: 14px;
-  }
-
-  .menu-category-title {
-    font-size: 13px;
-    padding: 14px 18px 10px 18px;
-  }
-
-  .student-sidebar-menu a {
-    padding: 16px 18px;
-  }
-
-  .menu-icon {
-    font-size: 22px;
-    width: 26px;
-  }
-
-  .menu-text {
-    font-size: 16px;
-  }
-
-  .sidebar-footer {
-    height: 100px;
-  }
-
-  .sidebar-user-avatar-wrapper {
-    width: 50px;
-    height: 50px;
-  }
-
-  .sidebar-user-avatar {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
-  }
-
-  .sidebar-avatar-frame {
-    width: 68px;
-    height: 52px;
-  }
-
-  .sidebar-user-name {
-    font-size: 15px;
-  }
-
-  .sidebar-user-role {
-    font-size: 13px;
-  }
-
-  .sidebar-logout-btn {
-    width: 45px;
-    height: 45px;
-    font-size: 22px;
-  }
-
-  .student-main-content {
-    margin-left: 90px;
-    width: calc(100% - 90px);
-    padding: 40px 60px;
-  }
-
-  .page-header h1 {
-    font-size: 36px;
-  }
-
-  .page-header p {
-    font-size: 18px;
-  }
-}
-
-/* Адаптивность для широких экранов (1440px - 1920px) */
-@media (min-width: 1440px) and (max-width: 1919px) {
-  .student-sidebar {
-    width: 85px;
-  }
-
-  .student-sidebar:hover {
-    width: 290px;
-  }
-
-  .student-main-content {
-    margin-left: 85px;
-    width: calc(100% - 85px);
-    padding: 35px;
-  }
-
-  .page-header h1 {
-    font-size: 34px;
-  }
-}
-
-/* Адаптивность для планшетов */
 @media (max-width: 1024px) {
-  .student-sidebar {
-    width: 70px;
-  }
-
-  .student-sidebar:hover {
-    width: 240px;
-  }
-
-  .student-main-content {
-    margin-left: 70px;
-    width: calc(100% - 70px);
-    padding: 20px;
-  }
-
-  .sidebar-title h2 {
-    font-size: 20px;
-  }
-
-  .menu-text {
-    font-size: 14px;
-  }
+  .student-sidebar { width: 60px; }
+  .student-sidebar:hover { width: 240px; }
+  .student-main-content { margin-left: 60px; width: calc(100% - 60px); }
 }
 
-/* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
-  .mobile-menu-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  .mobile-menu-btn { display: flex; }
 
-  .sidebar-overlay.active {
-    display: block;
-  }
+  .sidebar-overlay { display: block; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
 
   .student-sidebar {
     transform: translateX(-100%);
-    width: 280px;
+    width: 264px;
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), background 0.3s, border-color 0.3s;
   }
 
-  .student-sidebar:hover {
-    width: 280px;
-  }
+  .student-sidebar:hover { width: 264px; }
 
-  .student-sidebar.open {
-    transform: translateX(0);
-  }
+  .student-sidebar.open { transform: translateX(0); }
 
-  .student-sidebar.open ~ .sidebar-overlay {
-    display: block;
-  }
+  .student-sidebar.open .sidebar-title { opacity: 1; }
+  .student-sidebar.open .menu-category-title { opacity: 1; }
+  .student-sidebar.open .menu-text { opacity: 1; max-width: 200px; }
+  .student-sidebar.open .menu-icon { margin-right: 10px; }
+  .student-sidebar.open .sidebar-user-info { opacity: 1; max-width: 200px; }
+  .student-sidebar.open .sidebar-logout-btn { opacity: 1; pointer-events: auto; }
+  .student-sidebar.open .student-sidebar-menu a { justify-content: flex-start; }
+  .student-sidebar.open .sidebar-user { justify-content: flex-start; }
 
-  /* На мобильных показываем все элементы сразу */
-  .student-sidebar.open .sidebar-title,
-  .student-sidebar.open .menu-category-title,
-  .student-sidebar.open .menu-text,
-  .student-sidebar.open .sidebar-user-info {
-    opacity: 1;
-    width: auto;
-  }
-
-  .student-sidebar.open .menu-icon {
-    margin-right: 12px;
-  }
-
-  .student-sidebar.open .student-sidebar-menu a,
-  .student-sidebar.open .sidebar-user {
-    justify-content: flex-start;
-  }
-
-  .student-sidebar.open .sidebar-logout-btn {
-    right: 15px;
-    transform: translateX(0);
-  }
-
-  .student-main-content {
-    margin-left: 0;
-    width: 100%;
-    padding: 80px 15px 20px 15px;
-  }
-
-  .page-header h1 {
-    font-size: 26px;
-  }
-
-  .page-header p {
-    font-size: 14px;
-  }
-}
-
-/* Адаптивность для маленьких мобильных */
-@media (max-width: 480px) {
-  .student-sidebar {
-    width: 260px;
-  }
-
-  .mobile-menu-btn {
-    width: 45px;
-    height: 45px;
-    font-size: 20px;
-  }
-
-  .sidebar-header-content {
-    gap: 10px;
-  }
-
-  .sidebar-logo {
-    width: 45px;
-    height: 45px;
-  }
-
-  .logo-circle {
-    width: 45px;
-    height: 45px;
-    font-size: 16px;
-  }
-
-  .sidebar-title h2 {
-    font-size: 18px;
-  }
-
-  .sidebar-user-name {
-    font-size: 13px;
-  }
-
-  .student-main-content {
-    padding: 70px 10px 15px 10px;
-  }
+  .student-main-content { margin-left: 0; width: 100%; }
 }

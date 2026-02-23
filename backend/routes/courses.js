@@ -87,7 +87,8 @@ router.get('/', authenticate, async (req, res) => {
                    c.required_level, c.price,
                    c.created_at, c.created_by,
                    (SELECT COUNT(*) FROM course_lessons cl WHERE cl.course_id = c.id) as lesson_count,
-                   (SELECT COUNT(*) FROM course_enrollments ce WHERE ce.course_id = c.id) as enrolled_count
+                   (SELECT COUNT(*) FROM course_enrollments ce WHERE ce.course_id = c.id) as enrolled_count,
+                   EXISTS(SELECT 1 FROM course_enrollments ue WHERE ue.course_id = c.id AND ue.user_id = $3) as enrolled
             FROM courses c
             ${whereClause}
             ORDER BY c.created_at DESC
@@ -100,7 +101,7 @@ router.get('/', authenticate, async (req, res) => {
         `;
         
         const [result, countResult] = await Promise.all([
-            pool.query(query, [parseInt(limit), offset]),
+            pool.query(query, [parseInt(limit), offset, req.user.id]),
             pool.query(countQuery)
         ]);
         

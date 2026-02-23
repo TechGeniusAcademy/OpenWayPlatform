@@ -167,6 +167,59 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Обновить свои данные (доступно всем авторизованным пользователям)
+router.put('/me', authenticate, async (req, res) => {
+  try {
+    const { full_name, username, email, current_password, new_password } = req.body;
+    const userId = req.user.id;
+
+    const existingUser = await User.findById(userId);
+    if (!existingUser) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    const updates = {};
+
+    if (full_name !== undefined) updates.full_name = full_name;
+
+    if (username && username !== existingUser.username) {
+      const taken = await User.findByUsername(username);
+      if (taken) return res.status(409).json({ error: 'Этот username уже занят' });
+      updates.username = username;
+    }
+
+    if (email && email !== existingUser.email) {
+      const taken = await User.findByEmail(email);
+      if (taken) return res.status(409).json({ error: 'Этот email уже занят' });
+      updates.email = email;
+    }
+
+    if (new_password) {
+      if (!current_password) {
+        return res.status(400).json({ error: 'Введите текущий пароль' });
+      }
+      // findById excludes password column — fetch full record via email
+      const userWithPassword = await User.findByEmail(existingUser.email);
+      const bcrypt = (await import('bcryptjs')).default;
+      const valid = await bcrypt.compare(current_password, userWithPassword.password);
+      if (!valid) {
+        return res.status(400).json({ error: 'Текущий пароль неверен' });
+      }
+      updates.password = new_password;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'Нет данных для обновления' });
+    }
+
+    const updatedUser = await User.update(userId, updates);
+    res.json({ message: 'Данные успешно обновлены', user: updatedUser });
+  } catch (error) {
+    console.error('Ошибка обновления профиля:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Обновить пользователя (только админы)
 router.put('/:id', requireAdmin, async (req, res) => {
   try {

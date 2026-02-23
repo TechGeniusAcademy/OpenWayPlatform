@@ -1,465 +1,395 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useWebSocket } from '../context/WebSocketContext';
-import api, { BASE_URL } from '../utils/api';
-import { AiOutlineMessage, AiOutlineClose, AiOutlineSend } from 'react-icons/ai';
-import { HiUserGroup } from 'react-icons/hi';
-import styles from './FloatingChat.module.css';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useWebSocket } from "../context/WebSocketContext";
+import api, { BASE_URL } from "../utils/api";
+import { AiOutlineClose, AiOutlineSend } from "react-icons/ai";
+import {
+  IoChatbubblesOutline, IoExpandOutline, IoPinOutline,
+} from "react-icons/io5";
+import { FaUsers } from "react-icons/fa";
+import { MdSearch } from "react-icons/md";
+import styles from "./FloatingChat.module.css";
 
-function FloatingChat() {
-  const { user } = useAuth();
+/* ── Avatar with initials fallback ── */
+function AvatarImg({ src, name, className }) {
+  const [failed, setFailed] = useState(false);
+  const initials = (name || "?")
+    .split(" ").filter(Boolean).slice(0, 2)
+    .map(w => w[0].toUpperCase()).join("");
+  const hue = [...(name || "A")].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+  if (failed || !src)
+    return (
+      <div
+        className={className}
+        style={{
+          background: `hsl(${hue},55%,55%)`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "#fff", fontWeight: 700, fontSize: "0.75em", userSelect: "none",
+        }}
+      >
+        {initials}
+      </div>
+    );
+  return <img src={src} alt={name} className={className} onError={() => setFailed(true)} />;
+}
+
+/* ── Clickable links ── */
+function parseLinks(text) {
+  if (!text) return text;
+  const parts = text.split(/(https?:\/\/[^\s<>"']+)/gi);
+  return parts.map((p, i) =>
+    /^https?:\/\//i.test(p)
+      ? <a key={i} href={p} target="_blank" rel="noopener noreferrer">{p}</a>
+      : p
+  );
+}
+
+function fmtTime(ts) {
+  if (!ts) return "";
+  return new Date(ts).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+}
+
+export default function FloatingChat() {
+  const { user }      = useAuth();
   const { getSocket } = useWebSocket();
-  const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [chatId, setChatId] = useState(null);
-  const [frames, setFrames] = useState({});
-  const [availableChats, setAvailableChats] = useState([]);
+  const navigate      = useNavigate();
+
+  const [isOpen, setIsOpen]             = useState(false);
+  const [chats, setChats]               = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [messages, setMessages]         = useState([]);
+  const [newMessage, setNewMessage]     = useState("");
+  const [loading, setLoading]           = useState(false);
+  const [unreadMap, setUnreadMap]       = useState({});
+  const [typingUsers, setTypingUsers]   = useState([]);
+  const [onlineSet, setOnlineSet]       = useState(new Set());
+  const [search, setSearch]             = useState("");
+
   const messagesEndRef = useRef(null);
+  const typingTimer    = useRef(null);
+  const chatIdRef      = useRef(null);
 
+  const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
+
+  /* ── Initial load ── */
   useEffect(() => {
-    loadFrames();
-    if (user?.group_id) {
-      loadAvailableChats();
-    }
-  }, [user?.group_id]);
+    if (user) loadChats();
+  }, [user?.id]);
 
+  const loadChats = async () => {
+    try {
+      if (user?.group_id) await api.post("/chat/group", { groupId: user.group_id });
+      const res = await api.get("/chat/");
+      const list = res.data.chats || [];
+      setChats(list);
+      const grp = list.find(c => c.type === "group");
+      if (grp) setSelectedChat(grp);
+    } catch (err) {
+      console.error("FloatingChat loadChats:", err);
+    }
+  };
+
+  /* ── Load messages when chat changes ── */
   useEffect(() => {
-    if (isOpen && selectedChat) {
-      console.log('FloatingChat: Чат открыт, выбранный чат:', selectedChat);
-      if (selectedChat.type === 'group') {
-        initializeGroupChat();
-      } else {
-        initializePrivateChat(selectedChat.userId);
-      }
-    }
-  }, [isOpen, selectedChat]);
-
-  useEffect(() => {
-    if (isOpen && chatId) {
-      console.log('FloatingChat: Загружаем сообщения для чата:', chatId);
-      loadRecentMessages();
-      
-      // Присоединяемся к чату через WebSocket
-      const socket = getSocket();
-      if (socket) {
-        console.log('FloatingChat: Присоединяемся к чату:', chatId);
-        socket.emit('join-chat', chatId);
-      } else {
-        console.log('FloatingChat: Socket не найден для присоединения к чату');
-      }
-    }
-    
-    return () => {
-      if (chatId) {
-        const socket = getSocket();
-        if (socket) {
-          console.log('FloatingChat: Покидаем чат:', chatId);
-          socket.emit('leave-chat', chatId);
-        }
-      }
-    };
-  }, [isOpen, chatId]);
-
-  const loadFrames = async () => {
-    try {
-      const response = await api.get('/shop/items?type=frame');
-      const framesMap = {};
-      response.data.items.forEach(frame => {
-        framesMap[frame.item_key] = frame.image_url;
-      });
-      setFrames(framesMap);
-    } catch (error) {
-      console.error('Ошибка загрузки рамок:', error);
-    }
-  };
-
-  const loadAvailableChats = async () => {
-    try {
-      // Загружаем список участников группы
-      const groupResponse = await api.get(`/groups/${user.group_id}`);
-      console.log('Group response:', groupResponse.data);
-      
-      const groupData = groupResponse.data.group || groupResponse.data;
-      const groupMembers = groupData.members || groupData.students || [];
-      
-      console.log('Group members:', groupMembers);
-      
-      // Создаем список чатов: групповой чат + приватные с каждым участником
-      const chats = [
-        {
-          id: 'group',
-          type: 'group',
-          name: groupData.name || 'Группа',
-          avatar_url: null,
-          avatar_frame: null,
-          isGroup: true
-        },
-        ...groupMembers
-          .filter(member => member.id !== user.id)
-          .map(member => ({
-            id: `user-${member.id}`,
-            type: 'private',
-            userId: member.id,
-            name: member.full_name || member.username,
-            avatar_url: member.avatar_url,
-            avatar_frame: member.avatar_frame,
-            isGroup: false
-          }))
-      ];
-      
-      console.log('Available chats:', chats);
-      setAvailableChats(chats);
-      // По умолчанию выбираем групповой чат
-      setSelectedChat(chats[0]);
-    } catch (error) {
-      console.error('Ошибка загрузки чатов:', error);
-    }
-  };
-
-  const initializeGroupChat = async () => {
-    try {
-      console.log('FloatingChat: Инициализация группового чата для группы:', user.group_id);
-      const response = await api.post('/chat/group', {
-        groupId: user.group_id
-      });
-      console.log('FloatingChat: Групповой чат инициализирован, ID:', response.data.chat.id);
-      setChatId(response.data.chat.id);
-    } catch (error) {
-      console.error('Ошибка инициализации группового чата:', error);
-    }
-  };
-
-  const initializePrivateChat = async (userId) => {
-    try {
-      console.log('FloatingChat: Инициализация приватного чата с пользователем:', userId);
-      const response = await api.post('/chat/private', {
-        userId: userId
-      });
-      console.log('FloatingChat: Приватный чат инициализирован, ID:', response.data.chat.id);
-      setChatId(response.data.chat.id);
-    } catch (error) {
-      console.error('Ошибка инициализации приватного чата:', error);
-    }
-  };
-
-  const handleChatSelect = (chat) => {
-    console.log('FloatingChat: Выбран чат:', chat);
-    setSelectedChat(chat);
+    if (!selectedChat) return;
+    chatIdRef.current = selectedChat.id;
     setMessages([]);
-    setChatId(null);
-  };
-
-  useEffect(() => {
+    setTypingUsers([]);
+    loadMessages(selectedChat.id);
     const socket = getSocket();
-    console.log('FloatingChat: Получен socket:', socket);
-    console.log('FloatingChat: Socket подключен?', socket?.connected);
-    
-    if (!socket) {
-      console.log('FloatingChat: Socket не найден');
-      return;
-    }
-
-    const handleNewMessage = (message) => {
-      console.log('FloatingChat: Получено новое сообщение:', message);
-      console.log('FloatingChat: isOpen:', isOpen, 'chatId:', chatId, 'message.chat_id:', message.chat_id);
-      
-      if (isOpen && chatId && message.chat_id === chatId) {
-        setMessages(prev => {
-          // Проверяем, нет ли уже этого сообщения
-          const exists = prev.some(m => m.id === message.id);
-          if (exists) return prev;
-          
-          const newMessages = [...prev, message];
-          console.log('FloatingChat: Добавляем сообщение в UI:', message);
-          
-          // Сохраняем в localStorage
-          const localKey = `floating_chat_messages_${chatId}`;
-          localStorage.setItem(localKey, JSON.stringify(newMessages));
-          
-          return newMessages;
-        });
-        scrollToBottom();
-      } else if (chatId && message.chat_id === chatId) {
-        // Увеличиваем счетчик непрочитанных только если чат не открыт
-        setUnreadCount(prev => prev + 1);
-      }
-    };
-
-    console.log('FloatingChat: Подписываемся на new-message события');
-    socket.on('new-message', handleNewMessage);
-
+    if (socket) socket.emit("join-chat", selectedChat.id);
     return () => {
-      console.log('FloatingChat: Отписываемся от new-message событий');
-      socket.off('new-message', handleNewMessage);
+      const s = getSocket();
+      if (s) s.emit("leave-chat", selectedChat.id);
     };
-  }, [getSocket, isOpen, chatId, user?.id]);
+  }, [selectedChat?.id]);
 
-  const loadRecentMessages = async () => {
-    if (!chatId) return;
-    
+  const loadMessages = async (cid) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      console.log('FloatingChat: Загружаем сообщения для чата:', chatId);
-      
-      // Сначала загружаем из localStorage для мгновенного отображения
-      const localKey = `floating_chat_messages_${chatId}`;
-      const localMessages = localStorage.getItem(localKey);
-      if (localMessages) {
-        try {
-          const parsed = JSON.parse(localMessages);
-          console.log('FloatingChat: Загружены локальные сообщения:', parsed.length);
-          setMessages(parsed);
-          scrollToBottom();
-        } catch (e) {
-          console.error('Ошибка парсинга локальных сообщений:', e);
-        }
-      }
-
-      // Затем загружаем актуальные данные с сервера
-      const response = await api.get(`/chat/${chatId}/messages?limit=10`);
-      const serverMessages = response.data.messages || [];
-      console.log('FloatingChat: Загружены сообщения с сервера:', serverMessages.length);
-      setMessages(serverMessages);
-      
-      // Сохраняем в localStorage
-      localStorage.setItem(localKey, JSON.stringify(serverMessages));
-      setUnreadCount(0);
+      const res = await api.get(`/chat/${cid}/messages?limit=40`);
+      setMessages(res.data.messages || []);
       scrollToBottom();
-    } catch (error) {
-      console.error('Ошибка загрузки сообщений:', error);
+    } catch (err) {
+      console.error("FloatingChat loadMessages:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
+  /* ── Socket ── */
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
 
-  const handleSendMessage = async (e) => {
+    const onMessage = (msg) => {
+      if (msg.chat_id === chatIdRef.current && isOpen) {
+        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
+        scrollToBottom();
+      } else {
+        setUnreadMap(prev => ({ ...prev, [msg.chat_id]: (prev[msg.chat_id] || 0) + 1 }));
+      }
+    };
+    const onTyping = ({ chatId, userId, username }) => {
+      if (chatId !== chatIdRef.current || userId === user?.id) return;
+      setTypingUsers(prev => prev.includes(username) ? prev : [...prev, username]);
+      setTimeout(() => setTypingUsers(prev => prev.filter(u => u !== username)), 3000);
+    };
+    const onOnline  = ({ userId }) => setOnlineSet(prev => new Set([...prev, userId]));
+    const onOffline = ({ userId }) => setOnlineSet(prev => { const s = new Set(prev); s.delete(userId); return s; });
+
+    socket.on("new-message", onMessage);
+    socket.on("user-typing", onTyping);
+    socket.on("user-online", onOnline);
+    socket.on("user-offline", onOffline);
+    return () => {
+      socket.off("new-message", onMessage);
+      socket.off("user-typing", onTyping);
+      socket.off("user-online", onOnline);
+      socket.off("user-offline", onOffline);
+    };
+  }, [getSocket, isOpen, user?.id]);
+
+  /* Clear unread on open */
+  useEffect(() => {
+    if (isOpen && selectedChat) {
+      setUnreadMap(prev => ({ ...prev, [selectedChat.id]: 0 }));
+    }
+  }, [isOpen, selectedChat?.id]);
+
+  const scrollToBottom = () =>
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
+
+  const handleSend = async (e) => {
     e.preventDefault();
-    
-    if (!newMessage.trim() || !chatId) return;
-
-    const messageText = newMessage.trim();
-    setNewMessage('');
-
-    console.log('FloatingChat: Отправляем сообщение в чат:', chatId, 'Текст:', messageText);
-
+    if (!newMessage.trim() || !selectedChat) return;
+    const text = newMessage.trim();
+    setNewMessage("");
     try {
-      const response = await api.post(`/chat/${chatId}/messages`, {
-        message_type: 'text',
-        content: messageText
+      const res = await api.post(`/chat/${selectedChat.id}/messages`, {
+        message_type: "text", content: text,
       });
-
-      console.log('FloatingChat: Сообщение отправлено на сервер, ответ:', response.data);
-
-      // Добавляем сообщение локально сразу
-      const newMsg = {
-        ...response.data.message,
-        user_id: user.id,
-        username: user.username,
-        full_name: user.full_name,
-        avatar_url: user.avatar_url,
-        avatar_frame: user.avatar_frame,
-        content: messageText
+      const msg = {
+        ...res.data.message,
+        sender_id: user.id,
+        sender_full_name: user.full_name,
+        sender_username: user.username,
+        sender_avatar_url: user.avatar_url,
+        content: text,
       };
-      
-      console.log('FloatingChat: Добавляем сообщение локально:', newMsg);
-      
-      const newMessages = [...messages, newMsg];
-      setMessages(newMessages);
-      
-      // Сохраняем в localStorage
-      const localKey = `floating_chat_messages_${chatId}`;
-      localStorage.setItem(localKey, JSON.stringify(newMessages));
-      
+      setMessages(prev => [...prev, msg]);
       scrollToBottom();
-    } catch (error) {
-      console.error('Ошибка отправки сообщения:', error);
-      // Возвращаем текст обратно в случае ошибки
-      setNewMessage(messageText);
+    } catch {
+      setNewMessage(text);
     }
   };
 
-  const toggleChat = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen) {
-      setUnreadCount(0);
-    }
+  const handleTyping = () => {
+    const socket = getSocket();
+    if (!socket || !selectedChat) return;
+    socket.emit("typing", { chatId: selectedChat.id });
+    clearTimeout(typingTimer.current);
   };
 
-  const openFullChat = () => {
-    navigate('/student/chat');
-    setIsOpen(false);
+  const handleSelectChat = (chat) => {
+    setSelectedChat(chat);
+    setUnreadMap(prev => ({ ...prev, [chat.id]: 0 }));
   };
 
-  if (!user?.group_id) return null;
+  const groupChats   = chats.filter(c => c.type === "group");
+  const privateChats = chats
+    .filter(c => c.type !== "group")
+    .filter(c => {
+      const name = c.name || c.other_user?.full_name || "";
+      return name.toLowerCase().includes(search.toLowerCase());
+    });
+
+  if (!user) return null;
 
   return (
     <>
-      {/* Мини-чат */}
-      <div className={`${styles['floating-chat-container']} ${isOpen ? styles['open'] : ''}`}>
-        {/* Сайдбар с чатами */}
-        <div className={styles['floating-chat-sidebar']}>
-          {availableChats.map((chat) => (
-            <div
-              key={chat.id}
-              className={`${styles['chat-user-item']} ${selectedChat?.id === chat.id ? styles['active'] : ''}`}
-              onClick={() => handleChatSelect(chat)}
-              title={chat.name}
-            >
-              <div className={styles['chat-user-avatar-wrapper']}>
-                <div className={styles['chat-user-avatar']}>
-                  {chat.isGroup ? (
-                    <HiUserGroup className={styles['group-icon']} />
-                  ) : chat.avatar_url ? (
-                    <img src={`${BASE_URL}${chat.avatar_url}`} alt="" />
-                  ) : (
-                    <div className={styles['avatar-placeholder']}>
-                      {(chat.name || 'U').charAt(0).toUpperCase()}
-                    </div>
-                  )}
+      {/* ══ PANEL ══ */}
+      <div className={`${styles.panel} ${isOpen ? styles.panelOpen : ""}`}>
+
+        {/* Sidebar */}
+        <div className={styles.sidebar}>
+          <div className={styles.sidebarSearch}>
+            <MdSearch className={styles.searchIco} />
+            <input
+              className={styles.searchInput}
+              placeholder="Поиск..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className={styles.chatList}>
+            {/* Group chats – pinned */}
+            {groupChats.map(chat => {
+              const unread   = unreadMap[chat.id] || 0;
+              const isActive = selectedChat?.id === chat.id;
+              return (
+                <button
+                  key={chat.id}
+                  className={`${styles.chatItem} ${styles.chatItemPinned} ${isActive ? styles.chatItemActive : ""}`}
+                  onClick={() => handleSelectChat(chat)}
+                >
+                  <div className={styles.chatAvaWrap}>
+                    <div className={styles.groupAva}><FaUsers /></div>
+                    <IoPinOutline className={styles.pinBadge} />
+                  </div>
+                  <div className={styles.chatItemInfo}>
+                    <span className={styles.chatItemName}>{chat.name || "Группа"}</span>
+                    <span className={styles.chatItemSub}>{chat.last_message?.content || "Нет сообщений"}</span>
+                  </div>
+                  {unread > 0 && <span className={styles.unreadBadge}>{unread > 99 ? "99+" : unread}</span>}
+                </button>
+              );
+            })}
+
+            {/* Divider */}
+            {groupChats.length > 0 && privateChats.length > 0 && (
+              <div className={styles.divider}>Личные</div>
+            )}
+
+            {/* Private chats */}
+            {privateChats.map(chat => {
+              const name      = chat.chat_name || chat.other_user_name || "Пользователь";
+              const avatarSrc = chat.other_user_avatar ? `${BASE_URL}${chat.other_user_avatar}` : null;
+              const unread    = unreadMap[chat.id] || 0;
+              const isActive  = selectedChat?.id === chat.id;
+              const isOnline  = chat.other_user_id && onlineSet.has(Number(chat.other_user_id));
+              return (
+                <button
+                  key={chat.id}
+                  className={`${styles.chatItem} ${isActive ? styles.chatItemActive : ""}`}
+                  onClick={() => handleSelectChat(chat)}
+                >
+                  <div className={styles.chatAvaWrap}>
+                    <AvatarImg src={avatarSrc} name={name} className={styles.chatAvaImg} />
+                    {isOnline && <span className={styles.onlineDot} />}
+                  </div>
+                  <div className={styles.chatItemInfo}>
+                    <span className={styles.chatItemName}>{name}</span>
+                    <span className={styles.chatItemSub}>{chat.last_message?.content || "Нет сообщений"}</span>
+                  </div>
+                  {unread > 0 && <span className={styles.unreadBadge}>{unread > 99 ? "99+" : unread}</span>}
+                </button>
+              );
+            })}
+
+            {chats.length === 0 && (
+              <div className={styles.emptyList}>Нет чатов</div>
+            )}
+          </div>
+        </div>
+
+        {/* Main area */}
+        <div className={styles.main}>
+          {/* Header */}
+          <div className={styles.header}>
+            <div className={styles.headerLeft}>
+              {selectedChat?.type === "group" ? (
+                <div className={styles.headerAva}><FaUsers /></div>
+              ) : (
+                <AvatarImg
+                  src={selectedChat?.other_user?.avatar_url ? `${BASE_URL}${selectedChat.other_user.avatar_url}` : null}
+                  name={selectedChat?.name || selectedChat?.other_user?.full_name}
+                  className={styles.headerAva}
+                />
+              )}
+              <div>
+                <div className={styles.headerName}>
+                  {selectedChat?.name || selectedChat?.other_user?.full_name || "Чат"}
                 </div>
-                {!chat.isGroup && chat.avatar_frame && chat.avatar_frame !== 'none' && frames[chat.avatar_frame] && (
-                  <img 
-                    src={`${BASE_URL}${frames[chat.avatar_frame]}`}
-                    alt="Frame"
-                    className={styles['chat-user-frame']}
-                  />
+                {typingUsers.length > 0 && (
+                  <div className={styles.typingLabel}>{typingUsers[0]} печатает...</div>
                 )}
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Основная область чата */}
-        <div className={styles['floating-chat-main']}>
-          <div className={styles['floating-chat-header']}>
-            <div className={styles['chat-header-title']}>
-              <AiOutlineMessage />
-              <span>{selectedChat?.name || 'Чат'}</span>
-            </div>
-            <div className={styles['chat-header-actions']}>
-              <button 
-                className={styles['expand-btn']} 
-                onClick={openFullChat}
-                title="Открыть полный чат"
-              >
-                ↗
+            <div className={styles.headerActions}>
+              <button className={styles.headerBtn} onClick={() => navigate("/student/chat")} title="Открыть полный чат">
+                <IoExpandOutline />
               </button>
-              <button 
-                className={styles['close-chat-btn']} 
-                onClick={toggleChat}
-              >
+              <button className={styles.headerBtn} onClick={() => setIsOpen(false)}>
                 <AiOutlineClose />
               </button>
             </div>
           </div>
 
-        <div className={styles['floating-chat-messages']}>
-          {loading ? (
-            <div className={styles['chat-loading']}>
-              <div className={styles['spinner-small']}></div>
-              <p>Загрузка...</p>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className={styles['chat-empty']}>
-              <AiOutlineMessage className={styles['empty-icon']} />
-              <p>Нет сообщений</p>
-            </div>
-          ) : (
-            <>
-              {messages.map((msg) => {
-                // Определяем, чье это сообщение (может быть user_id для локальных или sender_id для серверных)
-                const isOwn = (msg.user_id === user.id) || (msg.sender_id === user.id);
-                // Используем правильные поля в зависимости от источника
-                const avatarUrl = msg.avatar_url || msg.sender_avatar_url;
-                const avatarFrame = msg.avatar_frame || msg.sender_avatar_frame;
-                const fullName = msg.full_name || msg.sender_full_name;
-                const username = msg.username || msg.sender_username;
-                
-                return (
-                  <div 
-                    key={msg.id} 
-                    className={`${styles['mini-message']} ${isOwn ? styles['own'] : ''}`}
-                  >
-                    <div className={styles['message-avatar-wrapper']}>
-                      <div className={styles['message-avatar']}>
-                        {avatarUrl ? (
-                          <img src={`${BASE_URL}${avatarUrl}`} alt="" />
-                        ) : (
-                          <div className={styles['avatar-placeholder']}>
-                            {(fullName || username || 'U').charAt(0).toUpperCase()}
-                          </div>
-                        )}
+          {/* Messages */}
+          <div className={styles.msgArea}>
+            {loading ? (
+              <div className={styles.center}><div className={styles.spinner} /></div>
+            ) : messages.length === 0 ? (
+              <div className={styles.center}>
+                <IoChatbubblesOutline style={{ fontSize: "2.4rem", opacity: 0.2 }} />
+                <span>Нет сообщений</span>
+              </div>
+            ) : (
+              <>
+                {messages.map(msg => {
+                  const isOwn     = msg.sender_id === user.id || msg.user_id === user.id;
+                  const name      = msg.sender_full_name || msg.full_name || msg.sender_username || msg.username || "";
+                  const rawAva    = msg.sender_avatar_url || msg.avatar_url;
+                  const avatarSrc = rawAva ? `${BASE_URL}${rawAva}` : null;
+                  const text      = msg.content || msg.message || "";
+                  return (
+                    <div key={msg.id} className={`${styles.msg} ${isOwn ? styles.msgOwn : ""}`}>
+                      {!isOwn && <AvatarImg src={avatarSrc} name={name} className={styles.msgAva} />}
+                      <div className={styles.msgBody}>
+                        {!isOwn && <div className={styles.msgName}>{name}</div>}
+                        <div className={styles.msgBubble}>
+                          <span className={styles.msgText}>{parseLinks(text)}</span>
+                          <span className={styles.msgTime}>{fmtTime(msg.created_at)}</span>
+                        </div>
                       </div>
-                      {avatarFrame && avatarFrame !== 'none' && frames[avatarFrame] && (
-                        <img 
-                          src={`${BASE_URL}${frames[avatarFrame]}`}
-                          alt="Frame"
-                          className={styles['message-avatar-frame']}
-                        />
-                      )}
+                      {isOwn && <AvatarImg src={avatarSrc} name={name} className={styles.msgAva} />}
                     </div>
-                    <div className={styles['message-content']}>
-                      <div className={styles['message-author']}>{fullName || username}</div>
-                      <div className={styles['message-text']}>{msg.content}</div>
+                  );
+                })}
+
+                {typingUsers.length > 0 && (
+                  <div className={styles.typingWrap}>
+                    <div className={styles.typingDots}>
+                      <span /><span /><span />
                     </div>
                   </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </>
-          )}
-        </div>
+                )}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
 
-        <form className={styles['floating-chat-input']} onSubmit={handleSendMessage}>
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Сообщение..."
-            maxLength={500}
-          />
-          <button 
-            type="submit" 
-            disabled={!newMessage.trim()}
-            className={styles['send-btn-mini']}
-          >
-            <AiOutlineSend />
-          </button>
-        </form>
+          {/* Input */}
+          <form className={styles.inputRow} onSubmit={handleSend}>
+            <input
+              type="text"
+              className={styles.inputField}
+              placeholder="Сообщение..."
+              value={newMessage}
+              maxLength={500}
+              onChange={e => { setNewMessage(e.target.value); handleTyping(); }}
+            />
+            <button type="submit" className={styles.sendBtn} disabled={!newMessage.trim()}>
+              <AiOutlineSend />
+            </button>
+          </form>
         </div>
       </div>
 
-      {/* Плавающая кнопка */}
-      <button 
-        className={`${styles['floating-chat-button']} ${isOpen ? styles['active'] : ''}`}
-        onClick={toggleChat}
-        title="Открыть чат"
+      {/* ══ FAB ══ */}
+      <button
+        className={`${styles.fab} ${isOpen ? styles.fabOpen : ""}`}
+        onClick={() => setIsOpen(o => !o)}
+        title="Чат"
       >
-        {isOpen ? (
-          <AiOutlineClose />
-        ) : (
-          <>
-            <AiOutlineMessage />
-            {unreadCount > 0 && (
-              <span className={styles['floating-badge']}>{unreadCount > 99 ? '99+' : unreadCount}</span>
-            )}
-          </>
+        {isOpen ? <AiOutlineClose /> : <IoChatbubblesOutline />}
+        {!isOpen && totalUnread > 0 && (
+          <span className={styles.fabBadge}>{totalUnread > 99 ? "99+" : totalUnread}</span>
         )}
       </button>
     </>
   );
 }
-
-export default FloatingChat;

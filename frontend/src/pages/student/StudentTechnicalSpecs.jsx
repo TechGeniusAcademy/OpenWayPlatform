@@ -1,221 +1,176 @@
-import { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaClone, FaDownload, FaFileAlt, FaCheck, FaTimes, FaClipboardList } from 'react-icons/fa';
-import { MdSettings } from 'react-icons/md';
-import api from '../../utils/api';
-import styles from './StudentTechnicalSpecs.module.css';
+import { useState, useEffect } from "react";
+import {
+  FaPlus, FaEdit, FaTrash, FaClone, FaDownload, FaFileAlt,
+  FaCheck, FaTimes, FaClipboardList, FaGlobe, FaMobileAlt,
+  FaDesktop, FaGamepad, FaEllipsisH, FaCalendarAlt, FaCoins,
+  FaBullseye, FaUsers, FaCogs, FaCode, FaPalette, FaInfoCircle,
+  FaChevronRight, FaSearch,
+} from "react-icons/fa";
+import { MdOutlineAssignment } from "react-icons/md";
+import { AiOutlineSearch } from "react-icons/ai";
+import api from "../../utils/api";
+import styles from "./StudentTechnicalSpecs.module.css";
+
+const PROJECT_TYPES = {
+  web:     { label: "Веб-сайт",          icon: <FaGlobe />,    color: "#3b82f6" },
+  mobile:  { label: "Мобильное прил.",    icon: <FaMobileAlt />, color: "#10b981" },
+  desktop: { label: "Десктоп прил.",      icon: <FaDesktop />, color: "#8b5cf6" },
+  game:    { label: "Игра",               icon: <FaGamepad />, color: "#f59e0b" },
+  other:   { label: "Другое",             icon: <FaEllipsisH />, color: "#6b7280" },
+};
+
+const EMPTY_FORM = {
+  title: "", project_type: "web", description: "", goals: "",
+  target_audience: "", functional_requirements: "", technical_requirements: "",
+  design_requirements: "", deadline: "", budget: "", additional_info: "",
+};
+
+const SECTIONS = [
+  { key: "description",             label: "Описание проекта",           icon: <FaInfoCircle />,  rows: 4, placeholder: "Краткое описание проекта, его назначение и основная идея" },
+  { key: "goals",                   label: "Цели и задачи",               icon: <FaBullseye />,   rows: 4, placeholder: "Что должен решать проект? Какие проблемы он решает?" },
+  { key: "target_audience",         label: "Целевая аудитория",           icon: <FaUsers />,      rows: 3, placeholder: "Кто будет пользоваться проектом? Возраст, интересы, потребности" },
+  { key: "functional_requirements", label: "Функциональные требования",   icon: <FaCogs />,       rows: 6, placeholder: "Какие функции должны быть реализованы? Например:\n- Регистрация и авторизация\n- Каталог с фильтрами" },
+  { key: "technical_requirements",  label: "Технические требования",      icon: <FaCode />,       rows: 5, placeholder: "Технологии, платформы, производительность. Например:\n- React + Node.js\n- Адаптивный дизайн" },
+  { key: "design_requirements",     label: "Требования к дизайну",        icon: <FaPalette />,    rows: 4, placeholder: "Стиль, цветовая гамма, примеры. Например:\n- Минималистичный стиль\n- Цвета: синий, белый" },
+  { key: "additional_info",         label: "Дополнительная информация",   icon: <FaClipboardList />, rows: 4, placeholder: "Любая дополнительная информация, пожелания, ссылки" },
+];
 
 function StudentTechnicalSpecs() {
-  const [specs, setSpecs] = useState([]);
+  const [specs, setSpecs]           = useState([]);
   const [selectedSpec, setSelectedSpec] = useState(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing]   = useState(false);
+  const [loading, setLoading]       = useState(true);
+  const [saving, setSaving]         = useState(false);
+  const [search, setSearch]         = useState("");
+  const [formData, setFormData]     = useState(EMPTY_FORM);
 
-  // Форма ТЗ
-  const [formData, setFormData] = useState({
-    title: '',
-    project_type: 'web',
-    description: '',
-    goals: '',
-    target_audience: '',
-    functional_requirements: '',
-    technical_requirements: '',
-    design_requirements: '',
-    deadline: '',
-    budget: '',
-    additional_info: ''
-  });
-
-  // Загрузка списка ТЗ
-  useEffect(() => {
-    loadSpecs();
-  }, []);
+  useEffect(() => { loadSpecs(); }, []);
 
   const loadSpecs = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/technical-specs');
-      setSpecs(response.data.specs || []);
-    } catch (error) {
-      console.error('Ошибка загрузки ТЗ:', error);
+      const res = await api.get("/technical-specs");
+      setSpecs(res.data.specs || []);
+    } catch (err) {
+      console.error("Ошибка загрузки ТЗ:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Создание нового ТЗ
-  const handleCreateNew = () => {
-    setIsCreating(true);
+  const openCreate = () => {
     setSelectedSpec(null);
-    setFormData({
-      title: '',
-      project_type: 'web',
-      description: '',
-      goals: '',
-      target_audience: '',
-      functional_requirements: '',
-      technical_requirements: '',
-      design_requirements: '',
-      deadline: '',
-      budget: '',
-      additional_info: ''
-    });
+    setFormData(EMPTY_FORM);
+    setIsEditing(true);
   };
 
-  // Редактирование существующего ТЗ
-  const handleEdit = (spec) => {
+  const openEdit = (spec) => {
     setSelectedSpec(spec);
-    setIsCreating(true);
     setFormData({
       title: spec.title,
       project_type: spec.project_type,
-      description: spec.description || '',
-      goals: spec.goals || '',
-      target_audience: spec.target_audience || '',
-      functional_requirements: spec.functional_requirements || '',
-      technical_requirements: spec.technical_requirements || '',
-      design_requirements: spec.design_requirements || '',
-      deadline: spec.deadline || '',
-      budget: spec.budget || '',
-      additional_info: spec.additional_info || ''
+      description: spec.description || "",
+      goals: spec.goals || "",
+      target_audience: spec.target_audience || "",
+      functional_requirements: spec.functional_requirements || "",
+      technical_requirements: spec.technical_requirements || "",
+      design_requirements: spec.design_requirements || "",
+      deadline: spec.deadline ? spec.deadline.split("T")[0] : "",
+      budget: spec.budget || "",
+      additional_info: spec.additional_info || "",
     });
+    setIsEditing(true);
   };
 
-  // Сохранение ТЗ
   const handleSave = async () => {
-    if (!formData.title.trim()) {
-      alert('Введите название проекта');
-      return;
-    }
-
+    if (!formData.title.trim()) { alert("Введите название проекта"); return; }
     try {
       setSaving(true);
       if (selectedSpec) {
-        // Обновление существующего
         await api.put(`/technical-specs/${selectedSpec.id}`, formData);
       } else {
-        // Создание нового
-        await api.post('/technical-specs', formData);
+        await api.post("/technical-specs", formData);
       }
-      
       await loadSpecs();
-      setIsCreating(false);
+      setIsEditing(false);
       setSelectedSpec(null);
-    } catch (error) {
-      console.error('Ошибка сохранения ТЗ:', error);
-      alert('Ошибка при сохранении ТЗ');
+    } catch (err) {
+      console.error("Ошибка сохранения:", err);
+      alert("Ошибка при сохранении ТЗ");
     } finally {
       setSaving(false);
     }
   };
 
-  // Удаление ТЗ
-  const handleDelete = async (id) => {
-    if (!window.confirm('Вы уверены, что хотите удалить это ТЗ?')) return;
-
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Вы уверены, что хотите удалить это ТЗ?")) return;
     try {
       await api.delete(`/technical-specs/${id}`);
       await loadSpecs();
-      if (selectedSpec?.id === id) {
-        setSelectedSpec(null);
-        setIsCreating(false);
-      }
-    } catch (error) {
-      console.error('Ошибка удаления ТЗ:', error);
-      alert('Ошибка при удалении ТЗ');
+      if (selectedSpec?.id === id) { setSelectedSpec(null); setIsEditing(false); }
+    } catch (err) {
+      alert("Ошибка при удалении ТЗ");
     }
   };
 
-  // Дублирование ТЗ
-  const handleDuplicate = async (spec) => {
+  const handleDuplicate = async (spec, e) => {
+    e.stopPropagation();
     try {
-      const duplicateData = {
-        ...spec,
-        title: `${spec.title} (копия)`,
-        id: undefined,
-        created_at: undefined,
-        updated_at: undefined
-      };
-      await api.post('/technical-specs', duplicateData);
+      const { id, created_at, updated_at, ...rest } = spec;
+      await api.post("/technical-specs", { ...rest, title: `${spec.title} (копия)` });
       await loadSpecs();
-    } catch (error) {
-      console.error('Ошибка дублирования ТЗ:', error);
-      alert('Ошибка при дублировании ТЗ');
+    } catch (err) {
+      alert("Ошибка при дублировании ТЗ");
     }
   };
 
-  // Экспорт ТЗ в текст
-  const handleExport = (spec) => {
-    const text = `
-ТЕХНИЧЕСКОЕ ЗАДАНИЕ
-==================
-
-Название проекта: ${spec.title}
-Тип проекта: ${getProjectTypeName(spec.project_type)}
-Дата создания: ${new Date(spec.created_at).toLocaleDateString('ru-RU')}
-
-ОПИСАНИЕ ПРОЕКТА
-----------------
-${spec.description || 'Не указано'}
-
-ЦЕЛИ И ЗАДАЧИ
--------------
-${spec.goals || 'Не указано'}
-
-ЦЕЛЕВАЯ АУДИТОРИЯ
------------------
-${spec.target_audience || 'Не указано'}
-
-ФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ
--------------------------
-${spec.functional_requirements || 'Не указано'}
-
-ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ
-----------------------
-${spec.technical_requirements || 'Не указано'}
-
-ТРЕБОВАНИЯ К ДИЗАЙНУ
---------------------
-${spec.design_requirements || 'Не указано'}
-
-СРОК ВЫПОЛНЕНИЯ
----------------
-${spec.deadline || 'Не указано'}
-
-БЮДЖЕТ
-------
-${spec.budget || 'Не указано'}
-
-ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ
--------------------------
-${spec.additional_info || 'Не указано'}
-`;
-
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const handleExport = (spec, e) => {
+    e?.stopPropagation();
+    const pt = PROJECT_TYPES[spec.project_type];
+    const line = (label, val) => `\n${label}\n${"-".repeat(label.length)}\n${val || "Не указано"}\n`;
+    const text = [
+      "ТЕХНИЧЕСКОЕ ЗАДАНИЕ",
+      "===================\n",
+      `Название проекта: ${spec.title}`,
+      `Тип проекта: ${pt?.label || spec.project_type}`,
+      `Дата создания: ${new Date(spec.created_at).toLocaleDateString("ru-RU")}`,
+      line("ОПИСАНИЕ ПРОЕКТА", spec.description),
+      line("ЦЕЛИ И ЗАДАЧИ", spec.goals),
+      line("ЦЕЛЕВАЯ АУДИТОРИЯ", spec.target_audience),
+      line("ФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ", spec.functional_requirements),
+      line("ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ", spec.technical_requirements),
+      line("ТРЕБОВАНИЯ К ДИЗАЙНУ", spec.design_requirements),
+      line("СРОК ВЫПОЛНЕНИЯ", spec.deadline),
+      line("БЮДЖЕТ", spec.budget),
+      line("ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ", spec.additional_info),
+    ].join("\n");
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `ТЗ_${spec.title.replace(/[^a-zа-яё0-9]/gi, '_')}.txt`;
+    a.download = `ТЗ_${spec.title.replace(/[^a-zа-яё0-9]/gi, "_")}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const getProjectTypeName = (type) => {
-    const types = {
-      'web': 'Веб-сайт',
-      'mobile': 'Мобильное приложение',
-      'desktop': 'Десктоп приложение',
-      'game': 'Игра',
-      'other': 'Другое'
-    };
-    return types[type] || type;
-  };
+  const getProjectTypeName = (type) => PROJECT_TYPES[type]?.label || type;
+
+  const filteredSpecs = specs.filter(s =>
+    !search || s.title.toLowerCase().includes(search.toLowerCase()) ||
+    getProjectTypeName(s.project_type).toLowerCase().includes(search.toLowerCase())
+  );
+
+  const stats = Object.keys(PROJECT_TYPES).map(k => ({
+    key: k, ...PROJECT_TYPES[k],
+    count: specs.filter(s => s.project_type === k).length,
+  })).filter(s => s.count > 0);
 
   if (loading) {
     return (
-      <div className={styles['technical-specs-page']}>
-        <div className={styles['loading-container']}>
-          <div className={styles.spinner}></div>
+      <div className={styles.page}>
+        <div className={styles.spinnerWrap}>
+          <div className={styles.spinner} />
           <p>Загрузка...</p>
         </div>
       </div>
@@ -223,219 +178,208 @@ ${spec.additional_info || 'Не указано'}
   }
 
   return (
-    <div className={styles['technical-specs-page']}>
-      <div className={styles['technical-specs-header']}>
-        <div className={styles['header-left']}>
-          <h1><FaClipboardList /> Технические задания</h1>
-          <p>Создавайте и управляйте своими ТЗ</p>
+    <div className={styles.page}>
+      {/* Header */}
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderIcon}><MdOutlineAssignment /></div>
+        <div>
+          <h1 className={styles.pageTitle}>Технические задания</h1>
+          <p className={styles.pageSub}>Создавайте и управляйте своими ТЗ для проектов</p>
         </div>
-        <button className={styles['create-spec-btn']} onClick={handleCreateNew}>
-          <FaPlus /> Создать новое ТЗ
+        <button className={styles.createBtn} onClick={openCreate}>
+          <FaPlus /> Создать ТЗ
         </button>
       </div>
 
-      <div className={styles['technical-specs-content']}>
-        {/* Левая панель - Список ТЗ */}
-        <div className={styles['specs-list-panel']}>
-          <div className={styles['specs-list-header']}>
-            <h3>Мои ТЗ ({specs.length})</h3>
+      {/* Stats */}
+      {specs.length > 0 && (
+        <div className={styles.statsRow}>
+          <div className={styles.statTile}>
+            <span className={styles.statIcon}><FaFileAlt /></span>
+            <span className={styles.statVal}>{specs.length}</span>
+            <span className={styles.statLbl}>Всего ТЗ</span>
           </div>
-          
-          {specs.length === 0 ? (
-            <div className={styles['empty-state']}>
-              <FaFileAlt />
-              <p>У вас пока нет ТЗ</p>
-              <small>Создайте первое техническое задание</small>
+          {stats.map(s => (
+            <div className={styles.statTile} key={s.key} style={{ "--type-color": s.color }}>
+              <span className={styles.statIcon} style={{ color: s.color }}>{s.icon}</span>
+              <span className={styles.statVal}>{s.count}</span>
+              <span className={styles.statLbl}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Main layout */}
+      <div className={styles.mainLayout}>
+        {/* Left: list */}
+        <div className={styles.listPanel}>
+          <div className={styles.listTop}>
+            <div className={styles.searchWrap}>
+              <AiOutlineSearch className={styles.searchIcon} />
+              <input
+                className={styles.searchInput}
+                placeholder="Поиск..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              {search && <button className={styles.searchClear} onClick={() => setSearch("")}><FaTimes /></button>}
+            </div>
+          </div>
+
+          {filteredSpecs.length === 0 ? (
+            <div className={styles.emptyList}>
+              <FaFileAlt className={styles.emptyListIcon} />
+              <p>{specs.length === 0 ? "Нет технических заданий" : "Нет совпадений"}</p>
+              {specs.length === 0 && (
+                <button className={styles.emptyCreateBtn} onClick={openCreate}>
+                  <FaPlus /> Создать первое ТЗ
+                </button>
+              )}
             </div>
           ) : (
-            <div className={styles['specs-list']}>
-              {specs.map((spec) => (
-                <div 
-                  key={spec.id} 
-                  className={`spec-card ${selectedSpec?.id === spec.id && isCreating ? 'active' : ''}`}
-                  onClick={() => handleEdit(spec)}
-                >
-                  <div className={styles['spec-card-header']}>
-                    <h4>{spec.title}</h4>
-                    <span className={styles['spec-type']}>{getProjectTypeName(spec.project_type)}</span>
+            <div className={styles.specsList}>
+              {filteredSpecs.map(spec => {
+                const pt = PROJECT_TYPES[spec.project_type] || PROJECT_TYPES.other;
+                const isActive = selectedSpec?.id === spec.id && isEditing;
+                return (
+                  <div
+                    key={spec.id}
+                    className={`${styles.specCard} ${isActive ? styles.specCardActive : ""}`}
+                    onClick={() => openEdit(spec)}
+                  >
+                    <div className={styles.specCardTop}>
+                      <span className={styles.specTypeBadge} style={{ "--tc": pt.color, background: `${pt.color}18`, color: pt.color }}>
+                        {pt.icon} {pt.label}
+                      </span>
+                      <span className={styles.specDate}>
+                        {new Date(spec.created_at).toLocaleDateString("ru-RU")}
+                      </span>
+                    </div>
+                    <h4 className={styles.specCardTitle}>{spec.title}</h4>
+                    {spec.description && (
+                      <p className={styles.specCardDesc}>{spec.description.slice(0, 80)}{spec.description.length > 80 ? "..." : ""}</p>
+                    )}
+                    <div className={styles.specCardActions}>
+                      <button title="Редактировать" onClick={e => { e.stopPropagation(); openEdit(spec); }}>
+                        <FaEdit />
+                      </button>
+                      <button title="Дублировать" onClick={e => handleDuplicate(spec, e)}>
+                        <FaClone />
+                      </button>
+                      <button title="Экспорт" onClick={e => handleExport(spec, e)}>
+                        <FaDownload />
+                      </button>
+                      <button title="Удалить" className={styles.deleteBtn} onClick={e => handleDelete(spec.id, e)}>
+                        <FaTrash />
+                      </button>
+                    </div>
                   </div>
-                  <div className={styles['spec-card-meta']}>
-                    <small>Создано: {new Date(spec.created_at).toLocaleDateString('ru-RU')}</small>
-                  </div>
-                  <div className={styles['spec-card-actions']}>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDuplicate(spec); }}
-                      title="Дублировать"
-                    >
-                      <FaClone />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleExport(spec); }}
-                      title="Экспортировать"
-                    >
-                      <FaDownload />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDelete(spec.id); }}
-                      className={styles['delete-btn']}
-                      title="Удалить"
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Правая панель - Форма редактирования */}
-        <div className={styles['spec-editor-panel']}>
-          {!isCreating ? (
-            <div className={styles['empty-editor']}>
-              <FaFileAlt />
+        {/* Right: editor */}
+        <div className={styles.editorPanel}>
+          {!isEditing ? (
+            <div className={styles.emptyEditor}>
+              <div className={styles.emptyEditorIcon}><MdOutlineAssignment /></div>
               <h3>Выберите ТЗ или создайте новое</h3>
-              <p>Выберите техническое задание из списка слева для редактирования</p>
+              <p>Нажмите на карточку слева для редактирования или создайте новое техническое задание</p>
+              <button className={styles.createBtn} onClick={openCreate}><FaPlus /> Создать ТЗ</button>
             </div>
           ) : (
-            <div className={styles['spec-form']}>
-              <div className={styles['spec-form-header']}>
-                <h2>{selectedSpec ? 'Редактирование ТЗ' : 'Создание нового ТЗ'}</h2>
-                <div className={styles['form-actions']}>
-                  <button 
-                    className={styles['save-btn']} 
-                    onClick={handleSave}
-                    disabled={saving}
-                  >
-                    <FaCheck /> {saving ? 'Сохранение...' : 'Сохранить'}
-                  </button>
-                  <button 
-                    className={styles['cancel-btn']} 
-                    onClick={() => setIsCreating(false)}
-                  >
+            <div className={styles.editorForm}>
+              {/* Editor header */}
+              <div className={styles.editorHeader}>
+                <div>
+                  <h2 className={styles.editorTitle}>
+                    {selectedSpec ? "Редактирование ТЗ" : "Новое техническое задание"}
+                  </h2>
+                  {selectedSpec && (
+                    <p className={styles.editorSub}>Изменения сохранятся после нажатия «Сохранить»</p>
+                  )}
+                </div>
+                <div className={styles.editorHeaderActions}>
+                  <button className={styles.cancelBtn} onClick={() => { setIsEditing(false); setSelectedSpec(null); }}>
                     <FaTimes /> Отмена
+                  </button>
+                  <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+                    <FaCheck /> {saving ? "Сохранение..." : "Сохранить"}
                   </button>
                 </div>
               </div>
 
-              <div className={styles['spec-form-body']}>
-                <div className={styles['form-group']}>
-                  <label>
+              {/* Base fields */}
+              <div className={styles.formSection}>
+                <div className={styles.formSectionTitle}><FaFileAlt /> Основное</div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
                     Название проекта <span className={styles.required}>*</span>
                   </label>
                   <input
+                    className={styles.formInput}
                     type="text"
                     placeholder="Например: Интернет-магазин одежды"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={e => setFormData({ ...formData, title: e.target.value })}
                   />
                 </div>
 
-                <div className={styles['form-group']}>
-                  <label>Тип проекта</label>
-                  <select
-                    value={formData.project_type}
-                    onChange={(e) => setFormData({...formData, project_type: e.target.value})}
-                  >
-                    <option value="web">Веб-сайт</option>
-                    <option value="mobile">Мобильное приложение</option>
-                    <option value="desktop">Десктоп приложение</option>
-                    <option value="game">Игра</option>
-                    <option value="other">Другое</option>
-                  </select>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Тип проекта</label>
+                  <div className={styles.typeGrid}>
+                    {Object.entries(PROJECT_TYPES).map(([key, pt]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`${styles.typeBtn} ${formData.project_type === key ? styles.typeBtnActive : ""}`}
+                        style={{ "--tc": pt.color }}
+                        onClick={() => setFormData({ ...formData, project_type: key })}
+                      >
+                        <span style={{ color: pt.color }}>{pt.icon}</span>
+                        {pt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className={styles['form-group']}>
-                  <label>Описание проекта</label>
-                  <textarea
-                    rows="4"
-                    placeholder="Краткое описание проекта, его назначение и основная идея"
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  />
-                </div>
-
-                <div className={styles['form-group']}>
-                  <label>Цели и задачи</label>
-                  <textarea
-                    rows="4"
-                    placeholder="Что должен решать проект? Какие проблемы он решает?"
-                    value={formData.goals}
-                    onChange={(e) => setFormData({...formData, goals: e.target.value})}
-                  />
-                </div>
-
-                <div className={styles['form-group']}>
-                  <label>Целевая аудитория</label>
-                  <textarea
-                    rows="3"
-                    placeholder="Кто будет пользоваться проектом? Возраст, интересы, потребности"
-                    value={formData.target_audience}
-                    onChange={(e) => setFormData({...formData, target_audience: e.target.value})}
-                  />
-                </div>
-
-                <div className={styles['form-group']}>
-                  <label>Функциональные требования</label>
-                  <textarea
-                    rows="6"
-                    placeholder="Какие функции должны быть реализованы? Например:&#10;- Регистрация и авторизация пользователей&#10;- Каталог товаров с фильтрами&#10;- Корзина и оформление заказа"
-                    value={formData.functional_requirements}
-                    onChange={(e) => setFormData({...formData, functional_requirements: e.target.value})}
-                  />
-                </div>
-
-                <div className={styles['form-group']}>
-                  <label>Технические требования</label>
-                  <textarea
-                    rows="5"
-                    placeholder="Технологии, платформы, требования к производительности. Например:&#10;- React + Node.js&#10;- Адаптивный дизайн&#10;- Поддержка браузеров: Chrome, Firefox, Safari"
-                    value={formData.technical_requirements}
-                    onChange={(e) => setFormData({...formData, technical_requirements: e.target.value})}
-                  />
-                </div>
-
-                <div className={styles['form-group']}>
-                  <label>Требования к дизайну</label>
-                  <textarea
-                    rows="4"
-                    placeholder="Стиль, цветовая гамма, примеры дизайна. Например:&#10;- Минималистичный стиль&#10;- Основные цвета: синий, белый&#10;- Современный и чистый UI"
-                    value={formData.design_requirements}
-                    onChange={(e) => setFormData({...formData, design_requirements: e.target.value})}
-                  />
-                </div>
-
-                <div className={styles['form-row']}>
-                  <div className={styles['form-group']}>
-                    <label>Срок выполнения</label>
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}><FaCalendarAlt /> Срок выполнения</label>
                     <input
+                      className={styles.formInput}
                       type="date"
                       value={formData.deadline}
-                      onChange={(e) => setFormData({...formData, deadline: e.target.value})}
+                      onChange={e => setFormData({ ...formData, deadline: e.target.value })}
                     />
                   </div>
-
-                  <div className={styles['form-group']}>
-                    <label>Бюджет</label>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}><FaCoins /> Бюджет</label>
                     <input
+                      className={styles.formInput}
                       type="text"
-                      placeholder="Например: 50000 тенге или По договоренности"
+                      placeholder="Например: 50 000 тенге"
                       value={formData.budget}
-                      onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                      onChange={e => setFormData({ ...formData, budget: e.target.value })}
                     />
                   </div>
-                </div>
-
-                <div className={styles['form-group']}>
-                  <label>Дополнительная информация</label>
-                  <textarea
-                    rows="4"
-                    placeholder="Любая дополнительная информация, пожелания, ссылки на примеры"
-                    value={formData.additional_info}
-                    onChange={(e) => setFormData({...formData, additional_info: e.target.value})}
-                  />
                 </div>
               </div>
+
+              {/* Content sections */}
+              {SECTIONS.map(sec => (
+                <div className={styles.formSection} key={sec.key}>
+                  <div className={styles.formSectionTitle}>{sec.icon} {sec.label}</div>
+                  <textarea
+                    className={styles.formTextarea}
+                    placeholder={sec.placeholder}
+                    value={formData[sec.key]}
+                    onChange={e => setFormData({ ...formData, [sec.key]: e.target.value })}
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>

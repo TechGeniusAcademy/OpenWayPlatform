@@ -6,9 +6,41 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: var(--bg-light);
+  background-color: var(--bg-main);
   color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+body.light {
+  --navbar-bg--grey: #F8F8FA;
+  --navbar-bg: #fff;
+  --bg-main: #F0F2F8;
+  --text-color: #313B5E;
+  --text-secondary: #6B7A99;
+  --border-color: rgba(0,0,0,0.1);
+  --card-bg: #ffffff;
+  --card-bg-alt: #F4F6FB;
+  --card-shadow: 0 1px 3px rgba(49,59,94,0.07), 0 6px 24px rgba(49,59,94,0.07);
+  --card-shadow-hover: 0 4px 16px rgba(49,59,94,0.13);
+  --accent: #6366f1;
+  --accent-soft: rgba(99,102,241,0.1);
+}
+
+body.dark {
+  --navbar-bg--grey: #313A46;
+  --navbar-bg: #22282E;
+  --bg-main: #1A1F26;
+  --text-color: #AAB8C5;
+  --text-secondary: #7A8FA0;
+  --border-color: rgba(255,255,255,0.08);
+  --card-bg: #2A3038;
+  --card-bg-alt: #313A46;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 6px 24px rgba(0,0,0,0.2);
+  --card-shadow-hover: 0 4px 16px rgba(0,0,0,0.35);
+  --accent: #818cf8;
+  --accent-soft: rgba(129,140,248,0.12);
+}
+
 
 :root {
   --primary-color: #2c3e50;
@@ -16,13 +48,23 @@ body {
   --success-color: #27ae60;
   --danger-color: #e74c3c;
   --warning-color: #f39c12;
-  --text-color: #2c3e50;
-  --text-secondary: #7f8c8d;
-  --border-color: #ecf0f1;
   --bg-light: #f8f9fa;
   --bg-white: #ffffff;
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   --shadow-hover: 0 5px 15px rgba(0, 0, 0, 0.15);
+  /* Default theme vars (light) so page isn't unstyled before JS runs */
+  --navbar-bg--grey: #F8F8FA;
+  --navbar-bg: #fff;
+  --bg-main: #F0F2F8;
+  --text-color: #313B5E;
+  --text-secondary: #6B7A99;
+  --border-color: rgba(0,0,0,0.1);
+  --card-bg: #ffffff;
+  --card-bg-alt: #F4F6FB;
+  --card-shadow: 0 1px 3px rgba(49,59,94,0.07), 0 6px 24px rgba(49,59,94,0.07);
+  --card-shadow-hover: 0 4px 16px rgba(49,59,94,0.13);
+  --accent: #6366f1;
+  --accent-soft: rgba(99,102,241,0.1);
 }
 
 /* Общие стили */

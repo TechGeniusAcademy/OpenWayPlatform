@@ -11,7 +11,7 @@ grid-template-rows: auto 1fr auto;
 min-height: 85vh;
 width: 88vw;
 z-index: 1;
-padding: 1rem;
+padding: 4rem;
 transition: padding-top .125s;
 background: ${({ theme }) => theme.background};
 }

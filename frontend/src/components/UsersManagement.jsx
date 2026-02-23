@@ -1,479 +1,438 @@
-import { useState, useEffect, useMemo } from 'react';
-import { 
-  FiUsers, FiEdit2, FiTrash2, FiPlus, FiImage, 
-  FiUpload, FiX, FiCheck, FiAlertCircle, FiDollarSign, FiSearch, FiZap 
-} from 'react-icons/fi';
-import api, { BASE_URL } from '../utils/api';
-import styles from './UsersManagement.module.css';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  FiUsers, FiEdit2, FiTrash2, FiPlus, FiImage,
+  FiUpload, FiX, FiCheck, FiAlertCircle, FiDollarSign,
+  FiSearch, FiZap, FiChevronUp, FiChevronDown,
+  FiShield, FiUser, FiBookOpen, FiFilter,
+} from "react-icons/fi";
+import api, { BASE_URL } from "../utils/api";
+import styles from "./UsersManagement.module.css";
 
-function UsersManagement() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    role: 'student',
-    full_name: ''
-  });
+/* ── helpers ── */
+const ROLE_META = {
+  admin:      { label: "Администратор", color: "admin"  },
+  student:    { label: "Ученик",        color: "student"},
+  teacher:    { label: "Учитель",       color: "teacher"},
+  tester:     { label: "Тестер",        color: "tester" },
+  css_editor: { label: "CSS Редактор",  color: "css"    },
+};
+const roleName = (r) => ROLE_META[r]?.label ?? r;
+const roleColor = (r) => ROLE_META[r]?.color ?? "student";
 
-  // Для управления баллами
-  const [showPointsModal, setShowPointsModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [pointsAmount, setPointsAmount] = useState(0);
+let toastTimer;
 
-  // Для загрузки аватарок
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [selectedAvatarUser, setSelectedAvatarUser] = useState(null);
-  const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-
-  // Для управления опытом
-  const [showExpModal, setShowExpModal] = useState(false);
-  const [selectedExpUser, setSelectedExpUser] = useState(null);
-  const [expAmount, setExpAmount] = useState(0);
-
-  // Для поиска
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Фильтрация пользователей по поисковому запросу
-  const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return users;
-    
-    const query = searchQuery.toLowerCase().trim();
-    return users.filter(user => {
-      const searchFields = [
-        user.id?.toString(),
-        user.username,
-        user.email,
-        user.full_name,
-        user.role,
-        user.group_name,
-        user.points?.toString(),
-        new Date(user.created_at).toLocaleDateString('ru-RU')
-      ];
-      
-      return searchFields.some(field => 
-        field && field.toLowerCase().includes(query)
-      );
-    });
-  }, [users, searchQuery]);
-
+/* ── Toast component ── */
+function Toast({ msg, type, onClose }) {
   useEffect(() => {
-    loadUsers();
-  }, []);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(onClose, 3500);
+    return () => clearTimeout(toastTimer);
+  }, [msg]);
+  if (!msg) return null;
+  return (
+    <div className={`${styles.toast} ${styles["toast-" + type]}`}>
+      {type === "success" ? <FiCheck /> : <FiAlertCircle />}
+      <span>{msg}</span>
+      <button className={styles.toastClose} onClick={onClose}><FiX /></button>
+    </div>
+  );
+}
 
-  const loadUsers = async () => {
+/* ── Confirm modal ── */
+function ConfirmModal({ msg, onConfirm, onCancel }) {
+  return (
+    <div className={styles.overlay} onClick={onCancel}>
+      <div className={`${styles.modal} ${styles.modalSm}`} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHead}>
+          <div className={styles.modalTitle}>
+            <FiAlertCircle style={{ color: "var(--danger)" }} />
+            <h2>Подтверждение</h2>
+          </div>
+          <button className={styles.closeBtn} onClick={onCancel}><FiX /></button>
+        </div>
+        <div className={styles.modalBody}>
+          <p className={styles.confirmText}>{msg}</p>
+          <div className={styles.formActions}>
+            <button className={styles.btnSec} onClick={onCancel}>Отмена</button>
+            <button className={styles.btnDanger} onClick={onConfirm}><FiTrash2 /><span>Удалить</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════ */
+function UsersManagement() {
+  const [users,    setUsers]   = useState([]);
+  const [loading,  setLoading] = useState(true);
+  const [toast,    setToast]   = useState(null); // {msg, type}
+
+  /* modals */
+  const [editModal,    setEditModal]    = useState(null); // null | "create" | user object
+  const [pointsModal,  setPointsModal]  = useState(null); // null | user
+  const [expModal,     setExpModal]     = useState(null); // null | user
+  const [avatarModal,  setAvatarModal]  = useState(null); // null | user
+  const [confirmModal, setConfirmModal] = useState(null); // null | {msg, onConfirm}
+
+  /* edit form */
+  const [form, setForm] = useState({ username:"", email:"", password:"", role:"student", full_name:"" });
+  const [formErr, setFormErr] = useState("");
+
+  /* points / exp */
+  const [pointsAmt, setPointsAmt] = useState(0);
+  const [expAmt,    setExpAmt]    = useState(0);
+
+  /* avatar */
+  const [avatarFile,    setAvatarFile]    = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [uploading,     setUploading]     = useState(false);
+
+  /* search / filter / sort */
+  const [search,     setSearch]     = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [sort,       setSort]       = useState({ col: "id", dir: "asc" });
+
+  /* ── load ── */
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users');
-      setUsers(response.data.users);
-    } catch (error) {
-      setError('Ошибка загрузки пользователей');
-      console.error(error);
+      const { data } = await api.get("/users");
+      setUsers(data.users);
+    } catch {
+      notify("error", "Ошибка загрузки пользователей");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  /* ── toast ── */
+  const notify = (type, msg) => setToast({ type, msg });
+
+  /* ── stats ── */
+  const stats = useMemo(() => {
+    const total    = users.length;
+    const students = users.filter(u => u.role === "student").length;
+    const teachers = users.filter(u => u.role === "teacher").length;
+    const admins   = users.filter(u => u.role === "admin").length;
+    return { total, students, teachers, admins };
+  }, [users]);
+
+  /* ── filtered + sorted ── */
+  const displayed = useMemo(() => {
+    let list = users;
+    if (roleFilter !== "all") list = list.filter(u => u.role === roleFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(u =>
+        [u.id?.toString(), u.username, u.email, u.full_name, u.role, u.group_name, u.points?.toString()]
+          .some(f => f && f.toLowerCase().includes(q))
+      );
+    }
+    return [...list].sort((a, b) => {
+      let va = a[sort.col] ?? "";
+      let vb = b[sort.col] ?? "";
+      if (typeof va === "number") return sort.dir === "asc" ? va - vb : vb - va;
+      va = String(va).toLowerCase();
+      vb = String(vb).toLowerCase();
+      return sort.dir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+  }, [users, search, roleFilter, sort]);
+
+  const toggleSort = (col) =>
+    setSort(s => s.col === col ? { col, dir: s.dir === "asc" ? "desc" : "asc" } : { col, dir: "asc" });
+
+  const SortIcon = ({ col }) => {
+    if (sort.col !== col) return <FiChevronUp style={{ opacity: 0.2 }} />;
+    return sort.dir === "asc" ? <FiChevronUp /> : <FiChevronDown />;
   };
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  /* ── create / edit ── */
+  const openCreate = () => {
+    setForm({ username:"", email:"", password:"", role:"student", full_name:"" });
+    setFormErr("");
+    setEditModal("create");
   };
+  const openEdit = (user) => {
+    setForm({ username: user.username, email: user.email, password:"", role: user.role, full_name: user.full_name || "" });
+    setFormErr("");
+    setEditModal(user);
+  };
+  const closeEdit = () => setEditModal(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-
+    setFormErr("");
     try {
-      if (editingUser) {
-        // Обновление пользователя
-        await api.put(`/users/${editingUser.id}`, formData);
-        setSuccess('Пользователь успешно обновлен');
+      if (editModal === "create") {
+        await api.post("/users", form);
+        notify("success", "Пользователь успешно создан");
       } else {
-        // Создание нового пользователя
-        await api.post('/users', formData);
-        setSuccess('Пользователь успешно создан');
+        await api.put(`/users/${editModal.id}`, form);
+        notify("success", "Пользователь успешно обновлён");
       }
-      
-      setShowModal(false);
-      resetForm();
-      loadUsers();
-      
-      // Скрыть сообщение об успехе через 3 секунды
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError(error.response?.data?.error || 'Ошибка при сохранении');
+      closeEdit();
+      load();
+    } catch (err) {
+      setFormErr(err.response?.data?.error || "Ошибка при сохранении");
     }
   };
 
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    setFormData({
-      username: user.username,
-      email: user.email,
-      password: '',
-      role: user.role,
-      full_name: user.full_name || ''
+  /* ── delete ── */
+  const askDelete = (user) => {
+    setConfirmModal({
+      msg: `Удалить пользователя «${user.full_name || user.username}»? Это действие нельзя отменить.`,
+      onConfirm: async () => {
+        setConfirmModal(null);
+        try {
+          await api.delete(`/users/${user.id}`);
+          notify("success", "Пользователь удалён");
+          load();
+        } catch (err) {
+          notify("error", err.response?.data?.error || "Ошибка при удалении");
+        }
+      },
     });
-    setShowModal(true);
   };
 
-  const handleDelete = async (userId) => {
-    if (!window.confirm('Вы уверены, что хотите удалить этого пользователя?')) {
-      return;
-    }
-
+  /* ── points ── */
+  const handlePoints = async () => {
+    if (!pointsAmt || pointsAmt === 0) { notify("error", "Введите количество баллов"); return; }
     try {
-      await api.delete(`/users/${userId}`);
-      setSuccess('Пользователь успешно удален');
-      loadUsers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError(error.response?.data?.error || 'Ошибка при удалении');
-    }
+      await api.post("/points/add", { userId: pointsModal.id, points: parseInt(pointsAmt) });
+      notify("success", `Баллы ${pointsAmt > 0 ? "добавлены" : "списаны"}`);
+      setPointsModal(null);
+      load();
+    } catch (err) { notify("error", err.response?.data?.error || "Ошибка"); }
   };
 
-  const resetForm = () => {
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      role: 'student',
-      full_name: ''
-    });
-    setEditingUser(null);
-    setError('');
-  };
-
-  const openCreateModal = () => {
-    resetForm();
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    resetForm();
-  };
-
-  // Управление баллами
-  const openPointsModal = (user) => {
-    setSelectedUser(user);
-    setPointsAmount(0);
-    setShowPointsModal(true);
-  };
-
-  const closePointsModal = () => {
-    setShowPointsModal(false);
-    setSelectedUser(null);
-    setPointsAmount(0);
-  };
-
-  const handleAddPoints = async () => {
-    if (!pointsAmount || pointsAmount === 0) {
-      setError('Введите количество баллов');
-      return;
-    }
-
+  /* ── exp ── */
+  const handleExp = async () => {
+    if (!expAmt || expAmt === 0) { notify("error", "Введите количество опыта"); return; }
     try {
-      await api.post('/points/add', {
-        userId: selectedUser.id,
-        points: parseInt(pointsAmount)
-      });
-      
-      setSuccess(`Баллы ${pointsAmount > 0 ? 'добавлены' : 'списаны'} успешно`);
-      closePointsModal();
-      loadUsers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError(error.response?.data?.error || 'Ошибка при изменении баллов');
-    }
+      await api.post("/users/add-experience", { userId: expModal.id, experience: parseInt(expAmt) });
+      notify("success", `Опыт ${expAmt > 0 ? "добавлен" : "списан"}`);
+      setExpModal(null);
+      load();
+    } catch (err) { notify("error", err.response?.data?.error || "Ошибка"); }
   };
 
-  // Управление аватарками
-  const openAvatarModal = (user) => {
-    setSelectedAvatarUser(user);
+  /* ── avatar ── */
+  const openAvatar = (user) => {
+    setAvatarModal(user);
     setAvatarFile(null);
     setAvatarPreview(user.avatar_url ? `${BASE_URL}${user.avatar_url}` : null);
-    setShowAvatarModal(true);
+  };
+  const closeAvatar = () => { setAvatarModal(null); setAvatarFile(null); setAvatarPreview(null); };
+
+  const handleAvatarFile = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setAvatarFile(f);
+    const r = new FileReader();
+    r.onloadend = () => setAvatarPreview(r.result);
+    r.readAsDataURL(f);
   };
 
-  // Управление опытом
-  const openExpModal = (user) => {
-    setSelectedExpUser(user);
-    setExpAmount(0);
-    setShowExpModal(true);
-  };
-
-  const closeExpModal = () => {
-    setShowExpModal(false);
-    setSelectedExpUser(null);
-    setExpAmount(0);
-  };
-
-  const handleAddExp = async () => {
-    if (!expAmount || expAmount === 0) {
-      setError('Введите количество опыта');
-      return;
-    }
-
+  const handleUpload = async () => {
+    if (!avatarFile) { notify("error", "Выберите изображение"); return; }
     try {
-      await api.post('/users/add-experience', {
-        userId: selectedExpUser.id,
-        experience: parseInt(expAmount)
-      });
-      
-      setSuccess(`Опыт ${expAmount > 0 ? 'добавлен' : 'списан'} успешно`);
-      closeExpModal();
-      loadUsers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError(error.response?.data?.error || 'Ошибка при изменении опыта');
-    }
+      setUploading(true);
+      const fd = new FormData();
+      fd.append("avatar", avatarFile);
+      await api.post(`/users/${avatarModal.id}/avatar`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      notify("success", "Аватарка обновлена");
+      closeAvatar();
+      load();
+    } catch (err) { notify("error", err.response?.data?.error || "Ошибка загрузки"); }
+    finally { setUploading(false); }
   };
 
-  const closeAvatarModal = () => {
-    setShowAvatarModal(false);
-    setSelectedAvatarUser(null);
-    setAvatarFile(null);
-    setAvatarPreview(null);
+  const askDeleteAvatar = (user) => {
+    closeAvatar();
+    setConfirmModal({
+      msg: `Удалить аватарку пользователя «${user.full_name || user.username}»?`,
+      onConfirm: async () => {
+        setConfirmModal(null);
+        try {
+          await api.delete(`/users/${user.id}/avatar`);
+          notify("success", "Аватарка удалена");
+          load();
+        } catch (err) { notify("error", err.response?.data?.error || "Ошибка"); }
+      },
+    });
   };
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleUploadAvatar = async () => {
-    if (!avatarFile) {
-      setError('Выберите файл изображения');
-      return;
-    }
-
-    try {
-      setUploadingAvatar(true);
-      const formData = new FormData();
-      formData.append('avatar', avatarFile);
-
-      await api.post(`/users/${selectedAvatarUser.id}/avatar`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      setSuccess('Аватарка успешно загружена');
-      closeAvatarModal();
-      loadUsers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError(error.response?.data?.error || 'Ошибка при загрузке аватарки');
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
-
-  const handleDeleteAvatar = async (userId) => {
-    if (!window.confirm('Удалить аватарку?')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/users/${userId}/avatar`);
-      setSuccess('Аватарка успешно удалена');
-      loadUsers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError(error.response?.data?.error || 'Ошибка при удалении аватарки');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className={styles['loading-state']}>
-        <p>Загрузка пользователей...</p>
-      </div>
-    );
-  }
-
+  /* ─────────────────────────────── RENDER ── */
   return (
-    <div className={styles['users-page']}>
-      <div className={styles['page-header']}>
-        <div className={styles['header-content']}>
-          <div className={styles['header-left']}>
-            <div className={styles['header-icon']}>
-              <FiUsers />
-            </div>
+    <div className={styles.page}>
+      <Toast msg={toast?.msg} type={toast?.type} onClose={() => setToast(null)} />
+
+      {/* ── Header ── */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerIcon}><FiUsers /></div>
+          <div>
+            <h1 className={styles.headerTitle}>Управление пользователями</h1>
+            <p className={styles.headerSub}>Учётные записи, роли, баллы и аватарки</p>
+          </div>
+        </div>
+        <button className={styles.btnPrimary} onClick={openCreate}>
+          <FiPlus /><span>Добавить</span>
+        </button>
+      </div>
+
+      {/* ── Stats ── */}
+      <div className={styles.stats}>
+        {[
+          { icon: <FiUsers />,    label: "Всего",    val: stats.total,    col: "total"   },
+          { icon: <FiUser />,     label: "Ученики",  val: stats.students, col: "student" },
+          { icon: <FiBookOpen />, label: "Учители",  val: stats.teachers, col: "teacher" },
+          { icon: <FiShield />,   label: "Админы",   val: stats.admins,   col: "admin"   },
+        ].map(s => (
+          <div
+            key={s.col}
+            className={`${styles.stat} ${roleFilter === s.col || (s.col === "total" && roleFilter === "all") ? styles.statActive : ""}`}
+            onClick={() => setRoleFilter(s.col === "total" ? "all" : s.col)}
+          >
+            <div className={`${styles.statIcon} ${styles["statIcon-" + s.col]}`}>{s.icon}</div>
             <div>
-              <h1>Управление пользователями</h1>
-              <p>Регистрация и управление учетными записями</p>
+              <div className={styles.statVal}>{s.val}</div>
+              <div className={styles.statLabel}>{s.label}</div>
             </div>
           </div>
-          <button className={styles['btn-primary']} onClick={openCreateModal}>
-            <FiPlus />
-            <span>Добавить пользователя</span>
-          </button>
-        </div>
+        ))}
       </div>
 
-      {success && (
-        <div className={styles['alert-success']}>
-          <FiCheck className={styles['alert-icon']} />
-          <span>{success}</span>
-        </div>
-      )}
-      {error && (
-        <div className={styles['alert-error']}>
-          <FiAlertCircle className={styles['alert-icon']} />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Поиск */}
-      <div className={styles['search-container']}>
-        <div className={styles['search-input-wrapper']}>
-          <FiSearch className={styles['search-icon']} />
+      {/* ── Toolbar ── */}
+      <div className={styles.toolbar}>
+        <div className={styles.searchWrap}>
+          <FiSearch className={styles.searchIcon} />
           <input
-            type="text"
+            className={styles.searchInput}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             placeholder="Поиск по ID, имени, email, ФИО, роли, группе..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles['search-input']}
           />
-          {searchQuery && (
-            <button 
-              className={styles['search-clear']} 
-              onClick={() => setSearchQuery('')}
-              title="Очистить поиск"
-            >
-              <FiX />
-            </button>
+          {search && (
+            <button className={styles.searchClear} onClick={() => setSearch("")}><FiX /></button>
           )}
         </div>
-        {searchQuery && (
-          <div className={styles['search-results-count']}>
-            Найдено: {filteredUsers.length} из {users.length}
-          </div>
+
+        <div className={styles.filterGroup}>
+          <FiFilter className={styles.filterIcon} />
+          <select className={styles.filterSelect} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
+            <option value="all">Все роли</option>
+            {Object.entries(ROLE_META).map(([v, m]) => (
+              <option key={v} value={v}>{m.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {(search || roleFilter !== "all") && (
+          <span className={styles.resultCount}>{displayed.length} из {users.length}</span>
         )}
       </div>
 
-      <div className={styles['users-table-container']}>
-        {users.length === 0 ? (
-          <div className={styles['empty-state']}>
-            <div className={styles['empty-state-icon']}>
-              <FiUsers />
-            </div>
-            <h3>Нет пользователей</h3>
-            <p>Создайте первого пользователя, нажав кнопку выше</p>
+      {/* ── Table ── */}
+      <div className={styles.tableWrap}>
+        {loading ? (
+          <div className={styles.skeleton}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className={styles.skeletonRow}>
+                <div className={styles.skeletonCell} style={{ width: 32 }} />
+                <div className={styles.skeletonAvatar} />
+                <div className={styles.skeletonCell} style={{ flex: 1 }} />
+                <div className={styles.skeletonCell} style={{ flex: 1.5 }} />
+                <div className={styles.skeletonCell} style={{ flex: 1 }} />
+                <div className={styles.skeletonCell} style={{ width: 80 }} />
+                <div className={styles.skeletonCell} style={{ width: 60 }} />
+                <div className={styles.skeletonCell} style={{ width: 56 }} />
+                <div className={styles.skeletonCell} style={{ width: 90 }} />
+                <div className={styles.skeletonCell} style={{ width: 130 }} />
+              </div>
+            ))}
+          </div>
+        ) : displayed.length === 0 ? (
+          <div className={styles.empty}>
+            <div className={styles.emptyIcon}><FiUsers /></div>
+            <h3>{users.length === 0 ? "Нет пользователей" : "Ничего не найдено"}</h3>
+            <p>{users.length === 0
+              ? "Создайте первого пользователя"
+              : "Попробуйте изменить поисковой запрос или фильтры"}
+            </p>
           </div>
         ) : (
-          <table className={styles['users-table']}>
+          <table className={styles.table}>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Аватар</th>
-                <th>Имя пользователя</th>
-                <th>Email</th>
-                <th>ФИО</th>
-                <th>Роль</th>
-                <th>Группа</th>
-                <th>Баллы</th>
-                <th>Дата создания</th>
-                <th>Действия</th>
+                {[
+                  { col: "id",         label: "ID"      },
+                  { col: null,         label: "Аватар"  },
+                  { col: "username",   label: "Логин"   },
+                  { col: "email",      label: "Email"   },
+                  { col: "full_name",  label: "ФИО"     },
+                  { col: "role",       label: "Роль"    },
+                  { col: "group_name", label: "Группа"  },
+                  { col: "points",     label: "Баллы"   },
+                  { col: "created_at", label: "Дата"    },
+                  { col: null,         label: "Действия"},
+                ].map((h, i) => (
+                  <th
+                    key={i}
+                    className={h.col ? styles.sortable : ""}
+                    onClick={h.col ? () => toggleSort(h.col) : undefined}
+                  >
+                    <span>{h.label}</span>
+                    {h.col && <SortIcon col={h.col} />}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
+              {displayed.map(user => (
                 <tr key={user.id}>
-                  <td data-label="ID">{user.id}</td>
-                  <td data-label="Аватар">
-                    <div className={styles['user-avatar-cell']}>
+                  <td className={styles.tdId}>{user.id}</td>
+                  <td>
+                    <div className={styles.avatarCell}>
                       {user.avatar_url ? (
-                        <img 
-                          src={`${BASE_URL}${user.avatar_url}`} 
-                          alt={user.username}
-                          className={styles['user-avatar-small']}
-                        />
+                        <img src={`${BASE_URL}${user.avatar_url}`} alt={user.username} className={styles.avatar} />
                       ) : (
-                        <div className={styles['user-avatar-placeholder']}>
-                          {(user.full_name || user.username).charAt(0).toUpperCase()}
+                        <div className={`${styles.avatarFallback} ${styles["avatarRole-" + roleColor(user.role)]}`}>
+                          {(user.full_name || user.username || "?")[0].toUpperCase()}
                         </div>
                       )}
+                      {user.is_online && <span className={styles.onlineDot} />}
                     </div>
                   </td>
-                  <td data-label="Имя">{user.username}</td>
-                  <td data-label="Email">{user.email}</td>
-                  <td data-label="ФИО">{user.full_name || '-'}</td>
+                  <td className={styles.tdBold} data-label="Логин">{user.username}</td>
+                  <td className={styles.tdMuted} data-label="Email">{user.email}</td>
+                  <td data-label="ФИО">{user.full_name || <span className={styles.dash}>—</span>}</td>
                   <td data-label="Роль">
-                    <span className={`${styles['role-badge']} ${styles['role-' + user.role]}`}>
-                      {user.role === 'admin' && 'Администратор'}
-                      {user.role === 'student' && 'Ученик'}
-                      {user.role === 'teacher' && 'Учитель'}
-                      {user.role === 'tester' && 'Тестер'}
-                      {user.role === 'css_editor' && 'CSS Редактор'}
+                    <span className={`${styles.roleBadge} ${styles["role-" + roleColor(user.role)]}`}>
+                      {roleName(user.role)}
                     </span>
                   </td>
-                  <td data-label="Группа">{user.group_name || '-'}</td>
+                  <td data-label="Группа">{user.group_name || <span className={styles.dash}>—</span>}</td>
                   <td data-label="Баллы">
-                    <span className={styles['points-badge']}>{user.points || 0}</span>
+                    <span className={styles.pointsBadge}>{user.points ?? 0} <small>pts</small></span>
                   </td>
-                  <td data-label="Дата">{new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
-                  <td data-label="Действия">
-                    <div className={styles['action-buttons']}>
-                      {user.role === 'student' && (
+                  <td className={styles.tdMuted} data-label="Дата">
+                    {new Date(user.created_at).toLocaleDateString("ru-RU")}
+                  </td>
+                  <td>
+                    <div className={styles.actions}>
+                      {["student","teacher"].includes(user.role) && (
                         <>
-                          <button 
-                            className={styles['btn-icon-avatar']}
-                            onClick={() => openAvatarModal(user)}
-                            title="Изменить аватарку"
-                          >
-                            <FiImage />
-                          </button>
-                          <button 
-                            className={styles['btn-icon-exp']}
-                            onClick={() => openExpModal(user)}
-                            title="Управление опытом"
-                          >
-                            <FiZap />
-                          </button>
-                          <button 
-                            className={styles['btn-icon-points']}
-                            onClick={() => openPointsModal(user)}
-                            title="Управление баллами"
-                          >
-                            <FiDollarSign />
-                          </button>
+                          <button className={`${styles.iconBtn} ${styles.iconBtnAvatar}`} onClick={() => openAvatar(user)} title="Аватарка"><FiImage /></button>
+                          <button className={`${styles.iconBtn} ${styles.iconBtnExp}`}    onClick={() => { setExpModal(user); setExpAmt(0); }} title="Опыт"><FiZap /></button>
+                          <button className={`${styles.iconBtn} ${styles.iconBtnPoints}`} onClick={() => { setPointsModal(user); setPointsAmt(0); }} title="Баллы"><FiDollarSign /></button>
                         </>
                       )}
-                      <button 
-                        className={styles['btn-icon-edit']}
-                        onClick={() => handleEdit(user)}
-                        title="Редактировать"
-                      >
-                        <FiEdit2 />
-                      </button>
-                      <button 
-                        className={styles['btn-icon-delete']}
-                        onClick={() => handleDelete(user.id)}
-                        title="Удалить"
-                      >
-                        <FiTrash2 />
-                      </button>
+                      <button className={`${styles.iconBtn} ${styles.iconBtnEdit}`}   onClick={() => openEdit(user)} title="Редактировать"><FiEdit2 /></button>
+                      <button className={`${styles.iconBtn} ${styles.iconBtnDelete}`} onClick={() => askDelete(user)} title="Удалить"><FiTrash2 /></button>
                     </div>
                   </td>
                 </tr>
@@ -483,97 +442,52 @@ function UsersManagement() {
         )}
       </div>
 
-      {showModal && (
-        <div className={styles['modal-overlay']} onClick={closeModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles['modal-header']}>
-              <h2>{editingUser ? 'Редактирование пользователя' : 'Новый пользователь'}</h2>
-              <button className={styles['close-btn']} onClick={closeModal}>
-                <FiX />
-              </button>
+      {/* ══════════ EDIT / CREATE MODAL ══════════ */}
+      {editModal && (
+        <div className={styles.overlay} onClick={closeEdit}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHead}>
+              <div className={styles.modalTitle}>
+                <FiUser className={styles.modalIcon} />
+                <h2>{editModal === "create" ? "Новый пользователь" : "Редактировать пользователя"}</h2>
+              </div>
+              <button className={styles.closeBtn} onClick={closeEdit}><FiX /></button>
             </div>
-
-            <form className={styles['modal-form']} onSubmit={handleSubmit}>
-              {error && (
-                <div className={styles['alert-error']}>
-                  <FiAlertCircle className={styles['alert-icon']} />
-                  <span>{error}</span>
-                </div>
+            <form className={styles.modalForm} onSubmit={handleSubmit}>
+              {formErr && (
+                <div className={styles.inlineErr}><FiAlertCircle /><span>{formErr}</span></div>
               )}
-
-              <div className={styles['form-group']}>
-                <label className={styles['form-label']}>Имя пользователя *</label>
-                <input
-                  type="text"
-                  name="username"
-                  className={styles['form-input']}
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  required
-                />
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Логин *</label>
+                  <input className={styles.formInput} name="username" value={form.username} onChange={e => setForm(f=>({...f,username:e.target.value}))} required />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Email *</label>
+                  <input className={styles.formInput} type="email" name="email" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))} required />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>ФИО</label>
+                  <input className={styles.formInput} name="full_name" value={form.full_name} onChange={e => setForm(f=>({...f,full_name:e.target.value}))} />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Роль *</label>
+                  <select className={styles.formSelect} value={form.role} onChange={e => setForm(f=>({...f,role:e.target.value}))} required>
+                    {Object.entries(ROLE_META).map(([v,m]) => <option key={v} value={v}>{m.label}</option>)}
+                  </select>
+                </div>
+                <div className={`${styles.formGroup} ${styles.spanFull}`}>
+                  <label className={styles.formLabel}>
+                    Пароль {editModal !== "create" && <span className={styles.formHint2}>(оставьте пустым чтобы не менять)</span>}
+                    {editModal === "create" && " *"}
+                  </label>
+                  <input className={styles.formInput} type="password" value={form.password} onChange={e => setForm(f=>({...f,password:e.target.value}))} required={editModal === "create"} />
+                </div>
               </div>
-
-              <div className={styles['form-group']}>
-                <label className={styles['form-label']}>Email *</label>
-                <input
-                  type="email"
-                  name="email"
-                  className={styles['form-input']}
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className={styles['form-group']}>
-                <label className={styles['form-label']}>
-                  Пароль {editingUser ? '(оставьте пустым, чтобы не менять)' : '*'}
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  className={styles['form-input']}
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required={!editingUser}
-                />
-              </div>
-
-              <div className={styles['form-group']}>
-                <label className={styles['form-label']}>ФИО</label>
-                <input
-                  type="text"
-                  name="full_name"
-                  className={styles['form-input']}
-                  value={formData.full_name}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className={styles['form-group']}>
-                <label className={styles['form-label']}>Роль *</label>
-                <select
-                  name="role"
-                  className={styles['form-select']}
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="student">Ученик</option>
-                  <option value="teacher">Учитель</option>
-                  <option value="tester">Тестер</option>
-                  <option value="css_editor">CSS Редактор</option>
-                  <option value="admin">Администратор</option>
-                </select>
-              </div>
-
-              <div className={styles['form-actions']}>
-                <button type="button" className={styles['btn-secondary']} onClick={closeModal}>
-                  Отмена
-                </button>
-                <button type="submit" className={styles['btn-primary']}>
-                  <FiCheck />
-                  <span>{editingUser ? 'Сохранить' : 'Создать'}</span>
+              <div className={styles.formActions}>
+                <button type="button" className={styles.btnSec} onClick={closeEdit}>Отмена</button>
+                <button type="submit" className={styles.btnPrimary}>
+                  <FiCheck /><span>{editModal === "create" ? "Создать" : "Сохранить"}</span>
                 </button>
               </div>
             </form>
@@ -581,191 +495,134 @@ function UsersManagement() {
         </div>
       )}
 
-      {showPointsModal && selectedUser && (
-        <div className={styles['modal-overlay']} onClick={closePointsModal}>
-          <div className={`${styles.modal} ${styles['modal-small']}`} onClick={(e) => e.stopPropagation()}>
-            <div className={styles['modal-header']}>
-              <div className={styles['modal-title']}>
-                <FiDollarSign className={styles['modal-icon']} />
-                <h2>Управление баллами</h2>
+      {/* ══════════ POINTS MODAL ══════════ */}
+      {pointsModal && (
+        <div className={styles.overlay} onClick={() => setPointsModal(null)}>
+          <div className={`${styles.modal} ${styles.modalSm}`} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHead}>
+              <div className={styles.modalTitle}>
+                <FiDollarSign className={styles.modalIcon} style={{ color: "#f59e0b" }} />
+                <h2>Баллы</h2>
               </div>
-              <button className={styles['close-btn']} onClick={closePointsModal}>
-                <FiX />
-              </button>
+              <button className={styles.closeBtn} onClick={() => setPointsModal(null)}><FiX /></button>
             </div>
-
-            <div className={styles['modal-body']}>
-              <div className={styles['user-info-box']}>
-                <p><strong>Студент:</strong> {selectedUser.full_name || selectedUser.username}</p>
-                <p><strong>Текущие баллы:</strong> <span className={styles['points-badge']}>{selectedUser.points || 0}</span></p>
+            <div className={styles.modalBody}>
+              <div className={styles.userInfoBox}>
+                <div className={`${styles.avatarFallback} ${styles["avatarRole-" + roleColor(pointsModal.role)]}`} style={{ width:44,height:44,fontSize:18 }}>
+                  {(pointsModal.full_name || pointsModal.username)[0].toUpperCase()}
+                </div>
+                <div>
+                  <div className={styles.uibName}>{pointsModal.full_name || pointsModal.username}</div>
+                  <div className={styles.uibSub}>Текущие баллы: <b>{pointsModal.points ?? 0}</b> pts</div>
+                </div>
               </div>
-
-              <div className={styles['form-group']}>
-                <label className={styles['form-label']}>Количество баллов (+ добавить, - списать)</label>
-                <input
-                  type="number"
-                  className={styles['form-input']}
-                  value={pointsAmount}
-                  onChange={(e) => setPointsAmount(e.target.value)}
-                  placeholder="Например: 10 или -5"
-                />
-                <small className={styles['form-hint']}>
-                  Используйте отрицательные числа для списания баллов
-                </small>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Количество баллов</label>
+                <input className={styles.formInput} type="number" value={pointsAmt} onChange={e => setPointsAmt(e.target.value)} placeholder="+ добавить / - списать" />
+                <small className={styles.formHint}>Отрицательное число для списания</small>
               </div>
-
-              <div className={styles['quick-buttons']}>
-                <button className={styles['btn-quick']} onClick={() => setPointsAmount(5)}>+5</button>
-                <button className={styles['btn-quick']} onClick={() => setPointsAmount(10)}>+10</button>
-                <button className={styles['btn-quick']} onClick={() => setPointsAmount(20)}>+20</button>
-                <button className={`${styles['btn-quick']} ${styles['btn-negative']}`} onClick={() => setPointsAmount(-5)}>-5</button>
+              <div className={styles.quickBtns}>
+                {[5,10,25,50].map(n => <button key={n} className={styles.qBtn} onClick={() => setPointsAmt(n)}>+{n}</button>)}
+                <button className={`${styles.qBtn} ${styles.qBtnNeg}`} onClick={() => setPointsAmt(-10)}>−10</button>
               </div>
-
-              <div className={styles['form-actions']}>
-                <button type="button" className={styles['btn-secondary']} onClick={closePointsModal}>
-                  Отмена
-                </button>
-                <button type="button" className={styles['btn-primary']} onClick={handleAddPoints}>
-                  <FiCheck />
-                  <span>Применить</span>
-                </button>
+              <div className={styles.formActions}>
+                <button className={styles.btnSec} onClick={() => setPointsModal(null)}>Отмена</button>
+                <button className={styles.btnPrimary} onClick={handlePoints}><FiCheck /><span>Применить</span></button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Модальное окно для управления опытом */}
-      {showExpModal && selectedExpUser && (
-        <div className={styles['modal-overlay']} onClick={closeExpModal}>
-          <div className={`${styles.modal} ${styles['modal-small']}`} onClick={(e) => e.stopPropagation()}>
-            <div className={styles['modal-header']}>
-              <div className={styles['modal-title']}>
-                <FiZap className={styles['modal-icon']} />
-                <h2>Управление опытом</h2>
+      {/* ══════════ EXP MODAL ══════════ */}
+      {expModal && (
+        <div className={styles.overlay} onClick={() => setExpModal(null)}>
+          <div className={`${styles.modal} ${styles.modalSm}`} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHead}>
+              <div className={styles.modalTitle}>
+                <FiZap className={styles.modalIcon} style={{ color: "#8b5cf6" }} />
+                <h2>Опыт (XP)</h2>
               </div>
-              <button className={styles['close-btn']} onClick={closeExpModal}>
-                <FiX />
-              </button>
+              <button className={styles.closeBtn} onClick={() => setExpModal(null)}><FiX /></button>
             </div>
-
-            <div className={styles['modal-body']}>
-              <div className={styles['user-info-box']}>
-                <p><strong>Студент:</strong> {selectedExpUser.full_name || selectedExpUser.username}</p>
-                <p><strong>Текущий опыт:</strong> {selectedExpUser.experience || 0} XP</p>
-                <p><strong>Уровень:</strong> {selectedExpUser.level || 1}</p>
+            <div className={styles.modalBody}>
+              <div className={styles.userInfoBox}>
+                <div className={`${styles.avatarFallback} ${styles["avatarRole-" + roleColor(expModal.role)]}`} style={{ width:44,height:44,fontSize:18 }}>
+                  {(expModal.full_name || expModal.username)[0].toUpperCase()}
+                </div>
+                <div>
+                  <div className={styles.uibName}>{expModal.full_name || expModal.username}</div>
+                  <div className={styles.uibSub}>Уровень {expModal.level ?? 1} · {expModal.experience ?? 0} XP</div>
+                </div>
               </div>
-
-              <div className={styles['form-group']}>
-                <label className={styles['form-label']}>Количество опыта</label>
-                <input
-                  type="number"
-                  className={styles['form-input']}
-                  value={expAmount}
-                  onChange={(e) => setExpAmount(e.target.value)}
-                  placeholder="Введите количество (отрицательное для списания)"
-                />
-                <small className={styles['form-hint']}>
-                  Положительное число для добавления, отрицательное для списания
-                </small>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Количество опыта</label>
+                <input className={styles.formInput} type="number" value={expAmt} onChange={e => setExpAmt(e.target.value)} placeholder="+ добавить / - списать" />
+                <small className={styles.formHint}>Отрицательное число для списания</small>
               </div>
-
-              <div className={styles['quick-buttons']}>
-                <button className={styles['btn-quick']} onClick={() => setExpAmount(10)}>+10</button>
-                <button className={styles['btn-quick']} onClick={() => setExpAmount(25)}>+25</button>
-                <button className={styles['btn-quick']} onClick={() => setExpAmount(50)}>+50</button>
-                <button className={styles['btn-quick']} onClick={() => setExpAmount(100)}>+100</button>
-                <button className={`${styles['btn-quick']} ${styles['btn-negative']}`} onClick={() => setExpAmount(-10)}>-10</button>
+              <div className={styles.quickBtns}>
+                {[10,25,50,100].map(n => <button key={n} className={styles.qBtn} onClick={() => setExpAmt(n)}>+{n}</button>)}
+                <button className={`${styles.qBtn} ${styles.qBtnNeg}`} onClick={() => setExpAmt(-25)}>−25</button>
               </div>
-
-              <div className={styles['form-actions']}>
-                <button type="button" className={styles['btn-secondary']} onClick={closeExpModal}>
-                  Отмена
-                </button>
-                <button type="button" className={styles['btn-primary']} onClick={handleAddExp}>
-                  <FiCheck />
-                  <span>Применить</span>
-                </button>
+              <div className={styles.formActions}>
+                <button className={styles.btnSec} onClick={() => setExpModal(null)}>Отмена</button>
+                <button className={styles.btnPrimary} onClick={handleExp}><FiCheck /><span>Применить</span></button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Модальное окно для загрузки аватарки */}
-      {showAvatarModal && selectedAvatarUser && (
-        <div className={styles['modal-overlay']} onClick={closeAvatarModal}>
-          <div className={`${styles.modal} ${styles['modal-small']}`} onClick={(e) => e.stopPropagation()}>
-            <div className={styles['modal-header']}>
-              <div className={styles['modal-title']}>
-                <FiImage className={styles['modal-icon']} />
-                <h2>Изменить аватарку</h2>
+      {/* ══════════ AVATAR MODAL ══════════ */}
+      {avatarModal && (
+        <div className={styles.overlay} onClick={closeAvatar}>
+          <div className={`${styles.modal} ${styles.modalSm}`} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHead}>
+              <div className={styles.modalTitle}>
+                <FiImage className={styles.modalIcon} style={{ color: "#0891b2" }} />
+                <h2>Аватарка</h2>
               </div>
-              <button className={styles['close-btn']} onClick={closeAvatarModal}>
-                <FiX />
-              </button>
+              <button className={styles.closeBtn} onClick={closeAvatar}><FiX /></button>
             </div>
-
-            <div className={styles['modal-body']}>
-              <div className={styles['user-info-box']}>
-                <p><strong>Студент:</strong> {selectedAvatarUser.full_name || selectedAvatarUser.username}</p>
-              </div>
-
-              <div className={styles['avatar-upload-section']}>
-                <div className={styles['avatar-preview']}>
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="Preview" />
-                  ) : (
-                    <div className={styles['avatar-placeholder-large']}>
-                      {(selectedAvatarUser.full_name || selectedAvatarUser.username).charAt(0).toUpperCase()}
-                    </div>
-                  )}
+            <div className={styles.modalBody}>
+              <div className={styles.avatarUploadWrap}>
+                <div className={styles.avatarLarge}>
+                  {avatarPreview
+                    ? <img src={avatarPreview} alt="preview" style={{ width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover" }} />
+                    : <div className={`${styles.avatarFallback} ${styles["avatarRole-" + roleColor(avatarModal.role)]}`} style={{ width:"100%",height:"100%",fontSize:42 }}>
+                        {(avatarModal.full_name || avatarModal.username)[0].toUpperCase()}
+                      </div>
+                  }
                 </div>
-
-                <div className={styles['form-group']}>
-                  <label className={styles['form-label']}>Выберите изображение</label>
-                  <input
-                    type="file"
-                    className={styles['form-input']}
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                    onChange={handleAvatarChange}
-                  />
-                  <small className={styles['form-hint']}>
-                    Поддерживаемые форматы: JPEG, PNG, GIF, WebP (макс. 5MB)
-                  </small>
-                </div>
+                <label className={styles.avatarUploadBtn}>
+                  <FiUpload /> Выбрать фото
+                  <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleAvatarFile} hidden />
+                </label>
+                <small className={styles.formHint} style={{ textAlign:"center" }}>JPEG · PNG · GIF · WebP · до 5 МБ</small>
               </div>
-
-              <div className={styles['form-actions']}>
-                {selectedAvatarUser.avatar_url && (
-                  <button 
-                    type="button" 
-                    className={styles['btn-danger']}
-                    onClick={() => {
-                      handleDeleteAvatar(selectedAvatarUser.id);
-                      closeAvatarModal();
-                    }}
-                  >
-                    <FiTrash2 />
-                    <span>Удалить аватарку</span>
+              <div className={styles.formActions}>
+                {avatarModal.avatar_url && (
+                  <button className={styles.btnDanger} onClick={() => askDeleteAvatar(avatarModal)}>
+                    <FiTrash2 /><span>Удалить</span>
                   </button>
                 )}
-                <button type="button" className={styles['btn-secondary']} onClick={closeAvatarModal}>
-                  Отмена
-                </button>
-                <button 
-                  type="button" 
-                  className={styles['btn-primary']} 
-                  onClick={handleUploadAvatar}
-                  disabled={!avatarFile || uploadingAvatar}
-                >
-                  <FiUpload />
-                  <span>{uploadingAvatar ? 'Загрузка...' : 'Загрузить'}</span>
+                <button className={styles.btnSec} onClick={closeAvatar}>Отмена</button>
+                <button className={styles.btnPrimary} onClick={handleUpload} disabled={!avatarFile || uploading}>
+                  <FiUpload /><span>{uploading ? "Загружаю..." : "Загрузить"}</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* ══════════ CONFIRM MODAL ══════════ */}
+      {confirmModal && (
+        <ConfirmModal
+          msg={confirmModal.msg}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
       )}
     </div>
   );
