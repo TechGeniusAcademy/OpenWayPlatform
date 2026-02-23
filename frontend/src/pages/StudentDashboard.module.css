@@ -119,12 +119,8 @@
 /* Рамка-косметика */
 .dashboard-page-header-frame {
   position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: clamp(120px, 13vw, 165px);
-  height: auto;
   pointer-events: none;
+  object-fit: contain;
 }
 
 /* ========================= */
@@ -821,10 +817,7 @@
     text-align: left;
   }
 
-  .dashboard-page-header-frame {
-    left: 16px;
-    transform: none;
-  }
+  /* .dashboard-page-header-frame positioning handled by getFrameStyle inline style */
 
   .div3 {
     grid-template-columns: 1fr;

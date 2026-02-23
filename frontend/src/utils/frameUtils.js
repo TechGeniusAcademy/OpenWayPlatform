@@ -36,10 +36,11 @@ export function getFrameStyle(item, context) {
 
   return {
     position: 'absolute',
-    top:    `${-inset + offsetY}px`,
-    left:   `${-inset + offsetX}px`,
-    width:  `calc(100% + ${inset * 2}px)`,
-    height: `calc(100% + ${inset * 2}px)`,
+    top:       `${-inset + offsetY}px`,
+    left:      `${-inset + offsetX}px`,
+    width:     `calc(100% + ${inset * 2}px)`,
+    height:    `calc(100% + ${inset * 2}px)`,
+    transform: 'none',
     pointerEvents: 'none',
     objectFit: 'contain',
     zIndex: 2,

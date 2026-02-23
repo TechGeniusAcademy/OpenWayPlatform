@@ -77,12 +77,8 @@
 
 .hero-avatar-frame {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 116px;
-  height: 116px;
   pointer-events: none;
+  object-fit: contain;
   z-index: 2;
 }
 
