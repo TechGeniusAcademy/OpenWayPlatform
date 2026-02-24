@@ -278,8 +278,49 @@ router.get('/history/:userId?', async (req, res) => {
     }
 
     const pool = (await import('../config/database.js')).default;
-    
-    // Получаем историю транзакций
+
+    const page   = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit  = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const filter = req.query.filter || 'all';  // all | positive | negative | admin | transfer | shop | boost
+    const search = (req.query.search || '').trim();
+
+    // Build dynamic WHERE conditions
+    const conditions = ['ph.user_id = $1'];
+    const params     = [userId];
+
+    if (filter === 'positive')  conditions.push('ph.points_change > 0');
+    if (filter === 'negative')  conditions.push('ph.points_change < 0');
+    if (filter === 'admin')     conditions.push('ph.admin_id IS NOT NULL');
+    if (filter === 'transfer')  conditions.push("ph.reason ILIKE '%передача%' OR ph.reason ILIKE '%получение баллов%'");
+    if (filter === 'shop')      conditions.push("ph.reason ILIKE '%покупка%'");
+    if (filter === 'boost')     conditions.push("ph.reason ILIKE '%буст%'");
+
+    if (search) {
+      params.push(`%${search}%`);
+      conditions.push(`ph.reason ILIKE $${params.length}`);
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // Stats query (always over full user history, ignoring filter/search)
+    const statsResult = await pool.query(
+      `SELECT
+        COALESCE(SUM(CASE WHEN points_change > 0 THEN points_change ELSE 0 END), 0)::int  AS total_earned,
+        COALESCE(SUM(CASE WHEN points_change < 0 THEN ABS(points_change) ELSE 0 END), 0)::int AS total_spent,
+        COUNT(*)::int AS total_transactions,
+        COALESCE(SUM(points_change), 0)::int AS net_change
+       FROM points_history WHERE user_id = $1`,
+      [userId]
+    );
+
+    // Total count for pagination (respects filter)
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS cnt FROM points_history ph WHERE ${whereClause}`,
+      params
+    );
+
+    // Paginated history
     const historyResult = await pool.query(
       `SELECT 
         ph.id,
@@ -287,18 +328,23 @@ router.get('/history/:userId?', async (req, res) => {
         ph.reason,
         ph.admin_id,
         ph.created_at,
-        a.username as admin_username,
-        a.full_name as admin_name
+        a.username AS admin_username,
+        a.full_name AS admin_name
       FROM points_history ph
       LEFT JOIN users a ON ph.admin_id = a.id
-      WHERE ph.user_id = $1
+      WHERE ${whereClause}
       ORDER BY ph.created_at DESC
-      LIMIT 100`,
-      [userId]
+      LIMIT ${limit} OFFSET ${offset}`,
+      params
     );
 
+    const total      = countResult.rows[0]?.cnt || 0;
+    const totalPages = Math.ceil(total / limit) || 1;
+
     res.json({ 
-      history: historyResult.rows 
+      history:     historyResult.rows,
+      stats:       statsResult.rows[0],
+      pagination:  { page, limit, total, totalPages }
     });
   } catch (error) {
     console.error('Ошибка получения истории транзакций:', error);
