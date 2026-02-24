@@ -12,6 +12,42 @@ import styles from './OnlineChess.module.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Аватар с fallback на инициалы
+const SafeAvatar = ({ src, name, className, size = 46 }) => {
+  const [failed, setFailed] = React.useState(false);
+  const initials = (name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const hue = (name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
+
+  if (!src || failed) {
+    return (
+      <div
+        className={className}
+        style={{
+          width: size, height: size,
+          borderRadius: '50%',
+          background: `hsl(${hue},45%,38%)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', fontWeight: 700,
+          fontSize: size * 0.36,
+          flexShrink: 0,
+          userSelect: 'none',
+        }}
+      >
+        {initials}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  );
+};
+
 const OnlineChess = () => {
   const { getSocket } = useWebSocket();
   const { user } = useAuth();
@@ -619,7 +655,7 @@ const OnlineChess = () => {
                         )}
                         <div className={styles.gameCardInfo}>
                           <div className={styles.avatarWrap}>
-                            <img src={avatarUrl} alt={opponent.name} className={styles.avatarImg} />
+                            <SafeAvatar src={avatarUrl} name={opponent.name} className={styles.avatarImg} size={46} />
                             {frameImage && (
                               <img
                                 src={frameImage}
@@ -750,7 +786,7 @@ const OnlineChess = () => {
                     <div className={styles.gameCardOverlay} />
                   )}
                   <div className={styles.avatarWrap}>
-                    <img src={avatarUrl} alt={player.full_name} className={styles.avatarImg} />
+                    <SafeAvatar src={avatarUrl} name={player.full_name || player.username} className={styles.avatarImg} size={46} />
                     {frameImage && (
                       <img
                         src={frameImage}
@@ -830,10 +866,11 @@ const OnlineChess = () => {
                 {/* Противник (сверху) */}
                 <div className={`${styles.playerBar} ${!isMyTurn ? styles.playerBarActive : ''}`}>
                   <div className={styles.pbAvatarWrap}>
-                    <img
-                      src={oppInfo.avatar ? `${BASE_URL}${oppInfo.avatar}` : '/default-avatar.png'}
+                    <SafeAvatar
+                      src={oppInfo.avatar ? `${BASE_URL}${oppInfo.avatar}` : null}
+                      name={oppInfo.name}
                       className={styles.pbAvatar}
-                      alt={oppInfo.name}
+                      size={40}
                     />
                     {getFrameImage(oppInfo.frame) && (
                       <img
@@ -866,10 +903,11 @@ const OnlineChess = () => {
                 {/* Я (снизу) */}
                 <div className={`${styles.playerBar} ${isMyTurn ? styles.playerBarActive : ''}`}>
                   <div className={styles.pbAvatarWrap}>
-                    <img
-                      src={myInfo.avatar ? `${BASE_URL}${myInfo.avatar}` : '/default-avatar.png'}
+                    <SafeAvatar
+                      src={myInfo.avatar ? `${BASE_URL}${myInfo.avatar}` : null}
+                      name={myInfo.name}
                       className={styles.pbAvatar}
-                      alt={myInfo.name}
+                      size={40}
                     />
                     {getFrameImage(myInfo.frame) && (
                       <img
