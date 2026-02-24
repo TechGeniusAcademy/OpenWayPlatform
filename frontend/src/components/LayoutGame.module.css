@@ -3,7 +3,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+  background: var(--bg-main);
   padding: 20px;
   overflow: hidden;
 }
@@ -20,23 +20,23 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-color);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .backBtn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--card-bg-alt);
 }
 
 .title {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #fff;
+  color: var(--text-color);
   font-size: 1.8rem;
   margin: 0;
 }
@@ -48,7 +48,7 @@
 .stats {
   display: flex;
   gap: 20px;
-  color: #a0aec0;
+  color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
@@ -84,7 +84,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #fff;
+  color: var(--text-color);
   font-size: 1.75rem;
   font-weight: 800;
   margin: 0 0 4px;
@@ -94,7 +94,7 @@
 .lvlTitle svg { color: #10b981; }
 
 .lvlSubtitle {
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   margin: 0;
 }
@@ -110,8 +110,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.10);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 10px 16px;
 }
@@ -124,19 +124,19 @@
 .lvlStatVal {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-color);
   line-height: 1;
 }
 
 .lvlStatVal span {
   font-size: 0.85rem;
   font-weight: 400;
-  color: #718096;
+  color: var(--text-secondary);
 }
 
 .lvlStatLbl {
   font-size: 0.72rem;
-  color: #718096;
+  color: var(--text-secondary);
   margin-top: 2px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -152,7 +152,7 @@
 .lvlProgressTrack {
   flex: 1;
   height: 6px;
-  background: rgba(255,255,255,0.08);
+  background: var(--border-color);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -187,19 +187,19 @@
   justify-content: space-between;
   margin-bottom: 14px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .lvlGroupLabel {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--text-color);
   letter-spacing: 0.02em;
 }
 
 .lvlGroupCount {
   font-size: 0.8rem;
-  color: #718096;
+  color: var(--text-secondary);
 }
 
 /* Levels Grid */
@@ -210,8 +210,8 @@
 }
 
 .levelCard {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 18px 18px 14px;
   cursor: pointer;
@@ -224,10 +224,10 @@
 }
 
 .levelCard:hover {
-  background: rgba(255,255,255,0.08);
+  background: var(--card-bg-alt);
   transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-  border-color: rgba(255,255,255,0.16);
+  box-shadow: var(--card-shadow-hover);
+  border-color: var(--accent-soft);
 }
 
 .levelCard.completed {
@@ -255,7 +255,7 @@
   left: 0;
   width: 3px;
   height: 100%;
-  background: rgba(255,255,255,0.1);
+  background: var(--border-color);
   border-radius: 14px 0 0 14px;
 }
 
@@ -272,7 +272,7 @@
 
 .lockOverlay svg {
   font-size: 1.5rem;
-  color: #718096;
+  color: var(--text-secondary);
 }
 
 .lvlCardTop {
@@ -298,7 +298,7 @@
 }
 
 .levelCard.locked .levelIcon {
-  background: rgba(255,255,255,0.08);
+  background: var(--card-bg-alt);
 }
 
 .levelIcon svg {
@@ -310,8 +310,8 @@
   position: absolute;
   bottom: -5px;
   right: -5px;
-  background: #0f0f23;
-  color: #fff;
+  background: var(--card-bg);
+  color: var(--text-color);
   font-size: 0.68rem;
   font-weight: 700;
   width: 18px;
@@ -348,7 +348,7 @@
 }
 
 .levelInfo h3 {
-  color: #e2e8f0;
+  color: var(--text-color);
   margin: 0 0 5px;
   font-size: 1rem;
   font-weight: 600;
@@ -356,7 +356,7 @@
 }
 
 .levelInfo p {
-  color: #718096;
+  color: var(--text-secondary);
   margin: 0 0 10px;
   font-size: 0.8rem;
   line-height: 1.4;
@@ -385,7 +385,7 @@
 }
 
 .lvlSize {
-  color: #4a5568;
+  color: var(--text-secondary);
   font-size: 0.72rem;
 }
 
@@ -394,13 +394,13 @@
   align-items: center;
   gap: 6px;
   font-size: 0.78rem;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-weight: 500;
   transition: color 0.2s;
 }
 
 .levelCard:hover .lvlPlayHint {
-  color: #a0aec0;
+  color: var(--text-color);
 }
 
 /* Кнопка справки Emmet */
@@ -432,17 +432,17 @@
   align-items: center;
   justify-content: center;
   padding: 60px;
-  color: #a0aec0;
+  color: var(--text-secondary);
 }
 
 .emptyIcon {
   font-size: 4rem;
-  color: #4a5568;
+  color: var(--border-color);
   margin-bottom: 20px;
 }
 
 .emptyHint {
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
