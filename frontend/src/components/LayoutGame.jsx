@@ -1793,28 +1793,62 @@ function LayoutGame({ onBack }) {
 
   // Экран выбора уровней
   if (!selectedLevel) {
+    // Группируем по сложности
+    const diffLabels = [
+      '', '⭐ Легко', '⭐⭐ Средне', '⭐⭐⭐ Сложно', '⭐⭐⭐⭐ Очень сложно', '⭐⭐⭐⭐⭐ Эксперт'
+    ];
+    const groups = [1, 2, 3, 4, 5]
+      .map(d => ({ diff: d, items: levels.filter(l => l.difficulty === d) }))
+      .filter(g => g.items.length > 0);
+
+    const completedCount = levels.filter(l => l.completed).length;
+    const pct = levels.length ? Math.round(completedCount / levels.length * 100) : 0;
+
     return (
       <div className={styles.container}>
-        <div className={styles.header}>
-          <button onClick={onBack} className={styles.backBtn}>
-            <FaArrowLeft /> Назад
-          </button>
-          <h1 className={styles.title}>
-            <FaCode /> Верстка
-          </h1>
-          {stats && (
-            <div className={styles.stats}>
-              <span><FaTrophy /> {stats.completed_levels}/{stats.total_levels}</span>
-              <span><BsLightningChargeFill /> {parseFloat(stats.average_accuracy).toFixed(1)}%</span>
+        {/* Hero-шапка */}
+        <div className={styles.lvlHero}>
+          <div className={styles.lvlHeroLeft}>
+            <button onClick={onBack} className={styles.backBtn}>
+              <FaArrowLeft /> Назад
+            </button>
+            <div>
+              <h1 className={styles.lvlTitle}><FaCode /> Верстка</h1>
+              <p className={styles.lvlSubtitle}>Воссоздавай HTML/CSS макеты и прокачивай навыки вёрстки</p>
             </div>
-          )}
-          <button 
-            className={styles.emmetHelpBtn}
-            onClick={() => setShowEmmetHelp(true)}
-          >
-            <FaQuestionCircle /> Справка Emmet
-          </button>
+          </div>
+          <div className={styles.lvlHeroRight}>
+            <div className={styles.lvlStatCard}>
+              <FaTrophy className={styles.lvlStatIcon} style={{color:'#fbbf24'}} />
+              <div>
+                <div className={styles.lvlStatVal}>{completedCount}<span>/{levels.length}</span></div>
+                <div className={styles.lvlStatLbl}>Пройдено</div>
+              </div>
+            </div>
+            {stats && (
+              <div className={styles.lvlStatCard}>
+                <BsLightningChargeFill className={styles.lvlStatIcon} style={{color:'#10b981'}} />
+                <div>
+                  <div className={styles.lvlStatVal}>{parseFloat(stats.average_accuracy).toFixed(1)}<span>%</span></div>
+                  <div className={styles.lvlStatLbl}>Средняя точность</div>
+                </div>
+              </div>
+            )}
+            <button className={styles.emmetHelpBtn} onClick={() => setShowEmmetHelp(true)}>
+              <FaQuestionCircle /> Emmet
+            </button>
+          </div>
         </div>
+
+        {/* Общий прогресс-бар */}
+        {levels.length > 0 && (
+          <div className={styles.lvlProgress}>
+            <div className={styles.lvlProgressTrack}>
+              <div className={styles.lvlProgressFill} style={{width:`${pct}%`}} />
+            </div>
+            <span className={styles.lvlProgressPct}>{pct}%</span>
+          </div>
+        )}
 
         {loading ? (
           <div className={styles.loading}>Загрузка уровней...</div>
@@ -1825,51 +1859,70 @@ function LayoutGame({ onBack }) {
             <p className={styles.emptyHint}>Администратор скоро добавит новые задания</p>
           </div>
         ) : (
-          <div className={styles.levelsGrid}>
-            {levels.map((level, index) => {
-              // Теперь completed уже boolean после нормализации в loadLevels
-              const prevCompleted = index === 0 || levels[index - 1].completed;
-              const isLocked = !prevCompleted;
-              
+          <div className={styles.lvlGroups}>
+            {groups.map(({ diff, items }) => {
+              // глобальный индекс первого элемента группы
+              const groupStartIdx = levels.indexOf(items[0]);
               return (
-                <div 
-                  key={level.id}
-                  className={`${styles.levelCard} ${level.completed ? styles.completed : ''} ${isLocked ? styles.locked : ''}`}
-                  onClick={() => !isLocked && selectLevel(level)}
-                >
-                  {isLocked && (
-                    <div className={styles.lockOverlay}>
-                      <FaLock />
-                    </div>
-                  )}
-                  
-                  <div className={styles.levelIcon}>
-                    <FaCode />
-                    <span className={styles.levelNumber}>{index + 1}</span>
+                <div key={diff} className={styles.lvlGroup}>
+                  <div className={styles.lvlGroupHeader}>
+                    <span className={styles.lvlGroupLabel}>{diffLabels[diff]}</span>
+                    <span className={styles.lvlGroupCount}>
+                      {items.filter(l => l.completed).length}/{items.length}
+                    </span>
                   </div>
-                  
-                  <div className={styles.levelInfo}>
-                    <h3>{level.title}</h3>
-                    <p>{level.description}</p>
-                    
-                    <div className={styles.levelMeta}>
-                      <span className={styles.difficulty}>
-                        {Array(level.difficulty).fill('⭐').join('')}
-                      </span>
-                      <span className={styles.points}>+{level.points_reward} очков</span>
-                    </div>
-                    
-                    {level.completed && (
-                      <div className={styles.completedBadge}>
-                        <FaCheck /> {parseFloat(level.best_accuracy).toFixed(1)}%
-                      </div>
-                    )}
-                    
-                    {level.attempts > 0 && !level.completed && (
-                      <div className={styles.attemptsBadge}>
-                        Попыток: {level.attempts}
-                      </div>
-                    )}
+                  <div className={styles.levelsGrid}>
+                    {items.map((level) => {
+                      const globalIdx = levels.indexOf(level);
+                      const prevCompleted = globalIdx === 0 || levels[globalIdx - 1].completed;
+                      const isLocked = !prevCompleted;
+                      return (
+                        <div
+                          key={level.id}
+                          className={`${styles.levelCard} ${level.completed ? styles.completed : ''} ${isLocked ? styles.locked : ''}`}
+                          onClick={() => !isLocked && selectLevel(level)}
+                        >
+                          {/* Полоска состояния слева */}
+                          <div className={styles.lvlCardAccent} />
+
+                          {isLocked && (
+                            <div className={styles.lockOverlay}><FaLock /></div>
+                          )}
+
+                          <div className={styles.lvlCardTop}>
+                            <div className={styles.levelIcon}>
+                              {level.completed ? <FaCheck /> : isLocked ? <FaLock /> : <FaCode />}
+                              <span className={styles.levelNumber}>{globalIdx + 1}</span>
+                            </div>
+                            {level.completed && (
+                              <div className={styles.lvlAccBadge}>
+                                {parseFloat(level.best_accuracy).toFixed(1)}%
+                              </div>
+                            )}
+                            {level.attempts > 0 && !level.completed && (
+                              <div className={styles.lvlAttBadge}>{level.attempts} попыток</div>
+                            )}
+                          </div>
+
+                          <div className={styles.levelInfo}>
+                            <h3>{level.title}</h3>
+                            {level.description && <p>{level.description}</p>}
+                            <div className={styles.levelMeta}>
+                              <span className={styles.difficulty}>{Array(level.difficulty).fill('⭐').join('')}</span>
+                              <span className={styles.points}>+{level.points_reward} XP</span>
+                              <span className={styles.lvlSize}>{level.canvas_width}×{level.canvas_height}</span>
+                            </div>
+                          </div>
+
+                          {!isLocked && !level.completed && (
+                            <div className={styles.lvlPlayHint}><FaPlay /> Начать</div>
+                          )}
+                          {level.completed && (
+                            <div className={styles.lvlPlayHint} style={{color:'#10b981'}}><FaPlay /> Улучшить</div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
