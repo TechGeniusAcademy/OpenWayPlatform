@@ -257,7 +257,6 @@ function PointsHistory({ isOpen, onClose, userId = null }) {
                   <div
                     key={item.id}
                     className={`${styles.item} ${isPos ? styles.itemPos : styles.itemNeg}`}
-                    title={formatAbsDate(item.created_at)}
                   >
                     <div
                       className={styles.itemIconBox}
@@ -280,7 +279,7 @@ function PointsHistory({ isOpen, onClose, userId = null }) {
                             {item.admin_name || item.admin_username || 'Admin'}
                           </span>
                         )}
-                        <span className={styles.itemDate}>{formatRelDate(item.created_at)}</span>
+                        <span className={styles.itemDate} data-date={formatAbsDate(item.created_at)}>{formatRelDate(item.created_at)}</span>
                       </div>
                     </div>
                     <div className={`${styles.itemAmount} ${isPos ? styles.amountPos : styles.amountNeg}`}>
