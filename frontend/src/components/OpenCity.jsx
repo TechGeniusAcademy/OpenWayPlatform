@@ -225,11 +225,11 @@ function RTSCamera({ camTargetRef, camStateRef, keysRef, inputRef }) {
       if (my > H - CAM_EDGE_SIZE)  { target.x -= forward.x * eSpeed; target.z -= forward.z * eSpeed; }
     }
 
-    // ── Middle-mouse drag pan ──
+    // ── Middle-mouse / LMB drag pan ──
     if (inp.middleDrag) {
       const dragSpeed = state.zoom * 0.0018;
-      target.x -= (inp.dragDeltaX * right.x + inp.dragDeltaY * forward.x) * dragSpeed;
-      target.z -= (inp.dragDeltaX * right.z + inp.dragDeltaY * forward.z) * dragSpeed;
+      target.x += (inp.dragDeltaX * right.x + inp.dragDeltaY * forward.x) * dragSpeed;
+      target.z += (inp.dragDeltaX * right.z + inp.dragDeltaY * forward.z) * dragSpeed;
       inp.dragDeltaX = 0;
       inp.dragDeltaY = 0;
     }
@@ -237,7 +237,7 @@ function RTSCamera({ camTargetRef, camStateRef, keysRef, inputRef }) {
     // ── Zoom from wheel ──
     if (inp.wheelDelta !== 0) {
       state.zoom = THREE.MathUtils.clamp(
-        state.zoom - inp.wheelDelta * CAM_ZOOM_STEP,
+        state.zoom + inp.wheelDelta * CAM_ZOOM_STEP,
         CAM_ZOOM_MIN, CAM_ZOOM_MAX
       );
       inp.wheelDelta = 0;
@@ -321,7 +321,7 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onBack }) {
         <span><kbd>W A S D</kbd> панорама</span>
         <span><kbd>Q / E</kbd> поворот</span>
         <span><kbd>↕ Колесо</kbd> зум</span>
-        <span><kbd>ПКМ/СКМ</kbd> перетащить</span>
+        <span><kbd>ЛКМ/ПКМ</kbd> перетащить</span>
         <span><kbd>ЛКМ</kbd> выделить объект</span>
         <span><kbd>Esc</kbd> сбросить выбор</span>
       </div>
@@ -424,6 +424,9 @@ export default function OpenCity({ onBack }) {
     const onDown = (e) => {
       if (e.button === 0) {
         lmbHeldRef.current = true;
+        inputRef.current.middleDrag = true;
+        inputRef.current.lastMX = e.clientX;
+        inputRef.current.lastMY = e.clientY;
       }
       if (e.button === 1 || e.button === 2) {
         inputRef.current.middleDrag = true;
@@ -433,7 +436,10 @@ export default function OpenCity({ onBack }) {
       }
     };
     const onUp = (e) => {
-      if (e.button === 0) lmbHeldRef.current = false;
+      if (e.button === 0) {
+        lmbHeldRef.current = false;
+        inputRef.current.middleDrag = false;
+      }
       if (e.button === 1 || e.button === 2)
         inputRef.current.middleDrag = false;
     };
