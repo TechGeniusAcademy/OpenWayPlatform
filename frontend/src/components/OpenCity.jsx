@@ -534,7 +534,7 @@ export default function OpenCity({ onBack }) {
         <Canvas
           shadows
           gl={{ antialias: true, powerPreference: 'high-performance' }}
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: '100%', height: '100%', position: 'relative', zIndex: 0 }}
         >
           <Scene
             camTargetRef={camTargetRef}
