@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo, useCallback, createContext, useContext, Suspense } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback, createContext, useContext, Suspense, Component } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sky, Stars, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -290,14 +290,80 @@ function Lighting() {
   );
 }
 
-// ─── Solar Panel — placement preview (follows mouse, glows) ─────────────────
+// ─── Model error boundary ────────────────────────────────────────────────────
 
-function SolarPanelPreview({ placementPosRef, inputRef }) {
-  const { scene } = useGLTF('/models/solar%20panel.glb');
+class ModelErrorBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+// ─── Shared placement mouse tracker (raycast to ground) ──────────────────────
+
+function usePlacementTracker(placementPosRef, inputRef) {
   const { camera, gl, raycaster } = useThree();
   const groupRef    = useRef();
   const groundPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
   const hitPoint    = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(() => {
+    const inp = inputRef.current;
+    if (inp.mouseX === null || !groupRef.current) return;
+    const ndc = new THREE.Vector2(
+      (inp.mouseX / gl.domElement.clientWidth)  *  2 - 1,
+     -(inp.mouseY / gl.domElement.clientHeight) *  2 + 1,
+    );
+    raycaster.setFromCamera(ndc, camera);
+    if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
+      groupRef.current.position.set(hitPoint.x, 0, hitPoint.z);
+      placementPosRef.current = { x: hitPoint.x, y: 0, z: hitPoint.z };
+    }
+  });
+  return groupRef;
+}
+
+// ─── Box glowing placeholder (used when GLB is missing) ─────────────────────
+
+function GlowBoxPreview({ placementPosRef, inputRef }) {
+  const groupRef = usePlacementTracker(placementPosRef, inputRef);
+  const matRef   = useRef();
+  useFrame(({ clock }) => {
+    if (matRef.current)
+      matRef.current.emissiveIntensity = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+  });
+  return (
+    <group ref={groupRef}>
+      <mesh castShadow position={[0, 0.5, 0]}>
+        <boxGeometry args={[2, 1, 3]} />
+        <meshStandardMaterial
+          ref={matRef}
+          color="#0a6ebd"
+          emissive={new THREE.Color(0x00aaff)}
+          emissiveIntensity={0.8}
+          transparent
+          opacity={0.82}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function GlowBoxPlaced({ position }) {
+  return (
+    <mesh castShadow position={[position[0], position[1] + 0.5, position[2]]}>
+      <boxGeometry args={[2, 1, 3]} />
+      <meshStandardMaterial color="#0a6ebd" emissive={new THREE.Color(0x003366)} emissiveIntensity={0.3} />
+    </mesh>
+  );
+}
+
+// ─── Solar Panel — GLB inner components (may throw if file missing) ──────────
+
+function SolarPanelGLTFPreview({ placementPosRef, inputRef }) {
+  const { scene } = useGLTF('/models/solar%20panel.glb');
+  const groupRef  = usePlacementTracker(placementPosRef, inputRef);
 
   const glowScene = useMemo(() => {
     const c = scene.clone(true);
@@ -314,18 +380,6 @@ function SolarPanelPreview({ placementPosRef, inputRef }) {
   }, [scene]);
 
   useFrame(({ clock }) => {
-    const inp = inputRef.current;
-    if (inp.mouseX === null || !groupRef.current) return;
-    const ndc = new THREE.Vector2(
-      (inp.mouseX / gl.domElement.clientWidth)  *  2 - 1,
-     -(inp.mouseY / gl.domElement.clientHeight) *  2 + 1
-    );
-    raycaster.setFromCamera(ndc, camera);
-    if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
-      groupRef.current.position.set(hitPoint.x, 0, hitPoint.z);
-      placementPosRef.current = { x: hitPoint.x, y: 0, z: hitPoint.z };
-    }
-    // Pulse glow
     const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
     glowScene.traverse(child => {
       if (child.isMesh) child.material.emissiveIntensity = pulse;
@@ -335,12 +389,32 @@ function SolarPanelPreview({ placementPosRef, inputRef }) {
   return <primitive ref={groupRef} object={glowScene} />;
 }
 
-// ─── Solar Panel — permanently placed instance ───────────────────────
-
-function SolarPanelPlaced({ position }) {
+function SolarPanelGLTFPlaced({ position }) {
   const { scene } = useGLTF('/models/solar%20panel.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
   return <primitive object={cloned} position={position} />;
+}
+
+// ─── Solar Panel — public components with error boundary + Suspense ──────────
+
+function SolarPanelPreview({ placementPosRef, inputRef }) {
+  return (
+    <ModelErrorBoundary fallback={<GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} />}>
+      <Suspense fallback={<GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} />}>
+        <SolarPanelGLTFPreview placementPosRef={placementPosRef} inputRef={inputRef} />
+      </Suspense>
+    </ModelErrorBoundary>
+  );
+}
+
+function SolarPanelPlaced({ position }) {
+  return (
+    <ModelErrorBoundary fallback={<GlowBoxPlaced position={position} />}>
+      <Suspense fallback={<GlowBoxPlaced position={position} />}>
+        <SolarPanelGLTFPlaced position={position} />
+      </Suspense>
+    </ModelErrorBoundary>
+  );
 }
 
 // ─── Shop Modal ─────────────────────────────────────────────────────────────
@@ -445,13 +519,11 @@ function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, plac
         inputRef={inputRef}
       />
       {placingItem === 'solar-panel' && (
-        <Suspense fallback={null}>
-          <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} />
-        </Suspense>
+        <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} />
       )}
       {placedItems.map(item =>
         item.type === 'solar-panel'
-          ? <Suspense key={item.id} fallback={null}><SolarPanelPlaced position={item.position} /></Suspense>
+          ? <SolarPanelPlaced key={item.id} position={item.position} />
           : null
       )}
     </>
