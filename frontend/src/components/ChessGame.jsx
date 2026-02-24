@@ -3,156 +3,24 @@ import { Chess } from 'chess.js';
 import ChessBoard from './ChessBoard';
 import styles from './ChessGame.module.css';
 
-// ═══════════════════════════════════════════════════════════════
-//  AI ENGINE — Minimax + Alpha-Beta + Piece-Square Tables
-//  Рейтинг: Easy ~900, Medium ~1300, Hard ~1600, Expert ~1800
-// ═══════════════════════════════════════════════════════════════
-
-const PIECE_VALUE = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
-
-const PST = {
-  p: [
-     0,  0,  0,  0,  0,  0,  0,  0,
-    50, 50, 50, 50, 50, 50, 50, 50,
-    10, 10, 20, 30, 30, 20, 10, 10,
-     5,  5, 10, 25, 25, 10,  5,  5,
-     0,  0,  0, 20, 20,  0,  0,  0,
-     5, -5,-10,  0,  0,-10, -5,  5,
-     5, 10, 10,-20,-20, 10, 10,  5,
-     0,  0,  0,  0,  0,  0,  0,  0,
-  ],
-  n: [
-    -50,-40,-30,-30,-30,-30,-40,-50,
-    -40,-20,  0,  0,  0,  0,-20,-40,
-    -30,  0, 10, 15, 15, 10,  0,-30,
-    -30,  5, 15, 20, 20, 15,  5,-30,
-    -30,  0, 15, 20, 20, 15,  0,-30,
-    -30,  5, 10, 15, 15, 10,  5,-30,
-    -40,-20,  0,  5,  5,  0,-20,-40,
-    -50,-40,-30,-30,-30,-30,-40,-50,
-  ],
-  b: [
-    -20,-10,-10,-10,-10,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0,  5, 10, 10,  5,  0,-10,
-    -10,  5,  5, 10, 10,  5,  5,-10,
-    -10,  0, 10, 10, 10, 10,  0,-10,
-    -10, 10, 10, 10, 10, 10, 10,-10,
-    -10,  5,  0,  0,  0,  0,  5,-10,
-    -20,-10,-10,-10,-10,-10,-10,-20,
-  ],
-  r: [
-     0,  0,  0,  0,  0,  0,  0,  0,
-     5, 10, 10, 10, 10, 10, 10,  5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-     0,  0,  0,  5,  5,  0,  0,  0,
-  ],
-  q: [
-    -20,-10,-10, -5, -5,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0,  5,  5,  5,  5,  0,-10,
-     -5,  0,  5,  5,  5,  5,  0, -5,
-      0,  0,  5,  5,  5,  5,  0, -5,
-    -10,  5,  5,  5,  5,  5,  0,-10,
-    -10,  0,  5,  0,  0,  0,  0,-10,
-    -20,-10,-10, -5, -5,-10,-10,-20,
-  ],
-  k: [
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -20,-30,-30,-40,-40,-30,-30,-20,
-    -10,-20,-20,-20,-20,-20,-20,-10,
-     20, 20,  0,  0,  0,  0, 20, 20,
-     20, 30, 10,  0,  0, 10, 30, 20,
-  ],
-};
-
-const FILES_ORDER = ['a','b','c','d','e','f','g','h'];
-
-function sqIdx(sq, color) {
-  const file = FILES_ORDER.indexOf(sq[0]);
-  const rank = 8 - parseInt(sq[1], 10);
-  const idx = rank * 8 + file;
-  return color === 'w' ? idx : 63 - idx;
-}
-
-function evalBoard(chess) {
-  if (chess.isCheckmate()) return chess.turn() === 'w' ? -99999 : 99999;
-  if (chess.isDraw() || chess.isStalemate()) return 0;
-  let score = 0;
-  for (const row of chess.board()) {
-    for (const cell of row) {
-      if (!cell) continue;
-      const pv = PIECE_VALUE[cell.type] || 0;
-      const ps = PST[cell.type] ? PST[cell.type][sqIdx(cell.square, cell.color)] : 0;
-      score += (cell.color === 'w' ? 1 : -1) * (pv + ps);
-    }
-  }
-  return score;
-}
-
-function orderMoves(moves) {
-  return moves.sort((a, b) => {
-    const aC = a.flags.includes('c') || a.flags.includes('e') ? 1 : 0;
-    const bC = b.flags.includes('c') || b.flags.includes('e') ? 1 : 0;
-    return bC - aC;
-  });
-}
-
-function minimax(chess, depth, alpha, beta, maximizing) {
-  if (depth === 0 || chess.isGameOver()) return evalBoard(chess);
-  const moves = orderMoves(chess.moves({ verbose: true }));
-  if (maximizing) {
-    let best = -Infinity;
-    for (const m of moves) {
-      chess.move(m);
-      best = Math.max(best, minimax(chess, depth - 1, alpha, beta, false));
-      chess.undo();
-      alpha = Math.max(alpha, best);
-      if (beta <= alpha) break;
-    }
-    return best;
-  } else {
-    let best = Infinity;
-    for (const m of moves) {
-      chess.move(m);
-      best = Math.min(best, minimax(chess, depth - 1, alpha, beta, true));
-      chess.undo();
-      beta = Math.min(beta, best);
-      if (beta <= alpha) break;
-    }
-    return best;
-  }
-}
-
-function getBestMoveSync(fen, depth) {
-  const chess = new Chess(fen);
-  const moves = orderMoves(chess.moves({ verbose: true }));
+// ─── Easy move helper (synchronous, fast) ─────────────────────
+// Picks a random move 60% of the time, otherwise takes any capture.
+function getEasyMove(chess) {
+  const moves = chess.moves({ verbose: true });
   if (!moves.length) return null;
-  const isBlack = chess.turn() === 'b';
-  let bestVal = isBlack ? Infinity : -Infinity;
-  let bestMove = moves[0];
-  for (const m of moves) {
-    chess.move(m);
-    const val = minimax(chess, depth - 1, -Infinity, Infinity, !isBlack);
-    chess.undo();
-    if (isBlack ? val < bestVal : val > bestVal) { bestVal = val; bestMove = m; }
-  }
-  return bestMove;
+  if (Math.random() < 0.6) return moves[Math.floor(Math.random() * moves.length)];
+  const caps = moves.filter(m => m.captured);
+  return caps.length ? caps[Math.floor(Math.random() * caps.length)] : moves[Math.floor(Math.random() * moves.length)];
 }
 
 // ─── DIFFICULTIES ─────────────────────────────────────────────
+// maxDepth — iterative-deepening safety cap (worker stops early via timeLimit)
+// timeLimit — milliseconds the worker is allowed to think
 const DIFFICULTIES = [
-  { id: 'easy',   label: 'Новичок',    depth: 1, emoji: '🟢', desc: '~900 ELO — учится играть' },
-  { id: 'medium', label: 'Любитель',   depth: 3, emoji: '🟡', desc: '~1300 ELO — думает на 3 хода' },
-  { id: 'hard',   label: 'Мастер',     depth: 4, emoji: '🔴', desc: '~1600 ELO — сильная игра' },
-  { id: 'expert', label: 'ИИ-Эксперт',depth: 5, emoji: '💜', desc: '~1800 ELO — почти непобедим' },
+  { id: 'easy',   label: 'Новичок',    maxDepth: 0,  timeLimit: 0,    emoji: '🟢', desc: '~900 ELO — случайные ходы' },
+  { id: 'medium', label: 'Любитель',   maxDepth: 6,  timeLimit: 800,  emoji: '🟡', desc: '~1400 ELO — думает до 0.8 с' },
+  { id: 'hard',   label: 'Мастер',     maxDepth: 8,  timeLimit: 2000, emoji: '🔴', desc: '~1700 ELO — думает до 2 с' },
+  { id: 'expert', label: 'ИИ-Эксперт', maxDepth: 10, timeLimit: 4000, emoji: '💜', desc: '~2000 ELO — думает до 4 с' },
 ];
 
 const PIECE_ICON   = { p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚' };
@@ -230,43 +98,66 @@ export default function ChessGame() {
     return false;
   }, []);
 
-  const makeAIMove = useCallback((currentGame) => {
-    const diff = DIFFICULTIES.find(d=>d.id===difficulty)||DIFFICULTIES[1];
-    setThinking(true);
-    let dots=0;
+  const applyMove = useCallback((move, currentFen) => {
     clearInterval(dotsTimer.current);
-    dotsTimer.current = setInterval(()=>{ dots=(dots+1)%4; setThinkingDots(dots); }, 400);
+    if (!move) { setThinking(false); return; }
+    const ng = new Chess(currentFen);
+    try { ng.move(move); } catch { setThinking(false); return; }
+    setLastMove({ from: move.from, to: move.to });
+    updateCaptures(ng);
+    setGame(ng);
+    setThinking(false);
+    checkOver(ng);
+  }, [updateCaptures, checkOver]);
 
-    // Delay so UI updates first
-    setTimeout(() => {
-      try {
-        let move;
-        if (diff.id === 'easy') {
-          const moves = currentGame.moves({ verbose:true });
-          move = Math.random()<0.65
-            ? moves[Math.floor(Math.random()*moves.length)]
-            : getBestMoveSync(currentGame.fen(), 1);
-        } else {
-          move = getBestMoveSync(currentGame.fen(), diff.depth);
-        }
+  const makeAIMove = useCallback((currentGame) => {
+    const diff = DIFFICULTIES.find(d => d.id === difficulty) || DIFFICULTIES[1];
+    setThinking(true);
+    let dots = 0;
+    clearInterval(dotsTimer.current);
+    dotsTimer.current = setInterval(() => { dots = (dots + 1) % 4; setThinkingDots(dots); }, 400);
 
-        clearInterval(dotsTimer.current);
-        if (!move) { setThinking(false); return; }
+    const fen = currentGame.fen();
 
-        const ng = new Chess(currentGame.fen());
-        ng.move(move);
-        setLastMove({ from: move.from, to: move.to });
-        updateCaptures(ng);
-        setGame(ng);
+    // Easy: instant random move, no worker needed
+    if (diff.id === 'easy') {
+      setTimeout(() => {
+        const move = getEasyMove(currentGame);
+        applyMove(move, fen);
+      }, 250 + Math.random() * 150);
+      return;
+    }
+
+    // Medium/Hard/Expert: Web Worker with iterative deepening
+    workerRef.current?.terminate();
+    const worker = new Worker(
+      new URL('../workers/chessWorker.js', import.meta.url),
+      { type: 'module' }
+    );
+    workerRef.current = worker;
+
+    worker.onmessage = (e) => {
+      worker.terminate();
+      workerRef.current = null;
+      if (e.data.error) {
+        console.error('Chess worker error:', e.data.error);
         setThinking(false);
-        checkOver(ng);
-      } catch(err) {
-        console.error('AI error:', err);
         clearInterval(dotsTimer.current);
-        setThinking(false);
+        return;
       }
-    }, diff.depth >= 4 ? 50 : 80);
-  }, [difficulty, updateCaptures, checkOver]);
+      applyMove(e.data.move, fen);
+    };
+
+    worker.onerror = (err) => {
+      console.error('Chess worker crashed:', err);
+      worker.terminate();
+      workerRef.current = null;
+      setThinking(false);
+      clearInterval(dotsTimer.current);
+    };
+
+    worker.postMessage({ fen, maxDepth: diff.maxDepth, timeLimit: diff.timeLimit });
+  }, [difficulty, applyMove]);
 
   const startGame = () => {
     const ng = new Chess();
