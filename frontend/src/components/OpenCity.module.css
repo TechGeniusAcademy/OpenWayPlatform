@@ -432,6 +432,37 @@
   margin: 0 2px;
 }
 
+/* ── Energy panel (below game clock, top-right) ── */
+.energyPanel {
+  position: absolute;
+  top: 62px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.energyRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.energyRow strong {
+  margin-left: auto;
+  padding-left: 8px;
+}
+
 /* ── Game clock (top-right) ── */
 .gameClock {
   position: absolute;

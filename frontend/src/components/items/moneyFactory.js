@@ -1,6 +1,7 @@
 // ─── Money Factory — item config ─────────────────────────────────────────────
 // Visual work-area zone: shown when building is selected.
 // Collision footprint: edit ITEM_FOOTPRINTS['money-factory'] in collision.js
+import { registerProducer } from '../systems/energy.js';
 
 export const MONEY_FACTORY_CONFIG = {
   /** Visible work-area zone shown when the building is selected */
@@ -11,4 +12,14 @@ export const MONEY_FACTORY_CONFIG = {
     opacity: 0.14,      // fill transparency (0 = invisible, 1 = solid)
     label:   'Зона производства',
   },
+  /** Height of the floating energy badge above ground (world units) */
+  badgeHeight: 9,
 };
+
+// ─── Energy production ──────────────────────────────────────────────
+registerProducer('money-factory', [
+  {
+    type:        'fuel',
+    ratePerHour: 5,   // л в игровой час, без условий (24/7)
+  },
+]);

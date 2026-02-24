@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useMemo, useCallback, createContext, useContext, Suspense, Component } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Sky, Stars, useGLTF } from '@react-three/drei';
+import { Sky, Stars, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import styles from './OpenCity.module.css';
 import { SOLAR_PANEL_CONFIG }   from './items/solarPanel.js';
@@ -15,6 +15,11 @@ import {
   formatGameTime,
   getDayPeriodIcon,
 } from './systems/dayNight.js';
+import {
+  ENERGY_TYPES,
+  getProductions,
+  calcEnergyTotals,
+} from './systems/energy.js';
 
 // ─── Context (avoids prop drilling into Building) ────────────────────────────
 const CityContext = createContext(null);
@@ -446,6 +451,48 @@ function GlowBoxPlaced({ position, rotation }) {
   );
 }
 
+// ─── Floating energy badge (shown above producing buildings) ─────────────────
+
+function EnergyBadge({ itemType, badgeHeight = 6 }) {
+  const prods = getProductions(itemType);
+  if (!prods.length) return null;
+
+  const lines = prods.map(p => {
+    const meta = ENERGY_TYPES[p.type];
+    return `${meta?.icon ?? '⚡'} ${p.ratePerHour}${meta?.unit ?? ''}/ч`;
+  });
+
+  return (
+    <Html
+      position={[0, badgeHeight, 0]}
+      center
+      distanceFactor={35}
+      zIndexRange={[10, 11]}
+      style={{ pointerEvents: 'none' }}
+    >
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+        pointerEvents: 'none',
+      }}>
+        {lines.map((line, i) => (
+          <div key={i} style={{
+            background: 'rgba(0,0,0,0.72)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 8,
+            padding: '2px 8px',
+            fontSize: 12,
+            fontFamily: 'monospace',
+            fontWeight: 700,
+            color: '#fde047',
+            whiteSpace: 'nowrap',
+            userSelect: 'none',
+          }}>{line}</div>
+        ))}
+      </div>
+    </Html>
+  );
+}
+
 // ─── Work-area zone overlay (shown when a placed item is selected) ───────────
 
 function WorkAreaOverlay({ width, depth, color, opacity }) {
@@ -536,6 +583,7 @@ function SolarPanelGLTFPlaced({ position, rotation, isSelected, onSelect }) {
         position={[0, SOLAR_PANEL_Y, 0]}
         rotation={[SOLAR_PANEL_TILT_X, rotation || 0, SOLAR_PANEL_TILT_Z]}
       />
+      <EnergyBadge itemType="solar-panel" badgeHeight={SOLAR_PANEL_CONFIG.badgeHeight} />
       {isSelected && (
         <WorkAreaOverlay
           width={workArea.width}
@@ -623,6 +671,7 @@ function MoneyFactoryGLTFPlaced({ position, rotation, isSelected, onSelect }) {
         position={[0, MONEY_FACTORY_Y, 0]}
         rotation={[MONEY_FACTORY_TILT_X, rotation || 0, MONEY_FACTORY_TILT_Z]}
       />
+      <EnergyBadge itemType="money-factory" badgeHeight={MONEY_FACTORY_CONFIG.badgeHeight} />
       {isSelected && (
         <WorkAreaOverlay
           width={workArea.width}
@@ -725,7 +774,7 @@ function ShopModal({ onClose, onBuy }) {
 
 // ─── HUD ─────────────────────────────────────────────────────────────────────
 
-function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString }) {
+function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals }) {
   return (
     <>
       <div className={styles.coords}>
@@ -735,6 +784,20 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placi
       {timeString && (
         <div className={styles.gameClock}>
           {getDayPeriodIcon(parseInt(timeString, 10))} {timeString}
+        </div>
+      )}
+      {energyTotals && Object.keys(energyTotals).length > 0 && (
+        <div className={styles.energyPanel}>
+          {Object.entries(energyTotals).map(([type, val]) => {
+            const meta = ENERGY_TYPES[type];
+            return (
+              <div key={type} className={styles.energyRow} style={{ color: meta?.color ?? '#fff' }}>
+                <span>{meta?.icon ?? '⚡'}</span>
+                <span>{meta?.label ?? type}</span>
+                <strong>{val} {meta?.unit ?? ''}/ч</strong>
+              </div>
+            );
+          })}
         </div>
       )}
       {placingItem && (
@@ -836,6 +899,20 @@ export default function OpenCity({ onBack }) {
   // Update HUD clock every game-minute (= 5 real seconds)
   useEffect(() => {
     const id = setInterval(() => setTimeString(formatGameTime(gameTimeRef.current)), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Energy totals — recalculate whenever placedItems changes
+  const [energyTotals, setEnergyTotals] = useState({});
+  useEffect(() => {
+    setEnergyTotals(calcEnergyTotals(placedItems, gameTimeRef.current));
+  }, [placedItems]);
+  // Also refresh every game-minute (day/night may change active production)
+  useEffect(() => {
+    const id = setInterval(
+      () => setEnergyTotals(calcEnergyTotals(placedItemsRef.current, gameTimeRef.current)),
+      5000,
+    );
     return () => clearInterval(id);
   }, []);
 
@@ -1035,6 +1112,7 @@ export default function OpenCity({ onBack }) {
           onBack={onBack || (() => {})}
           placingItem={placingItem}
           timeString={timeString}
+          energyTotals={energyTotals}
         />
         {shopOpen && <ShopModal onClose={() => setShopOpen(false)} onBuy={startPlacing} />}
       </div>
