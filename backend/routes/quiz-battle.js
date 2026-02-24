@@ -288,12 +288,14 @@ router.post('/questions', authenticate, async (req, res) => {
     const { category_id, question, option_a, option_b, option_c, option_d, correct_option, difficulty } = req.body;
     
     const options = JSON.stringify([option_a, option_b, option_c, option_d]);
+    const optionMap = { a: option_a, b: option_b, c: option_c, d: option_d };
+    const correct_answer = optionMap[correct_option] || option_a;
     const result = await pool.query(
       `INSERT INTO game_questions 
-       (category_id, question, option_a, option_b, option_c, option_d, correct_option, difficulty, options) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+       (category_id, question, option_a, option_b, option_c, option_d, correct_option, correct_answer, difficulty, options) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
        RETURNING *`,
-      [category_id || null, question, option_a, option_b, option_c, option_d, correct_option, difficulty || 'medium', options]
+      [category_id || null, question, option_a, option_b, option_c, option_d, correct_option, correct_answer, difficulty || 'medium', options]
     );
     
     res.json(result.rows[0]);
@@ -310,13 +312,15 @@ router.put('/questions/:id', authenticate, async (req, res) => {
     const { category_id, question, option_a, option_b, option_c, option_d, correct_option, difficulty } = req.body;
     
     const options = JSON.stringify([option_a, option_b, option_c, option_d]);
+    const optionMap = { a: option_a, b: option_b, c: option_c, d: option_d };
+    const correct_answer = optionMap[correct_option] || option_a;
     const result = await pool.query(
       `UPDATE game_questions 
        SET category_id = $1, question = $2, option_a = $3, option_b = $4, 
-           option_c = $5, option_d = $6, correct_option = $7, difficulty = $8, options = $9
-       WHERE id = $10 
+           option_c = $5, option_d = $6, correct_option = $7, correct_answer = $8, difficulty = $9, options = $10
+       WHERE id = $11 
        RETURNING *`,
-      [category_id || null, question, option_a, option_b, option_c, option_d, correct_option, difficulty || 'medium', options, id]
+      [category_id || null, question, option_a, option_b, option_c, option_d, correct_option, correct_answer, difficulty || 'medium', options, id]
     );
     
     if (result.rows.length === 0) {
