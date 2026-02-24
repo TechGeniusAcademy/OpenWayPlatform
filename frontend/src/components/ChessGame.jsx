@@ -1,789 +1,485 @@
-import { useState, useEffect, useRef } from 'react';
-import { Chessboard } from 'react-chessboard';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess } from 'chess.js';
-import { FaTrophy, FaHandshake, FaExclamationTriangle, FaCircle, FaChess, FaRedo, FaHistory, FaBrain, FaRobot, FaCrown, FaBolt } from 'react-icons/fa';
-import { GiChessKing, GiChessQueen, GiChessRook, GiChessBishop, GiChessKnight, GiChessPawn, GiArtificialIntelligence } from 'react-icons/gi';
-import { IoMdSettings } from 'react-icons/io';
+import ChessBoard from './ChessBoard';
 import styles from './ChessGame.module.css';
 
-function ChessGame() {
-  const [game, setGame] = useState(new Chess());
-  const [position, setPosition] = useState(game.fen());
-  const [moveHistory, setMoveHistory] = useState([]);
-  const [selectedSquare, setSelectedSquare] = useState(null);
-  const [gameStatus, setGameStatus] = useState('');
+// ═══════════════════════════════════════════════════════════════
+//  AI ENGINE — Minimax + Alpha-Beta + Piece-Square Tables
+//  Рейтинг: Easy ~900, Medium ~1300, Hard ~1600, Expert ~1800
+// ═══════════════════════════════════════════════════════════════
+
+const PIECE_VALUE = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+
+const PST = {
+  p: [
+     0,  0,  0,  0,  0,  0,  0,  0,
+    50, 50, 50, 50, 50, 50, 50, 50,
+    10, 10, 20, 30, 30, 20, 10, 10,
+     5,  5, 10, 25, 25, 10,  5,  5,
+     0,  0,  0, 20, 20,  0,  0,  0,
+     5, -5,-10,  0,  0,-10, -5,  5,
+     5, 10, 10,-20,-20, 10, 10,  5,
+     0,  0,  0,  0,  0,  0,  0,  0,
+  ],
+  n: [
+    -50,-40,-30,-30,-30,-30,-40,-50,
+    -40,-20,  0,  0,  0,  0,-20,-40,
+    -30,  0, 10, 15, 15, 10,  0,-30,
+    -30,  5, 15, 20, 20, 15,  5,-30,
+    -30,  0, 15, 20, 20, 15,  0,-30,
+    -30,  5, 10, 15, 15, 10,  5,-30,
+    -40,-20,  0,  5,  5,  0,-20,-40,
+    -50,-40,-30,-30,-30,-30,-40,-50,
+  ],
+  b: [
+    -20,-10,-10,-10,-10,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5, 10, 10,  5,  0,-10,
+    -10,  5,  5, 10, 10,  5,  5,-10,
+    -10,  0, 10, 10, 10, 10,  0,-10,
+    -10, 10, 10, 10, 10, 10, 10,-10,
+    -10,  5,  0,  0,  0,  0,  5,-10,
+    -20,-10,-10,-10,-10,-10,-10,-20,
+  ],
+  r: [
+     0,  0,  0,  0,  0,  0,  0,  0,
+     5, 10, 10, 10, 10, 10, 10,  5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+     0,  0,  0,  5,  5,  0,  0,  0,
+  ],
+  q: [
+    -20,-10,-10, -5, -5,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5,  5,  5,  5,  0,-10,
+     -5,  0,  5,  5,  5,  5,  0, -5,
+      0,  0,  5,  5,  5,  5,  0, -5,
+    -10,  5,  5,  5,  5,  5,  0,-10,
+    -10,  0,  5,  0,  0,  0,  0,-10,
+    -20,-10,-10, -5, -5,-10,-10,-20,
+  ],
+  k: [
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -20,-30,-30,-40,-40,-30,-30,-20,
+    -10,-20,-20,-20,-20,-20,-20,-10,
+     20, 20,  0,  0,  0,  0, 20, 20,
+     20, 30, 10,  0,  0, 10, 30, 20,
+  ],
+};
+
+const FILES_ORDER = ['a','b','c','d','e','f','g','h'];
+
+function sqIdx(sq, color) {
+  const file = FILES_ORDER.indexOf(sq[0]);
+  const rank = 8 - parseInt(sq[1], 10);
+  const idx = rank * 8 + file;
+  return color === 'w' ? idx : 63 - idx;
+}
+
+function evalBoard(chess) {
+  if (chess.isCheckmate()) return chess.turn() === 'w' ? -99999 : 99999;
+  if (chess.isDraw() || chess.isStalemate()) return 0;
+  let score = 0;
+  for (const row of chess.board()) {
+    for (const cell of row) {
+      if (!cell) continue;
+      const pv = PIECE_VALUE[cell.type] || 0;
+      const ps = PST[cell.type] ? PST[cell.type][sqIdx(cell.square, cell.color)] : 0;
+      score += (cell.color === 'w' ? 1 : -1) * (pv + ps);
+    }
+  }
+  return score;
+}
+
+function orderMoves(moves) {
+  return moves.sort((a, b) => {
+    const aC = a.flags.includes('c') || a.flags.includes('e') ? 1 : 0;
+    const bC = b.flags.includes('c') || b.flags.includes('e') ? 1 : 0;
+    return bC - aC;
+  });
+}
+
+function minimax(chess, depth, alpha, beta, maximizing) {
+  if (depth === 0 || chess.isGameOver()) return evalBoard(chess);
+  const moves = orderMoves(chess.moves({ verbose: true }));
+  if (maximizing) {
+    let best = -Infinity;
+    for (const m of moves) {
+      chess.move(m);
+      best = Math.max(best, minimax(chess, depth - 1, alpha, beta, false));
+      chess.undo();
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const m of moves) {
+      chess.move(m);
+      best = Math.min(best, minimax(chess, depth - 1, alpha, beta, true));
+      chess.undo();
+      beta = Math.min(beta, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
+function getBestMoveSync(fen, depth) {
+  const chess = new Chess(fen);
+  const moves = orderMoves(chess.moves({ verbose: true }));
+  if (!moves.length) return null;
+  const isBlack = chess.turn() === 'b';
+  let bestVal = isBlack ? Infinity : -Infinity;
+  let bestMove = moves[0];
+  for (const m of moves) {
+    chess.move(m);
+    const val = minimax(chess, depth - 1, -Infinity, Infinity, !isBlack);
+    chess.undo();
+    if (isBlack ? val < bestVal : val > bestVal) { bestVal = val; bestMove = m; }
+  }
+  return bestMove;
+}
+
+// ─── DIFFICULTIES ─────────────────────────────────────────────
+const DIFFICULTIES = [
+  { id: 'easy',   label: 'Новичок',    depth: 1, emoji: '🟢', desc: '~900 ELO — учится играть' },
+  { id: 'medium', label: 'Любитель',   depth: 3, emoji: '🟡', desc: '~1300 ELO — думает на 3 хода' },
+  { id: 'hard',   label: 'Мастер',     depth: 4, emoji: '🔴', desc: '~1600 ELO — сильная игра' },
+  { id: 'expert', label: 'ИИ-Эксперт',depth: 5, emoji: '💜', desc: '~1800 ELO — почти непобедим' },
+];
+
+const PIECE_ICON   = { p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚' };
+const PIECE_ICON_W = { p:'♙',n:'♘',b:'♗',r:'♖',q:'♕',k:'♔' };
+
+// ═══════════════════════════════════════════════════════════════
+//  COMPONENT
+// ═══════════════════════════════════════════════════════════════
+export default function ChessGame() {
+  const [screen, setScreen] = useState('setup');
   const [difficulty, setDifficulty] = useState('medium');
   const [playerColor, setPlayerColor] = useState('white');
-  const [isComputerTurn, setIsComputerTurn] = useState(false);
-  const stockfishRef = useRef(null);
-  const [stockfishReady, setStockfishReady] = useState(false);
-  const [engineThinking, setEngineThinking] = useState('');
 
-  // Инициализация OpenWay AI
+  const [game, setGame] = useState(new Chess());
+  const [lastMove, setLastMove] = useState(null);
+  const [thinking, setThinking] = useState(false);
+  const [thinkingDots, setThinkingDots] = useState(0);
+  const [result, setResult] = useState(null);
+  const [capByWhite, setCapByWhite] = useState([]);
+  const [capByBlack, setCapByBlack] = useState([]);
+
+  const boardRef = useRef(null);
+  const [boardWidth, setBoardWidth] = useState(520);
+  const workerRef = useRef(null);
+  const dotsTimer = useRef(null);
+  const moveListRef = useRef(null);
+
+  // Responsive board
   useEffect(() => {
-    if (difficulty === 'hard' && !stockfishRef.current) {
+    if (!boardRef.current) return;
+    const ro = new ResizeObserver(entries => {
+      for (const e of entries) {
+        const w = Math.floor(e.contentRect.width);
+        if (w > 0) setBoardWidth(Math.min(w, 840));
+      }
+    });
+    ro.observe(boardRef.current);
+    return () => ro.disconnect();
+  }, [screen]);
+
+  useEffect(() => {
+    return () => { workerRef.current?.terminate(); clearInterval(dotsTimer.current); };
+  }, []);
+
+  // Auto-scroll move list
+  useEffect(() => {
+    if (moveListRef.current) moveListRef.current.scrollTop = moveListRef.current.scrollHeight;
+  }, [game]);
+
+  const updateCaptures = useCallback((chess) => {
+    const allPieces = { p:8, n:2, b:2, r:2, q:1, k:1 };
+    const on = { w:{}, b:{} };
+    for (const row of chess.board())
+      for (const cell of row)
+        if (cell) on[cell.color][cell.type] = (on[cell.color][cell.type]||0)+1;
+
+    const capW=[], capB=[];
+    for (const [type,count] of Object.entries(allPieces)) {
+      const mW=count-(on.w[type]||0), mB=count-(on.b[type]||0);
+      for(let i=0;i<mW;i++) capB.push(type);
+      for(let i=0;i<mB;i++) capW.push(type);
+    }
+    setCapByWhite(capW); setCapByBlack(capB);
+  }, []);
+
+  const checkOver = useCallback((chess) => {
+    if (chess.isCheckmate()) {
+      setResult({ winner: chess.turn()==='w'?'black':'white', reason:'checkmate' });
+      setScreen('result'); return true;
+    }
+    if (chess.isDraw()) {
+      const reason = chess.isStalemate()?'stalemate':chess.isThreefoldRepetition()?'repetition':chess.isInsufficientMaterial()?'insufficient':'draw';
+      setResult({ winner:'draw', reason }); setScreen('result'); return true;
+    }
+    return false;
+  }, []);
+
+  const makeAIMove = useCallback((currentGame) => {
+    const diff = DIFFICULTIES.find(d=>d.id===difficulty)||DIFFICULTIES[1];
+    setThinking(true);
+    let dots=0;
+    clearInterval(dotsTimer.current);
+    dotsTimer.current = setInterval(()=>{ dots=(dots+1)%4; setThinkingDots(dots); }, 400);
+
+    // Delay so UI updates first
+    setTimeout(() => {
       try {
-        // Используем шахматный движок максимальной силы
-        const engine = new Worker('https://cdn.jsdelivr.net/npm/stockfish@14.1.0/stockfish.js');
-        stockfishRef.current = engine;
+        let move;
+        if (diff.id === 'easy') {
+          const moves = currentGame.moves({ verbose:true });
+          move = Math.random()<0.65
+            ? moves[Math.floor(Math.random()*moves.length)]
+            : getBestMoveSync(currentGame.fen(), 1);
+        } else {
+          move = getBestMoveSync(currentGame.fen(), diff.depth);
+        }
 
-        engine.onmessage = (event) => {
-          const message = event.data;
-          
-          if (message === 'uciok') {
-            setStockfishReady(true);
-            // МАКСИМАЛЬНЫЕ настройки для непобедимости
-            engine.postMessage('setoption name Skill Level value 20'); // Максимум
-            engine.postMessage('setoption name Threads value 8'); // Больше потоков
-            engine.postMessage('setoption name Hash value 512'); // Больше памяти
-            engine.postMessage('setoption name MultiPV value 1'); // Лучший ход
-            engine.postMessage('setoption name Contempt value 100'); // Агрессивная игра
-            engine.postMessage('setoption name Ponder value false'); // Не думать в фоне
-            engine.postMessage('isready');
-          }
-          
-          if (message === 'readyok') {
-            console.log('OpenWay AI готов к игре');
-          }
-          
-          if (message.startsWith('info') && message.includes('depth')) {
-            // Показываем что движок думает
-            const depthMatch = message.match(/depth (\d+)/);
-            const scoreMatch = message.match(/score cp (-?\d+)/);
-            const mateMatch = message.match(/score mate (-?\d+)/);
-            
-            if (depthMatch) {
-              let status = `OpenWay AI: глубина ${depthMatch[1]}`;
-              if (mateMatch) {
-                status += ` | Мат в ${Math.abs(parseInt(mateMatch[1]))}`;
-              } else if (scoreMatch) {
-                status += ` | Оценка: ${(parseInt(scoreMatch[1])/100).toFixed(2)}`;
-              }
-              setEngineThinking(status);
-            }
-          }
-          
-          if (message.startsWith('bestmove')) {
-            const moveMatch = message.match(/bestmove ([a-h][1-8][a-h][1-8][qrbn]?)/);
-            if (moveMatch) {
-              const bestMove = moveMatch[1];
-              applyStockfishMove(bestMove);
-            }
-          }
-        };
+        clearInterval(dotsTimer.current);
+        if (!move) { setThinking(false); return; }
 
-        engine.onerror = (error) => {
-          console.error('Ошибка OpenWay AI:', error);
-          setStockfishReady(false);
-        };
-
-        engine.postMessage('uci');
-      } catch (error) {
-        console.error('Не удалось загрузить OpenWay AI:', error);
-        setStockfishReady(false);
+        const ng = new Chess(currentGame.fen());
+        ng.move(move);
+        setLastMove({ from: move.from, to: move.to });
+        updateCaptures(ng);
+        setGame(ng);
+        setThinking(false);
+        checkOver(ng);
+      } catch(err) {
+        console.error('AI error:', err);
+        clearInterval(dotsTimer.current);
+        setThinking(false);
       }
-    }
+    }, diff.depth >= 4 ? 50 : 80);
+  }, [difficulty, updateCaptures, checkOver]);
 
-    return () => {
-      if (stockfishRef.current) {
-        stockfishRef.current.terminate();
-        stockfishRef.current = null;
-        setStockfishReady(false);
-      }
-    };
-  }, [difficulty]);
-
-  useEffect(() => {
-    updateGameStatus();
-  }, [position]);
-
-  useEffect(() => {
-    // Если играем за чёрных, компьютер делает первый ход
-    if (playerColor === 'black' && game.turn() === 'w') {
-      setTimeout(() => makeComputerMove(), 500);
-    }
-  }, [playerColor]);
-
-  const updateGameStatus = () => {
-    if (game.isCheckmate()) {
-      setGameStatus(game.turn() === 'w' ? 'Чёрные победили! Мат!' : 'Белые победили! Мат!');
-    } else if (game.isDraw()) {
-      setGameStatus('Ничья!');
-    } else if (game.isStalemate()) {
-      setGameStatus('Пат! Ничья!');
-    } else if (game.isCheck()) {
-      setGameStatus(game.turn() === 'w' ? 'Белым шах!' : 'Чёрным шах!');
-    } else {
-      setGameStatus(game.turn() === 'w' ? 'Ход белых' : 'Ход чёрных');
-    }
+  const startGame = () => {
+    const ng = new Chess();
+    setGame(ng); setLastMove(null); setResult(null);
+    setCapByWhite([]); setCapByBlack([]);
+    setThinking(false); setScreen('game');
+    if (playerColor === 'black') setTimeout(() => makeAIMove(ng), 500);
   };
 
-  const onDrop = (sourceSquare, targetSquare) => {
-    // Проверяем, не ход ли компьютера
-    if (isComputerTurn) return false;
-    
-    // Проверяем, играет ли игрок за этот цвет
-    const currentTurn = game.turn();
-    if ((playerColor === 'white' && currentTurn === 'b') || 
-        (playerColor === 'black' && currentTurn === 'w')) {
-      return false;
-    }
-
+  const onDrop = useCallback((from, to) => {
+    if (thinking) return false;
+    const isMyTurn = (game.turn()==='w') === (playerColor==='white');
+    if (!isMyTurn) return false;
     try {
-      const move = game.move({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: 'q' // Автоматическое превращение пешки в ферзя
-      });
-
-      if (move === null) return false;
-
-      setPosition(game.fen());
-      setMoveHistory([...moveHistory, move.san]);
-      
-      // Если игра не окончена, делаем ход компьютера
-      if (!game.isGameOver()) {
-        setTimeout(() => makeComputerMove(), 500);
-      }
-
+      const ng = new Chess(game.fen());
+      const move = ng.move({ from, to, promotion:'q' });
+      if (!move) return false;
+      setLastMove({ from, to });
+      updateCaptures(ng);
+      setGame(ng);
+      if (!checkOver(ng)) setTimeout(() => makeAIMove(ng), 150);
       return true;
-    } catch (error) {
-      return false;
-    }
+    } catch { return false; }
+  }, [game, thinking, playerColor, makeAIMove, updateCaptures, checkOver]);
+
+  const resign = () => {
+    setResult({ winner: playerColor==='white'?'black':'white', reason:'resignation' });
+    setScreen('result');
   };
 
-  const applyStockfishMove = (uciMove) => {
-    try {
-      const from = uciMove.substring(0, 2);
-      const to = uciMove.substring(2, 4);
-      const promotion = uciMove.length > 4 ? uciMove[4] : undefined;
+  // Derived
+  const history = game.history({ verbose:true });
+  const movePairs = [];
+  for (let i=0;i<history.length;i+=2)
+    movePairs.push({ num:Math.floor(i/2)+1, w:history[i]?.san||'', b:history[i+1]?.san||'' });
 
-      const move = game.move({
-        from,
-        to,
-        promotion
-      });
+  const diff = DIFFICULTIES.find(d=>d.id===difficulty)||DIFFICULTIES[1];
+  const isMyTurn = !thinking && (game.turn()==='w')===(playerColor==='white');
 
-      if (move) {
-        setPosition(game.fen());
-        setMoveHistory(prev => [...prev, move.san]);
-      }
-    } catch (error) {
-      console.error('Ошибка применения хода:', error);
-    } finally {
-      setIsComputerTurn(false);
-      setEngineThinking('');
-    }
-  };
+  let statusText='', statusClass=styles.statusNeutral;
+  if (thinking) { statusText=`🤖 ИИ думает${'.'.repeat(thinkingDots+1)}`; statusClass=styles.statusThinking; }
+  else if (game.isCheck()) { statusText='⚠️ Шах!'; statusClass=styles.statusCheck; }
+  else if (isMyTurn) { statusText='🟢 Ваш ход'; statusClass=styles.statusYour; }
+  else { statusText='⏳ Ход ИИ'; statusClass=styles.statusAI; }
 
-  const getStockfishMove = () => {
-    if (stockfishRef.current && stockfishReady) {
-      setEngineThinking('OpenWay AI анализирует...');
-      
-      // Отправляем текущую позицию
-      stockfishRef.current.postMessage('ucinewgame');
-      stockfishRef.current.postMessage(`position fen ${game.fen()}`);
-      
-      // МАКСИМАЛЬНАЯ СИЛА с быстрым откликом: глубина 18, время 800мс
-      // Stockfish на этих настройках сильнее любого гроссмейстера
-      stockfishRef.current.postMessage('go depth 18 movetime 800');
-    } else {
-      // Fallback на обычный AI
-      const move = getBestMove();
-      setTimeout(() => {
-        game.move(move);
-        setPosition(game.fen());
-        setMoveHistory(prev => [...prev, move]);
-        setIsComputerTurn(false);
-      }, 300);
-    }
-  };
+  const aiCaptures = playerColor==='white'?capByBlack:capByWhite;
+  const myCaptures = playerColor==='white'?capByWhite:capByBlack;
+  const aiPieceIcons = playerColor==='white'?PIECE_ICON_W:PIECE_ICON;
+  const myPieceIcons = playerColor==='white'?PIECE_ICON:PIECE_ICON_W;
 
-  const makeComputerMove = () => {
-    setIsComputerTurn(true);
-    
-    const possibleMoves = game.moves();
-    if (possibleMoves.length === 0) {
-      setIsComputerTurn(false);
-      return;
-    }
-
-    let selectedMove;
-
-    if (difficulty === 'easy') {
-      // Случайный ход
-      setTimeout(() => {
-        selectedMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-        game.move(selectedMove);
-        setPosition(game.fen());
-        setMoveHistory([...moveHistory, selectedMove]);
-        setIsComputerTurn(false);
-      }, 300);
-    } else if (difficulty === 'medium') {
-      // Minimax AI средней силы
-      setTimeout(() => {
-        selectedMove = getBestMove();
-        game.move(selectedMove);
-        setPosition(game.fen());
-        setMoveHistory([...moveHistory, selectedMove]);
-        setIsComputerTurn(false);
-      }, 500);
-    } else {
-      // Hard: OpenWay AI максимальной силы
-      getStockfishMove();
-    }
-  };
-
-  // Продвинутый AI с Minimax и альфа-бета отсечением + улучшенная эвристика
-  const getBestMove = () => {
-    // Быстрая глубина (<300мс)
-    const depth = difficulty === 'hard' ? 3 : difficulty === 'medium' ? 2 : 1;
-    let bestMove = null;
-    let bestValue = -Infinity;
-    
-    const possibleMoves = game.moves({ verbose: true });
-    
-    // Если слишком много ходов (>30), используем упрощенную оценку
-    if (possibleMoves.length > 30) {
-      const captureMoves = possibleMoves.filter(m => m.captured);
-      if (captureMoves.length > 0) {
-        return captureMoves.sort((a, b) => {
-          const captureValue = { p: 100, n: 320, b: 330, r: 500, q: 900 };
-          return (captureValue[b.captured] || 0) - (captureValue[a.captured] || 0);
-        })[0].san;
-      }
-    }
-    
-    // Продвинутая сортировка ходов по MVV-LVA для оптимального отсечения
-    const sortedMoves = possibleMoves.sort((a, b) => {
-      let scoreA = 0;
-      let scoreB = 0;
-      
-      // MVV-LVA: Приоритет взятию ценных фигур дешевыми
-      if (a.captured) {
-        const captureValue = { p: 100, n: 320, b: 330, r: 500, q: 900 };
-        const attackerValue = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 1000 };
-        scoreA += (captureValue[a.captured] || 0) * 10 - (attackerValue[a.piece] || 0);
-      }
-      if (b.captured) {
-        const captureValue = { p: 100, n: 320, b: 330, r: 500, q: 900 };
-        const attackerValue = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 1000 };
-        scoreB += (captureValue[b.captured] || 0) * 10 - (attackerValue[b.piece] || 0);
-      }
-      
-      // Превращение пешки в ферзя - критически важно!
-      if (a.promotion === 'q') scoreA += 9000;
-      if (b.promotion === 'q') scoreB += 9000;
-      if (a.promotion) scoreA += 800;
-      if (b.promotion) scoreB += 800;
-      
-      // Шахи имеют высокий приоритет
-      try {
-        const gameCopy = new Chess(game.fen());
-        gameCopy.move(a);
-        if (gameCopy.isCheck()) scoreA += 50;
-        gameCopy.undo();
-        gameCopy.move(b);
-        if (gameCopy.isCheck()) scoreB += 50;
-      } catch (error) {
-        // Пропускаем проверку шахов при ошибке
-      }
-      
-      // Ходы к центру
-      const centerSquares = ['d4', 'e4', 'd5', 'e5'];
-      if (centerSquares.includes(a.to)) scoreA += 30;
-      if (centerSquares.includes(b.to)) scoreB += 30;
-      
-      return scoreB - scoreA;
-    });
-
-    // Итеративное углубление с альфа-бета
-    let alpha = -Infinity;
-    let beta = Infinity;
-    
-    for (let move of sortedMoves) {
-      game.move(move);
-      const value = -minimax(depth - 1, -beta, -alpha, false);
-      game.undo();
-
-      if (value > bestValue) {
-        bestValue = value;
-        bestMove = move.san;
-      }
-      
-      alpha = Math.max(alpha, value);
-    }
-
-    return bestMove || possibleMoves[0].san;
-  };
-
-  // Quiescence Search - анализ тактических комбинаций (ограниченная глубина)
-  const quiescence = (alpha, beta, depth = 0) => {
-    const standPat = evaluateBoard();
-    
-    if (standPat >= beta) {
-      return beta;
-    }
-    if (alpha < standPat) {
-      alpha = standPat;
-    }
-
-    // Ограничиваем глубину quiescence для производительности
-    if (depth >= 3) {
-      return alpha;
-    }
-
-    // Только взятия и превращения (самые важные тактические ходы)
-    const captureMoves = game.moves({ verbose: true }).filter(m => m.captured || m.promotion);
-    
-    // Сортируем взятия по MVV-LVA
-    captureMoves.sort((a, b) => {
-      const captureValue = { p: 100, n: 320, b: 330, r: 500, q: 900 };
-      const valA = (a.captured ? captureValue[a.captured] : 0) + (a.promotion ? 900 : 0);
-      const valB = (b.captured ? captureValue[b.captured] : 0) + (b.promotion ? 900 : 0);
-      return valB - valA;
-    });
-    
-    // Анализируем только топ-5 лучших взятий
-    for (let i = 0; i < Math.min(5, captureMoves.length); i++) {
-      const move = captureMoves[i];
-      game.move(move);
-      const score = -quiescence(-beta, -alpha, depth + 1);
-      game.undo();
-
-      if (score >= beta) {
-        return beta;
-      }
-      if (score > alpha) {
-        alpha = score;
-      }
-    }
-    
-    return alpha;
-  };
-
-  const minimax = (depth, alpha, beta, isMaximizing) => {
-    if (depth === 0) {
-      // Quiescence search для тактической точности
-      return quiescence(alpha, beta);
-    }
-
-    const possibleMoves = game.moves({ verbose: true });
-    
-    if (possibleMoves.length === 0) {
-      if (game.isCheckmate()) {
-        return isMaximizing ? -100000 : 100000;
-      }
-      return 0; // Пат
-    }
-
-    if (isMaximizing) {
-      let maxEval = -Infinity;
-      for (let move of possibleMoves) {
-        game.move(move);
-        const evaluation = minimax(depth - 1, alpha, beta, false);
-        game.undo();
-        maxEval = Math.max(maxEval, evaluation);
-        alpha = Math.max(alpha, evaluation);
-        if (beta <= alpha) break; // Альфа-бета отсечение
-      }
-      return maxEval;
-    } else {
-      let minEval = Infinity;
-      for (let move of possibleMoves) {
-        game.move(move);
-        const evaluation = minimax(depth - 1, alpha, beta, true);
-        game.undo();
-        minEval = Math.min(minEval, evaluation);
-        beta = Math.min(beta, evaluation);
-        if (beta <= alpha) break; // Альфа-бета отсечение
-      }
-      return minEval;
-    }
-  };
-
-  const evaluateBoard = () => {
-    // Гроссмейстерская оценочная функция
-    const pieceValues = {
-      p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000
-    };
-
-    // Улучшенные таблицы позиционных бонусов (на основе Stockfish)
-    const pawnTable = [
-      [0,   0,   0,   0,   0,   0,   0,   0],
-      [50,  50,  50,  50,  50,  50,  50,  50],
-      [10,  10,  20,  30,  30,  20,  10,  10],
-      [5,   5,   10,  27,  27,  10,  5,   5],
-      [0,   0,   0,   25,  25,  0,   0,   0],
-      [5,   -5,  -10, 0,   0,   -10, -5,  5],
-      [5,   10,  10,  -25, -25, 10,  10,  5],
-      [0,   0,   0,   0,   0,   0,   0,   0]
-    ];
-
-    const knightTable = [
-      [-50, -40, -30, -30, -30, -30, -40, -50],
-      [-40, -20, 0,   5,   5,   0,   -20, -40],
-      [-30, 5,   10,  15,  15,  10,  5,   -30],
-      [-30, 0,   15,  20,  20,  15,  0,   -30],
-      [-30, 5,   15,  20,  20,  15,  5,   -30],
-      [-30, 0,   10,  15,  15,  10,  0,   -30],
-      [-40, -20, 0,   0,   0,   0,   -20, -40],
-      [-50, -40, -20, -30, -30, -20, -40, -50]
-    ];
-
-    const bishopTable = [
-      [-20, -10, -10, -10, -10, -10, -10, -20],
-      [-10, 5,   0,   0,   0,   0,   5,   -10],
-      [-10, 10,  10,  10,  10,  10,  10,  -10],
-      [-10, 0,   10,  10,  10,  10,  0,   -10],
-      [-10, 5,   5,   10,  10,  5,   5,   -10],
-      [-10, 0,   5,   10,  10,  5,   0,   -10],
-      [-10, 0,   0,   0,   0,   0,   0,   -10],
-      [-20, -10, -40, -10, -10, -40, -10, -20]
-    ];
-
-    const rookTable = [
-      [0,  0,  0,  5,  5,  0,  0,  0],
-      [-5, 0,  0,  0,  0,  0,  0,  -5],
-      [-5, 0,  0,  0,  0,  0,  0,  -5],
-      [-5, 0,  0,  0,  0,  0,  0,  -5],
-      [-5, 0,  0,  0,  0,  0,  0,  -5],
-      [-5, 0,  0,  0,  0,  0,  0,  -5],
-      [5,  10, 10, 10, 10, 10, 10, 5],
-      [0,  0,  0,  0,  0,  0,  0,  0]
-    ];
-
-    const queenTable = [
-      [-20, -10, -10, -5,  -5,  -10, -10, -20],
-      [-10, 0,   5,   0,   0,   0,   0,   -10],
-      [-10, 5,   5,   5,   5,   5,   0,   -10],
-      [0,   0,   5,   5,   5,   5,   0,   -5],
-      [-5,  0,   5,   5,   5,   5,   0,   -5],
-      [-10, 0,   5,   5,   5,   5,   0,   -10],
-      [-10, 0,   0,   0,   0,   0,   0,   -10],
-      [-20, -10, -10, -5,  -5,  -10, -10, -20]
-    ];
-
-    const kingMiddleGameTable = [
-      [20,  30,  10,  0,   0,   10,  30,  20],
-      [20,  20,  0,   0,   0,   0,   20,  20],
-      [-10, -20, -20, -20, -20, -20, -20, -10],
-      [-20, -30, -30, -40, -40, -30, -30, -20],
-      [-30, -40, -40, -50, -50, -40, -40, -30],
-      [-30, -40, -40, -50, -50, -40, -40, -30],
-      [-30, -40, -40, -50, -50, -40, -40, -30],
-      [-30, -40, -40, -50, -50, -40, -40, -30]
-    ];
-
-    let totalEvaluation = 0;
-    const board = game.board();
-    let whitePieces = 0;
-    let blackPieces = 0;
-
-    // Подсчет материала для определения фазы игры
-    for (let i = 0; i < 8; i++) {
-      for (let j = 0; j < 8; j++) {
-        const square = board[i][j];
-        if (!square) continue;
-
-        const pieceValue = pieceValues[square.type];
-        const isWhite = square.color === 'w';
-        const multiplier = isWhite ? 1 : -1;
-
-        if (isWhite) whitePieces += pieceValue;
-        else blackPieces += pieceValue;
-
-        // Базовая стоимость фигуры
-        totalEvaluation += pieceValue * multiplier;
-
-        // Позиционные бонусы с учетом всех таблиц
-        let positionalBonus = 0;
-        const row = isWhite ? i : 7 - i;
-
-        if (square.type === 'p') {
-          positionalBonus = pawnTable[row][j];
-          // Бонус за проходную пешку
-          if (row >= 4) positionalBonus += (row - 3) * 10;
-        } else if (square.type === 'n') {
-          positionalBonus = knightTable[row][j];
-        } else if (square.type === 'b') {
-          positionalBonus = bishopTable[row][j];
-          // Бонус за пару слонов
-          const bishops = board.flat().filter(p => p && p.type === 'b' && p.color === square.color);
-          if (bishops.length >= 2) positionalBonus += 30;
-        } else if (square.type === 'r') {
-          positionalBonus = rookTable[row][j];
-          // Бонус за ладью на открытой линии
-          const colPawns = board.filter(r => r[j] && r[j].type === 'p').length;
-          if (colPawns === 0) positionalBonus += 20;
-        } else if (square.type === 'q') {
-          positionalBonus = queenTable[row][j];
-        } else if (square.type === 'k') {
-          // Король использует разные таблицы в зависимости от фазы игры
-          const totalMaterial = whitePieces + blackPieces;
-          const isEndgame = totalMaterial < 3000;
-          
-          if (!isEndgame) {
-            positionalBonus = kingMiddleGameTable[row][j];
-          } else {
-            // В эндшпиле король должен быть активным
-            positionalBonus = -kingMiddleGameTable[row][j] * 0.5;
-          }
-        }
-
-        totalEvaluation += positionalBonus * multiplier;
-      }
-    }
-
-    // Продвинутая оценка мобильности
-    const currentTurn = game.turn();
-    const mobility = game.moves().length;
-    
-    // Переключаем ход для подсчета мобильности противника
-    let opponentMobility = 0;
-    try {
-      const fenParts = game.fen().split(' ');
-      fenParts[1] = currentTurn === 'w' ? 'b' : 'w';
-      fenParts[3] = '-'; // Убираем en-passant для корректного FEN
-      const tempGame = new Chess(fenParts.join(' '));
-      opponentMobility = tempGame.moves().length;
-    } catch (error) {
-      // Если не удалось создать позицию, используем текущую мобильность
-      opponentMobility = mobility;
-    }
-    
-    totalEvaluation += (mobility - opponentMobility) * 5;
-
-    // Оценка структуры пешек
-    let doubledPawns = 0;
-    let isolatedPawns = 0;
-    
-    for (let j = 0; j < 8; j++) {
-      const colPawns = [];
-      for (let i = 0; i < 8; i++) {
-        if (board[i][j] && board[i][j].type === 'p') {
-          colPawns.push({ color: board[i][j].color, row: i });
-        }
-      }
-      
-      // Сдвоенные пешки
-      if (colPawns.length > 1) {
-        doubledPawns += colPawns.length - 1;
-      }
-      
-      // Изолированные пешки
-      if (colPawns.length > 0) {
-        const hasNeighbor = 
-          (j > 0 && board.some(row => row[j-1] && row[j-1].type === 'p' && row[j-1].color === colPawns[0].color)) ||
-          (j < 7 && board.some(row => row[j+1] && row[j+1].type === 'p' && row[j+1].color === colPawns[0].color));
-        
-        if (!hasNeighbor) isolatedPawns++;
-      }
-    }
-    
-    totalEvaluation -= (doubledPawns * 10 + isolatedPawns * 15);
-
-    // Упрощенная оценка контроля центра (оптимизация)
-    const centerSquares = ['d4', 'e4', 'd5', 'e5'];
-    let centerControl = 0;
-    for (let i = 3; i <= 4; i++) {
-      for (let j = 3; j <= 4; j++) {
-        const square = board[i][j];
-        if (square) {
-          if (square.color === 'w') centerControl += 15;
-          else centerControl -= 15;
-        }
-      }
-    }
-    totalEvaluation += centerControl;
-
-    // Серьезный штраф за шах
-    if (game.isCheck()) {
-      totalEvaluation += currentTurn === 'w' ? -80 : 80;
-    }
-
-    // Бонус за безопасность короля (рокировка)
-    const history = game.history({ verbose: true });
-    const hasCastled = history.some(move => move.flags.includes('k') || move.flags.includes('q'));
-    if (hasCastled) {
-      totalEvaluation += currentTurn === 'w' ? 50 : -50;
-    }
-
-    return currentTurn === 'w' ? totalEvaluation : -totalEvaluation;
-  };
-
-  const resetGame = () => {
-    const newGame = new Chess();
-    setGame(newGame);
-    setPosition(newGame.fen());
-    setMoveHistory([]);
-    setGameStatus('');
-    setIsComputerTurn(false);
-    
-    // Если играем за чёрных, компьютер делает первый ход
-    if (playerColor === 'black') {
-      setTimeout(() => makeComputerMove(), 500);
-    }
-  };
-
-  const undoMove = () => {
-    if (moveHistory.length >= 2) {
-      game.undo(); // Отменить ход компьютера
-      game.undo(); // Отменить ход игрока
-      setPosition(game.fen());
-      setMoveHistory(moveHistory.slice(0, -2));
-    }
-  };
-
-  const switchColor = () => {
-    setPlayerColor(playerColor === 'white' ? 'black' : 'white');
-    resetGame();
-  };
-
+  // ════════════════════════════════════════════════════════════
   return (
-    <div className={styles['chess-game']}>
-      <div className={styles['chess-game-header']}>
-        <div className={styles['header-title']}>
-          <GiChessKing className={styles['title-icon']} />
-          <h2>Шахматы vs AI</h2>
-        </div>
-        <div className={styles['chess-controls']}>
-          <div className={styles['control-group']}>
-            <IoMdSettings className={styles['control-icon']} />
-            <select 
-              value={difficulty} 
-              onChange={(e) => setDifficulty(e.target.value)}
-              className={styles['chess-select']}
-            >
-              <option value="easy">Лёгкий</option>
-              <option value="medium">Средний</option>
-              <option value="hard">Непобедимый</option>
-            </select>
+    <div className={styles.wrap}>
+
+      {/* ── SETUP ─────────────────────────────────────────── */}
+      {screen==='setup' && (
+        <div className={styles.setup}>
+          <div className={styles.setupHeader}>
+            <span className={styles.setupIcon}>♟</span>
+            <div>
+              <h1 className={styles.setupTitle}>Шахматы vs ИИ</h1>
+              <p className={styles.setupSub}>Minimax + Alpha-Beta pruning · Piece-Square Tables</p>
+            </div>
           </div>
-          
-          <button onClick={switchColor} className={`${styles['chess-btn']} ${styles['chess-btn-secondary']}`}>
-            <FaCircle /> {playerColor === 'white' ? 'Играть за белых' : 'Играть за чёрных'}
-          </button>
-          
-          <button onClick={undoMove} className={`${styles['chess-btn']} ${styles['chess-btn-secondary']}`} disabled={moveHistory.length < 2}>
-            <FaHistory /> Отменить
-          </button>
-          
-          <button onClick={resetGame} className={`${styles['chess-btn']} ${styles['chess-btn-primary']}`}>
-            <FaRedo /> Новая игра
-          </button>
-        </div>
-      </div>
 
-      <div className={styles['chess-game-status']}>
-        <div className={styles['status-content']}>
-          <h3>{gameStatus}</h3>
-          {isComputerTurn && (
-            <span className={styles['thinking']}>
-              <FaBrain className={styles['robot-icon']} /> 
-              {engineThinking || 'AI анализирует позицию...'}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className={styles['chess-game-container']}>
-        <div className={styles['chess-board-wrapper']}>
-          <Chessboard
-            position={position}
-            onPieceDrop={onDrop}
-            boardOrientation={playerColor}
-            customBoardStyle={{
-              borderRadius: '8px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-            }}
-            customDarkSquareStyle={{ backgroundColor: '#779952' }}
-            customLightSquareStyle={{ backgroundColor: '#edeed1' }}
-            isDraggablePiece={({ piece }) => {
-              // Разрешаем перетаскивать только фигуры игрока
-              if (isComputerTurn) return false;
-              const pieceColor = piece[0];
-              return (playerColor === 'white' && pieceColor === 'w') || 
-                     (playerColor === 'black' && pieceColor === 'b');
-            }}
-            animationDuration={200}
-            arePiecesDraggable={!isComputerTurn}
-            snapToCursor={true}
-            customPremoveDarkSquareStyle={{ backgroundColor: '#779952' }}
-            customPremoveLightSquareStyle={{ backgroundColor: '#edeed1' }}
-          />
-        </div>
-
-        <div className={styles['chess-sidebar']}>
-          <div className={styles['move-history']}>
-            <h4>
-              <FaHistory className={styles['section-icon']} /> 
-              История ходов
-            </h4>
-            <div className={styles['moves-list']}>
-              {moveHistory.length === 0 ? (
-                <p className={styles['no-moves']}>Ходы появятся здесь</p>
-              ) : (
-                moveHistory.map((move, index) => (
-                  <div key={index} className={styles['move-item']}>
-                    <span className={styles['move-number']}>{Math.floor(index / 2) + 1}.</span>
-                    <span className={`${styles['move-notation']} ${index % 2 === 0 ? styles['white'] : styles['black']}`}>
-                      {move}
-                    </span>
+          <div className={styles.setupGrid}>
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>Сложность ИИ</h3>
+              {DIFFICULTIES.map(d=>(
+                <button
+                  key={d.id}
+                  className={`${styles.diffBtn} ${difficulty===d.id?styles.diffBtnOn:''}`}
+                  onClick={()=>setDifficulty(d.id)}
+                >
+                  <span className={styles.dEmoji}>{d.emoji}</span>
+                  <div className={styles.dText}>
+                    <span className={styles.dLabel}>{d.label}</span>
+                    <span className={styles.dDesc}>{d.desc}</span>
                   </div>
-                ))
-              )}
+                  {difficulty===d.id && <span className={styles.dCheck}>✓</span>}
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>Ваш цвет</h3>
+              <div className={styles.colorRow}>
+                {[['white','♔','Белые','Первый ход'],['black','♚','Чёрные','ИИ ходит первым']].map(([v,icon,lbl,hint])=>(
+                  <button
+                    key={v}
+                    className={`${styles.colorBtn} ${playerColor===v?styles.colorBtnOn:''}`}
+                    onClick={()=>setPlayerColor(v)}
+                  >
+                    <span className={styles.cIcon}>{icon}</span>
+                    <span className={styles.cLabel}>{lbl}</span>
+                    <span className={styles.cHint}>{hint}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className={styles['game-info']}>
-            <h4>
-              <FaRobot className={styles['section-icon']} />
-              Информация
-            </h4>
-            <div className={styles['info-item']}>
-              <span>Вы играете:</span>
-              <strong>
-                <FaCircle className={styles['color-indicator']} /> 
-                {playerColor === 'white' ? 'Белыми' : 'Чёрными'}
-              </strong>
-            </div>
-            <div className={styles['info-item']}>
-              <span>Сложность AI:</span>
-              <strong>
-                {difficulty === 'easy' && (
-                  <>
-                    <FaCircle style={{ color: '#10b981', fontSize: '12px' }} /> Лёгкий
-                  </>
+          <button className={styles.startBtn} onClick={startGame}>▶ Начать игру</button>
+        </div>
+      )}
+
+      {/* ── GAME ──────────────────────────────────────────── */}
+      {screen==='game' && (
+        <div className={styles.gameView}>
+          <div className={styles.topBar}>
+            <button className={styles.btnBack} onClick={()=>{ workerRef.current?.terminate(); setThinking(false); setScreen('setup'); }}>
+              ← Настройки
+            </button>
+            <div className={`${styles.statusBadge} ${statusClass}`}>{statusText}</div>
+            <button className={styles.btnResign} onClick={resign}>⚑ Сдаться</button>
+          </div>
+
+          <div className={styles.gameLayout}>
+            <div className={styles.boardCol}>
+              {/* AI Player Bar */}
+              <div className={`${styles.pbar} ${thinking?styles.pbarActive:''}`}>
+                <div className={styles.pbarAvatar}>🤖</div>
+                <div className={styles.pbarInfo}>
+                  <span className={styles.pbarName}>OpenWay AI — {diff.label}</span>
+                  <span className={styles.pbarColor}>{diff.emoji} {playerColor==='white'?'♚ Чёрные':'♔ Белые'}</span>
+                </div>
+                <div className={styles.capRow}>
+                  {aiCaptures.map((p,i)=>(
+                    <span key={i} className={styles.capPiece}>{aiPieceIcons[p]}</span>
+                  ))}
+                </div>
+                {thinking && (
+                  <div className={styles.thinkAnim}>
+                    <span/><span/><span/>
+                  </div>
                 )}
-                {difficulty === 'medium' && (
-                  <>
-                    <FaCircle style={{ color: '#f59e0b', fontSize: '12px' }} /> Средний
-                  </>
-                )}
-                {difficulty === 'hard' && (
-                  <>
-                    <FaBolt style={{ color: '#ef4444', fontSize: '14px' }} /> Непобедимый AI
-                    {stockfishReady && <span style={{ color: '#10b981', fontSize: '10px', marginLeft: '5px' }}>(OpenWay AI активен)</span>}
-                  </>
-                )}
-              </strong>
-            </div>
-            <div className={styles['info-item']}>
-              <span>Сделано ходов:</span>
-              <strong>{moveHistory.length}</strong>
-            </div>
-            {difficulty === 'hard' && (
-              <div className={styles['ai-warning']}>
-                <FaCrown />
-                <span>Максимальная мощность AI!</span>
               </div>
-            )}
+
+              <div ref={boardRef} className={styles.boardWrap}>
+                <ChessBoard
+                  position={game.fen()}
+                  onPieceDrop={onDrop}
+                  boardOrientation={playerColor}
+                  boardWidth={boardWidth}
+                  lastMove={lastMove}
+                />
+              </div>
+
+              {/* My Player Bar */}
+              <div className={`${styles.pbar} ${isMyTurn?styles.pbarActive:''}`}>
+                <div className={styles.pbarAvatar}>👤</div>
+                <div className={styles.pbarInfo}>
+                  <span className={styles.pbarName}>Вы</span>
+                  <span className={styles.pbarColor}>{playerColor==='white'?'♔ Белые':'♚ Чёрные'}</span>
+                </div>
+                <div className={styles.capRow}>
+                  {myCaptures.map((p,i)=>(
+                    <span key={i} className={styles.capPiece}>{myPieceIcons[p]}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className={styles.sidebar}>
+              <div className={styles.historyBox}>
+                <div className={styles.histTitle}>История ходов</div>
+                <div className={styles.moveGrid} ref={moveListRef}>
+                  <span className={styles.mHdr}>#</span>
+                  <span className={styles.mHdr}>Белые</span>
+                  <span className={styles.mHdr}>Чёрные</span>
+                  {movePairs.flatMap(pair=>[
+                    <span key={pair.num+'-n'} className={styles.mNum}>{pair.num}.</span>,
+                    <span key={pair.num+'-w'} className={styles.mW}>{pair.w}</span>,
+                    <span key={pair.num+'-b'} className={styles.mB}>{pair.b}</span>,
+                  ])}
+                </div>
+              </div>
+
+              <div className={styles.diffBadge}>
+                <span className={styles.dbEmoji}>{diff.emoji}</span>
+                <div>
+                  <div className={styles.dbLabel}>{diff.label}</div>
+                  <div className={styles.dbDesc}>{diff.desc}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ── RESULT ────────────────────────────────────────── */}
+      {screen==='result' && result && (
+        <div className={styles.overlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalEmoji}>
+              {result.winner==='draw'?'🤝':result.winner===playerColor?'🏆':'😔'}
+            </div>
+            <h2 className={styles.modalTitle}>
+              {result.winner==='draw'?'Ничья!':result.winner===playerColor?'Вы победили!':'ИИ победил!'}
+            </h2>
+            <p className={styles.modalReason}>
+              {({checkmate:'Мат',stalemate:'Пат',repetition:'Тройное повторение',
+                insufficient:'Недостаточно материала',resignation:'Сдача',draw:'Ничья'})[result.reason]||result.reason}
+            </p>
+            <p className={styles.modalMoves}>Сыграно ходов: {history.length}</p>
+            <div className={styles.modalBtns}>
+              <button className={styles.btnAgain} onClick={startGame}>↺ Снова</button>
+              <button className={styles.btnSetup} onClick={()=>setScreen('setup')}>⚙ Настройки</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default ChessGame;
