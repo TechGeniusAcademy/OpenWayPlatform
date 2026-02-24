@@ -279,6 +279,11 @@ router.post('/levels/:id/check', auth, async (req, res) => {
           'UPDATE users SET points = points + $1 WHERE id = $2',
           [pointsAwarded, req.user.id]
         );
+
+        await pool.query(
+          `INSERT INTO points_history (user_id, points_change, reason) VALUES ($1, $2, $3)`,
+          [req.user.id, pointsAwarded, `Игра «Верстка»: уровень «${level.title}» пройден`]
+        );
       }
       
       await pool.query(`
@@ -300,6 +305,11 @@ router.post('/levels/:id/check', auth, async (req, res) => {
         await pool.query(
           'UPDATE users SET points = points + $1 WHERE id = $2',
           [pointsAwarded, req.user.id]
+        );
+
+        await pool.query(
+          `INSERT INTO points_history (user_id, points_change, reason) VALUES ($1, $2, $3)`,
+          [req.user.id, pointsAwarded, `Игра «Верстка»: уровень «${level.title}» пройден`]
         );
       }
       
