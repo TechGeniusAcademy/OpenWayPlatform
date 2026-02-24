@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
-import { Chessboard } from 'react-chessboard';
+import ChessBoard from './ChessBoard';
 import { Chess } from 'chess.js';
 import { useWebSocket } from '../context/WebSocketContext';
 import { useAuth } from '../context/AuthContext';
@@ -31,6 +31,7 @@ const OnlineChess = () => {
   const [myTurnStartTime, setMyTurnStartTime] = useState(null); // Когда начался мой ход
   const [displayTime, setDisplayTime] = useState(300); // Для отображения
   const [cosmetics, setCosmetics] = useState({ frames: [], banners: [] });
+  const [lastMove, setLastMove] = useState(null);
   const boardRef = useRef(null);
   const [boardWidth, setBoardWidth] = useState(500);
 
@@ -235,7 +236,8 @@ const OnlineChess = () => {
       setMyTimeLeft(newMyTime);
       setOpponentTimeLeft(newOpponentTime);
       setDisplayTime(newMyTime);
-      
+      setLastMove({ from: move.from, to: move.to });
+
       // Теперь наш ход - запускаем таймер
       const isOurTurn = (newGame.turn() === 'w' && playerColor === 'white') || 
                         (newGame.turn() === 'b' && playerColor === 'black');
@@ -420,6 +422,7 @@ const OnlineChess = () => {
 
       if (move === null) return false;
 
+      setLastMove({ from: sourceSquare, to: targetSquare });
       const newGame = new Chess(game.fen());
       setGame(newGame);
 
@@ -851,17 +854,12 @@ const OnlineChess = () => {
 
                 {/* Доска */}
                 <div ref={boardRef} className={styles.boardWrapper}>
-                  <Chessboard
+                  <ChessBoard
                     position={game.fen()}
                     onPieceDrop={onDrop}
                     boardOrientation={playerColor}
                     boardWidth={boardWidth}
-                    customBoardStyle={{
-                      borderRadius: '6px',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                    }}
-                    customDarkSquareStyle={{ backgroundColor: '#4a7c9e' }}
-                    customLightSquareStyle={{ backgroundColor: '#d4e9f7' }}
+                    lastMove={lastMove}
                   />
                 </div>
 
