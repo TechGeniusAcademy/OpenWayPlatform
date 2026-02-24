@@ -24,7 +24,7 @@ const CAM_ROT_SPEED   = 1.5;   // radians/sec for Q/E rotation
 // ─── Building (selectable object) ──────────────────────────────────────────
 
 function Building({ d, id }) {
-  const { lmbHeldRef, selectedRef, meshMapRef } = useContext(CityContext);
+  const { lmbHeldRef, selectedRef, meshMapRef, placingItemRef } = useContext(CityContext);
   const meshRef = useRef();
 
   // Register / unregister this mesh in the global map (for clear)
@@ -55,10 +55,10 @@ function Building({ d, id }) {
       receiveShadow
       position={[d.bx, d.bh / 2, d.bz]}
       onPointerDown={(e) => {
-        if (e.button === 0) { e.stopPropagation(); doSelect(); }
+        if (e.button === 0 && !placingItemRef.current) { e.stopPropagation(); doSelect(); }
       }}
       onPointerMove={(e) => {
-        if (lmbHeldRef.current) { e.stopPropagation(); doSelect(); }
+        if (lmbHeldRef.current && !placingItemRef.current) { e.stopPropagation(); doSelect(); }
       }}
     >
       <boxGeometry args={[d.bw, d.bh, d.bd]} />
@@ -302,7 +302,7 @@ class ModelErrorBoundary extends Component {
 
 // ─── Shared placement mouse tracker (raycast to ground) ──────────────────────
 
-function usePlacementTracker(placementPosRef, inputRef) {
+function usePlacementTracker(placementPosRef, inputRef, placementRotYRef) {
   const { camera, gl, raycaster } = useThree();
   const groupRef    = useRef();
   const groundPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
@@ -318,6 +318,7 @@ function usePlacementTracker(placementPosRef, inputRef) {
     raycaster.setFromCamera(ndc, camera);
     if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
       groupRef.current.position.set(hitPoint.x, 0, hitPoint.z);
+      groupRef.current.rotation.y = placementRotYRef.current;
       placementPosRef.current = { x: hitPoint.x, y: 0, z: hitPoint.z };
     }
   });
@@ -326,8 +327,8 @@ function usePlacementTracker(placementPosRef, inputRef) {
 
 // ─── Box glowing placeholder (used when GLB is missing) ─────────────────────
 
-function GlowBoxPreview({ placementPosRef, inputRef }) {
-  const groupRef = usePlacementTracker(placementPosRef, inputRef);
+function GlowBoxPreview({ placementPosRef, inputRef, placementRotYRef }) {
+  const groupRef = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
   const matRef   = useRef();
   useFrame(({ clock }) => {
     if (matRef.current)
@@ -350,9 +351,9 @@ function GlowBoxPreview({ placementPosRef, inputRef }) {
   );
 }
 
-function GlowBoxPlaced({ position }) {
+function GlowBoxPlaced({ position, rotation }) {
   return (
-    <mesh castShadow position={[position[0], position[1] + 0.5, position[2]]}>
+    <mesh castShadow position={[position[0], position[1] + 0.5, position[2]]} rotation={[0, rotation || 0, 0]}>
       <boxGeometry args={[2, 1, 3]} />
       <meshStandardMaterial color="#0a6ebd" emissive={new THREE.Color(0x003366)} emissiveIntensity={0.3} />
     </mesh>
@@ -361,9 +362,9 @@ function GlowBoxPlaced({ position }) {
 
 // ─── Solar Panel — GLB inner components (may throw if file missing) ──────────
 
-function SolarPanelGLTFPreview({ placementPosRef, inputRef }) {
+function SolarPanelGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
   const { scene } = useGLTF('/models/Solar%20Panel.glb');
-  const groupRef  = usePlacementTracker(placementPosRef, inputRef);
+  const groupRef  = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
 
   const glowScene = useMemo(() => {
     const c = scene.clone(true);
@@ -389,29 +390,29 @@ function SolarPanelGLTFPreview({ placementPosRef, inputRef }) {
   return <primitive ref={groupRef} object={glowScene} />;
 }
 
-function SolarPanelGLTFPlaced({ position }) {
+function SolarPanelGLTFPlaced({ position, rotation }) {
   const { scene } = useGLTF('/models/Solar%20Panel.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
-  return <primitive object={cloned} position={position} />;
+  return <primitive object={cloned} position={position} rotation={[0, rotation || 0, 0]} />;
 }
 
 // ─── Solar Panel — public components with error boundary + Suspense ──────────
 
-function SolarPanelPreview({ placementPosRef, inputRef }) {
+function SolarPanelPreview({ placementPosRef, inputRef, placementRotYRef }) {
   return (
-    <ModelErrorBoundary fallback={<GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} />}>
-      <Suspense fallback={<GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} />}>
-        <SolarPanelGLTFPreview placementPosRef={placementPosRef} inputRef={inputRef} />
+    <ModelErrorBoundary fallback={<GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />}>
+      <Suspense fallback={<GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />}>
+        <SolarPanelGLTFPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
       </Suspense>
     </ModelErrorBoundary>
   );
 }
 
-function SolarPanelPlaced({ position }) {
+function SolarPanelPlaced({ position, rotation }) {
   return (
-    <ModelErrorBoundary fallback={<GlowBoxPlaced position={position} />}>
-      <Suspense fallback={<GlowBoxPlaced position={position} />}>
-        <SolarPanelGLTFPlaced position={position} />
+    <ModelErrorBoundary fallback={<GlowBoxPlaced position={position} rotation={rotation} />}>
+      <Suspense fallback={<GlowBoxPlaced position={position} rotation={rotation} />}>
+        <SolarPanelGLTFPlaced position={position} rotation={rotation} />
       </Suspense>
     </ModelErrorBoundary>
   );
@@ -479,7 +480,7 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placi
       </div>
       {placingItem && (
         <div className={styles.placingHint}>
-          🔧 Перемещайте объект &nbsp;·&nbsp; <kbd>Enter</kbd> поставить &nbsp;·&nbsp; <kbd>Esc</kbd> отмена
+          🔧 Перемещайте объект &nbsp;·&nbsp; <kbd>Колесо</kbd> поворот &nbsp;·&nbsp; <kbd>ЛКМ</kbd> поставить &nbsp;·&nbsp; <kbd>Esc</kbd> отмена
         </div>
       )}
       {!placingItem && selectedCount > 0 && (
@@ -504,7 +505,7 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placi
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
-function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, placedItems, placementPosRef }) {
+function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, placedItems, placementPosRef, placementRotYRef }) {
   return (
     <>
       <Sky distance={450000} sunPosition={[100, 80, 80]} turbidity={6} rayleigh={0.4} />
@@ -519,11 +520,11 @@ function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, plac
         inputRef={inputRef}
       />
       {placingItem === 'solar-panel' && (
-        <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} />
+        <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
       )}
       {placedItems.map(item =>
         item.type === 'solar-panel'
-          ? <SolarPanelPlaced key={item.id} position={item.position} />
+          ? <SolarPanelPlaced key={item.id} position={item.position} rotation={item.rotation} />
           : null
       )}
     </>
@@ -550,8 +551,14 @@ export default function OpenCity({ onBack }) {
   const [placingItem,  setPlacingItem]  = useState(null);  // 'solar-panel' | null
   const [placedItems,  setPlacedItems]  = useState([]);
   const placementPosRef  = useRef(null);
+  const placementRotYRef = useRef(0);
   const placingItemRef   = useRef(null);  // mirror for sync access in event handlers
   useEffect(() => { placingItemRef.current = placingItem; }, [placingItem]);
+
+  const startPlacing = useCallback((type) => {
+    placementRotYRef.current = 0;
+    setPlacingItem(type);
+  }, []);
 
   // Selection state
   const lmbHeldRef   = useRef(false);
@@ -572,7 +579,7 @@ export default function OpenCity({ onBack }) {
   }, []);
 
   const cityCtx = useMemo(
-    () => ({ lmbHeldRef, selectedRef, meshMapRef }),
+    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef }),
     []
   );
 
@@ -580,19 +587,6 @@ export default function OpenCity({ onBack }) {
   useEffect(() => {
     const down = (e) => {
       keysRef.current[e.code] = true;
-      if (e.code === 'Enter') {
-        if (placingItemRef.current && placementPosRef.current) {
-          const pos = placementPosRef.current;
-          setPlacedItems(prev => [...prev, {
-            id: Date.now(),
-            type: placingItemRef.current,
-            position: [pos.x, pos.y, pos.z],
-          }]);
-          setPlacingItem(null);
-        }
-        e.preventDefault();
-        return;
-      }
       if (e.code === 'Escape') {
         if (placingItemRef.current) { setPlacingItem(null); e.preventDefault(); return; }
         clearSelection();
@@ -627,13 +621,24 @@ export default function OpenCity({ onBack }) {
     };
     const onDown = (e) => {
       if (e.button === 0) {
-        // Don't drag camera while placing an item
-        if (!placingItemRef.current) {
-          lmbHeldRef.current = true;
-          inputRef.current.middleDrag = true;
-          inputRef.current.lastMX = e.clientX;
-          inputRef.current.lastMY = e.clientY;
+        if (placingItemRef.current) {
+          // LMB click during placement → place the object
+          if (placementPosRef.current) {
+            const pos = placementPosRef.current;
+            setPlacedItems(prev => [...prev, {
+              id: Date.now(),
+              type: placingItemRef.current,
+              position: [pos.x, pos.y, pos.z],
+              rotation: placementRotYRef.current,
+            }]);
+            setPlacingItem(null);
+          }
+          return;
         }
+        lmbHeldRef.current = true;
+        inputRef.current.middleDrag = true;
+        inputRef.current.lastMX = e.clientX;
+        inputRef.current.lastMY = e.clientY;
       }
       if (e.button === 1 || e.button === 2) {
         inputRef.current.middleDrag = true;
@@ -656,7 +661,12 @@ export default function OpenCity({ onBack }) {
       inputRef.current.middleDrag = false;
     };
     const onWheel = (e) => {
-      inputRef.current.wheelDelta += e.deltaY > 0 ? 1 : -1;
+      if (placingItemRef.current) {
+        // Scroll rotates the object being placed
+        placementRotYRef.current += e.deltaY > 0 ? 0.2 : -0.2;
+      } else {
+        inputRef.current.wheelDelta += e.deltaY > 0 ? 1 : -1;
+      }
       e.preventDefault();
     };
     const onContext = (e) => e.preventDefault();
@@ -703,6 +713,7 @@ export default function OpenCity({ onBack }) {
             placingItem={placingItem}
             placedItems={placedItems}
             placementPosRef={placementPosRef}
+            placementRotYRef={placementRotYRef}
           />
         </Canvas>
 
@@ -715,7 +726,7 @@ export default function OpenCity({ onBack }) {
           onBack={onBack || (() => {})}
           placingItem={placingItem}
         />
-        {shopOpen && <ShopModal onClose={() => setShopOpen(false)} onBuy={setPlacingItem} />}
+        {shopOpen && <ShopModal onClose={() => setShopOpen(false)} onBuy={startPlacing} />}
       </div>
     </CityContext.Provider>
   );
