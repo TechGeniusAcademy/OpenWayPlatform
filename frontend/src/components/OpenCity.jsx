@@ -228,8 +228,8 @@ function RTSCamera({ camTargetRef, camStateRef, keysRef, inputRef }) {
     // ── Middle-mouse / LMB drag pan ──
     if (inp.middleDrag) {
       const dragSpeed = state.zoom * 0.0018;
-      target.x += (inp.dragDeltaX * right.x + inp.dragDeltaY * forward.x) * dragSpeed;
-      target.z += (inp.dragDeltaX * right.z + inp.dragDeltaY * forward.z) * dragSpeed;
+      target.x += (-inp.dragDeltaX * right.x + inp.dragDeltaY * forward.x) * dragSpeed;
+      target.z += (-inp.dragDeltaX * right.z + inp.dragDeltaY * forward.z) * dragSpeed;
       inp.dragDeltaX = 0;
       inp.dragDeltaY = 0;
     }
