@@ -3,6 +3,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sky, Stars, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import styles from './OpenCity.module.css';
+import { SOLAR_PANEL_CONFIG }   from './items/solarPanel.js';
+import { MONEY_FACTORY_CONFIG } from './items/moneyFactory.js';
 
 // ─── Context (avoids prop drilling into Building) ────────────────────────────
 const CityContext = createContext(null);
@@ -21,10 +23,16 @@ const CAM_ZOOM_STEP   = 6;
 const CAM_TILT        = 55;    // degrees above horizon (fixed RTS angle)
 const CAM_ROT_SPEED   = 1.5;   // radians/sec for Q/E rotation
 
-// ─── Per-model Y height offsets ─────────────────────────────────────────────
-// Increase the value if the model is underground, decrease if it floats.
-const SOLAR_PANEL_Y   = 0;     // metres above ground for Solar Panel
-const MONEY_FACTORY_Y = 0;     // metres above ground for MoneyFactory
+// ─── Per-model position & tilt offsets ─────────────────────────────────────
+// Y   – lift above ground (increase if model is underground)
+// TILT_X / TILT_Z – fix model tilt in radians (e.g. Math.PI / 2  =  90°)
+const SOLAR_PANEL_Y      = 0;          // Solar Panel — height
+const SOLAR_PANEL_TILT_X = 0;          // Solar Panel — X-axis tilt (radians)
+const SOLAR_PANEL_TILT_Z = 0;          // Solar Panel — Z-axis tilt (radians)
+
+const MONEY_FACTORY_Y      = 0;        // MoneyFactory — height
+const MONEY_FACTORY_TILT_X = 0;        // MoneyFactory — X-axis tilt (radians)
+const MONEY_FACTORY_TILT_Z = 0;        // MoneyFactory — Z-axis tilt (radians)
 
 // ─── Building (selectable object) ──────────────────────────────────────────
 
@@ -365,6 +373,43 @@ function GlowBoxPlaced({ position, rotation }) {
   );
 }
 
+// ─── Work-area zone overlay (shown when a placed item is selected) ───────────
+
+function WorkAreaOverlay({ width, depth, color, opacity }) {
+  const border = useMemo(() => {
+    const hw = width / 2, hd = depth / 2;
+    const pts = new Float32Array([
+      -hw, 0, -hd,  hw, 0, -hd,
+       hw, 0, -hd,  hw, 0,  hd,
+       hw, 0,  hd, -hw, 0,  hd,
+      -hw, 0,  hd, -hw, 0, -hd,
+    ]);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pts, 3));
+    return geo;
+  }, [width, depth]);
+
+  return (
+    <group position={[0, 0.05, 0]}>
+      {/* Transparent fill */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[width, depth]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={opacity}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {/* Solid border */}
+      <lineSegments geometry={border}>
+        <lineBasicMaterial color={color} />
+      </lineSegments>
+    </group>
+  );
+}
+
 // ─── Solar Panel — GLB inner components (may throw if file missing) ──────────
 
 function SolarPanelGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
@@ -394,15 +439,35 @@ function SolarPanelGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) 
 
   return (
     <group ref={groupRef}>
-      <primitive object={glowScene} position={[0, SOLAR_PANEL_Y, 0]} />
+      <primitive object={glowScene} position={[0, SOLAR_PANEL_Y, 0]} rotation={[SOLAR_PANEL_TILT_X, 0, SOLAR_PANEL_TILT_Z]} />
     </group>
   );
 }
 
-function SolarPanelGLTFPlaced({ position, rotation }) {
+function SolarPanelGLTFPlaced({ position, rotation, isSelected, onSelect }) {
   const { scene } = useGLTF('/models/Solar%20Panel.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
-  return <primitive object={cloned} position={[position[0], position[1] + SOLAR_PANEL_Y, position[2]]} rotation={[0, rotation || 0, 0]} />;
+  const { workArea } = SOLAR_PANEL_CONFIG;
+  return (
+    <group
+      position={[position[0], 0, position[2]]}
+      onPointerDown={(e) => { e.stopPropagation(); onSelect?.(); }}
+    >
+      <primitive
+        object={cloned}
+        position={[0, SOLAR_PANEL_Y, 0]}
+        rotation={[SOLAR_PANEL_TILT_X, rotation || 0, SOLAR_PANEL_TILT_Z]}
+      />
+      {isSelected && (
+        <WorkAreaOverlay
+          width={workArea.width}
+          depth={workArea.depth}
+          color={workArea.color}
+          opacity={workArea.opacity}
+        />
+      )}
+    </group>
+  );
 }
 
 // ─── Solar Panel — public components with error boundary + Suspense ──────────
@@ -417,11 +482,11 @@ function SolarPanelPreview({ placementPosRef, inputRef, placementRotYRef }) {
   );
 }
 
-function SolarPanelPlaced({ position, rotation }) {
+function SolarPanelPlaced({ position, rotation, isSelected, onSelect }) {
   return (
     <ModelErrorBoundary fallback={<GlowBoxPlaced position={position} rotation={rotation} />}>
       <Suspense fallback={<GlowBoxPlaced position={position} rotation={rotation} />}>
-        <SolarPanelGLTFPlaced position={position} rotation={rotation} />
+        <SolarPanelGLTFPlaced position={position} rotation={rotation} isSelected={isSelected} onSelect={onSelect} />
       </Suspense>
     </ModelErrorBoundary>
   );
@@ -456,15 +521,35 @@ function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }
 
   return (
     <group ref={groupRef}>
-      <primitive object={glowScene} position={[0, MONEY_FACTORY_Y, 0]} />
+      <primitive object={glowScene} position={[0, MONEY_FACTORY_Y, 0]} rotation={[MONEY_FACTORY_TILT_X, 0, MONEY_FACTORY_TILT_Z]} />
     </group>
   );
 }
 
-function MoneyFactoryGLTFPlaced({ position, rotation }) {
+function MoneyFactoryGLTFPlaced({ position, rotation, isSelected, onSelect }) {
   const { scene } = useGLTF('/models/MoneyFactory.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
-  return <primitive object={cloned} position={[position[0], position[1] + MONEY_FACTORY_Y, position[2]]} rotation={[0, rotation || 0, 0]} />;
+  const { workArea } = MONEY_FACTORY_CONFIG;
+  return (
+    <group
+      position={[position[0], 0, position[2]]}
+      onPointerDown={(e) => { e.stopPropagation(); onSelect?.(); }}
+    >
+      <primitive
+        object={cloned}
+        position={[0, MONEY_FACTORY_Y, 0]}
+        rotation={[MONEY_FACTORY_TILT_X, rotation || 0, MONEY_FACTORY_TILT_Z]}
+      />
+      {isSelected && (
+        <WorkAreaOverlay
+          width={workArea.width}
+          depth={workArea.depth}
+          color={workArea.color}
+          opacity={workArea.opacity}
+        />
+      )}
+    </group>
+  );
 }
 
 function MoneyFactoryPreview({ placementPosRef, inputRef, placementRotYRef }) {
@@ -478,12 +563,12 @@ function MoneyFactoryPreview({ placementPosRef, inputRef, placementRotYRef }) {
   );
 }
 
-function MoneyFactoryPlaced({ position, rotation }) {
+function MoneyFactoryPlaced({ position, rotation, isSelected, onSelect }) {
   const fb = <GlowBoxPlaced position={position} rotation={rotation} />;
   return (
     <ModelErrorBoundary fallback={fb}>
       <Suspense fallback={fb}>
-        <MoneyFactoryGLTFPlaced position={position} rotation={rotation} />
+        <MoneyFactoryGLTFPlaced position={position} rotation={rotation} isSelected={isSelected} onSelect={onSelect} />
       </Suspense>
     </ModelErrorBoundary>
   );
@@ -591,7 +676,7 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placi
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
-function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, placedItems, placementPosRef, placementRotYRef }) {
+function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, placedItems, placementPosRef, placementRotYRef, selectedPlacedId, setSelectedPlacedId }) {
   return (
     <>
       <Sky distance={450000} sunPosition={[100, 80, 80]} turbidity={6} rayleigh={0.4} />
@@ -613,9 +698,15 @@ function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, plac
       )}
       {placedItems.map(item =>
         item.type === 'solar-panel'
-          ? <SolarPanelPlaced key={item.id} position={item.position} rotation={item.rotation} />
+          ? <SolarPanelPlaced key={item.id} position={item.position} rotation={item.rotation}
+              isSelected={selectedPlacedId === item.id}
+              onSelect={() => setSelectedPlacedId(item.id)}
+            />
           : item.type === 'money-factory'
-          ? <MoneyFactoryPlaced key={item.id} position={item.position} rotation={item.rotation} />
+          ? <MoneyFactoryPlaced key={item.id} position={item.position} rotation={item.rotation}
+              isSelected={selectedPlacedId === item.id}
+              onSelect={() => setSelectedPlacedId(item.id)}
+            />
           : null
       )}
     </>
@@ -641,6 +732,7 @@ export default function OpenCity({ onBack }) {
   // Placement state
   const [placingItem,  setPlacingItem]  = useState(null);  // 'solar-panel' | null
   const [placedItems,  setPlacedItems]  = useState([]);
+  const [selectedPlacedId, setSelectedPlacedId] = useState(null);
   const placementPosRef  = useRef(null);
   const placementRotYRef = useRef(0);
   const placingItemRef   = useRef(null);  // mirror for sync access in event handlers
@@ -681,6 +773,7 @@ export default function OpenCity({ onBack }) {
       if (e.code === 'Escape') {
         if (placingItemRef.current) { setPlacingItem(null); e.preventDefault(); return; }
         clearSelection();
+        setSelectedPlacedId(null);
       }
       e.preventDefault?.();
     };
@@ -691,7 +784,7 @@ export default function OpenCity({ onBack }) {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup',   up);
     };
-  }, [clearSelection]);
+  }, [clearSelection, setSelectedPlacedId]);
 
   // Mouse events
   const canvasWrapRef = useRef(null);
@@ -805,6 +898,8 @@ export default function OpenCity({ onBack }) {
             placedItems={placedItems}
             placementPosRef={placementPosRef}
             placementRotYRef={placementRotYRef}
+            selectedPlacedId={selectedPlacedId}
+            setSelectedPlacedId={setSelectedPlacedId}
           />
         </Canvas>
 
