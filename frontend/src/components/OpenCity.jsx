@@ -1,8 +1,11 @@
-import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback, createContext, useContext } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sky, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import styles from './OpenCity.module.css';
+
+// ─── Context (avoids prop drilling into Building) ────────────────────────────
+const CityContext = createContext(null);
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -18,6 +21,56 @@ const CAM_ZOOM_MAX    = 140;   // max height
 const CAM_ZOOM_STEP   = 6;
 const CAM_TILT        = 55;    // degrees above horizon (fixed RTS angle)
 const CAM_ROT_SPEED   = 1.5;   // radians/sec for Q/E rotation
+
+// ─── Building (selectable object) ──────────────────────────────────────────
+
+function Building({ d, id }) {
+  const { lmbHeldRef, selectedRef, meshMapRef } = useContext(CityContext);
+  const meshRef = useRef();
+
+  // Register / unregister this mesh in the global map (for clear)
+  useEffect(() => {
+    meshMapRef.current.set(id, meshRef);
+    return () => { meshMapRef.current.delete(id); };
+  }, [id, meshMapRef]);
+
+  // Restore highlight after chunk reload
+  useEffect(() => {
+    if (selectedRef.current.has(id) && meshRef.current) {
+      meshRef.current.material.emissive.setHex(0x1a88ff);
+      meshRef.current.material.emissiveIntensity = 0.55;
+    }
+  });
+
+  const doSelect = useCallback(() => {
+    if (!meshRef.current || selectedRef.current.has(id)) return;
+    selectedRef.current.add(id);
+    meshRef.current.material.emissive.setHex(0x1a88ff);
+    meshRef.current.material.emissiveIntensity = 0.55;
+  }, [id, selectedRef]);
+
+  return (
+    <mesh
+      ref={meshRef}
+      castShadow
+      receiveShadow
+      position={[d.bx, d.bh / 2, d.bz]}
+      onPointerDown={(e) => {
+        if (e.button === 0) { e.stopPropagation(); doSelect(); }
+      }}
+      onPointerMove={(e) => {
+        if (lmbHeldRef.current) { e.stopPropagation(); doSelect(); }
+      }}
+    >
+      <boxGeometry args={[d.bw, d.bh, d.bd]} />
+      <meshStandardMaterial
+        color={`hsl(${Math.floor(d.hue * 360)}, 20%, 30%)`}
+        roughness={0.7}
+        metalness={0.1}
+      />
+    </mesh>
+  );
+}
 
 // ─── Chunk ──────────────────────────────────────────────────────────────────
 
@@ -78,19 +131,7 @@ function Chunk({ cx, cz }) {
 
       {/* Placeholder buildings / props (will be swapped for .glb) */}
       {decorations.map((d, i) => (
-        <mesh
-          key={i}
-          castShadow
-          receiveShadow
-          position={[d.bx, d.bh / 2, d.bz]}
-        >
-          <boxGeometry args={[d.bw, d.bh, d.bd]} />
-          <meshStandardMaterial
-            color={`hsl(${Math.floor(d.hue * 360)}, 20%, 30%)`}
-            roughness={0.7}
-            metalness={0.1}
-          />
-        </mesh>
+        <Building key={i} d={d} id={`${cx}_${cz}_${i}`} />
       ))}
     </group>
   );
@@ -263,18 +304,26 @@ function Lighting() {
 
 // ─── HUD ─────────────────────────────────────────────────────────────────────
 
-function HUD({ pos, zoom, onBack }) {
+function HUD({ pos, zoom, selectedCount, onClearSelection, onBack }) {
   return (
     <>
       <div className={styles.coords}>
         X: {pos.x.toFixed(0)} &nbsp;|&nbsp; Z: {pos.z.toFixed(0)}
         &nbsp;|&nbsp; Зум: {zoom.toFixed(0)}
       </div>
+      {selectedCount > 0 && (
+        <div className={styles.selectionInfo}>
+          <span>Выбрано: <strong>{selectedCount}</strong></span>
+          <button className={styles.clearBtn} onClick={onClearSelection} title="Сбросить выделение">✕</button>
+        </div>
+      )}
       <div className={styles.miniControls}>
         <span><kbd>W A S D</kbd> панорама</span>
         <span><kbd>Q / E</kbd> поворот</span>
         <span><kbd>↕ Колесо</kbd> зум</span>
         <span><kbd>ПКМ/СКМ</kbd> перетащить</span>
+        <span><kbd>ЛКМ</kbd> выделить объект</span>
+        <span><kbd>Esc</kbd> сбросить выбор</span>
       </div>
       <button className={styles.backBtn} onClick={onBack}>← Назад</button>
     </>
@@ -316,9 +365,36 @@ export default function OpenCity({ onBack }) {
   const [displayPos,  setDisplayPos]  = useState({ x: 0, z: 0 });
   const [displayZoom, setDisplayZoom] = useState(50);
 
+  // Selection state
+  const lmbHeldRef   = useRef(false);
+  const selectedRef  = useRef(new Set());
+  const meshMapRef   = useRef(new Map());
+  const [selectedCount, setSelectedCount] = useState(0);
+
+  const clearSelection = useCallback(() => {
+    for (const id of selectedRef.current) {
+      const mRef = meshMapRef.current.get(id);
+      if (mRef?.current) {
+        mRef.current.material.emissive.setHex(0x000000);
+        mRef.current.material.emissiveIntensity = 0;
+      }
+    }
+    selectedRef.current.clear();
+    setSelectedCount(0);
+  }, []);
+
+  const cityCtx = useMemo(
+    () => ({ lmbHeldRef, selectedRef, meshMapRef }),
+    []
+  );
+
   // Keyboard
   useEffect(() => {
-    const down = (e) => { keysRef.current[e.code] = true; e.preventDefault?.(); };
+    const down = (e) => {
+      keysRef.current[e.code] = true;
+      if (e.code === 'Escape') clearSelection();
+      e.preventDefault?.();
+    };
     const up   = (e) => { keysRef.current[e.code] = false; };
     window.addEventListener('keydown', down, { passive: false });
     window.addEventListener('keyup',   up);
@@ -326,7 +402,7 @@ export default function OpenCity({ onBack }) {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup',   up);
     };
-  }, []);
+  }, [clearSelection]);
 
   // Mouse events
   const canvasWrapRef = useRef(null);
@@ -346,6 +422,9 @@ export default function OpenCity({ onBack }) {
       inp.lastMY = e.clientY;
     };
     const onDown = (e) => {
+      if (e.button === 0) {
+        lmbHeldRef.current = true;
+      }
       if (e.button === 1 || e.button === 2) {
         inputRef.current.middleDrag = true;
         inputRef.current.lastMX = e.clientX;
@@ -354,6 +433,7 @@ export default function OpenCity({ onBack }) {
       }
     };
     const onUp = (e) => {
+      if (e.button === 0) lmbHeldRef.current = false;
       if (e.button === 1 || e.button === 2)
         inputRef.current.middleDrag = false;
     };
@@ -389,26 +469,35 @@ export default function OpenCity({ onBack }) {
     const id = setInterval(() => {
       setDisplayPos({ x: camTargetRef.current.x, z: camTargetRef.current.z });
       setDisplayZoom(camStateRef.current.zoom);
+      setSelectedCount(selectedRef.current.size);
     }, 100);
     return () => clearInterval(id);
   }, []);
 
   return (
-    <div className={styles.wrapper} ref={canvasWrapRef}>
-      <Canvas
-        shadows
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <Scene
-          camTargetRef={camTargetRef}
-          camStateRef={camStateRef}
-          keysRef={keysRef}
-          inputRef={inputRef}
-        />
-      </Canvas>
+    <CityContext.Provider value={cityCtx}>
+      <div className={styles.wrapper} ref={canvasWrapRef}>
+        <Canvas
+          shadows
+          gl={{ antialias: true, powerPreference: 'high-performance' }}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <Scene
+            camTargetRef={camTargetRef}
+            camStateRef={camStateRef}
+            keysRef={keysRef}
+            inputRef={inputRef}
+          />
+        </Canvas>
 
-      <HUD pos={displayPos} zoom={displayZoom} onBack={onBack || (() => {})} />
-    </div>
+        <HUD
+          pos={displayPos}
+          zoom={displayZoom}
+          selectedCount={selectedCount}
+          onClearSelection={clearSelection}
+          onBack={onBack || (() => {})}
+        />
+      </div>
+    </CityContext.Provider>
   );
 }
