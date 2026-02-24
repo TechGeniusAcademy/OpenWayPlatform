@@ -6,6 +6,15 @@ import styles from './OpenCity.module.css';
 import { SOLAR_PANEL_CONFIG }   from './items/solarPanel.js';
 import { MONEY_FACTORY_CONFIG } from './items/moneyFactory.js';
 import { isColliding }          from './items/collision.js';
+import {
+  REAL_MS_PER_GAME_HOUR,
+  getSunPosition,
+  getSkyParams,
+  getLighting,
+  getFogColor,
+  formatGameTime,
+  getDayPeriodIcon,
+} from './systems/dayNight.js';
 
 // ─── Context (avoids prop drilling into Building) ────────────────────────────
 const CityContext = createContext(null);
@@ -270,26 +279,78 @@ function RTSCamera({ camTargetRef, camStateRef, keysRef, inputRef }) {
 // ─── Lighting ────────────────────────────────────────────────────────────────
 
 function Lighting() {
-  const sunRef = useRef();
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime() * 0.015;
+  // Kept as empty stub — replaced by DynamicEnvironment inside Scene
+  return null;
+}
+
+// ─── Dynamic sky + lighting (reads gameTimeRef every frame via useFrame) ────────
+
+function DynamicEnvironment({ gameTimeRef }) {
+  const skyRef  = useRef();
+  const sunRef  = useRef();
+  const ambRef  = useRef();
+  const hemiRef = useRef();
+  const { scene } = useThree();
+
+  useFrame(() => {
+    const h = gameTimeRef.current;
+    const [sx, sy, sz] = getSunPosition(h);
+    const lit = getLighting(h);
+    const sky = getSkyParams(h);
+
+    // Sky uniforms
+    if (skyRef.current?.material?.uniforms) {
+      const u = skyRef.current.material.uniforms;
+      u.sunPosition.value.set(sx, sy, sz);
+      u.turbidity.value       = sky.turbidity;
+      u.rayleigh.value        = sky.rayleigh;
+      u.mieCoefficient.value  = sky.mieCoefficient;
+      u.mieDirectionalG.value = sky.mieDirectionalG;
+    }
+
+    // Directional light (sun)
     if (sunRef.current) {
-      sunRef.current.position.set(
-        Math.cos(t) * 300,
-        Math.sin(t) * 300,
-        Math.sin(t * 0.5) * 150
-      );
-      sunRef.current.target.position.set(0, 0, 0);
+      sunRef.current.position.set(sx, sy, sz);
+      sunRef.current.intensity = lit.dirIntensity;
+      sunRef.current.color.set(lit.dirColor);
       sunRef.current.target.updateMatrixWorld();
     }
+
+    // Ambient light
+    if (ambRef.current) {
+      ambRef.current.intensity = lit.ambientIntensity;
+      ambRef.current.color.set(lit.ambientColor);
+    }
+
+    // Hemisphere light
+    if (hemiRef.current) {
+      hemiRef.current.intensity = lit.hemiIntensity;
+      hemiRef.current.color.set(lit.hemiSky);
+      hemiRef.current.groundColor.set(lit.hemiGround);
+    }
+
+    // Fog colour
+    if (scene.fog) scene.fog.color.set(getFogColor(h));
   });
+
   return (
     <>
-      <ambientLight intensity={0.45} color="#c8d8ff" />
+      <Sky
+        ref={skyRef}
+        distance={450000}
+        sunPosition={[200, 0, 60]}
+        turbidity={10}
+        rayleigh={2}
+        mieCoefficient={0.02}
+        mieDirectionalG={0.98}
+      />
+      <Stars radius={400} depth={60} count={2500} factor={3} fade speed={0.3} />
+      <fog attach="fog" args={[getFogColor(8), 80, 350]} />
+      <ambientLight ref={ambRef} intensity={0.06} />
       <directionalLight
         ref={sunRef}
         castShadow
-        intensity={1.8}
+        intensity={0}
         color="#fff8e0"
         shadow-mapSize={[2048, 2048]}
         shadow-camera-near={1}
@@ -299,7 +360,7 @@ function Lighting() {
         shadow-camera-top={200}
         shadow-camera-bottom={-200}
       />
-      <hemisphereLight args={['#a0c8ff', '#3a5a3a', 0.4]} />
+      <hemisphereLight ref={hemiRef} args={['#9ec8ff', '#3a5a3a', 0.08]} />
     </>
   );
 }
@@ -664,13 +725,18 @@ function ShopModal({ onClose, onBuy }) {
 
 // ─── HUD ─────────────────────────────────────────────────────────────────────
 
-function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem }) {
+function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString }) {
   return (
     <>
       <div className={styles.coords}>
         X: {pos.x.toFixed(0)} &nbsp;|&nbsp; Z: {pos.z.toFixed(0)}
         &nbsp;|&nbsp; Зум: {zoom.toFixed(0)}
       </div>
+      {timeString && (
+        <div className={styles.gameClock}>
+          {getDayPeriodIcon(parseInt(timeString, 10))} {timeString}
+        </div>
+      )}
       {placingItem && (
         <div className={styles.placingHint}>
           🔧 Перемещайте объект &nbsp;·&nbsp; <kbd>Колесо</kbd> поворот &nbsp;·&nbsp; <kbd>ЛКМ</kbd> поставить &nbsp;·&nbsp; <kbd>Esc</kbd> отмена
@@ -698,13 +764,10 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placi
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
-function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, placedItems, placementPosRef, placementRotYRef, selectedPlacedId, setSelectedPlacedId }) {
+function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, placedItems, placementPosRef, placementRotYRef, selectedPlacedId, setSelectedPlacedId, gameTimeRef }) {
   return (
     <>
-      <Sky distance={450000} sunPosition={[100, 80, 80]} turbidity={6} rayleigh={0.4} />
-      <Stars radius={400} depth={60} count={2000} factor={3} fade speed={0.3} />
-      <fog attach="fog" args={['#8ab4cc', 80, 350]} />
-      <Lighting />
+      <DynamicEnvironment gameTimeRef={gameTimeRef} />
       <World camTargetRef={camTargetRef} />
       <RTSCamera
         camTargetRef={camTargetRef}
@@ -750,6 +813,31 @@ export default function OpenCity({ onBack }) {
   const [displayPos,  setDisplayPos]  = useState({ x: 0, z: 0 });
   const [displayZoom, setDisplayZoom] = useState(50);
   const [shopOpen,    setShopOpen]    = useState(false);
+
+  // ─── Day / night time tracking
+  const gameTimeRef  = useRef(8);                              // game hour 0–24, starts at 08:00
+  const [timeString, setTimeString] = useState('08:00');
+
+  // rAF — advances game time every real frame
+  useEffect(() => {
+    let lastMs = null;
+    let raf;
+    const tick = (nowMs) => {
+      if (lastMs !== null) {
+        gameTimeRef.current = (gameTimeRef.current + (nowMs - lastMs) / REAL_MS_PER_GAME_HOUR) % 24;
+      }
+      lastMs = nowMs;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Update HUD clock every game-minute (= 5 real seconds)
+  useEffect(() => {
+    const id = setInterval(() => setTimeString(formatGameTime(gameTimeRef.current)), 5000);
+    return () => clearInterval(id);
+  }, []);
 
   // Placement state
   const [placingItem,  setPlacingItem]  = useState(null);  // 'solar-panel' | null
@@ -934,6 +1022,7 @@ export default function OpenCity({ onBack }) {
             placementRotYRef={placementRotYRef}
             selectedPlacedId={selectedPlacedId}
             setSelectedPlacedId={setSelectedPlacedId}
+            gameTimeRef={gameTimeRef}
           />
         </Canvas>
 
@@ -945,6 +1034,7 @@ export default function OpenCity({ onBack }) {
           onShop={() => setShopOpen(true)}
           onBack={onBack || (() => {})}
           placingItem={placingItem}
+          timeString={timeString}
         />
         {shopOpen && <ShopModal onClose={() => setShopOpen(false)} onBuy={startPlacing} />}
       </div>
