@@ -30,7 +30,8 @@
 
 .setupIcon {
   font-size: 52px;
-  line-height: 1;
+  color: #a78bfa;
+  flex-shrink: 0;
 }
 
 .setupTitle {
@@ -100,13 +101,17 @@
 
 .dEmoji { font-size: 18px; flex-shrink: 0; }
 
+.btnIcon { margin-right: 5px; vertical-align: middle; }
+
+.statusIcon { margin-right: 5px; vertical-align: middle; }
+
 .dText { flex: 1; display: flex; flex-direction: column; gap: 1px; }
 
 .dLabel { font-size: 14px; font-weight: 600; }
 
 .dDesc { font-size: 11px; color: #64748b; }
 
-.dCheck { color: #7c72ff; font-weight: 700; font-size: 16px; }
+.dCheck { color: #7c72ff; font-size: 14px; }
 
 /* Color buttons */
 .colorRow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -240,9 +245,17 @@
 }
 
 .pbarAvatar {
-  font-size: 26px;
-  line-height: 1;
+  font-size: 24px;
+  color: #94a3b8;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #0d0d1a;
+  border-radius: 50%;
+  border: 1px solid #2a2a45;
 }
 
 .pbarInfo {
@@ -372,7 +385,7 @@
   gap: 10px;
 }
 
-.dbEmoji { font-size: 22px; flex-shrink: 0; }
+.dbEmoji { font-size: 22px; flex-shrink: 0; color: #94a3b8; display: flex; align-items: center; }
 .dbLabel { font-size: 13px; font-weight: 600; }
 .dbDesc  { font-size: 11px; color: #64748b; }
 
@@ -405,7 +418,14 @@
   to   { transform: scale(1);   opacity: 1; }
 }
 
-.modalEmoji  { font-size: 56px; margin-bottom: 12px; line-height: 1; }
+.modalEmoji {
+  font-size: 52px;
+  margin-bottom: 12px;
+  line-height: 1;
+  color: #a78bfa;
+  display: flex;
+  justify-content: center;
+}
 .modalTitle  { font-size: 24px; font-weight: 700; margin: 0 0 8px; }
 .modalReason { color: #94a3b8; margin: 0 0 4px; font-size: 15px; }
 .modalMoves  { color: #64748b; font-size: 13px; margin: 0 0 24px; }

@@ -2,6 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess } from 'chess.js';
 import ChessBoard from './ChessBoard';
 import styles from './ChessGame.module.css';
+import {
+  FaRobot, FaUser, FaTrophy, FaHandshake, FaSadCry,
+  FaRedo, FaCog, FaPlay, FaArrowLeft, FaFlag, FaCheck,
+  FaCircle, FaExclamationTriangle, FaClock, FaBrain,
+} from 'react-icons/fa';
+import { GiChessPawn } from 'react-icons/gi';
 
 // ─── Easy move helper (synchronous, fast) ─────────────────────
 // Picks a random move 60% of the time, otherwise takes any capture.
@@ -17,11 +23,16 @@ function getEasyMove(chess) {
 // maxDepth — iterative-deepening safety cap (worker stops early via timeLimit)
 // timeLimit — milliseconds the worker is allowed to think
 const DIFFICULTIES = [
-  { id: 'easy',   label: 'Новичок',    maxDepth: 0,  timeLimit: 0,    emoji: '🟢', desc: '~900 ELO — случайные ходы' },
-  { id: 'medium', label: 'Любитель',   maxDepth: 6,  timeLimit: 800,  emoji: '🟡', desc: '~1400 ELO — думает до 0.8 с' },
-  { id: 'hard',   label: 'Мастер',     maxDepth: 8,  timeLimit: 2000, emoji: '🔴', desc: '~1700 ELO — думает до 2 с' },
-  { id: 'expert', label: 'ИИ-Эксперт', maxDepth: 10, timeLimit: 4000, emoji: '💜', desc: '~2000 ELO — думает до 4 с' },
+  { id: 'easy',   label: 'Новичок',    maxDepth: 0,  timeLimit: 0,    iconColor: '#4ade80', desc: '~900 ELO — случайные ходы' },
+  { id: 'medium', label: 'Любитель',   maxDepth: 6,  timeLimit: 800,  iconColor: '#facc15', desc: '~1400 ELO — думает до 0.8 с' },
+  { id: 'hard',   label: 'Мастер',     maxDepth: 8,  timeLimit: 2000, iconColor: '#f87171', desc: '~1700 ELO — думает до 2 с' },
+  { id: 'expert', label: 'ИИ-Эксперт', maxDepth: 10, timeLimit: 4000, iconColor: '#a78bfa', desc: '~2000 ELO — думает до 4 с' },
 ];
+
+const DiffIcon = ({ id, style }) => {
+  const d = DIFFICULTIES.find(x => x.id === id);
+  return <FaCircle style={{ color: d?.iconColor || '#94a3b8', fontSize: 12, ...style }} />;
+};
 
 const PIECE_ICON   = { p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚' };
 const PIECE_ICON_W = { p:'♙',n:'♘',b:'♗',r:'♖',q:'♕',k:'♔' };
@@ -197,11 +208,20 @@ export default function ChessGame() {
   const diff = DIFFICULTIES.find(d=>d.id===difficulty)||DIFFICULTIES[1];
   const isMyTurn = !thinking && (game.turn()==='w')===(playerColor==='white');
 
-  let statusText='', statusClass=styles.statusNeutral;
-  if (thinking) { statusText=`🤖 ИИ думает${'.'.repeat(thinkingDots+1)}`; statusClass=styles.statusThinking; }
-  else if (game.isCheck()) { statusText='⚠️ Шах!'; statusClass=styles.statusCheck; }
-  else if (isMyTurn) { statusText='🟢 Ваш ход'; statusClass=styles.statusYour; }
-  else { statusText='⏳ Ход ИИ'; statusClass=styles.statusAI; }
+  let statusNode, statusClass=styles.statusNeutral;
+  if (thinking) {
+    statusNode = <><FaBrain className={styles.statusIcon}/> ИИ думает{'.'.repeat(thinkingDots+1)}</>;
+    statusClass = styles.statusThinking;
+  } else if (game.isCheck()) {
+    statusNode = <><FaExclamationTriangle className={styles.statusIcon}/> Шах!</>;
+    statusClass = styles.statusCheck;
+  } else if (isMyTurn) {
+    statusNode = <><FaCircle className={styles.statusIcon} style={{color:'#4ade80',fontSize:10}}/> Ваш ход</>;
+    statusClass = styles.statusYour;
+  } else {
+    statusNode = <><FaClock className={styles.statusIcon}/> Ход ИИ</>;
+    statusClass = styles.statusAI;
+  }
 
   const aiCaptures = playerColor==='white'?capByBlack:capByWhite;
   const myCaptures = playerColor==='white'?capByWhite:capByBlack;
@@ -216,7 +236,7 @@ export default function ChessGame() {
       {screen==='setup' && (
         <div className={styles.setup}>
           <div className={styles.setupHeader}>
-            <span className={styles.setupIcon}>♟</span>
+            <GiChessPawn className={styles.setupIcon} />
             <div>
               <h1 className={styles.setupTitle}>Шахматы vs ИИ</h1>
               <p className={styles.setupSub}>Minimax + Alpha-Beta pruning · Piece-Square Tables</p>
@@ -232,12 +252,12 @@ export default function ChessGame() {
                   className={`${styles.diffBtn} ${difficulty===d.id?styles.diffBtnOn:''}`}
                   onClick={()=>setDifficulty(d.id)}
                 >
-                  <span className={styles.dEmoji}>{d.emoji}</span>
+                  <DiffIcon id={d.id} />
                   <div className={styles.dText}>
                     <span className={styles.dLabel}>{d.label}</span>
                     <span className={styles.dDesc}>{d.desc}</span>
                   </div>
-                  {difficulty===d.id && <span className={styles.dCheck}>✓</span>}
+                  {difficulty===d.id && <FaCheck className={styles.dCheck}/>}
                 </button>
               ))}
             </div>
@@ -260,7 +280,7 @@ export default function ChessGame() {
             </div>
           </div>
 
-          <button className={styles.startBtn} onClick={startGame}>▶ Начать игру</button>
+          <button className={styles.startBtn} onClick={startGame}><FaPlay className={styles.btnIcon}/> Начать игру</button>
         </div>
       )}
 
@@ -269,20 +289,20 @@ export default function ChessGame() {
         <div className={styles.gameView}>
           <div className={styles.topBar}>
             <button className={styles.btnBack} onClick={()=>{ workerRef.current?.terminate(); setThinking(false); setScreen('setup'); }}>
-              ← Настройки
+              <FaArrowLeft className={styles.btnIcon}/> Настройки
             </button>
-            <div className={`${styles.statusBadge} ${statusClass}`}>{statusText}</div>
-            <button className={styles.btnResign} onClick={resign}>⚑ Сдаться</button>
+            <div className={`${styles.statusBadge} ${statusClass}`}>{statusNode}</div>
+            <button className={styles.btnResign} onClick={resign}><FaFlag className={styles.btnIcon}/> Сдаться</button>
           </div>
 
           <div className={styles.gameLayout}>
             <div className={styles.boardCol}>
               {/* AI Player Bar */}
               <div className={`${styles.pbar} ${thinking?styles.pbarActive:''}`}>
-                <div className={styles.pbarAvatar}>🤖</div>
+                <div className={styles.pbarAvatar}><FaRobot /></div>
                 <div className={styles.pbarInfo}>
                   <span className={styles.pbarName}>OpenWay AI — {diff.label}</span>
-                  <span className={styles.pbarColor}>{diff.emoji} {playerColor==='white'?'♚ Чёрные':'♔ Белые'}</span>
+                  <span className={styles.pbarColor}><DiffIcon id={diff.id} style={{marginRight:4}}/>{playerColor==='white'?'♚ Чёрные':'♔ Белые'}</span>
                 </div>
                 <div className={styles.capRow}>
                   {aiCaptures.map((p,i)=>(
@@ -308,7 +328,7 @@ export default function ChessGame() {
 
               {/* My Player Bar */}
               <div className={`${styles.pbar} ${isMyTurn?styles.pbarActive:''}`}>
-                <div className={styles.pbarAvatar}>👤</div>
+                <div className={styles.pbarAvatar}><FaUser /></div>
                 <div className={styles.pbarInfo}>
                   <span className={styles.pbarName}>Вы</span>
                   <span className={styles.pbarColor}>{playerColor==='white'?'♔ Белые':'♚ Чёрные'}</span>
@@ -338,7 +358,7 @@ export default function ChessGame() {
               </div>
 
               <div className={styles.diffBadge}>
-                <span className={styles.dbEmoji}>{diff.emoji}</span>
+                <DiffIcon id={diff.id} style={{ fontSize: 18 }} />
                 <div>
                   <div className={styles.dbLabel}>{diff.label}</div>
                   <div className={styles.dbDesc}>{diff.desc}</div>
@@ -354,7 +374,11 @@ export default function ChessGame() {
         <div className={styles.overlay}>
           <div className={styles.modal}>
             <div className={styles.modalEmoji}>
-              {result.winner==='draw'?'🤝':result.winner===playerColor?'🏆':'😔'}
+              {result.winner==='draw'
+                ? <FaHandshake style={{ color:'#38bdf8' }} />
+                : result.winner===playerColor
+                  ? <FaTrophy style={{ color:'#facc15' }} />
+                  : <FaSadCry style={{ color:'#f87171' }} />}
             </div>
             <h2 className={styles.modalTitle}>
               {result.winner==='draw'?'Ничья!':result.winner===playerColor?'Вы победили!':'ИИ победил!'}
@@ -365,8 +389,8 @@ export default function ChessGame() {
             </p>
             <p className={styles.modalMoves}>Сыграно ходов: {history.length}</p>
             <div className={styles.modalBtns}>
-              <button className={styles.btnAgain} onClick={startGame}>↺ Снова</button>
-              <button className={styles.btnSetup} onClick={()=>setScreen('setup')}>⚙ Настройки</button>
+              <button className={styles.btnAgain} onClick={startGame}><FaRedo className={styles.btnIcon}/> Снова</button>
+              <button className={styles.btnSetup} onClick={()=>setScreen('setup')}><FaCog className={styles.btnIcon}/> Настройки</button>
             </div>
           </div>
         </div>
