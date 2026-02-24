@@ -12,7 +12,7 @@
 
 /* ── Coordinates HUD ── */
 .coords {
-  position: absolute;
+  position: fixed;
   top: 18px;
   left: 50%;
   transform: translateX(-50%);
@@ -25,20 +25,20 @@
   font-family: 'JetBrains Mono', monospace;
   color: #94a3b8;
   pointer-events: none;
-  z-index: 10;
+  z-index: 9999;
   white-space: nowrap;
 }
 
 /* ── Mini controls hint (bottom-right) ── */
 .miniControls {
-  position: absolute;
+  position: fixed;
   bottom: 18px;
   right: 18px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   pointer-events: none;
-  z-index: 10;
+  z-index: 9999;
 }
 
 .miniControls span {
@@ -62,10 +62,10 @@
 
 /* ── Back button ── */
 .backBtn {
-  position: absolute;
+  position: fixed;
   top: 18px;
   left: 18px;
-  z-index: 30;
+  z-index: 9999;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -86,7 +86,7 @@
 
 /* ── Selection info badge ── */
 .selectionInfo {
-  position: absolute;
+  position: fixed;
   top: 18px;
   left: 50%;
   transform: translateX(-50%);
@@ -102,7 +102,7 @@
   font-size: 13px;
   color: #93c5fd;
   pointer-events: auto;
-  z-index: 15;
+  z-index: 9999;
   white-space: nowrap;
   animation: fadeIn 0.2s ease;
 }
@@ -142,13 +142,13 @@
 
 /* ── Shop button (bottom-left) ── */
 .shopBtn {
-  position: absolute;
+  position: fixed;
   bottom: 18px;
   left: 18px;
-  z-index: 30;
-  background: rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  background: rgba(20, 25, 45, 0.85);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.4);
   border-radius: 14px;
   font-size: 26px;
   width: 52px;
@@ -160,21 +160,23 @@
   transition: all 0.2s ease;
   line-height: 1;
   padding: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(251, 191, 36, 0.15);
 }
 
 .shopBtn:hover {
   background: rgba(251, 191, 36, 0.18);
-  border-color: rgba(251, 191, 36, 0.35);
+  border-color: rgba(251, 191, 36, 0.7);
   transform: scale(1.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(251, 191, 36, 0.25);
 }
 
 /* ── Shop modal overlay ── */
 .shopOverlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
-  z-index: 100;
+  z-index: 10000;
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
