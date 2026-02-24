@@ -362,7 +362,7 @@ function GlowBoxPlaced({ position }) {
 // ─── Solar Panel — GLB inner components (may throw if file missing) ──────────
 
 function SolarPanelGLTFPreview({ placementPosRef, inputRef }) {
-  const { scene } = useGLTF('/models/solar%20panel.glb');
+  const { scene } = useGLTF('/models/Solar%20Panel.glb');
   const groupRef  = usePlacementTracker(placementPosRef, inputRef);
 
   const glowScene = useMemo(() => {
@@ -390,7 +390,7 @@ function SolarPanelGLTFPreview({ placementPosRef, inputRef }) {
 }
 
 function SolarPanelGLTFPlaced({ position }) {
-  const { scene } = useGLTF('/models/solar%20panel.glb');
+  const { scene } = useGLTF('/models/Solar%20Panel.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
   return <primitive object={cloned} position={position} />;
 }
