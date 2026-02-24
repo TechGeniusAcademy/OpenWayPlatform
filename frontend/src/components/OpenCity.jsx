@@ -21,6 +21,11 @@ const CAM_ZOOM_STEP   = 6;
 const CAM_TILT        = 55;    // degrees above horizon (fixed RTS angle)
 const CAM_ROT_SPEED   = 1.5;   // radians/sec for Q/E rotation
 
+// ─── Per-model Y height offsets ─────────────────────────────────────────────
+// Increase the value if the model is underground, decrease if it floats.
+const SOLAR_PANEL_Y   = 0;     // metres above ground for Solar Panel
+const MONEY_FACTORY_Y = 0;     // metres above ground for MoneyFactory
+
 // ─── Building (selectable object) ──────────────────────────────────────────
 
 function Building({ d, id }) {
@@ -387,13 +392,17 @@ function SolarPanelGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) 
     });
   });
 
-  return <primitive ref={groupRef} object={glowScene} />;
+  return (
+    <group ref={groupRef}>
+      <primitive object={glowScene} position={[0, SOLAR_PANEL_Y, 0]} />
+    </group>
+  );
 }
 
 function SolarPanelGLTFPlaced({ position, rotation }) {
   const { scene } = useGLTF('/models/Solar%20Panel.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
-  return <primitive object={cloned} position={position} rotation={[0, rotation || 0, 0]} />;
+  return <primitive object={cloned} position={[position[0], position[1] + SOLAR_PANEL_Y, position[2]]} rotation={[0, rotation || 0, 0]} />;
 }
 
 // ─── Solar Panel — public components with error boundary + Suspense ──────────
@@ -445,13 +454,17 @@ function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }
     });
   });
 
-  return <primitive ref={groupRef} object={glowScene} />;
+  return (
+    <group ref={groupRef}>
+      <primitive object={glowScene} position={[0, MONEY_FACTORY_Y, 0]} />
+    </group>
+  );
 }
 
 function MoneyFactoryGLTFPlaced({ position, rotation }) {
   const { scene } = useGLTF('/models/MoneyFactory.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
-  return <primitive object={cloned} position={position} rotation={[0, rotation || 0, 0]} />;
+  return <primitive object={cloned} position={[position[0], position[1] + MONEY_FACTORY_Y, position[2]]} rotation={[0, rotation || 0, 0]} />;
 }
 
 function MoneyFactoryPreview({ placementPosRef, inputRef, placementRotYRef }) {
