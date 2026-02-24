@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useMemo, useCallback, createContext, useContext } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Sky, Stars } from '@react-three/drei';
+import { Sky, Stars, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import styles from './OpenCity.module.css';
 
@@ -290,13 +290,68 @@ function Lighting() {
   );
 }
 
+useGLTF.preload('/models/solar%20panel.glb');
+
+// ─── Solar Panel — placement preview (follows mouse, glows) ─────────────────
+
+function SolarPanelPreview({ placementPosRef, inputRef }) {
+  const { scene } = useGLTF('/models/solar%20panel.glb');
+  const { camera, gl, raycaster } = useThree();
+  const groupRef    = useRef();
+  const groundPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
+  const hitPoint    = useMemo(() => new THREE.Vector3(), []);
+
+  const glowScene = useMemo(() => {
+    const c = scene.clone(true);
+    c.traverse(child => {
+      if (child.isMesh) {
+        child.material = child.material.clone();
+        child.material.emissive          = new THREE.Color(0x00aaff);
+        child.material.emissiveIntensity = 0.8;
+        child.material.transparent       = true;
+        child.material.opacity           = 0.8;
+      }
+    });
+    return c;
+  }, [scene]);
+
+  useFrame(({ clock }) => {
+    const inp = inputRef.current;
+    if (inp.mouseX === null || !groupRef.current) return;
+    const ndc = new THREE.Vector2(
+      (inp.mouseX / gl.domElement.clientWidth)  *  2 - 1,
+     -(inp.mouseY / gl.domElement.clientHeight) *  2 + 1
+    );
+    raycaster.setFromCamera(ndc, camera);
+    if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
+      groupRef.current.position.set(hitPoint.x, 0, hitPoint.z);
+      placementPosRef.current = { x: hitPoint.x, y: 0, z: hitPoint.z };
+    }
+    // Pulse glow
+    const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    glowScene.traverse(child => {
+      if (child.isMesh) child.material.emissiveIntensity = pulse;
+    });
+  });
+
+  return <primitive ref={groupRef} object={glowScene} />;
+}
+
+// ─── Solar Panel — permanently placed instance ───────────────────────
+
+function SolarPanelPlaced({ position }) {
+  const { scene } = useGLTF('/models/solar%20panel.glb');
+  const cloned    = useMemo(() => scene.clone(true), [scene]);
+  return <primitive object={cloned} position={position} />;
+}
+
 // ─── Shop Modal ─────────────────────────────────────────────────────────────
 
 const SHOP_TABS = [
   { id: 'energy', label: '⚡ Энергия' },
 ];
 
-function ShopModal({ onClose }) {
+function ShopModal({ onClose, onBuy }) {
   const [activeTab, setActiveTab] = useState('energy');
 
   return (
@@ -324,10 +379,15 @@ function ShopModal({ onClose }) {
         {/* Content */}
         <div className={styles.shopContent}>
           {activeTab === 'energy' && (
-            <div className={styles.shopEmpty}>
-              <span className={styles.shopEmptyIcon}>⚡</span>
-              <p>Энергетические постройки появятся здесь</p>
-              <span className={styles.shopEmptyHint}>Скоро...</span>
+            <div className={styles.shopGrid}>
+              <div className={styles.shopItem} onClick={() => { onBuy('solar-panel'); onClose(); }}>
+                <div className={styles.shopItemIcon}>☀️</div>
+                <div className={styles.shopItemInfo}>
+                  <span className={styles.shopItemName}>Солнечная панель</span>
+                  <span className={styles.shopItemDesc}>Генерирует энергию днём</span>
+                </div>
+                <button className={styles.shopItemBtn}>Разместить</button>
+              </div>
             </div>
           )}
         </div>
@@ -338,14 +398,19 @@ function ShopModal({ onClose }) {
 
 // ─── HUD ─────────────────────────────────────────────────────────────────────
 
-function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack }) {
+function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem }) {
   return (
     <>
       <div className={styles.coords}>
         X: {pos.x.toFixed(0)} &nbsp;|&nbsp; Z: {pos.z.toFixed(0)}
         &nbsp;|&nbsp; Зум: {zoom.toFixed(0)}
       </div>
-      {selectedCount > 0 && (
+      {placingItem && (
+        <div className={styles.placingHint}>
+          🔧 Перемещайте объект &nbsp;·&nbsp; <kbd>Enter</kbd> поставить &nbsp;·&nbsp; <kbd>Esc</kbd> отмена
+        </div>
+      )}
+      {!placingItem && selectedCount > 0 && (
         <div className={styles.selectionInfo}>
           <span>Выбрано: <strong>{selectedCount}</strong></span>
           <button className={styles.clearBtn} onClick={onClearSelection} title="Сбросить выделение">✕</button>
@@ -359,7 +424,7 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack }) {
         <span><kbd>ЛКМ</kbd> выделить объект</span>
         <span><kbd>Esc</kbd> сбросить выбор</span>
       </div>
-      <button className={styles.shopBtn} onClick={onShop} title="Магазин построек">🏪</button>
+      {!placingItem && <button className={styles.shopBtn} onClick={onShop} title="Магазин построек">🏪</button>}
       <button className={styles.backBtn} onClick={onBack}>← Назад</button>
     </>
   );
@@ -367,7 +432,7 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack }) {
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 
-function Scene({ camTargetRef, camStateRef, keysRef, inputRef }) {
+function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, placedItems, placementPosRef }) {
   return (
     <>
       <Sky distance={450000} sunPosition={[100, 80, 80]} turbidity={6} rayleigh={0.4} />
@@ -381,6 +446,14 @@ function Scene({ camTargetRef, camStateRef, keysRef, inputRef }) {
         keysRef={keysRef}
         inputRef={inputRef}
       />
+      {placingItem === 'solar-panel' && (
+        <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} />
+      )}
+      {placedItems.map(item =>
+        item.type === 'solar-panel'
+          ? <SolarPanelPlaced key={item.id} position={item.position} />
+          : null
+      )}
     </>
   );
 }
@@ -400,6 +473,13 @@ export default function OpenCity({ onBack }) {
   const [displayPos,  setDisplayPos]  = useState({ x: 0, z: 0 });
   const [displayZoom, setDisplayZoom] = useState(50);
   const [shopOpen,    setShopOpen]    = useState(false);
+
+  // Placement state
+  const [placingItem,  setPlacingItem]  = useState(null);  // 'solar-panel' | null
+  const [placedItems,  setPlacedItems]  = useState([]);
+  const placementPosRef  = useRef(null);
+  const placingItemRef   = useRef(null);  // mirror for sync access in event handlers
+  useEffect(() => { placingItemRef.current = placingItem; }, [placingItem]);
 
   // Selection state
   const lmbHeldRef   = useRef(false);
@@ -428,10 +508,26 @@ export default function OpenCity({ onBack }) {
   useEffect(() => {
     const down = (e) => {
       keysRef.current[e.code] = true;
-      if (e.code === 'Escape') clearSelection();
+      if (e.code === 'Enter') {
+        if (placingItemRef.current && placementPosRef.current) {
+          const pos = placementPosRef.current;
+          setPlacedItems(prev => [...prev, {
+            id: Date.now(),
+            type: placingItemRef.current,
+            position: [pos.x, pos.y, pos.z],
+          }]);
+          setPlacingItem(null);
+        }
+        e.preventDefault();
+        return;
+      }
+      if (e.code === 'Escape') {
+        if (placingItemRef.current) { setPlacingItem(null); e.preventDefault(); return; }
+        clearSelection();
+      }
       e.preventDefault?.();
     };
-    const up   = (e) => { keysRef.current[e.code] = false; };
+    const up = (e) => { keysRef.current[e.code] = false; };
     window.addEventListener('keydown', down, { passive: false });
     window.addEventListener('keyup',   up);
     return () => {
@@ -459,10 +555,13 @@ export default function OpenCity({ onBack }) {
     };
     const onDown = (e) => {
       if (e.button === 0) {
-        lmbHeldRef.current = true;
-        inputRef.current.middleDrag = true;
-        inputRef.current.lastMX = e.clientX;
-        inputRef.current.lastMY = e.clientY;
+        // Don't drag camera while placing an item
+        if (!placingItemRef.current) {
+          lmbHeldRef.current = true;
+          inputRef.current.middleDrag = true;
+          inputRef.current.lastMX = e.clientX;
+          inputRef.current.lastMY = e.clientY;
+        }
       }
       if (e.button === 1 || e.button === 2) {
         inputRef.current.middleDrag = true;
@@ -529,6 +628,9 @@ export default function OpenCity({ onBack }) {
             camStateRef={camStateRef}
             keysRef={keysRef}
             inputRef={inputRef}
+            placingItem={placingItem}
+            placedItems={placedItems}
+            placementPosRef={placementPosRef}
           />
         </Canvas>
 
@@ -539,8 +641,9 @@ export default function OpenCity({ onBack }) {
           onClearSelection={clearSelection}
           onShop={() => setShopOpen(true)}
           onBack={onBack || (() => {})}
+          placingItem={placingItem}
         />
-        {shopOpen && <ShopModal onClose={() => setShopOpen(false)} />}
+        {shopOpen && <ShopModal onClose={() => setShopOpen(false)} onBuy={setPlacingItem} />}
       </div>
     </CityContext.Provider>
   );
