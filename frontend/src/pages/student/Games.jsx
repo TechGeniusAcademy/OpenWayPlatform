@@ -7,6 +7,7 @@ import QuizBattle from "../../components/QuizBattle";
 import FlexChan from "../../components/FlexChan";
 import LayoutGame from "../../components/LayoutGame";
 import JSGame from "../../components/JSGame";
+import OpenCity from "../../components/OpenCity";
 import styles from "./Games.module.css";
 import { MdOutlineQuiz } from "react-icons/md";
 import {
@@ -29,6 +30,12 @@ function StatPill({ icon, label, value, accent }) {
 }
 
 const GAMES = [
+  {
+    id: "open-city", title: "OpenCity",
+    icon: <IoGameController />, color: "#22d3ee",
+    tag: "3D Мир", new: true,
+    desc: "Исследуй бесконечный 3D город — свободное передвижение, живой мир и постоянно растущее содержимое"
+  },
   {
     id: "quiz-battle", title: "Битва Знаний",
     icon: <MdOutlineQuiz />, color: "#6366f1",
@@ -132,6 +139,11 @@ export default function Games() {
     }
   };
 
+  /* ── OpenCity — full-screen, has its own back button ── */
+  if (selectedGame === "open-city") {
+    return <OpenCity onBack={() => setSelectedGame(null)} />;
+  }
+
   /* ── render selected game ── */
   if (selectedGame) {
     const game = GAMES.find(g => g.id === selectedGame);
@@ -146,6 +158,7 @@ export default function Games() {
         {selectedGame === "flex-chan"     && <FlexChan />}
         {selectedGame === "layout-game"  && <LayoutGame onBack={() => setSelectedGame(null)} />}
         {selectedGame === "js-game"      && <JSGame onBack={() => setSelectedGame(null)} />}
+        {selectedGame === "open-city"     && <OpenCity onBack={() => setSelectedGame(null)} />}
       </div>
     );
   }
