@@ -151,6 +151,33 @@ router.delete('/admin/levels/:id', auth, adminAuth, async (req, res) => {
   }
 });
 
+// Прогресс всех студентов по уровню (для админа)
+router.get('/admin/levels/:id/progress', auth, adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        u.id            AS user_id,
+        u.full_name,
+        u.username,
+        u.avatar_url,
+        COALESCE(p.completed,      false) AS completed,
+        COALESCE(p.best_accuracy,  0)     AS best_accuracy,
+        COALESCE(p.attempts,       0)     AS attempts,
+        p.completed_at
+      FROM users u
+      INNER JOIN layout_game_progress p ON p.user_id = u.id AND p.level_id = $1
+      ORDER BY p.best_accuracy DESC, u.full_name ASC
+    `, [id]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Ошибка получения прогресса:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 // ==================== STUDENT ROUTES ====================
 
 // Получить все активные уровни с прогрессом пользователя

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import styles from './LayoutGameManagement.module.css';
-import { FaPlus, FaEdit, FaTrash, FaCode, FaSave, FaTimes, FaEye, FaEyeSlash, FaArrowUp, FaArrowDown, FaPlay } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaCode, FaSave, FaTimes, FaEye, FaEyeSlash, FaArrowUp, FaArrowDown, FaPlay, FaUsers, FaTrophy, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import api from '../utils/api';
 import { toast } from 'react-toastify';
 
@@ -22,6 +22,12 @@ function LayoutGameManagement() {
   });
   const [saving, setSaving] = useState(false);
   const previewRef = useRef(null);
+
+  // Прогресс
+  const [progressModal, setProgressModal]   = useState(false);
+  const [progressLevel, setProgressLevel]   = useState(null);
+  const [progressData,  setProgressData]    = useState([]);
+  const [progressLoading, setProgressLoading] = useState(false);
 
   useEffect(() => {
     loadLevels();
@@ -237,6 +243,27 @@ function LayoutGameManagement() {
     }
   };
 
+  const openProgressModal = async (level) => {
+    setProgressLevel(level);
+    setProgressModal(true);
+    setProgressData([]);
+    setProgressLoading(true);
+    try {
+      const res = await api.get(`/layout-game/admin/levels/${level.id}/progress`);
+      setProgressData(res.data);
+    } catch (e) {
+      toast.error('Не удалось загрузить прогресс');
+    } finally {
+      setProgressLoading(false);
+    }
+  };
+
+  const closeProgressModal = () => {
+    setProgressModal(false);
+    setProgressLevel(null);
+    setProgressData([]);
+  };
+
   if (loading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
@@ -324,6 +351,13 @@ function LayoutGameManagement() {
               </div>
 
               <div className={styles.levelActions}>
+                <button 
+                  onClick={() => openProgressModal(level)}
+                  className={`${styles.actionBtn} ${styles.progressBtn}`}
+                  title="Прогресс учеников"
+                >
+                  <FaUsers />
+                </button>
                 <button 
                   onClick={() => toggleActive(level)} 
                   className={`${styles.actionBtn} ${!level.is_active ? styles.inactive : ''}`}
@@ -485,8 +519,82 @@ function LayoutGameManagement() {
           </div>
         </div>
       )}
-    </div>
-  );
+
+      {/* Модалка прогресса */}
+      {progressModal && (
+        <div className={styles.modalOverlay} onClick={closeProgressModal}>
+          <div className={`${styles.modal} ${styles.progressModalWrap}`} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2><FaUsers /> Прогресс: {progressLevel?.title}</h2>
+              <button onClick={closeProgressModal} className={styles.closeBtn}><FaTimes /></button>
+            </div>
+
+            <div className={styles.progressBody}>
+              {progressLoading ? (
+                <div className={styles.progressLoading}>Загрузка...</div>
+              ) : progressData.length === 0 ? (
+                <div className={styles.progressEmpty}>
+                  <FaUsers className={styles.emptyIcon} />
+                  <p>Никто ещё не проходил этот уровень</p>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.progressStats}>
+                    <span className={styles.progressStatChip}>
+                      <FaUsers /> {progressData.length} попыток
+                    </span>
+                    <span className={styles.progressStatChip} style={{ color: '#22c55e' }}>
+                      <FaTrophy /> {progressData.filter(r => r.completed).length} прошли
+                    </span>
+                  </div>
+                  <div className={styles.progressTable}>
+                    <div className={styles.progressTableHead}>
+                      <span>Ученик</span>
+                      <span>Лучшая точность</span>
+                      <span>Попыток</span>
+                      <span>Статус</span>
+                      <span>Дата</span>
+                    </div>
+                    {progressData.map(row => (
+                      <div key={row.user_id} className={`${styles.progressRow} ${row.completed ? styles.progressRowDone : ''}`}>
+                        <span className={styles.progressName}>
+                          {row.avatar_url
+                            ? <img src={row.avatar_url} alt="" className={styles.progressAvatar} />
+                            : <span className={styles.progressAvatarFallback}>{(row.full_name || row.username || '?')[0].toUpperCase()}</span>
+                          }
+                          <span>{row.full_name || row.username}</span>
+                        </span>
+                        <span>
+                          <span className={styles.accuracyBar}>
+                            <span
+                              className={styles.accuracyFill}
+                              style={{ width: `${row.best_accuracy}%`, background: row.best_accuracy >= 95 ? '#22c55e' : row.best_accuracy >= 70 ? '#f59e0b' : '#ef4444' }}
+                            />
+                          </span>
+                          <strong>{Number(row.best_accuracy).toFixed(1)}%</strong>
+                        </span>
+                        <span>{row.attempts}</span>
+                        <span>
+                          {row.completed
+                            ? <><FaCheckCircle color="#22c55e" /> Пройден</>
+                            : <><FaTimesCircle color="#ef4444" /> Не пройден</>
+                          }
+                        </span>
+                        <span>
+                          {row.completed_at
+                            ? new Date(row.completed_at).toLocaleDateString('ru-RU')
+                            : '—'
+                          }
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 }
 
 export default LayoutGameManagement;
