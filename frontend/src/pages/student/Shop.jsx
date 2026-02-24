@@ -23,6 +23,16 @@ export default function Shop() {
   const [userExperience, setUserXP]     = useState(0);
   const [userLevels, setUserLevels]     = useState([]);
   const [loading, setLoading]           = useState(false);
+  const [activeBoosts, setActiveBoosts] = useState([]);
+  const [boostMsg, setBoostMsg]         = useState(null);
+  const [, forceBoostTick]              = useState(0);
+
+  // Countdown tick
+  useEffect(() => {
+    if (!activeBoosts.length) return;
+    const id = setInterval(() => forceBoostTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [activeBoosts.length]);
 
   const [selectedType, setSelectedType] = useState("all");
   const [searchQuery, setSearch]        = useState("");
@@ -35,6 +45,7 @@ export default function Shop() {
     fetchPurchases();
     refreshUserData();
     fetchUserLevels();
+    fetchActiveBoosts();
   }, []);
 
   const refreshUserData = async () => {
@@ -54,6 +65,34 @@ export default function Shop() {
   };
   const fetchUserLevels = async () => {
     try { const r = await api.get("/user-levels"); setUserLevels(r.data); } catch (e) { console.error(e); }
+  };
+
+  const fetchActiveBoosts = async () => {
+    try { const r = await api.get('/boosts/active'); setActiveBoosts(r.data.boosts || []); } catch (e) { console.error(e); }
+  };
+
+  const handleBoostPurchase = async (level) => {
+    setLoading(true);
+    try {
+      const r = await api.post('/boosts/purchase', { level });
+      setUserPoints(r.data.remainingPoints);
+      await fetchActiveBoosts();
+      setBoostMsg({ text: r.data.message, ok: true });
+      setTimeout(() => setBoostMsg(null), 4000);
+    } catch (e) {
+      const msg = e.response?.data?.error || 'Ошибка покупки';
+      setBoostMsg({ text: msg, ok: false });
+      setTimeout(() => setBoostMsg(null), 4000);
+    } finally { setLoading(false); }
+  };
+
+  const formatCountdown = (expiresAt) => {
+    const ms = new Date(expiresAt) - Date.now();
+    if (ms <= 0) return 'истёк';
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${h}ч ${m.toString().padStart(2,'0')}м ${s.toString().padStart(2,'0')}с`;
   };
 
   const getRequiredLevel = (xp) => {
@@ -115,6 +154,7 @@ export default function Shop() {
     { value: "banner",        label: "Баннеры",       icon: <AiOutlinePicture />,     count: shopItems.filter(i => i.item_type === "banner").length },
     { value: "username",      label: "Никнеймы",      icon: <AiOutlineFontSize />,    count: shopItems.filter(i => i.item_type === "username").length },
     { value: "message_color", label: "Цвет текста",   icon: <MdFormatColorText />,    count: shopItems.filter(i => i.item_type === "message_color").length },
+    { value: "boost",         label: "Бусты XP",      icon: <HiLightningBolt />,      count: 2 },
   ];
 
   const priceRanges = [
@@ -244,7 +284,106 @@ export default function Shop() {
 
         {/* Main grid */}
         <main className={styles.main}>
-          <div className={styles.toolBar}>
+          {/* ── Boost section ── */}
+          {selectedType === 'boost' && (
+            <div style={{ width: '100%' }}>
+              {boostMsg && (
+                <div style={{
+                  marginBottom: 16, padding: '12px 18px', borderRadius: 10,
+                  background: boostMsg.ok ? '#d1fae5' : '#fee2e2',
+                  color: boostMsg.ok ? '#065f46' : '#991b1b',
+                  border: `1px solid ${boostMsg.ok ? '#6ee7b7' : '#fca5a5'}`,
+                  fontWeight: 500, fontSize: 14,
+                }}>
+                  {boostMsg.text}
+                </div>
+              )}
+
+              {/* Active boosts */}
+              {activeBoosts.length > 0 && (
+                <div style={{ marginBottom: 28 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: 'var(--text-primary, #1e293b)' }}>⚡ Активные бусты</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    {activeBoosts.map(b => (
+                      <div key={b.id} style={{
+                        background: b.boost_level === 1 ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'linear-gradient(135deg,#f59e0b,#ef4444)',
+                        color: '#fff', borderRadius: 12, padding: '10px 16px',
+                        fontSize: 13, fontWeight: 600, minWidth: 160,
+                      }}>
+                        <div style={{ fontSize: 16 }}>Буст {b.boost_level === 1 ? 'I' : 'II'}</div>
+                        <div style={{ opacity: 0.85, fontSize: 12, marginTop: 3 }}>+{b.boost_level === 1 ? 1 : 5} XP / 5 мин</div>
+                        <div style={{ marginTop: 6, fontSize: 11, opacity: 0.8 }}>⏱ {formatCountdown(b.expires_at)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Buy cards */}
+              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: 'var(--text-primary, #1e293b)' }}>Купить буст</h3>
+              <div className={styles.grid}>
+                {/* BOOST I */}
+                <div className={styles.card}>
+                  <div className={styles.previewFrame} style={{
+                    background: 'linear-gradient(135deg,#6366f115,#8b5cf615)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48,
+                  }}>⚡</div>
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardTop}>
+                      <h3 className={styles.cardName}>Буст XP I</h3>
+                    </div>
+                    <p className={styles.cardDesc}>+1 XP каждые 5 минут на 24 часа. Стакается — каждый купленный буст работает отдельно.</p>
+                    <div style={{ fontSize: 12, color: '#6366f1', marginBottom: 8 }}>
+                      {activeBoosts.filter(b => b.boost_level === 1).length > 0
+                        ? `Активных стеков: ${activeBoosts.filter(b => b.boost_level === 1).length}`
+                        : 'Нет активных стеков'}
+                    </div>
+                    <div className={styles.cardFoot}>
+                      <span className={styles.price}><AiOutlineDollarCircle className={styles.priceIco} /> 1 000</span>
+                      <button
+                        className={`${styles.btn} ${styles.btnBuy} ${userPoints < 1000 ? styles.btnDisabled : ''}`}
+                        onClick={() => handleBoostPurchase(1)}
+                        disabled={loading || userPoints < 1000}
+                      >
+                        {userPoints < 1000 ? <><AiOutlineCloseCircle /> Недостаточно</> : <><HiLightningBolt /> Купить</>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* BOOST II */}
+                <div className={styles.card}>
+                  <div className={styles.previewFrame} style={{
+                    background: 'linear-gradient(135deg,#f59e0b15,#ef444415)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48,
+                  }}>🔥</div>
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardTop}>
+                      <h3 className={styles.cardName}>Буст XP II</h3>
+                    </div>
+                    <p className={styles.cardDesc}>+5 XP каждые 5 минут на 24 часа. В 5 раз эффективнее первого уровня.</p>
+                    <div style={{ fontSize: 12, color: '#f59e0b', marginBottom: 8 }}>
+                      {activeBoosts.filter(b => b.boost_level === 2).length > 0
+                        ? `Активных стеков: ${activeBoosts.filter(b => b.boost_level === 2).length}`
+                        : 'Нет активных стеков'}
+                    </div>
+                    <div className={styles.cardFoot}>
+                      <span className={styles.price}><AiOutlineDollarCircle className={styles.priceIco} /> 5 000</span>
+                      <button
+                        className={`${styles.btn} ${styles.btnBuy} ${userPoints < 5000 ? styles.btnDisabled : ''}`}
+                        onClick={() => handleBoostPurchase(2)}
+                        disabled={loading || userPoints < 5000}
+                      >
+                        {userPoints < 5000 ? <><AiOutlineCloseCircle /> Недостаточно</> : <><HiLightningBolt /> Купить</>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={styles.toolBar} style={{ display: selectedType === 'boost' ? 'none' : undefined }}>
             <span className={styles.resultInfo}>
               Показано: <strong>{filteredItems.length + freeDefaults.length}</strong> предметов
             </span>
@@ -385,7 +524,7 @@ export default function Shop() {
             })}
           </div>
 
-          {filteredItems.length === 0 && freeDefaults.length === 0 && (
+          {filteredItems.length === 0 && freeDefaults.length === 0 && selectedType !== 'boost' && (
             <div className={styles.empty}>
               <AiOutlineSearch />
               <h3>Ничего не найдено</h3>

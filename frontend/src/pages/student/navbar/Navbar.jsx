@@ -24,6 +24,8 @@ function Navbar() {
   const menuRef = useRef(null);
   const bellRef = useRef(null);
   const { user, logout } = useAuth();
+  const [activeBoosts, setActiveBoosts] = React.useState([]);
+  const [, forceBoostTick]              = React.useState(0);
 
   useEffect(() => {
     // Use classList to avoid wiping other body classes
@@ -47,6 +49,31 @@ function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Fetch active boosts
+  useEffect(() => {
+    if (!user) return;
+    const loadBoosts = () => api.get('/boosts/active').then(r => setActiveBoosts(r.data.boosts || [])).catch(() => {});
+    loadBoosts();
+    const id = setInterval(loadBoosts, 30_000);
+    return () => clearInterval(id);
+  }, [user]);
+
+  // Countdown tick every second when boosts are active
+  useEffect(() => {
+    if (!activeBoosts.length) return;
+    const id = setInterval(() => forceBoostTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [activeBoosts.length]);
+
+  const fmtCountdown = (iso) => {
+    const ms = new Date(iso) - Date.now();
+    if (ms <= 0) return 'истёк';
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  };
 
   // Fetch notifications (updates)
   useEffect(() => {
@@ -164,6 +191,45 @@ function Navbar() {
           </button>
         )}
       </form>
+
+      {/* ── Active boost pills ── */}
+      {activeBoosts.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          {/* Group by level, show one pill per level with stack count */}
+          {[1, 2].map(lvl => {
+            const boostsOfLevel = activeBoosts.filter(b => b.boost_level === lvl);
+            if (!boostsOfLevel.length) return null;
+            // show the one expiring last
+            const latest = boostsOfLevel.reduce((a, b) => new Date(a.expires_at) > new Date(b.expires_at) ? a : b);
+            const colors = lvl === 1
+              ? { bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)', glow: '#6366f166' }
+              : { bg: 'linear-gradient(135deg,#f59e0b,#ef4444)', glow: '#f59e0b66' };
+            return (
+              <div
+                key={lvl}
+                title={`Буст ${lvl === 1 ? 'I' : 'II'}: +${lvl === 1 ? 1 : 5} XP/5мин${boostsOfLevel.length > 1 ? ` ×${boostsOfLevel.length} (стек)` : ''}`}
+                style={{
+                  background: colors.bg,
+                  boxShadow: `0 0 10px ${colors.glow}`,
+                  borderRadius: 20, padding: '4px 10px',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  color: '#fff', fontSize: 12, fontWeight: 700,
+                  cursor: 'default', userSelect: 'none', whiteSpace: 'nowrap',
+                }}
+              >
+                ⚡ Б{lvl === 1 ? 'I' : 'II'}
+                {boostsOfLevel.length > 1 && (
+                  <span style={{
+                    background: 'rgba(255,255,255,0.25)', borderRadius: 10,
+                    padding: '0 5px', fontSize: 11,
+                  }}>×{boostsOfLevel.length}</span>
+                )}
+                <span style={{ opacity: 0.85, fontSize: 11, fontWeight: 400 }}>{fmtCountdown(latest.expires_at)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Управление */}
       <div className={styles.Control}>

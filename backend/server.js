@@ -40,6 +40,7 @@ import achievementsRoutes from './routes/achievements.js';
 import musicRoutes from './routes/music.js';
 import moviesRoutes from './routes/movies.js';
 import scheduleRoutes from './routes/schedule.js';
+import boostsRoutes, { startBoostXpTick } from './routes/boosts.js';
 
 dotenv.config();
 
@@ -122,6 +123,7 @@ app.use('/api/achievements', achievementsRoutes);
 app.use('/api/music', musicRoutes);
 app.use('/api/movies', moviesRoutes);
 app.use('/api/schedule', scheduleRoutes);
+app.use('/api/boosts', boostsRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
@@ -559,6 +561,7 @@ const startServer = async () => {
       console.log(`🌐 Публичный доступ: http://2.74.192.182:${PORT}`);
       console.log(`📊 PostgreSQL база данных подключена`);
       console.log(`💬 WebSocket сервер готов`);
+      startBoostXpTick();
     });
   } catch (error) {
     console.error('❌ Ошибка запуска сервера:', error);
