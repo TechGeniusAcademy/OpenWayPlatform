@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo, useCallback, createContext, useContext } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback, createContext, useContext, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sky, Stars, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -290,8 +290,6 @@ function Lighting() {
   );
 }
 
-useGLTF.preload('/models/solar%20panel.glb');
-
 // ─── Solar Panel — placement preview (follows mouse, glows) ─────────────────
 
 function SolarPanelPreview({ placementPosRef, inputRef }) {
@@ -447,11 +445,13 @@ function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, plac
         inputRef={inputRef}
       />
       {placingItem === 'solar-panel' && (
-        <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} />
+        <Suspense fallback={null}>
+          <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} />
+        </Suspense>
       )}
       {placedItems.map(item =>
         item.type === 'solar-panel'
-          ? <SolarPanelPlaced key={item.id} position={item.position} />
+          ? <Suspense key={item.id} fallback={null}><SolarPanelPlaced position={item.position} /></Suspense>
           : null
       )}
     </>
