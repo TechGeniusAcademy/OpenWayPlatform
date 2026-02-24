@@ -302,9 +302,55 @@ function Lighting() {
   );
 }
 
+// ─── Shop Modal ─────────────────────────────────────────────────────────────
+
+const SHOP_TABS = [
+  { id: 'energy', label: '⚡ Энергия' },
+];
+
+function ShopModal({ onClose }) {
+  const [activeTab, setActiveTab] = useState('energy');
+
+  return (
+    <div className={styles.shopOverlay} onClick={onClose}>
+      <div className={styles.shopModal} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className={styles.shopHeader}>
+          <span className={styles.shopTitle}>🏪 Магазин построек</span>
+          <button className={styles.shopClose} onClick={onClose}>✕</button>
+        </div>
+
+        {/* Tabs */}
+        <div className={styles.shopTabs}>
+          {SHOP_TABS.map(t => (
+            <button
+              key={t.id}
+              className={`${styles.shopTab} ${activeTab === t.id ? styles.shopTabActive : ''}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className={styles.shopContent}>
+          {activeTab === 'energy' && (
+            <div className={styles.shopEmpty}>
+              <span className={styles.shopEmptyIcon}>⚡</span>
+              <p>Энергетические постройки появятся здесь</p>
+              <span className={styles.shopEmptyHint}>Скоро...</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── HUD ─────────────────────────────────────────────────────────────────────
 
-function HUD({ pos, zoom, selectedCount, onClearSelection, onBack }) {
+function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack }) {
   return (
     <>
       <div className={styles.coords}>
@@ -325,6 +371,7 @@ function HUD({ pos, zoom, selectedCount, onClearSelection, onBack }) {
         <span><kbd>ЛКМ</kbd> выделить объект</span>
         <span><kbd>Esc</kbd> сбросить выбор</span>
       </div>
+      <button className={styles.shopBtn} onClick={onShop} title="Магазин построек">🏪</button>
       <button className={styles.backBtn} onClick={onBack}>← Назад</button>
     </>
   );
@@ -364,6 +411,7 @@ export default function OpenCity({ onBack }) {
   });
   const [displayPos,  setDisplayPos]  = useState({ x: 0, z: 0 });
   const [displayZoom, setDisplayZoom] = useState(50);
+  const [shopOpen,    setShopOpen]    = useState(false);
 
   // Selection state
   const lmbHeldRef   = useRef(false);
@@ -501,8 +549,10 @@ export default function OpenCity({ onBack }) {
           zoom={displayZoom}
           selectedCount={selectedCount}
           onClearSelection={clearSelection}
+          onShop={() => setShopOpen(true)}
           onBack={onBack || (() => {})}
         />
+        {shopOpen && <ShopModal onClose={() => setShopOpen(false)} />}
       </div>
     </CityContext.Provider>
   );
