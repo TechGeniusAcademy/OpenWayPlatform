@@ -193,7 +193,7 @@ export default function ChessBoard({
               {pieceStr && (
                 <span
                   className={`${styles.piece} ${isWhitePiece ? styles.pieceWhite : styles.pieceBlack}`}
-                  style={{ fontSize: cellSize * 0.72 }}
+                  style={{ fontSize: cellSize * 0.78 }}
                 >
                   {pieceStr}
                 </span>
@@ -229,7 +229,7 @@ export default function ChessBoard({
               top: dragging.y - cellSize / 2,
               width: cellSize,
               height: cellSize,
-              fontSize: cellSize * 0.72,
+              fontSize: cellSize * 0.78,
               pointerEvents: 'none',
               zIndex: 9999,
               display: 'flex',

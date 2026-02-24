@@ -41,7 +41,7 @@ const OnlineChess = () => {
     const ro = new ResizeObserver(entries => {
       for (const entry of entries) {
         const w = Math.floor(entry.contentRect.width);
-        if (w > 0) setBoardWidth(Math.min(w, 720));
+        if (w > 0) setBoardWidth(Math.min(w, 860));
       }
     });
     ro.observe(boardRef.current);

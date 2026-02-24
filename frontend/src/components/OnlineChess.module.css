@@ -469,8 +469,8 @@
 /* Two-column layout */
 .gameLayout {
   display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 1.25rem;
+  grid-template-columns: 1fr 260px;
+  gap: 1rem;
   align-items: start;
 }
 
@@ -601,7 +601,7 @@
   border: 1px solid #2a2a45;
   border-radius: 12px;
   padding: 1rem;
-  max-height: 520px;
+  max-height: 780px;
   overflow-y: auto;
 }
 
