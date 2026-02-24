@@ -423,12 +423,13 @@ function LayoutGameManagement() {
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>Очки</label>
+                  <label>Очки опыта (XP) <span style={{fontWeight:400,fontSize:'0.78rem',opacity:0.6}}>— награда ученику за прохождение</span></label>
                   <input
                     type="number"
                     value={formData.points_reward}
                     onChange={(e) => setFormData({...formData, points_reward: parseInt(e.target.value) || 10})}
                     min="1"
+                    placeholder="10"
                   />
                 </div>
               </div>
@@ -595,6 +596,8 @@ function LayoutGameManagement() {
           </div>
         </div>
       )}
+    </div>
+  );
 }
 
 export default LayoutGameManagement;

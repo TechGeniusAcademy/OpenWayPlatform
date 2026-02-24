@@ -1123,10 +1123,12 @@ function LayoutGame({ onBack }) {
       const response = await api.get('/layout-game/levels');
       console.log('Loaded levels:', response.data);
       // Преобразуем completed в boolean
-      const normalizedLevels = response.data.map(level => ({
-        ...level,
-        completed: level.completed === true || level.completed === 'true' || level.completed === 't'
-      }));
+      const normalizedLevels = response.data
+        .map(level => ({
+          ...level,
+          completed: level.completed === true || level.completed === 'true' || level.completed === 't'
+        }))
+        .sort((a, b) => a.difficulty - b.difficulty || a.order_index - b.order_index);
       console.log('Normalized levels:', normalizedLevels);
       setLevels(normalizedLevels);
     } catch (error) {
