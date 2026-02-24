@@ -14,8 +14,7 @@ const RENDER_DIST = 4;    // chunks radius
 
 // RTS Camera
 const CAM_PAN_SPEED   = 22;    // units/sec keyboard pan
-const CAM_EDGE_SIZE   = 60;    // px — edge scroll zone
-const CAM_EDGE_SPEED  = 28;
+
 const CAM_ZOOM_MIN    = 10;    // min height
 const CAM_ZOOM_MAX    = 140;   // max height
 const CAM_ZOOM_STEP   = 6;
@@ -213,17 +212,6 @@ function RTSCamera({ camTargetRef, camStateRef, keysRef, inputRef }) {
     if (keys['KeyS'] || keys['ArrowDown'])  { target.x -= forward.x * kSpeed; target.z -= forward.z * kSpeed; }
     if (keys['KeyA'] || keys['ArrowLeft'])  { target.x -= right.x * kSpeed;   target.z -= right.z * kSpeed; }
     if (keys['KeyD'] || keys['ArrowRight']) { target.x += right.x * kSpeed;   target.z += right.z * kSpeed; }
-
-    // ── Edge scrolling ──
-    const mx = inp.mouseX, my = inp.mouseY;
-    const W  = gl.domElement.clientWidth, H = gl.domElement.clientHeight;
-    const eSpeed = CAM_EDGE_SPEED * dt * (state.zoom / 50);
-    if (mx !== null && my !== null) {
-      if (mx < CAM_EDGE_SIZE)      { target.x -= right.x * eSpeed;   target.z -= right.z * eSpeed; }
-      if (mx > W - CAM_EDGE_SIZE)  { target.x += right.x * eSpeed;   target.z += right.z * eSpeed; }
-      if (my < CAM_EDGE_SIZE)      { target.x += forward.x * eSpeed; target.z += forward.z * eSpeed; }
-      if (my > H - CAM_EDGE_SIZE)  { target.x -= forward.x * eSpeed; target.z -= forward.z * eSpeed; }
-    }
 
     // ── Middle-mouse / LMB drag pan ──
     if (inp.middleDrag) {
