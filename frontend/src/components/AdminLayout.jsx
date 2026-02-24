@@ -40,7 +40,7 @@ const MENU = [
   {
     title: "Интерактив",
     items: [
-      { to: "/admin/game",                    icon: <FaQuestion />,              text: "Викторина"        },
+      { to: "/admin/quiz-battle",             icon: <FaQuestion />,              text: "Викторина"        },
       { to: "/admin/games",                   icon: <IoGameControllerOutline />, text: "Игры"             },
       { to: "/admin/flexchan",                icon: <FiMonitor />,               text: "FlexChan"         },
       { to: "/admin/layout-game",             icon: <FaCode />,                  text: "Верстка"          },

@@ -7,9 +7,7 @@ import {
   FiLink, FiX, FiCheck, FiAlertCircle, FiTrendingUp,
   FiTarget, FiZap, FiUser
 } from 'react-icons/fi';
-import { BASE_URL } from '../utils/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import api, { BASE_URL } from '../utils/api';
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
 
 function QuizBattle() {
@@ -33,6 +31,8 @@ function QuizBattle() {
   const [hoursUntilNextGame, setHoursUntilNextGame] = useState(0);
   const timerRef = useRef(null);
   const battleTimerRef = useRef(null);
+  const currentBattleRef = useRef(null);
+  currentBattleRef.current = currentBattle;
 
   // Загрузить активные битвы при монтировании
   useEffect(() => {
@@ -54,15 +54,12 @@ function QuizBattle() {
     if (view === 'lobby' && currentBattle) {
       const interval = setInterval(async () => {
         try {
-          const response = await fetch(`${API_URL}/quiz-battle/${currentBattle.id}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-          });
-          const updatedBattle = await response.json();
+          const { data: updatedBattle } = await api.get(`/quiz-battle/${currentBattleRef.current?.id}`);
           setCurrentBattle(updatedBattle);
         } catch (error) {
           console.error('Failed to refresh battle:', error);
         }
-      }, 2000); // Обновлять каждые 2 секунды
+      }, 2000);
 
       return () => clearInterval(interval);
     }
@@ -82,7 +79,7 @@ function QuizBattle() {
     });
 
     newSocket.on('quiz:player-joined', ({ battleId, player, players }) => {
-      if (currentBattle && currentBattle.id === battleId) {
+      if (currentBattleRef.current && currentBattleRef.current.id === battleId) {
         setCurrentBattle(prev => ({ ...prev, players }));
       }
       // Обновить список активных битв
@@ -92,7 +89,7 @@ function QuizBattle() {
     });
 
     newSocket.on('quiz:battle-started', ({ battleId, questions, timeLimit }) => {
-      if (currentBattle && currentBattle.id === battleId) {
+      if (currentBattleRef.current && currentBattleRef.current.id === battleId) {
         setQuestions(questions);
         setCurrentQuestionIndex(0);
         setView('battle');
@@ -104,13 +101,13 @@ function QuizBattle() {
     });
 
     newSocket.on('quiz:answer-submitted', ({ battleId, userId, username, isCorrect, pointsEarned, players }) => {
-      if (currentBattle && currentBattle.id === battleId) {
+      if (currentBattleRef.current && currentBattleRef.current.id === battleId) {
         setCurrentBattle(prev => ({ ...prev, players }));
       }
     });
 
     newSocket.on('quiz:battle-finished', ({ battleId, players, reason }) => {
-      if (currentBattle && currentBattle.id === battleId) {
+      if (currentBattleRef.current && currentBattleRef.current.id === battleId) {
         setCurrentBattle(prev => ({ ...prev, players, status: 'finished' }));
         setView('results');
         setWaitingForOthers(false);
@@ -125,7 +122,7 @@ function QuizBattle() {
       newSocket.close();
       stopTimer();
     };
-  }, [currentBattle?.id]);
+  }, []);
 
   const startTimer = () => {
     setTimer(30);
@@ -174,10 +171,7 @@ function QuizBattle() {
 
   const fetchActiveBattles = async () => {
     try {
-      const response = await fetch(`${API_URL}/quiz-battle/active`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await response.json();
+      const { data } = await api.get('/quiz-battle/active');
       setActiveBattles(data);
     } catch (error) {
       console.error('Failed to fetch battles:', error);
@@ -186,10 +180,7 @@ function QuizBattle() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_URL}/quiz-battle/categories`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await response.json();
+      const { data } = await api.get('/quiz-battle/categories');
       setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -199,10 +190,7 @@ function QuizBattle() {
 
   const checkCanPlay = async () => {
     try {
-      const response = await fetch(`${API_URL}/quiz-battle/can-play`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await response.json();
+      const { data } = await api.get('/quiz-battle/can-play');
       setCanPlay(data.canPlay);
       setHoursUntilNextGame(data.hoursRemaining || 0);
     } catch (error) {
@@ -217,29 +205,19 @@ function QuizBattle() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/quiz-battle/create`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ categoryId: selectedCategory })
-      });
-      
-      if (response.status === 429) {
-        const data = await response.json();
-        alert(data.message || 'Вы уже играли сегодня. Попробуйте завтра!');
-        setShowCreateModal(false);
-        setSelectedCategory(null);
-        return;
+      let battle;
+      try {
+        const { data } = await api.post('/quiz-battle/create', { categoryId: selectedCategory });
+        battle = data;
+      } catch (err) {
+        if (err.response?.status === 429) {
+          alert(err.response.data?.message || 'Вы уже играли сегодня. Попробуйте завтра!');
+          setShowCreateModal(false);
+          setSelectedCategory(null);
+          return;
+        }
+        throw err;
       }
-      
-      if (!response.ok) {
-        throw new Error('Failed to create battle');
-      }
-      
-      const battle = await response.json();
-      
       setCurrentBattle(battle);
       setView('lobby');
       setShowCreateModal(false);
@@ -252,45 +230,23 @@ function QuizBattle() {
 
   const joinBattle = async (roomCode) => {
     try {
-      const response = await fetch(`${API_URL}/quiz-battle/join`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ roomCode })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        alert(error.error);
-        return;
-      }
-
-      const battle = await response.json();
+      const { data: battle } = await api.post('/quiz-battle/join', { roomCode });
       setCurrentBattle(battle);
       setView('lobby');
-    } catch (error) {
-      console.error('Failed to join battle:', error);
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Не удалось присоединиться к битве';
+      alert(msg);
+      console.error('Failed to join battle:', err);
     }
   };
 
   const startBattle = async () => {
     try {
-      const response = await fetch(`${API_URL}/quiz-battle/${currentBattle.id}/start`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        alert(error.error);
-      }
-    } catch (error) {
-      console.error('Failed to start battle:', error);
+      await api.post(`/quiz-battle/${currentBattle.id}/start`);
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Не удалось запустить битву';
+      alert(msg);
+      console.error('Failed to start battle:', err);
     }
   };
 
@@ -300,20 +256,11 @@ function QuizBattle() {
     setSelectedAnswer(answer);
 
     try {
-      const response = await fetch(`${API_URL}/quiz-battle/${currentBattle.id}/answer`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          questionId: questions[currentQuestionIndex].id,
-          answer,
-          timeSpent
-        })
+      const { data: result } = await api.post(`/quiz-battle/${currentBattle.id}/answer`, {
+        questionId: questions[currentQuestionIndex].id,
+        answer,
+        timeSpent
       });
-
-      const result = await response.json();
       
       setAnsweredQuestions(prev => [...prev, {
         questionId: questions[currentQuestionIndex].id,
@@ -345,13 +292,7 @@ function QuizBattle() {
 
   const finishBattle = async () => {
     try {
-      await fetch(`${API_URL}/quiz-battle/${currentBattle.id}/finish`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await api.post(`/quiz-battle/${currentBattle.id}/finish`);
     } catch (error) {
       console.error('Failed to finish battle:', error);
     }
