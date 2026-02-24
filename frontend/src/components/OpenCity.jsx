@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import styles from './OpenCity.module.css';
 import { SOLAR_PANEL_CONFIG }   from './items/solarPanel.js';
 import { MONEY_FACTORY_CONFIG } from './items/moneyFactory.js';
+import { isColliding }          from './items/collision.js';
 
 // ─── Context (avoids prop drilling into Building) ────────────────────────────
 const CityContext = createContext(null);
@@ -317,7 +318,9 @@ class ModelErrorBoundary extends Component {
 
 function usePlacementTracker(placementPosRef, inputRef, placementRotYRef) {
   const { camera, gl, raycaster } = useThree();
+  const { placedItemsRef, placingItemRef } = useContext(CityContext);
   const groupRef    = useRef();
+  const blockedRef  = useRef(false);
   const groundPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
   const hitPoint    = useMemo(() => new THREE.Vector3(), []);
 
@@ -333,19 +336,28 @@ function usePlacementTracker(placementPosRef, inputRef, placementRotYRef) {
       groupRef.current.position.set(hitPoint.x, 0, hitPoint.z);
       groupRef.current.rotation.y = placementRotYRef.current;
       placementPosRef.current = { x: hitPoint.x, y: 0, z: hitPoint.z };
+      blockedRef.current = isColliding(
+        { x: hitPoint.x, z: hitPoint.z },
+        placingItemRef?.current,
+        placedItemsRef?.current ?? [],
+      );
     }
   });
-  return groupRef;
+  return { groupRef, blockedRef };
 }
 
 // ─── Box glowing placeholder (used when GLB is missing) ─────────────────────
 
 function GlowBoxPreview({ placementPosRef, inputRef, placementRotYRef }) {
-  const groupRef = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-  const matRef   = useRef();
+  const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
+  const matRef = useRef();
   useFrame(({ clock }) => {
-    if (matRef.current)
-      matRef.current.emissiveIntensity = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    if (!matRef.current) return;
+    const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    const blocked = blockedRef.current;
+    matRef.current.color.setHex(blocked ? 0x6e0a0a : 0x0a6ebd);
+    matRef.current.emissive.setHex(blocked ? 0xff2200 : 0x00aaff);
+    matRef.current.emissiveIntensity = pulse;
   });
   return (
     <group ref={groupRef}>
@@ -414,7 +426,7 @@ function WorkAreaOverlay({ width, depth, color, opacity }) {
 
 function SolarPanelGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
   const { scene } = useGLTF('/models/Solar%20Panel.glb');
-  const groupRef  = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
+  const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
 
   const glowScene = useMemo(() => {
     const c = scene.clone(true);
@@ -431,9 +443,13 @@ function SolarPanelGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) 
   }, [scene]);
 
   useFrame(({ clock }) => {
-    const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    const blocked = blockedRef.current;
     glowScene.traverse(child => {
-      if (child.isMesh) child.material.emissiveIntensity = pulse;
+      if (child.isMesh) {
+        child.material.emissive.setHex(blocked ? 0xff2200 : 0x00aaff);
+        child.material.emissiveIntensity = pulse;
+      }
     });
   });
 
@@ -496,7 +512,7 @@ function SolarPanelPlaced({ position, rotation, isSelected, onSelect }) {
 
 function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
   const { scene } = useGLTF('/models/MoneyFactory.glb');
-  const groupRef  = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
+  const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
 
   const glowScene = useMemo(() => {
     const c = scene.clone(true);
@@ -513,9 +529,13 @@ function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }
   }, [scene]);
 
   useFrame(({ clock }) => {
-    const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    const blocked = blockedRef.current;
     glowScene.traverse(child => {
-      if (child.isMesh) child.material.emissiveIntensity = pulse;
+      if (child.isMesh) {
+        child.material.emissive.setHex(blocked ? 0xff2200 : 0x00ff88);
+        child.material.emissiveIntensity = pulse;
+      }
     });
   });
 
@@ -732,6 +752,8 @@ export default function OpenCity({ onBack }) {
   // Placement state
   const [placingItem,  setPlacingItem]  = useState(null);  // 'solar-panel' | null
   const [placedItems,  setPlacedItems]  = useState([]);
+  const placedItemsRef = useRef([]);
+  useEffect(() => { placedItemsRef.current = placedItems; }, [placedItems]);
   const [selectedPlacedId, setSelectedPlacedId] = useState(null);
   const placementPosRef  = useRef(null);
   const placementRotYRef = useRef(0);
@@ -762,7 +784,8 @@ export default function OpenCity({ onBack }) {
   }, []);
 
   const cityCtx = useMemo(
-    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef }),
+    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef, placedItemsRef }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -809,6 +832,8 @@ export default function OpenCity({ onBack }) {
           // LMB click during placement → place the object
           if (placementPosRef.current) {
             const pos = placementPosRef.current;
+            // Block if overlapping an existing item
+            if (isColliding({ x: pos.x, z: pos.z }, placingItemRef.current, placedItemsRef.current)) return;
             setPlacedItems(prev => [...prev, {
               id: Date.now(),
               type: placingItemRef.current,

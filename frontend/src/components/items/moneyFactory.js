@@ -1,5 +1,6 @@
 // ─── Money Factory — item config ─────────────────────────────────────────────
-// Adjust workArea to match the real footprint of the model.
+// Visual work-area zone: shown when building is selected.
+// Collision footprint: edit ITEM_FOOTPRINTS['money-factory'] in collision.js
 
 export const MONEY_FACTORY_CONFIG = {
   /** Visible work-area zone shown when the building is selected */
