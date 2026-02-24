@@ -418,10 +418,69 @@ function SolarPanelPlaced({ position, rotation }) {
   );
 }
 
+// ─── Money Factory — GLB inner components ───────────────────────────────────
+
+function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
+  const { scene } = useGLTF('/models/MoneyFactory.glb');
+  const groupRef  = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
+
+  const glowScene = useMemo(() => {
+    const c = scene.clone(true);
+    c.traverse(child => {
+      if (child.isMesh) {
+        child.material = child.material.clone();
+        child.material.emissive          = new THREE.Color(0x00ff88);
+        child.material.emissiveIntensity = 0.8;
+        child.material.transparent       = true;
+        child.material.opacity           = 0.82;
+      }
+    });
+    return c;
+  }, [scene]);
+
+  useFrame(({ clock }) => {
+    const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    glowScene.traverse(child => {
+      if (child.isMesh) child.material.emissiveIntensity = pulse;
+    });
+  });
+
+  return <primitive ref={groupRef} object={glowScene} />;
+}
+
+function MoneyFactoryGLTFPlaced({ position, rotation }) {
+  const { scene } = useGLTF('/models/MoneyFactory.glb');
+  const cloned    = useMemo(() => scene.clone(true), [scene]);
+  return <primitive object={cloned} position={position} rotation={[0, rotation || 0, 0]} />;
+}
+
+function MoneyFactoryPreview({ placementPosRef, inputRef, placementRotYRef }) {
+  const fb = <GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />;
+  return (
+    <ModelErrorBoundary fallback={fb}>
+      <Suspense fallback={fb}>
+        <MoneyFactoryGLTFPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      </Suspense>
+    </ModelErrorBoundary>
+  );
+}
+
+function MoneyFactoryPlaced({ position, rotation }) {
+  const fb = <GlowBoxPlaced position={position} rotation={rotation} />;
+  return (
+    <ModelErrorBoundary fallback={fb}>
+      <Suspense fallback={fb}>
+        <MoneyFactoryGLTFPlaced position={position} rotation={rotation} />
+      </Suspense>
+    </ModelErrorBoundary>
+  );
+}
+
 // ─── Shop Modal ─────────────────────────────────────────────────────────────
 
 const SHOP_TABS = [
-  { id: 'energy', label: '⚡ Энергия' },
+  { id: 'energy',     label: '⚡ Энергия' },
+  { id: 'production', label: '🏗️ Производство' },
 ];
 
 function ShopModal({ onClose, onBuy }) {
@@ -458,6 +517,18 @@ function ShopModal({ onClose, onBuy }) {
                 <div className={styles.shopItemInfo}>
                   <span className={styles.shopItemName}>Солнечная панель</span>
                   <span className={styles.shopItemDesc}>Генерирует энергию днём</span>
+                </div>
+                <button className={styles.shopItemBtn}>Разместить</button>
+              </div>
+            </div>
+          )}
+          {activeTab === 'production' && (
+            <div className={styles.shopGrid}>
+              <div className={styles.shopItem} onClick={() => { onBuy('money-factory'); onClose(); }}>
+                <div className={styles.shopItemIcon}>🏦</div>
+                <div className={styles.shopItemInfo}>
+                  <span className={styles.shopItemName}>Денежная фабрика</span>
+                  <span className={styles.shopItemDesc}>Генерирует доход для города</span>
                 </div>
                 <button className={styles.shopItemBtn}>Разместить</button>
               </div>
@@ -522,9 +593,14 @@ function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, plac
       {placingItem === 'solar-panel' && (
         <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
       )}
+      {placingItem === 'money-factory' && (
+        <MoneyFactoryPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      )}
       {placedItems.map(item =>
         item.type === 'solar-panel'
           ? <SolarPanelPlaced key={item.id} position={item.position} rotation={item.rotation} />
+          : item.type === 'money-factory'
+          ? <MoneyFactoryPlaced key={item.id} position={item.position} rotation={item.rotation} />
           : null
       )}
     </>
