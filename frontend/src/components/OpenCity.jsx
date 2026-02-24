@@ -464,10 +464,11 @@ function SolarPanelGLTFPlaced({ position, rotation, isSelected, onSelect }) {
   const { scene } = useGLTF('/models/Solar%20Panel.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
   const { workArea } = SOLAR_PANEL_CONFIG;
+  const { placedHitRef } = useContext(CityContext);
   return (
     <group
       position={[position[0], 0, position[2]]}
-      onPointerDown={(e) => { e.stopPropagation(); onSelect?.(); }}
+      onPointerDown={(e) => { e.stopPropagation(); placedHitRef.current = true; onSelect?.(); }}
     >
       <primitive
         object={cloned}
@@ -550,10 +551,11 @@ function MoneyFactoryGLTFPlaced({ position, rotation, isSelected, onSelect }) {
   const { scene } = useGLTF('/models/MoneyFactory.glb');
   const cloned    = useMemo(() => scene.clone(true), [scene]);
   const { workArea } = MONEY_FACTORY_CONFIG;
+  const { placedHitRef } = useContext(CityContext);
   return (
     <group
       position={[position[0], 0, position[2]]}
-      onPointerDown={(e) => { e.stopPropagation(); onSelect?.(); }}
+      onPointerDown={(e) => { e.stopPropagation(); placedHitRef.current = true; onSelect?.(); }}
     >
       <primitive
         object={cloned}
@@ -754,6 +756,7 @@ export default function OpenCity({ onBack }) {
   const [placedItems,  setPlacedItems]  = useState([]);
   const placedItemsRef = useRef([]);
   useEffect(() => { placedItemsRef.current = placedItems; }, [placedItems]);
+  const placedHitRef   = useRef(false);   // set by model click before DOM mousedown
   const [selectedPlacedId, setSelectedPlacedId] = useState(null);
   const placementPosRef  = useRef(null);
   const placementRotYRef = useRef(0);
@@ -784,7 +787,7 @@ export default function OpenCity({ onBack }) {
   }, []);
 
   const cityCtx = useMemo(
-    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef, placedItemsRef }),
+    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef, placedItemsRef, placedHitRef }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
@@ -848,6 +851,12 @@ export default function OpenCity({ onBack }) {
         inputRef.current.middleDrag = true;
         inputRef.current.lastMX = e.clientX;
         inputRef.current.lastMY = e.clientY;
+        // If the click did NOT hit a placed model, clear zone selection
+        if (placedHitRef.current) {
+          placedHitRef.current = false;
+        } else {
+          setSelectedPlacedId(null);
+        }
       }
       if (e.button === 1 || e.button === 2) {
         inputRef.current.middleDrag = true;
