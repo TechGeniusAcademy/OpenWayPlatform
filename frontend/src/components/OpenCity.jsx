@@ -6,6 +6,7 @@ import styles from './OpenCity.module.css';
 import { SOLAR_PANEL_CONFIG }   from './items/solarPanel.js';
 import { MONEY_FACTORY_CONFIG } from './items/moneyFactory.js';
 import { isColliding }          from './items/collision.js';
+import { useCitySync }          from './systems/citySync.js';
 import {
   REAL_MS_PER_GAME_HOUR,
   getSunPosition,
@@ -902,6 +903,27 @@ export default function OpenCity({ onBack }) {
     return () => clearInterval(id);
   }, []);
 
+  // Placement state
+  const [placingItem,  setPlacingItem]  = useState(null);  // 'solar-panel' | null
+  const [placedItems,  setPlacedItems]  = useState([]);
+  const placedItemsRef = useRef([]);
+  useEffect(() => { placedItemsRef.current = placedItems; }, [placedItems]);
+
+  // ─── Backend sync (load on mount, auto-save every 30 s, save on close)
+  const { loading: worldLoading, offlineHours } = useCitySync({
+    gameTimeRef,
+    placedItemsRef,
+    setPlacedItems,
+  });
+  const [offlineToast, setOfflineToast] = useState(false);
+  useEffect(() => {
+    if (offlineHours >= 0.1) {
+      setOfflineToast(true);
+      const t = setTimeout(() => setOfflineToast(false), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [offlineHours]);
+
   // Energy totals — recalculate whenever placedItems changes
   const [energyTotals, setEnergyTotals] = useState({});
   useEffect(() => {
@@ -915,12 +937,6 @@ export default function OpenCity({ onBack }) {
     );
     return () => clearInterval(id);
   }, []);
-
-  // Placement state
-  const [placingItem,  setPlacingItem]  = useState(null);  // 'solar-panel' | null
-  const [placedItems,  setPlacedItems]  = useState([]);
-  const placedItemsRef = useRef([]);
-  useEffect(() => { placedItemsRef.current = placedItems; }, [placedItems]);
   const placedHitRef   = useRef(false);   // set by model click before DOM mousedown
   const [selectedPlacedId, setSelectedPlacedId] = useState(null);
   const placementPosRef  = useRef(null);
@@ -1115,6 +1131,21 @@ export default function OpenCity({ onBack }) {
           energyTotals={energyTotals}
         />
         {shopOpen && <ShopModal onClose={() => setShopOpen(false)} onBuy={startPlacing} />}
+
+        {/* Loading overlay while world is being fetched */}
+        {worldLoading && (
+          <div className={styles.worldLoading}>
+            <div className={styles.worldLoadingSpinner} />
+            <span>Загрузка мира…</span>
+          </div>
+        )}
+
+        {/* Offline progress toast */}
+        {offlineToast && (
+          <div className={styles.offlineToast}>
+            🕒 Пока вас не было: прошло <strong>{offlineHours.toFixed(1)} игр. ч.</strong>
+          </div>
+        )}
       </div>
     </CityContext.Provider>
   );

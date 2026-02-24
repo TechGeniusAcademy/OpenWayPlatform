@@ -41,6 +41,7 @@ import musicRoutes from './routes/music.js';
 import moviesRoutes from './routes/movies.js';
 import scheduleRoutes from './routes/schedule.js';
 import boostsRoutes, { startBoostXpTick } from './routes/boosts.js';
+import cityRoutes from './routes/city.js';
 
 dotenv.config();
 
@@ -124,6 +125,7 @@ app.use('/api/music', musicRoutes);
 app.use('/api/movies', moviesRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/boosts', boostsRoutes);
+app.use('/api/city',   cityRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {
