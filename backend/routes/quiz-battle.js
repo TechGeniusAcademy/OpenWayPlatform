@@ -18,16 +18,20 @@ router.post('/create', authenticate, async (req, res) => {
   try {
     const { categoryId } = req.body;
     
-    // Проверить, играл ли пользователь сегодня
+    // Проверить, играл ли пользователь сегодня (через quiz_battles)
     const userCheck = await pool.query(
-      `SELECT last_quiz_battle_date 
-       FROM users 
-       WHERE id = $1`,
+      `SELECT qb.created_at
+       FROM quiz_battles qb
+       JOIN quiz_battle_players qbp ON qb.id = qbp.battle_id
+       WHERE qbp.user_id = $1
+         AND qb.created_at > NOW() - INTERVAL '24 hours'
+       ORDER BY qb.created_at DESC
+       LIMIT 1`,
       [req.user.id]
     );
     
-    if (userCheck.rows.length > 0 && userCheck.rows[0].last_quiz_battle_date) {
-      const lastBattleDate = new Date(userCheck.rows[0].last_quiz_battle_date);
+    if (userCheck.rows.length > 0) {
+      const lastBattleDate = new Date(userCheck.rows[0].created_at);
       const now = new Date();
       const hoursSinceLastBattle = (now - lastBattleDate) / (1000 * 60 * 60);
       
@@ -132,27 +136,31 @@ router.get('/active', authenticate, async (req, res) => {
 router.get('/can-play', authenticate, async (req, res) => {
   try {
     const userCheck = await pool.query(
-      `SELECT last_quiz_battle_date 
-       FROM users 
-       WHERE id = $1`,
+      `SELECT qb.created_at
+       FROM quiz_battles qb
+       JOIN quiz_battle_players qbp ON qb.id = qbp.battle_id
+       WHERE qbp.user_id = $1
+         AND qb.created_at > NOW() - INTERVAL '24 hours'
+       ORDER BY qb.created_at DESC
+       LIMIT 1`,
       [req.user.id]
     );
-    
-    if (userCheck.rows.length > 0 && userCheck.rows[0].last_quiz_battle_date) {
-      const lastBattleDate = new Date(userCheck.rows[0].last_quiz_battle_date);
+
+    if (userCheck.rows.length > 0) {
+      const lastBattleDate = new Date(userCheck.rows[0].created_at);
       const now = new Date();
       const hoursSinceLastBattle = (now - lastBattleDate) / (1000 * 60 * 60);
-      
+
       if (hoursSinceLastBattle < 24) {
         const hoursRemaining = Math.ceil(24 - hoursSinceLastBattle);
-        return res.json({ 
+        return res.json({
           canPlay: false,
           hoursRemaining,
           nextAvailableTime: new Date(lastBattleDate.getTime() + 24 * 60 * 60 * 1000)
         });
       }
     }
-    
+
     res.json({ canPlay: true });
   } catch (error) {
     console.error('Error checking play availability:', error);
@@ -279,12 +287,13 @@ router.post('/questions', authenticate, async (req, res) => {
   try {
     const { category_id, question, option_a, option_b, option_c, option_d, correct_option, difficulty } = req.body;
     
+    const options = JSON.stringify([option_a, option_b, option_c, option_d]);
     const result = await pool.query(
       `INSERT INTO game_questions 
-       (category_id, question, option_a, option_b, option_c, option_d, correct_option, difficulty) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+       (category_id, question, option_a, option_b, option_c, option_d, correct_option, difficulty, options) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
        RETURNING *`,
-      [category_id || null, question, option_a, option_b, option_c, option_d, correct_option, difficulty || 'medium']
+      [category_id || null, question, option_a, option_b, option_c, option_d, correct_option, difficulty || 'medium', options]
     );
     
     res.json(result.rows[0]);
@@ -300,13 +309,14 @@ router.put('/questions/:id', authenticate, async (req, res) => {
     const { id } = req.params;
     const { category_id, question, option_a, option_b, option_c, option_d, correct_option, difficulty } = req.body;
     
+    const options = JSON.stringify([option_a, option_b, option_c, option_d]);
     const result = await pool.query(
       `UPDATE game_questions 
        SET category_id = $1, question = $2, option_a = $3, option_b = $4, 
-           option_c = $5, option_d = $6, correct_option = $7, difficulty = $8
-       WHERE id = $9 
+           option_c = $5, option_d = $6, correct_option = $7, difficulty = $8, options = $9
+       WHERE id = $10 
        RETURNING *`,
-      [category_id || null, question, option_a, option_b, option_c, option_d, correct_option, difficulty || 'medium', id]
+      [category_id || null, question, option_a, option_b, option_c, option_d, correct_option, difficulty || 'medium', options, id]
     );
     
     if (result.rows.length === 0) {
@@ -371,15 +381,6 @@ router.post('/:id/start', authenticate, async (req, res) => {
 
     await QuizBattle.updateStatus(battle.id, 'in_progress');
     
-    // Обновить дату последней игры для всех игроков
-    const playerIds = players.map(p => p.user_id);
-    await pool.query(
-      `UPDATE users 
-       SET last_quiz_battle_date = NOW() 
-       WHERE id = ANY($1::int[])`,
-      [playerIds]
-    );
-
     // Получить ВСЕ вопросы из выбранной категории (или все вопросы, если категория не указана)
     let questionsResult;
     if (battle.category_id) {
