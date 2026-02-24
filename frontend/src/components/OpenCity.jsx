@@ -525,7 +525,9 @@ function ShopModal({ onClose, onBuy }) {
           {activeTab === 'production' && (
             <div className={styles.shopGrid}>
               <div className={styles.shopItem} onClick={() => { onBuy('money-factory'); onClose(); }}>
-                <div className={styles.shopItemIcon}>🏦</div>
+                <div className={styles.shopItemThumb}>
+                  <img src="/models/MoneyFactory.png" alt="Денежная фабрика" />
+                </div>
                 <div className={styles.shopItemInfo}>
                   <span className={styles.shopItemName}>Денежная фабрика</span>
                   <span className={styles.shopItemDesc}>Генерирует доход для города</span>
