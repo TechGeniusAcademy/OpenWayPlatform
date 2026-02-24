@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    dedupe: ['react', 'react-dom', 'react-dnd', 'react-dnd-html5-backend'],
+  },
+  optimizeDeps: {
+    include: ['react-chessboard'],
+  },
   build: {
     sourcemap: false, // Отключаем source maps в production
   },
