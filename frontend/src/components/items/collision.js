@@ -14,6 +14,34 @@ export const ITEM_FOOTPRINTS = {
     hw: 7,
     hd: 7,
   },
+  'energy-storage': {
+    hw: 5,
+    hd: 5,
+  },
+  'town-hall': {
+    hw: 5,
+    hd: 5,
+  },
+  'street-lamp': {
+    hw: 1.5,
+    hd: 1.5,
+  },
+  'splitter': {
+    hw: 1.5,
+    hd: 1.5,
+  },
+  'merger': {
+    hw: 1.5,
+    hd: 1.5,
+  },
+  'extractor': {
+    hw: 2.5,
+    hd: 2.5,
+  },
+  'builder-house': {
+    hw: 3.5,
+    hd: 3.5,
+  },
 };
 
 // ─── Collision check ──────────────────────────────────────────────────────────

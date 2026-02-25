@@ -14,7 +14,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-const AUTO_SAVE_INTERVAL_MS = 30_000;  // 30 real seconds
+const AUTO_SAVE_INTERVAL_MS = 5_000;  // 5 real seconds
 const API_BASE               = '/api/city';
 
 // ─── Tiny fetch helper with Bearer token ────────────────────────────────────
@@ -38,11 +38,14 @@ function apiFetch(path, options = {}) {
  *   gameTimeRef:    React.MutableRefObject<number>,
  *   placedItemsRef: React.MutableRefObject<Array>,
  *   setPlacedItems: (items: Array) => void,
+ *   conveyorsRef?:  React.MutableRefObject<Array>,
+ *   setConveyors?:  (conveyors: Array) => void,
  * }} opts
  */
-export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems }) {
+export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conveyorsRef, setConveyors, energyCablesRef, setEnergyCables, storedAmountsRef, setStoredAmounts, pointsAmountsRef, setPointsAmounts, buildingLevelsRef, setBuildingLevels, placedWallsRef, setPlacedWalls, placedTowersRef, setPlacedTowers }) {
   const [loading,      setLoading]      = useState(true);
   const [offlineHours, setOfflineHours] = useState(0);
+  const [suggestedSpawn, setSuggestedSpawn] = useState(null);
   const initialLoadDone = useRef(false);
 
   // ── Save helper (fire-and-forget, logs errors) ───────────────────────────
@@ -50,6 +53,13 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems }) {
     const body = JSON.stringify({
       gameTimeHours: gameTimeRef.current,
       placedItems:   placedItemsRef.current,
+      conveyors:     conveyorsRef?.current ?? [],
+      energyCables:  energyCablesRef?.current ?? [],
+      storedAmounts: storedAmountsRef?.current ?? {},
+      pointsAmounts: pointsAmountsRef?.current ?? {},
+      buildingLevels: buildingLevelsRef?.current ?? {},
+      placedWalls:   placedWallsRef?.current ?? [],
+      placedTowers:  placedTowersRef?.current ?? [],
     });
     apiFetch('/world', { method: 'PUT', body }).catch(err =>
       console.warn('[citySync] auto-save failed:', err),
@@ -70,7 +80,41 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems }) {
         if (Array.isArray(data.placedItems)) {
           setPlacedItems(data.placedItems);
         }
+        // Restore conveyors
+        if (Array.isArray(data.conveyors) && setConveyors) {
+          setConveyors(data.conveyors);
+        }
+        // Restore energy cables
+        if (Array.isArray(data.energyCables) && setEnergyCables) {
+          setEnergyCables(data.energyCables);
+        }
+        // Restore stored amounts
+        if (data.storedAmounts && typeof data.storedAmounts === 'object' && setStoredAmounts) {
+          if (storedAmountsRef) storedAmountsRef.current = data.storedAmounts;
+          setStoredAmounts(data.storedAmounts);
+        }
+        // Restore points amounts
+        if (data.pointsAmounts && typeof data.pointsAmounts === 'object' && setPointsAmounts) {
+          if (pointsAmountsRef) pointsAmountsRef.current = data.pointsAmounts;
+          setPointsAmounts(data.pointsAmounts);
+        }
+        // Restore building levels
+        if (data.buildingLevels && typeof data.buildingLevels === 'object' && setBuildingLevels) {
+          if (buildingLevelsRef) buildingLevelsRef.current = data.buildingLevels;
+          setBuildingLevels(data.buildingLevels);
+        }
+        // Restore placed walls
+        if (Array.isArray(data.placedWalls) && setPlacedWalls) {
+          if (placedWallsRef) placedWallsRef.current = data.placedWalls;
+          setPlacedWalls(data.placedWalls);
+        }
+        // Restore placed towers
+        if (Array.isArray(data.placedTowers) && setPlacedTowers) {
+          if (placedTowersRef) placedTowersRef.current = data.placedTowers;
+          setPlacedTowers(data.placedTowers);
+        }
         setOfflineHours(data.offlineHours ?? 0);
+        if (data.suggestedSpawn) setSuggestedSpawn(data.suggestedSpawn);
         initialLoadDone.current = true;
       })
       .catch(err => {
@@ -108,5 +152,5 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { loading, offlineHours };
+  return { loading, offlineHours, suggestedSpawn };
 }

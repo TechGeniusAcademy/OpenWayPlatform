@@ -39,6 +39,32 @@ router.get('/my', async (req, res) => {
   }
 });
 
+// Потратить баллы (для игровых улучшений)
+router.post('/spend', async (req, res) => {
+  try {
+    const { amount, reason } = req.body;
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Необходимо указать корректное количество баллов' });
+    }
+    const pool = (await import('../config/database.js')).default;
+    // Проверяем текущий баланс
+    const check = await pool.query('SELECT points FROM users WHERE id = $1', [req.user.id]);
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Пользователь не найден' });
+    const current = check.rows[0].points || 0;
+    if (current < amount) {
+      return res.status(400).json({ error: 'Недостаточно баллов', current, required: amount });
+    }
+    const result = await pool.query(
+      'UPDATE users SET points = points - $1 WHERE id = $2 RETURNING points',
+      [amount, req.user.id]
+    );
+    res.json({ success: true, newBalance: result.rows[0].points, spent: amount });
+  } catch (error) {
+    console.error('Ошибка списания баллов:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Добавить баллы студенту (только админы)
 router.post('/add', requireAdmin, async (req, res) => {
   try {

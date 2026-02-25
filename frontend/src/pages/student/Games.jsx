@@ -209,7 +209,7 @@ export default function Games() {
               style={{ "--card-accent": game.color }}
               onClick={() => setSelectedGame(game.id)}
             >
-              {game.new && <span className={styles.newBadge}>NEW</span>}
+              {game.new && <span className={styles.newBadge}>В разработке...</span>}
               <div className={styles.cardTag} style={{ background: game.color + "22", color: game.color }}>
                 {game.tag}
               </div>

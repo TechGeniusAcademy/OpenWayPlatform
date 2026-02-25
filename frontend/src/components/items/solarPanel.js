@@ -1,7 +1,7 @@
 // ─── Solar Panel — item config ───────────────────────────────────────────────
 // Visual work-area zone: shown when building is selected.
 // Collision footprint: edit ITEM_FOOTPRINTS['solar-panel'] in collision.js
-import { registerProducer } from '../systems/energy.js';
+import { registerProducer, registerEnergyZone } from '../systems/energy.js';
 
 export const SOLAR_PANEL_CONFIG = {
   /** Visible work-area zone shown when the building is selected */
@@ -15,6 +15,9 @@ export const SOLAR_PANEL_CONFIG = {
   /** Height of the floating energy badge above ground (world units) */
   badgeHeight: 5,
 };
+
+// ─── Energy supply zone (matches the visual work-area)
+registerEnergyZone('solar-panel', { width: 100, depth: 100 });
 
 // ─── Energy production ────────────────────────────────────────────────
 registerProducer('solar-panel', [

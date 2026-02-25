@@ -1,866 +1,29 @@
-import { useRef, useState, useEffect, useMemo, useCallback, createContext, useContext, Suspense, Component } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Sky, Stars, useGLTF, Html } from '@react-three/drei';
-import * as THREE from 'three';
+import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import { Canvas } from '@react-three/fiber';
 import styles from './OpenCity.module.css';
-import { SOLAR_PANEL_CONFIG }   from './items/solarPanel.js';
-import { MONEY_FACTORY_CONFIG } from './items/moneyFactory.js';
-import { isColliding }          from './items/collision.js';
-import { useCitySync }          from './systems/citySync.js';
-import {
-  REAL_MS_PER_GAME_HOUR,
-  getSunPosition,
-  getSkyParams,
-  getLighting,
-  getFogColor,
-  formatGameTime,
-  getDayPeriodIcon,
-} from './systems/dayNight.js';
-import {
-  ENERGY_TYPES,
-  getProductions,
-  calcEnergyTotals,
-} from './systems/energy.js';
-
-// ─── Context (avoids prop drilling into Building) ────────────────────────────
-const CityContext = createContext(null);
-
-// ─── Constants ──────────────────────────────────────────────────────────────
-
-const CHUNK_SIZE  = 40;   // world units per chunk side
-const RENDER_DIST = 4;    // chunks radius
-
-// RTS Camera
-const CAM_PAN_SPEED   = 22;    // units/sec keyboard pan
-
-const CAM_ZOOM_MIN    = 10;    // min height
-const CAM_ZOOM_MAX    = 140;   // max height
-const CAM_ZOOM_STEP   = 6;
-const CAM_TILT        = 55;    // degrees above horizon (fixed RTS angle)
-const CAM_ROT_SPEED   = 1.5;   // radians/sec for Q/E rotation
-
-// ─── Per-model position & tilt offsets ─────────────────────────────────────
-// Y   – lift above ground (increase if model is underground)
-// TILT_X / TILT_Z – fix model tilt in radians (e.g. Math.PI / 2  =  90°)
-const SOLAR_PANEL_Y      = 0;          // Solar Panel — height
-const SOLAR_PANEL_TILT_X = 0;          // Solar Panel — X-axis tilt (radians)
-const SOLAR_PANEL_TILT_Z = 0;          // Solar Panel — Z-axis tilt (radians)
-
-const MONEY_FACTORY_Y      = 0;        // MoneyFactory — height
-const MONEY_FACTORY_TILT_X = 0;        // MoneyFactory — X-axis tilt (radians)
-const MONEY_FACTORY_TILT_Z = 0;        // MoneyFactory — Z-axis tilt (radians)
-
-// ─── Building (selectable object) ──────────────────────────────────────────
-
-function Building({ d, id }) {
-  const { lmbHeldRef, selectedRef, meshMapRef, placingItemRef } = useContext(CityContext);
-  const meshRef = useRef();
-
-  // Register / unregister this mesh in the global map (for clear)
-  useEffect(() => {
-    meshMapRef.current.set(id, meshRef);
-    return () => { meshMapRef.current.delete(id); };
-  }, [id, meshMapRef]);
-
-  // Restore highlight after chunk reload
-  useEffect(() => {
-    if (selectedRef.current.has(id) && meshRef.current) {
-      meshRef.current.material.emissive.setHex(0x1a88ff);
-      meshRef.current.material.emissiveIntensity = 0.55;
-    }
-  });
-
-  const doSelect = useCallback(() => {
-    if (!meshRef.current || selectedRef.current.has(id)) return;
-    selectedRef.current.add(id);
-    meshRef.current.material.emissive.setHex(0x1a88ff);
-    meshRef.current.material.emissiveIntensity = 0.55;
-  }, [id, selectedRef]);
-
-  return (
-    <mesh
-      ref={meshRef}
-      castShadow
-      receiveShadow
-      position={[d.bx, d.bh / 2, d.bz]}
-      onPointerDown={(e) => {
-        if (e.button === 0 && !placingItemRef.current) { e.stopPropagation(); doSelect(); }
-      }}
-      onPointerMove={(e) => {
-        if (lmbHeldRef.current && !placingItemRef.current) { e.stopPropagation(); doSelect(); }
-      }}
-    >
-      <boxGeometry args={[d.bw, d.bh, d.bd]} />
-      <meshStandardMaterial
-        color={`hsl(${Math.floor(d.hue * 360)}, 20%, 30%)`}
-        roughness={0.7}
-        metalness={0.1}
-      />
-    </mesh>
-  );
-}
-
-// ─── Chunk ──────────────────────────────────────────────────────────────────
-
-function Chunk({ cx, cz }) {
-  const x = cx * CHUNK_SIZE;
-  const z = cz * CHUNK_SIZE;
-
-  const gridHelper = useMemo(() => {
-    const g = new THREE.GridHelper(CHUNK_SIZE, 8, '#1e2e1e', '#1e2e1e');
-    g.material.transparent = true;
-    g.material.opacity     = 0.5;
-    return g;
-  }, []);
-
-  useEffect(() => () => { gridHelper.dispose?.(); }, [gridHelper]);
-
-  // Deterministic pseudo-random for decorations based on chunk coords
-  const seed = cx * 73856093 ^ cz * 19349663;
-  const rng  = (n) => (((seed ^ n * 2654435761) >>> 0) % 1000) / 1000;
-
-  const decorations = useMemo(() => {
-    const items = [];
-    // Scatter some placeholder boxes (will be replaced by .glb later)
-    const count = Math.floor(rng(1) * 4);
-    for (let i = 0; i < count; i++) {
-      const bx  = x + (rng(i * 10 + 2) - 0.5) * CHUNK_SIZE * 0.8;
-      const bz  = z + (rng(i * 10 + 3) - 0.5) * CHUNK_SIZE * 0.8;
-      const bh  = 1 + rng(i * 10 + 4) * 6;
-      const bw  = 0.8 + rng(i * 10 + 5) * 3;
-      const bd  = 0.8 + rng(i * 10 + 6) * 3;
-      const hue = rng(i * 10 + 7);
-      items.push({ bx, bz, bh, bw, bd, hue });
-    }
-    return items;
-  }, [cx, cz]);
-
-  return (
-    <group>
-      {/* Ground tile */}
-      <mesh
-        receiveShadow
-        position={[x, 0, z]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <planeGeometry args={[CHUNK_SIZE, CHUNK_SIZE]} />
-        <meshStandardMaterial
-          color={`hsl(${120 + (cx + cz) * 7}, 18%, ${14 + (Math.abs(cx) + Math.abs(cz)) % 3}%)`}
-          roughness={0.9}
-          metalness={0}
-        />
-      </mesh>
-
-      {/* Chunk grid */}
-      <primitive
-        object={gridHelper}
-        position={[x, 0.02, z]}
-      />
-
-      {/* Placeholder buildings / props (will be swapped for .glb) */}
-      {decorations.map((d, i) => (
-        <Building key={i} d={d} id={`${cx}_${cz}_${i}`} />
-      ))}
-    </group>
-  );
-}
-
-// ─── World (infinite chunk manager) ─────────────────────────────────────────
-
-function World({ camTargetRef }) {
-  const [chunks, setChunks] = useState(() => {
-    const set = new Set();
-    for (let dx = -RENDER_DIST; dx <= RENDER_DIST; dx++)
-      for (let dz = -RENDER_DIST; dz <= RENDER_DIST; dz++)
-        set.add(`${dx},${dz}`);
-    return set;
-  });
-
-  useFrame(() => {
-    const pos = camTargetRef.current;
-    const cx  = Math.round(pos.x / CHUNK_SIZE);
-    const cz  = Math.round(pos.z / CHUNK_SIZE);
-    const next = new Set();
-    for (let dx = -RENDER_DIST; dx <= RENDER_DIST; dx++)
-      for (let dz = -RENDER_DIST; dz <= RENDER_DIST; dz++)
-        next.add(`${cx + dx},${cz + dz}`);
-    if (next.size !== chunks.size || [...next].some(k => !chunks.has(k)))
-      setChunks(next);
-  });
-
-  return (
-    <>
-      {[...chunks].map(key => {
-        const [cx, cz] = key.split(',').map(Number);
-        return <Chunk key={key} cx={cx} cz={cz} />;
-      })}
-    </>
-  );
-}
-
-// ─── RTS Camera Controller ────────────────────────────────────────────────────
-// camTargetRef  – {x, z} point on the ground the camera looks at
-// camStateRef   – { zoom, rotY } mutable camera state
-
-function RTSCamera({ camTargetRef, camStateRef, keysRef, inputRef }) {
-  const { camera, gl } = useThree();
-  // Smooth target for interpolation
-  const smoothTarget = useRef(new THREE.Vector3());
-  const smoothZoom   = useRef(50);
-  const smoothRotY   = useRef(0);
-
-  useEffect(() => {
-    camera.fov  = 50;
-    camera.near = 0.5;
-    camera.far  = 800;
-    camera.updateProjectionMatrix();
-  }, [camera]);
-
-  useFrame((_, delta) => {
-    const dt      = Math.min(delta, 0.05);
-    const keys    = keysRef.current;
-    const inp     = inputRef.current;
-    const state   = camStateRef.current;
-    const target  = camTargetRef.current;
-
-    // ── Rotation (Q/E) ──
-    if (keys['KeyQ']) state.rotY += CAM_ROT_SPEED * dt;
-    if (keys['KeyE']) state.rotY -= CAM_ROT_SPEED * dt;
-
-    // ── Pan direction vectors based on camera rotation ──
-    const forward = new THREE.Vector3(
-      -Math.sin(state.rotY), 0, -Math.cos(state.rotY)
-    );
-    const right = new THREE.Vector3(
-      Math.cos(state.rotY), 0, -Math.sin(state.rotY)
-    );
-
-    // ── Keyboard pan ──
-    const kSpeed = CAM_PAN_SPEED * dt * (state.zoom / 50);
-    if (keys['KeyW'] || keys['ArrowUp'])    { target.x += forward.x * kSpeed; target.z += forward.z * kSpeed; }
-    if (keys['KeyS'] || keys['ArrowDown'])  { target.x -= forward.x * kSpeed; target.z -= forward.z * kSpeed; }
-    if (keys['KeyA'] || keys['ArrowLeft'])  { target.x -= right.x * kSpeed;   target.z -= right.z * kSpeed; }
-    if (keys['KeyD'] || keys['ArrowRight']) { target.x += right.x * kSpeed;   target.z += right.z * kSpeed; }
-
-    // ── Middle-mouse / LMB drag pan ──
-    if (inp.middleDrag) {
-      const dragSpeed = state.zoom * 0.0018;
-      target.x += (-inp.dragDeltaX * right.x + inp.dragDeltaY * forward.x) * dragSpeed;
-      target.z += (-inp.dragDeltaX * right.z + inp.dragDeltaY * forward.z) * dragSpeed;
-      inp.dragDeltaX = 0;
-      inp.dragDeltaY = 0;
-    }
-
-    // ── Zoom from wheel ──
-    if (inp.wheelDelta !== 0) {
-      state.zoom = THREE.MathUtils.clamp(
-        state.zoom + inp.wheelDelta * CAM_ZOOM_STEP,
-        CAM_ZOOM_MIN, CAM_ZOOM_MAX
-      );
-      inp.wheelDelta = 0;
-    }
-
-    // ── Smooth lerp camera ──
-    const lerpK = 1 - Math.pow(0.002, dt);
-    smoothTarget.current.lerp(new THREE.Vector3(target.x, 0, target.z), lerpK);
-    smoothZoom.current  += (state.zoom  - smoothZoom.current)  * lerpK;
-    smoothRotY.current  += (state.rotY  - smoothRotY.current)  * lerpK;
-
-    // ── Position camera isometrically above target ──
-    const tiltRad = THREE.MathUtils.degToRad(CAM_TILT);
-    const dist    = smoothZoom.current / Math.tan(tiltRad);
-    const height  = smoothZoom.current;
-
-    camera.position.set(
-      smoothTarget.current.x + Math.sin(smoothRotY.current) * dist,
-      height,
-      smoothTarget.current.z + Math.cos(smoothRotY.current) * dist
-    );
-    camera.lookAt(smoothTarget.current);
-  });
-
-  return null;
-}
-
-// ─── Lighting ────────────────────────────────────────────────────────────────
-
-function Lighting() {
-  // Kept as empty stub — replaced by DynamicEnvironment inside Scene
-  return null;
-}
-
-// ─── Dynamic sky + lighting (reads gameTimeRef every frame via useFrame) ────────
-
-function DynamicEnvironment({ gameTimeRef }) {
-  const skyRef  = useRef();
-  const sunRef  = useRef();
-  const ambRef  = useRef();
-  const hemiRef = useRef();
-  const { scene } = useThree();
-
-  useFrame(() => {
-    const h = gameTimeRef.current;
-    const [sx, sy, sz] = getSunPosition(h);
-    const lit = getLighting(h);
-    const sky = getSkyParams(h);
-
-    // Sky uniforms
-    if (skyRef.current?.material?.uniforms) {
-      const u = skyRef.current.material.uniforms;
-      u.sunPosition.value.set(sx, sy, sz);
-      u.turbidity.value       = sky.turbidity;
-      u.rayleigh.value        = sky.rayleigh;
-      u.mieCoefficient.value  = sky.mieCoefficient;
-      u.mieDirectionalG.value = sky.mieDirectionalG;
-    }
-
-    // Directional light (sun)
-    if (sunRef.current) {
-      sunRef.current.position.set(sx, sy, sz);
-      sunRef.current.intensity = lit.dirIntensity;
-      sunRef.current.color.set(lit.dirColor);
-      sunRef.current.target.updateMatrixWorld();
-    }
-
-    // Ambient light
-    if (ambRef.current) {
-      ambRef.current.intensity = lit.ambientIntensity;
-      ambRef.current.color.set(lit.ambientColor);
-    }
-
-    // Hemisphere light
-    if (hemiRef.current) {
-      hemiRef.current.intensity = lit.hemiIntensity;
-      hemiRef.current.color.set(lit.hemiSky);
-      hemiRef.current.groundColor.set(lit.hemiGround);
-    }
-
-    // Fog colour
-    if (scene.fog) scene.fog.color.set(getFogColor(h));
-  });
-
-  return (
-    <>
-      <Sky
-        ref={skyRef}
-        distance={450000}
-        sunPosition={[200, 0, 60]}
-        turbidity={10}
-        rayleigh={2}
-        mieCoefficient={0.02}
-        mieDirectionalG={0.98}
-      />
-      <Stars radius={400} depth={60} count={2500} factor={3} fade speed={0.3} />
-      <fog attach="fog" args={[getFogColor(8), 80, 350]} />
-      <ambientLight ref={ambRef} intensity={0.06} />
-      <directionalLight
-        ref={sunRef}
-        castShadow
-        intensity={0}
-        color="#fff8e0"
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-near={1}
-        shadow-camera-far={600}
-        shadow-camera-left={-200}
-        shadow-camera-right={200}
-        shadow-camera-top={200}
-        shadow-camera-bottom={-200}
-      />
-      <hemisphereLight ref={hemiRef} args={['#9ec8ff', '#3a5a3a', 0.08]} />
-    </>
-  );
-}
-
-// ─── Model error boundary ────────────────────────────────────────────────────
-
-class ModelErrorBoundary extends Component {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  render() {
-    return this.state.failed ? this.props.fallback : this.props.children;
-  }
-}
-
-// ─── Shared placement mouse tracker (raycast to ground) ──────────────────────
-
-function usePlacementTracker(placementPosRef, inputRef, placementRotYRef) {
-  const { camera, gl, raycaster } = useThree();
-  const { placedItemsRef, placingItemRef } = useContext(CityContext);
-  const groupRef    = useRef();
-  const blockedRef  = useRef(false);
-  const groundPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
-  const hitPoint    = useMemo(() => new THREE.Vector3(), []);
-
-  useFrame(() => {
-    const inp = inputRef.current;
-    if (inp.mouseX === null || !groupRef.current) return;
-    const ndc = new THREE.Vector2(
-      (inp.mouseX / gl.domElement.clientWidth)  *  2 - 1,
-     -(inp.mouseY / gl.domElement.clientHeight) *  2 + 1,
-    );
-    raycaster.setFromCamera(ndc, camera);
-    if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
-      groupRef.current.position.set(hitPoint.x, 0, hitPoint.z);
-      groupRef.current.rotation.y = placementRotYRef.current;
-      placementPosRef.current = { x: hitPoint.x, y: 0, z: hitPoint.z };
-      blockedRef.current = isColliding(
-        { x: hitPoint.x, z: hitPoint.z },
-        placingItemRef?.current,
-        placedItemsRef?.current ?? [],
-      );
-    }
-  });
-  return { groupRef, blockedRef };
-}
-
-// ─── Box glowing placeholder (used when GLB is missing) ─────────────────────
-
-function GlowBoxPreview({ placementPosRef, inputRef, placementRotYRef }) {
-  const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-  const matRef = useRef();
-  useFrame(({ clock }) => {
-    if (!matRef.current) return;
-    const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    const blocked = blockedRef.current;
-    matRef.current.color.setHex(blocked ? 0x6e0a0a : 0x0a6ebd);
-    matRef.current.emissive.setHex(blocked ? 0xff2200 : 0x00aaff);
-    matRef.current.emissiveIntensity = pulse;
-  });
-  return (
-    <group ref={groupRef}>
-      <mesh castShadow position={[0, 0.5, 0]}>
-        <boxGeometry args={[2, 1, 3]} />
-        <meshStandardMaterial
-          ref={matRef}
-          color="#0a6ebd"
-          emissive={new THREE.Color(0x00aaff)}
-          emissiveIntensity={0.8}
-          transparent
-          opacity={0.82}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-function GlowBoxPlaced({ position, rotation }) {
-  return (
-    <mesh castShadow position={[position[0], position[1] + 0.5, position[2]]} rotation={[0, rotation || 0, 0]}>
-      <boxGeometry args={[2, 1, 3]} />
-      <meshStandardMaterial color="#0a6ebd" emissive={new THREE.Color(0x003366)} emissiveIntensity={0.3} />
-    </mesh>
-  );
-}
-
-// ─── Floating energy badge (shown above producing buildings) ─────────────────
-
-function EnergyBadge({ itemType, badgeHeight = 6 }) {
-  const prods = getProductions(itemType);
-  if (!prods.length) return null;
-
-  const lines = prods.map(p => {
-    const meta = ENERGY_TYPES[p.type];
-    return `${meta?.icon ?? '⚡'} ${p.ratePerHour}${meta?.unit ?? ''}/ч`;
-  });
-
-  return (
-    <Html
-      position={[0, badgeHeight, 0]}
-      center
-      distanceFactor={35}
-      zIndexRange={[10, 11]}
-      style={{ pointerEvents: 'none' }}
-    >
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-        pointerEvents: 'none',
-      }}>
-        {lines.map((line, i) => (
-          <div key={i} style={{
-            background: 'rgba(0,0,0,0.72)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 8,
-            padding: '2px 8px',
-            fontSize: 12,
-            fontFamily: 'monospace',
-            fontWeight: 700,
-            color: '#fde047',
-            whiteSpace: 'nowrap',
-            userSelect: 'none',
-          }}>{line}</div>
-        ))}
-      </div>
-    </Html>
-  );
-}
-
-// ─── Work-area zone overlay (shown when a placed item is selected) ───────────
-
-function WorkAreaOverlay({ width, depth, color, opacity }) {
-  const border = useMemo(() => {
-    const hw = width / 2, hd = depth / 2;
-    const pts = new Float32Array([
-      -hw, 0, -hd,  hw, 0, -hd,
-       hw, 0, -hd,  hw, 0,  hd,
-       hw, 0,  hd, -hw, 0,  hd,
-      -hw, 0,  hd, -hw, 0, -hd,
-    ]);
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pts, 3));
-    return geo;
-  }, [width, depth]);
-
-  return (
-    <group position={[0, 0.05, 0]}>
-      {/* Transparent fill */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[width, depth]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={opacity}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-      {/* Solid border */}
-      <lineSegments geometry={border}>
-        <lineBasicMaterial color={color} />
-      </lineSegments>
-    </group>
-  );
-}
-
-// ─── Solar Panel — GLB inner components (may throw if file missing) ──────────
-
-function SolarPanelGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
-  const { scene } = useGLTF('/models/Solar%20Panel.glb');
-  const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-
-  const glowScene = useMemo(() => {
-    const c = scene.clone(true);
-    c.traverse(child => {
-      if (child.isMesh) {
-        child.material = child.material.clone();
-        child.material.emissive          = new THREE.Color(0x00aaff);
-        child.material.emissiveIntensity = 0.8;
-        child.material.transparent       = true;
-        child.material.opacity           = 0.8;
-      }
-    });
-    return c;
-  }, [scene]);
-
-  useFrame(({ clock }) => {
-    const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    const blocked = blockedRef.current;
-    glowScene.traverse(child => {
-      if (child.isMesh) {
-        child.material.emissive.setHex(blocked ? 0xff2200 : 0x00aaff);
-        child.material.emissiveIntensity = pulse;
-      }
-    });
-  });
-
-  return (
-    <group ref={groupRef}>
-      <primitive object={glowScene} position={[0, SOLAR_PANEL_Y, 0]} rotation={[SOLAR_PANEL_TILT_X, 0, SOLAR_PANEL_TILT_Z]} />
-    </group>
-  );
-}
-
-function SolarPanelGLTFPlaced({ position, rotation, isSelected, onSelect }) {
-  const { scene } = useGLTF('/models/Solar%20Panel.glb');
-  const cloned    = useMemo(() => scene.clone(true), [scene]);
-  const { workArea } = SOLAR_PANEL_CONFIG;
-  const { placedHitRef } = useContext(CityContext);
-  return (
-    <group
-      position={[position[0], 0, position[2]]}
-      onPointerDown={(e) => { e.stopPropagation(); placedHitRef.current = true; onSelect?.(); }}
-    >
-      <primitive
-        object={cloned}
-        position={[0, SOLAR_PANEL_Y, 0]}
-        rotation={[SOLAR_PANEL_TILT_X, rotation || 0, SOLAR_PANEL_TILT_Z]}
-      />
-      <EnergyBadge itemType="solar-panel" badgeHeight={SOLAR_PANEL_CONFIG.badgeHeight} />
-      {isSelected && (
-        <WorkAreaOverlay
-          width={workArea.width}
-          depth={workArea.depth}
-          color={workArea.color}
-          opacity={workArea.opacity}
-        />
-      )}
-    </group>
-  );
-}
-
-// ─── Solar Panel — public components with error boundary + Suspense ──────────
-
-function SolarPanelPreview({ placementPosRef, inputRef, placementRotYRef }) {
-  return (
-    <ModelErrorBoundary fallback={<GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />}>
-      <Suspense fallback={<GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />}>
-        <SolarPanelGLTFPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
-      </Suspense>
-    </ModelErrorBoundary>
-  );
-}
-
-function SolarPanelPlaced({ position, rotation, isSelected, onSelect }) {
-  return (
-    <ModelErrorBoundary fallback={<GlowBoxPlaced position={position} rotation={rotation} />}>
-      <Suspense fallback={<GlowBoxPlaced position={position} rotation={rotation} />}>
-        <SolarPanelGLTFPlaced position={position} rotation={rotation} isSelected={isSelected} onSelect={onSelect} />
-      </Suspense>
-    </ModelErrorBoundary>
-  );
-}
-
-// ─── Money Factory — GLB inner components ───────────────────────────────────
-
-function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
-  const { scene } = useGLTF('/models/MoneyFactory.glb');
-  const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-
-  const glowScene = useMemo(() => {
-    const c = scene.clone(true);
-    c.traverse(child => {
-      if (child.isMesh) {
-        child.material = child.material.clone();
-        child.material.emissive          = new THREE.Color(0x00ff88);
-        child.material.emissiveIntensity = 0.8;
-        child.material.transparent       = true;
-        child.material.opacity           = 0.82;
-      }
-    });
-    return c;
-  }, [scene]);
-
-  useFrame(({ clock }) => {
-    const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    const blocked = blockedRef.current;
-    glowScene.traverse(child => {
-      if (child.isMesh) {
-        child.material.emissive.setHex(blocked ? 0xff2200 : 0x00ff88);
-        child.material.emissiveIntensity = pulse;
-      }
-    });
-  });
-
-  return (
-    <group ref={groupRef}>
-      <primitive object={glowScene} position={[0, MONEY_FACTORY_Y, 0]} rotation={[MONEY_FACTORY_TILT_X, 0, MONEY_FACTORY_TILT_Z]} />
-    </group>
-  );
-}
-
-function MoneyFactoryGLTFPlaced({ position, rotation, isSelected, onSelect }) {
-  const { scene } = useGLTF('/models/MoneyFactory.glb');
-  const cloned    = useMemo(() => scene.clone(true), [scene]);
-  const { workArea } = MONEY_FACTORY_CONFIG;
-  const { placedHitRef } = useContext(CityContext);
-  return (
-    <group
-      position={[position[0], 0, position[2]]}
-      onPointerDown={(e) => { e.stopPropagation(); placedHitRef.current = true; onSelect?.(); }}
-    >
-      <primitive
-        object={cloned}
-        position={[0, MONEY_FACTORY_Y, 0]}
-        rotation={[MONEY_FACTORY_TILT_X, rotation || 0, MONEY_FACTORY_TILT_Z]}
-      />
-      <EnergyBadge itemType="money-factory" badgeHeight={MONEY_FACTORY_CONFIG.badgeHeight} />
-      {isSelected && (
-        <WorkAreaOverlay
-          width={workArea.width}
-          depth={workArea.depth}
-          color={workArea.color}
-          opacity={workArea.opacity}
-        />
-      )}
-    </group>
-  );
-}
-
-function MoneyFactoryPreview({ placementPosRef, inputRef, placementRotYRef }) {
-  const fb = <GlowBoxPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />;
-  return (
-    <ModelErrorBoundary fallback={fb}>
-      <Suspense fallback={fb}>
-        <MoneyFactoryGLTFPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
-      </Suspense>
-    </ModelErrorBoundary>
-  );
-}
-
-function MoneyFactoryPlaced({ position, rotation, isSelected, onSelect }) {
-  const fb = <GlowBoxPlaced position={position} rotation={rotation} />;
-  return (
-    <ModelErrorBoundary fallback={fb}>
-      <Suspense fallback={fb}>
-        <MoneyFactoryGLTFPlaced position={position} rotation={rotation} isSelected={isSelected} onSelect={onSelect} />
-      </Suspense>
-    </ModelErrorBoundary>
-  );
-}
-
-// ─── Shop Modal ─────────────────────────────────────────────────────────────
-
-const SHOP_TABS = [
-  { id: 'energy',     label: '⚡ Энергия' },
-  { id: 'production', label: '🏗️ Производство' },
-];
-
-function ShopModal({ onClose, onBuy }) {
-  const [activeTab, setActiveTab] = useState('energy');
-
-  return (
-    <div className={styles.shopOverlay} onClick={onClose}>
-      <div className={styles.shopModal} onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className={styles.shopHeader}>
-          <span className={styles.shopTitle}>🏪 Магазин построек</span>
-          <button className={styles.shopClose} onClick={onClose}>✕</button>
-        </div>
-
-        {/* Tabs */}
-        <div className={styles.shopTabs}>
-          {SHOP_TABS.map(t => (
-            <button
-              key={t.id}
-              className={`${styles.shopTab} ${activeTab === t.id ? styles.shopTabActive : ''}`}
-              onClick={() => setActiveTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className={styles.shopContent}>
-          {activeTab === 'energy' && (
-            <div className={styles.shopGrid}>
-              <div className={styles.shopItem} onClick={() => { onBuy('solar-panel'); onClose(); }}>
-                <div className={styles.shopItemIcon}>☀️</div>
-                <div className={styles.shopItemInfo}>
-                  <span className={styles.shopItemName}>Солнечная панель</span>
-                  <span className={styles.shopItemDesc}>Генерирует энергию днём</span>
-                </div>
-                <button className={styles.shopItemBtn}>Разместить</button>
-              </div>
-            </div>
-          )}
-          {activeTab === 'production' && (
-            <div className={styles.shopGrid}>
-              <div className={styles.shopItem} onClick={() => { onBuy('money-factory'); onClose(); }}>
-                <div className={styles.shopItemThumb}>
-                  <img src="/models/MoneyFactory.png" alt="Денежная фабрика" />
-                </div>
-                <div className={styles.shopItemInfo}>
-                  <span className={styles.shopItemName}>Денежная фабрика</span>
-                  <span className={styles.shopItemDesc}>Генерирует доход для города</span>
-                </div>
-                <button className={styles.shopItemBtn}>Разместить</button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── HUD ─────────────────────────────────────────────────────────────────────
-
-function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals }) {
-  return (
-    <>
-      <div className={styles.coords}>
-        X: {pos.x.toFixed(0)} &nbsp;|&nbsp; Z: {pos.z.toFixed(0)}
-        &nbsp;|&nbsp; Зум: {zoom.toFixed(0)}
-      </div>
-      {timeString && (
-        <div className={styles.gameClock}>
-          {getDayPeriodIcon(parseInt(timeString, 10))} {timeString}
-        </div>
-      )}
-      {energyTotals && Object.keys(energyTotals).length > 0 && (
-        <div className={styles.energyPanel}>
-          {Object.entries(energyTotals).map(([type, val]) => {
-            const meta = ENERGY_TYPES[type];
-            return (
-              <div key={type} className={styles.energyRow} style={{ color: meta?.color ?? '#fff' }}>
-                <span>{meta?.icon ?? '⚡'}</span>
-                <span>{meta?.label ?? type}</span>
-                <strong>{val} {meta?.unit ?? ''}/ч</strong>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {placingItem && (
-        <div className={styles.placingHint}>
-          🔧 Перемещайте объект &nbsp;·&nbsp; <kbd>Колесо</kbd> поворот &nbsp;·&nbsp; <kbd>ЛКМ</kbd> поставить &nbsp;·&nbsp; <kbd>Esc</kbd> отмена
-        </div>
-      )}
-      {!placingItem && selectedCount > 0 && (
-        <div className={styles.selectionInfo}>
-          <span>Выбрано: <strong>{selectedCount}</strong></span>
-          <button className={styles.clearBtn} onClick={onClearSelection} title="Сбросить выделение">✕</button>
-        </div>
-      )}
-      <div className={styles.miniControls}>
-        <span><kbd>W A S D</kbd> панорама</span>
-        <span><kbd>Q / E</kbd> поворот</span>
-        <span><kbd>↕ Колесо</kbd> зум</span>
-        <span><kbd>ЛКМ/ПКМ</kbd> перетащить</span>
-        <span><kbd>ЛКМ</kbd> выделить объект</span>
-        <span><kbd>Esc</kbd> сбросить выбор</span>
-      </div>
-      {!placingItem && <button className={styles.shopBtn} onClick={onShop} title="Магазин построек">🏪</button>}
-      <button className={styles.backBtn} onClick={onBack}>← Назад</button>
-    </>
-  );
-}
-
-// ─── Scene ───────────────────────────────────────────────────────────────────
-
-function Scene({ camTargetRef, camStateRef, keysRef, inputRef, placingItem, placedItems, placementPosRef, placementRotYRef, selectedPlacedId, setSelectedPlacedId, gameTimeRef }) {
-  return (
-    <>
-      <DynamicEnvironment gameTimeRef={gameTimeRef} />
-      <World camTargetRef={camTargetRef} />
-      <RTSCamera
-        camTargetRef={camTargetRef}
-        camStateRef={camStateRef}
-        keysRef={keysRef}
-        inputRef={inputRef}
-      />
-      {placingItem === 'solar-panel' && (
-        <SolarPanelPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
-      )}
-      {placingItem === 'money-factory' && (
-        <MoneyFactoryPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
-      )}
-      {placedItems.map(item =>
-        item.type === 'solar-panel'
-          ? <SolarPanelPlaced key={item.id} position={item.position} rotation={item.rotation}
-              isSelected={selectedPlacedId === item.id}
-              onSelect={() => setSelectedPlacedId(item.id)}
-            />
-          : item.type === 'money-factory'
-          ? <MoneyFactoryPlaced key={item.id} position={item.position} rotation={item.rotation}
-              isSelected={selectedPlacedId === item.id}
-              onSelect={() => setSelectedPlacedId(item.id)}
-            />
-          : null
-      )}
-    </>
-  );
-}
+import { isColliding }             from './items/collision.js';
+import './items/conveyorRules.js';   // side-effect: registers all transfer rules
+import './items/energyCableRules.js'; // side-effect: registers cable rules
+import './items/townHall.js';         // side-effect: registers town-hall storage
+import './items/splitterMerger.js';   // side-effect: registers splitter/merger rules + slot limits
+import './items/extractor.js';        // side-effect: registers extractor storage
+import { findNearestOreDeposit, canMineOre } from './systems/oreRegistry.js';
+import { countFreeBuilders, countTotalBuilders, countPlacedType, findIdleBuilderHousePos } from './systems/builderSystem.js';
+import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, CONSTRUCTION_DURATION_MS, BUILDER_HOUSE_EXTRA_COST_COINS } from './items/shopPrices.js';
+import { snapWallPoint, WALL_SEGMENT_COIN_COST, TOWER_COIN_COST, WALL_LEVELS, TOWER_LEVELS, WALL_GRID_SNAP } from './items/wallSystem.js';
+import { canConnect, canBeSource, getTransferRule, getConveyorOutLimit, getConveyorInLimit } from './systems/conveyor.js';
+import { canCableConnect, getCableRule, calcCablePoweredIds } from './systems/energyCable.js';
+import { calcConveyorRates, calcCableRates } from './systems/connectionRates.js';
+import { getLevelConfig, getNextLevelConfig } from './systems/upgrades.js';
+import { useCitySync }             from './systems/citySync.js';
+import { REAL_MS_PER_GAME_HOUR, formatGameTime } from './systems/dayNight.js';
+import { calcEnergyTotals, calcStorageTotals, calcPoweredItems, getStorages } from './systems/energy.js';
+import { CityContext }             from './city/CityContext.js';
+import { Scene }                   from './city/CityScene.jsx';
+import { useOtherPlayers }         from './systems/useOtherPlayers.js';
+import { HUD }                     from './city/HUD.jsx';
+import { ShopModal }               from './city/ShopModal.jsx';
+import { ContextMenu }             from './city/ContextMenu.jsx';
 
 // ─── Main export ─────────────────────────────────────────────────────────────
 
@@ -878,42 +41,132 @@ export default function OpenCity({ onBack }) {
   const [displayZoom, setDisplayZoom] = useState(50);
   const [shopOpen,    setShopOpen]    = useState(false);
 
-  // ─── Day / night time tracking
-  const gameTimeRef  = useRef(8);                              // game hour 0–24, starts at 08:00
-  const [timeString, setTimeString] = useState('08:00');
+  // ─── Day / night time tracking ────────────────────────────────────────────
+  // Derived from wall-clock so all players share the same game time.
+  const GAME_DAY_MS = 24 * REAL_MS_PER_GAME_HOUR;
+  const getSharedGameTime = () => (Date.now() % GAME_DAY_MS) / REAL_MS_PER_GAME_HOUR;
+  const gameTimeRef  = useRef(getSharedGameTime());
+  const [timeString, setTimeString] = useState(() => formatGameTime(gameTimeRef.current));
 
-  // rAF — advances game time every real frame
   useEffect(() => {
-    let lastMs = null;
     let raf;
-    const tick = (nowMs) => {
-      if (lastMs !== null) {
-        gameTimeRef.current = (gameTimeRef.current + (nowMs - lastMs) / REAL_MS_PER_GAME_HOUR) % 24;
-      }
-      lastMs = nowMs;
+    const tick = () => {
+      gameTimeRef.current = getSharedGameTime();
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Update HUD clock every game-minute (= 5 real seconds)
   useEffect(() => {
     const id = setInterval(() => setTimeString(formatGameTime(gameTimeRef.current)), 5000);
     return () => clearInterval(id);
   }, []);
 
-  // Placement state
-  const [placingItem,  setPlacingItem]  = useState(null);  // 'solar-panel' | null
+  // ─── Placement state ──────────────────────────────────────────────────────
+  const [placingItem,  setPlacingItem]  = useState(null);
   const [placedItems,  setPlacedItems]  = useState([]);
   const placedItemsRef = useRef([]);
   useEffect(() => { placedItemsRef.current = placedItems; }, [placedItems]);
 
-  // ─── Backend sync (load on mount, auto-save every 30 s, save on close)
-  const { loading: worldLoading, offlineHours } = useCitySync({
+  // ─── Conveyor state — declared BEFORE useCitySync ─────────────────────────
+  const [conveyors,      setConveyors]      = useState([]);
+  const conveyorsRef     = useRef([]);
+  useEffect(() => { conveyorsRef.current = conveyors; }, [conveyors]);
+  const [conveyorMode,   setConveyorMode]   = useState(false);
+  const conveyorModeRef  = useRef(false);
+  const [conveyorFromId, setConveyorFromId] = useState(null);
+  const conveyorFromIdRef = useRef(null);
+  useEffect(() => { conveyorModeRef.current   = conveyorMode;   }, [conveyorMode]);
+  useEffect(() => { conveyorFromIdRef.current = conveyorFromId; }, [conveyorFromId]);
+  // ─── Energy cable state — declared BEFORE useCitySync ─────────────────────────
+  const [energyCables,      setEnergyCables]      = useState([]);
+  const energyCablesRef     = useRef([]);
+  useEffect(() => { energyCablesRef.current = energyCables; }, [energyCables]);
+  const [cableMode,         setCableMode]         = useState(false);
+  const cableModeRef        = useRef(false);
+  const [cableFromId,       setCableFromId]       = useState(null);
+  const cableFromIdRef      = useRef(null);
+  useEffect(() => { cableModeRef.current   = cableMode;   }, [cableMode]);
+  useEffect(() => { cableFromIdRef.current = cableFromId; }, [cableFromId]);
+
+  // ─── Wall / Tower state ───────────────────────────────────────────────────
+  const [placedWalls,   setPlacedWalls]   = useState([]);
+  const placedWallsRef  = useRef([]);
+  useEffect(() => { placedWallsRef.current  = placedWalls;  }, [placedWalls]);
+  const [placedTowers,  setPlacedTowers]  = useState([]);
+  const placedTowersRef = useRef([]);
+  useEffect(() => { placedTowersRef.current = placedTowers; }, [placedTowers]);
+  const [wallMode,      setWallMode]      = useState(false);
+  const wallModeRef     = useRef(false);
+  const [towerMode,     setTowerMode]     = useState(false);
+  const towerModeRef    = useRef(false);
+  const [wallFromPoint, setWallFromPoint] = useState(null); // { x, z }
+  useEffect(() => { wallModeRef.current  = wallMode;  }, [wallMode]);
+  useEffect(() => { towerModeRef.current = towerMode; }, [towerMode]);
+  // Live cursor pos updated by CityScene ground plane via ref — no React re-render per frame
+  const wallCursorRef = useRef(null);
+
+  // ─── Stored amounts + points — declared BEFORE useCitySync so they can be persisted ─
+  const storedAmountsRef = useRef({});
+  const [storedAmounts, setStoredAmounts] = useState({});
+  const pointsAmountsRef = useRef({});
+  const [pointsAmounts, setPointsAmounts] = useState({});
+  // Throttle React state updates: game logic runs every 1 s but we only
+  // push to React every 3 ticks to avoid 1 Hz full-scene re-renders.
+  const accumTickRef = useRef(0);
+  // ─── Building levels — persisted via citySync ─────────────────────────────
+  const buildingLevelsRef = useRef({});  // { [itemId]: level }
+  const [buildingLevels, setBuildingLevels] = useState({});  // ─── Upgrade timers { [itemId]: { startReal, durationMs, targetLevel } } ──────────
+  const upgradingBuildingsRef = useRef({});
+  const [upgradingBuildings, setUpgradingBuildings] = useState({});
+  useEffect(() => { upgradingBuildingsRef.current = upgradingBuildings; }, [upgradingBuildings]);
+  // ─── Construction timers { [itemId]: { startReal, durationMs } } ─────────
+  const constructingBuildingsRef = useRef({});
+  const [constructingBuildings, setConstructingBuildings] = useState({});
+  useEffect(() => { constructingBuildingsRef.current = constructingBuildings; }, [constructingBuildings]);
+  // ─── Moving builder runners [{ id, fromPos, toPos, startReal }] ──────────
+  const [movingBuilders, setMovingBuilders] = useState([]);
+  // ─── Platform XP & Points — fetched once from /api/auth/me ─────────────────
+  const [userId, setUserId] = useState(null);
+  const [userXp, setUserXp] = useState(0);
+  const [userPoints, setUserPoints] = useState(0);
+  const userPointsRef = useRef(0);
+  useEffect(() => { userPointsRef.current = userPoints; }, [userPoints]);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch('/api/auth/me', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        const u = data?.user ?? data;
+        if (typeof u?.id === 'number') setUserId(u.id);
+        if (typeof u?.experience === 'number') setUserXp(u.experience);
+        if (typeof u?.points === 'number') { setUserPoints(u.points); userPointsRef.current = u.points; }
+      })
+      .catch(() => {});
+  }, []);
+
+  // ─── Backend sync (load on mount, auto-save every 30 s, save on close) ────
+  const { loading: worldLoading, offlineHours, suggestedSpawn } = useCitySync({
     gameTimeRef,
     placedItemsRef,
     setPlacedItems,
+    conveyorsRef,
+    setConveyors,
+    energyCablesRef,
+    setEnergyCables,
+    storedAmountsRef,
+    setStoredAmounts,
+    pointsAmountsRef,
+    setPointsAmounts,
+    buildingLevelsRef,
+    setBuildingLevels,
+    placedWallsRef,
+    setPlacedWalls,
+    placedTowersRef,
+    setPlacedTowers,
   });
   const [offlineToast, setOfflineToast] = useState(false);
   useEffect(() => {
@@ -924,12 +177,29 @@ export default function OpenCity({ onBack }) {
     }
   }, [offlineHours]);
 
-  // Energy totals — recalculate whenever placedItems changes
+  // ─── Other players (multiplayer) ─────────────────────────────────────────
+  const { players: otherPlayers } = useOtherPlayers();
+
+  // ─── Center camera on town-hall (or suggestedSpawn, or 0,0) once after load
+  const hasCenteredRef = useRef(false);
+  useEffect(() => {
+    if (worldLoading || hasCenteredRef.current) return;
+    hasCenteredRef.current = true;
+    const th = placedItems.find(i => i.type === 'town-hall');
+    if (th) {
+      camTargetRef.current = { x: th.position[0], z: th.position[2] };
+    } else if (suggestedSpawn) {
+      camTargetRef.current = { x: suggestedSpawn.x, z: suggestedSpawn.z };
+    } else {
+      camTargetRef.current = { x: 0, z: 0 };
+    }
+  }, [worldLoading, placedItems, suggestedSpawn]);
+
+  // ─── Energy totals ────────────────────────────────────────────────────────
   const [energyTotals, setEnergyTotals] = useState({});
   useEffect(() => {
     setEnergyTotals(calcEnergyTotals(placedItems, gameTimeRef.current));
   }, [placedItems]);
-  // Also refresh every game-minute (day/night may change active production)
   useEffect(() => {
     const id = setInterval(
       () => setEnergyTotals(calcEnergyTotals(placedItemsRef.current, gameTimeRef.current)),
@@ -937,11 +207,295 @@ export default function OpenCity({ onBack }) {
     );
     return () => clearInterval(id);
   }, []);
-  const placedHitRef   = useRef(false);   // set by model click before DOM mousedown
+
+  // ─── Storage totals ───────────────────────────────────────────────────────
+  const [storageTotals, setStorageTotals] = useState({});
+  useEffect(() => {
+    setStorageTotals(calcStorageTotals(placedItems));
+  }, [placedItems]);
+
+  // ─── Powered items (energy zone + cable check) ─────────────────────────────
+  const [poweredIds, setPoweredIds] = useState(() => new Set());
+  useEffect(() => {
+    const zone   = calcPoweredItems(placedItems, gameTimeRef.current);
+    const cables = calcCablePoweredIds(placedItems, energyCables);
+    setPoweredIds(new Set([...zone, ...cables]));
+  }, [placedItems, energyCables]);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const zone   = calcPoweredItems(placedItemsRef.current, gameTimeRef.current);
+      const cables = calcCablePoweredIds(placedItemsRef.current, energyCablesRef.current);
+      setPoweredIds(new Set([...zone, ...cables]));
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ─── Per-building stored amounts (real-time accumulation) ─────────────────
+  useEffect(() => {
+    const id = setInterval(() => {
+      const deltaGameHours = 1000 / REAL_MS_PER_GAME_HOUR;
+      const validIds = new Set(placedItemsRef.current.map(i => String(i.id)));
+      const next = Object.fromEntries(
+        Object.entries(storedAmountsRef.current).filter(([k]) => validIds.has(k))
+      );
+
+      // Compute effective per-connection rates (handles multi-source / multi-target)
+      const convRates = calcConveyorRates(placedItemsRef.current, conveyorsRef.current, buildingLevelsRef.current);
+      const cabRates  = calcCableRates(placedItemsRef.current, energyCablesRef.current, buildingLevelsRef.current);
+
+      // ─── Extractor mining: fill internal ore buffer ─────────────────────────────
+      for (const item of placedItemsRef.current) {
+        if (item.type !== 'extractor') continue;
+        const key      = String(item.id);
+        const lvl      = buildingLevelsRef.current[key] ?? 1;
+        const conf     = getLevelConfig('extractor', lvl);        // Only mine if: extractor level supports the ore type under it
+        if (item.oreType && !canMineOre(lvl, item.oreType)) continue;        const mining   = 3 * (conf?.rateMultiplier ?? 1.0); // ед./ч
+        const bufCap   = 30 * (conf?.capacityMultiplier ?? 1.0);
+        if (!next[key]) next[key] = {};
+        next[key].ore = Math.min((next[key].ore ?? 0) + mining * deltaGameHours, bufCap);
+      }
+
+      for (const conv of conveyorsRef.current) {
+        const effectiveRate = convRates.get(conv.id) ?? 0;
+        if (effectiveRate <= 0) continue;
+        const to = placedItemsRef.current.find(i => i.id === conv.toId);
+        const from = placedItemsRef.current.find(i => i.id === conv.fromId);
+        if (!from || !to) continue;
+        const rule = getTransferRule(from.type, to.type);
+        if (!rule) continue;
+        const stors = getStorages(to.type);
+        if (!stors.length) continue;
+        // Level multiplier already applied inside calcConveyorRates
+        const adjustedRate = effectiveRate;
+        // If the source has an internal buffer (e.g. extractor), drain from it first.
+        // This ensures the buffer is consumed before transferring to the destination.
+        let actualRate = adjustedRate;
+        const fromStors = getStorages(from.type);
+        if (fromStors.length) {
+          const fromKey    = String(from.id);
+          const rule2      = getTransferRule(from.type, to.type);
+          const available  = next[fromKey]?.[rule2?.resource ?? rule.resource] ?? 0;
+          const drainAmt   = Math.min(adjustedRate * deltaGameHours, available);
+          actualRate       = drainAmt / deltaGameHours;
+          if (!next[fromKey]) next[fromKey] = {};
+          next[fromKey][rule2?.resource ?? rule.resource] = available - drainAmt;
+        }
+        // Apply destination building's capacity multiplier
+        const toLevel   = buildingLevelsRef.current[String(to.id)] ?? 1;
+        const toLvlConf = getLevelConfig(to.type, toLevel);
+        const key = String(to.id);
+        if (!next[key]) next[key] = {};
+        const stor = stors.find(s => s.type === rule.resource) ?? stors[0];
+        const cap  = (stor?.capacity ?? 1000) * (toLvlConf.capacityMultiplier ?? 1.0);
+        next[key][rule.resource] = Math.min(
+          (next[key][rule.resource] ?? 0) + actualRate * deltaGameHours,
+          cap,
+        );
+      }
+      // ─ Energy cables ───────────────────────────────────────────────────────────────
+      for (const cable of energyCablesRef.current) {
+        const effectiveRate = cabRates.get(cable.id) ?? 0;
+        if (effectiveRate <= 0) continue;
+        const from = placedItemsRef.current.find(i => i.id === cable.fromId);
+        const to   = placedItemsRef.current.find(i => i.id === cable.toId);
+        if (!from || !to) continue;
+        const rule = getCableRule(from.type, to.type);
+        if (!rule) continue;
+        const stors = getStorages(to.type);
+        if (!stors.length) continue;
+        // Level multiplier already applied inside calcCableRates
+        const adjustedRate = effectiveRate;
+        const toLevel   = buildingLevelsRef.current[String(to.id)] ?? 1;
+        const toLvlConf = getLevelConfig(to.type, toLevel);
+        const key = String(to.id);
+        if (!next[key]) next[key] = {};
+        const stor = stors.find(s => s.type === rule.resource) ?? stors[0];
+        const cap  = (stor?.capacity ?? 1000) * (toLvlConf.capacityMultiplier ?? 1.0);
+        next[key][rule.resource] = Math.min(
+          (next[key][rule.resource] ?? 0) + adjustedRate * deltaGameHours,
+          cap,
+        );
+      }
+      storedAmountsRef.current = next;
+      accumTickRef.current++;
+
+      // ─ Coins → Points conversion for every town-hall ────────────────────
+      const nextPoints = { ...pointsAmountsRef.current };
+      let pointsChanged = false;
+      for (const item of placedItemsRef.current) {
+        if (item.type !== 'town-hall') continue;
+        const key = String(item.id);
+        const coins = next[key]?.coins ?? 0;
+        // Use town-hall's level config to determine conversion rate
+        const thLevel = buildingLevelsRef.current[key] ?? 1;
+        const thConf  = getLevelConfig('town-hall', thLevel);
+        const COINS_PER_POINT = thConf.coinsPerPoint ?? 1000;
+        if (coins >= COINS_PER_POINT) {
+          const earned = Math.floor(coins / COINS_PER_POINT);
+          if (!next[key]) next[key] = {};
+          next[key].coins = coins - earned * COINS_PER_POINT;
+          nextPoints[key] = (nextPoints[key] ?? 0) + earned;
+          pointsChanged = true;
+        }
+      }
+      if (pointsChanged) {
+        storedAmountsRef.current = next;  // update again after coin deduction
+        setStoredAmounts({ ...next });
+        pointsAmountsRef.current = nextPoints;
+        setPointsAmounts({ ...nextPoints });
+      } else if (accumTickRef.current % 3 === 0) {
+        // Push visual update to React every 3 s to avoid 1-Hz full re-renders
+        setStoredAmounts({ ...next });
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, []); // eslint-disable-line
+
+  // ─── Context menu (RMB on building) ──────────────────────────────────────
+  const rightClickHitRef = useRef(false);
+  const rightClickRef    = useRef(null);
+  const [contextMenu, setContextMenu] = useState(null);
+
+  // ─── Conveyor handler ─────────────────────────────────────────────────────
+  const handleConveyorBuildingClick = useCallback((itemId) => {
+    if (!conveyorModeRef.current) return;
+    const fromId = conveyorFromIdRef.current;
+
+    if (fromId === null) {
+      // ─ Select source: must be a valid source type AND not already have max outgoing conveyors
+      const item = placedItemsRef.current.find(i => i.id === itemId);
+      if (!item) return;
+      if (!canBeSource(item.type)) return;
+      const outCount = conveyorsRef.current.filter(c => c.fromId === itemId).length;
+      if (outCount >= getConveyorOutLimit(item.type)) return;   // slot limit
+      setConveyorFromId(itemId);
+
+    } else if (fromId === itemId) {
+      setConveyorFromId(null);
+
+    } else {
+      const from = placedItemsRef.current.find(i => i.id === fromId);
+      const to   = placedItemsRef.current.find(i => i.id === itemId);
+      if (from && to && canConnect(from.type, to.type)) {
+        const dupSrc = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
+        const inCount = conveyorsRef.current.filter(c => c.toId === itemId).length;
+        if (!dupSrc && inCount < getConveyorInLimit(to.type)) {
+          setConveyors(prev => [...prev, { id: Date.now(), fromId, toId: itemId }]);
+        }
+      }
+      setConveyorFromId(null);
+    }
+  }, []);
+
+  const startConveyorMode = useCallback(() => {
+    setConveyorMode(true);
+    setConveyorFromId(null);
+  }, []);
+
+  // ─── Energy cable handler ────────────────────────────────────────────────────
+  const handleCableBuildingClick = useCallback((itemId) => {
+    if (!cableModeRef.current) return;
+    const fromId = cableFromIdRef.current;
+    if (fromId === null) {
+      setCableFromId(itemId);
+    } else if (fromId === itemId) {
+      setCableFromId(null);
+    } else {
+      const from = placedItemsRef.current.find(i => i.id === fromId);
+      const to   = placedItemsRef.current.find(i => i.id === itemId);
+      if (from && to && canCableConnect(from.type, to.type)) {
+        const dup = energyCablesRef.current.find(c => c.fromId === fromId && c.toId === itemId);
+        if (!dup) {
+          setEnergyCables(prev => [...prev, { id: Date.now(), fromId, toId: itemId }]);
+        }
+      }
+      setCableFromId(null);
+    }
+  }, []);
+
+  const startCableMode = useCallback(() => {
+    setCableMode(true);
+    setCableFromId(null);
+  }, []);
+
+  // ─── Wall handlers ────────────────────────────────────────────────────────
+  const startWallMode  = useCallback(() => { setWallMode(true);  setWallFromPoint(null); setTowerMode(false); }, []);
+  const startTowerMode = useCallback(() => { setTowerMode(true); setWallMode(false);     setWallFromPoint(null); }, []);
+
+  const handleWallGroundClick = useCallback((x, z) => {
+    if (!wallModeRef.current) return;
+    const snapped = snapWallPoint(x, z, placedWallsRef.current, placedTowersRef.current);
+
+    setWallFromPoint(prev => {
+      if (prev === null) {
+        // First click — set start point, wait for second click
+        return snapped;
+      }
+
+      // Second click — place wall segment, then RESET (no chaining)
+      const dx = snapped.x - prev.x;
+      const dz = snapped.z - prev.z;
+      const length = Math.hypot(dx, dz);
+      if (length < 0.2) return null; // same point → cancel
+
+      // Cost = number of grid columns spanned × coin cost per column
+      const segments = Math.max(1, Math.round(length / WALL_GRID_SNAP));
+      const totalCost = segments * WALL_SEGMENT_COIN_COST;
+      const availableCoins = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
+      if (availableCoins < totalCost) {
+        alert(`Нужно ${totalCost} монет (${segments} столбов × ${WALL_SEGMENT_COIN_COST})!`);
+        return null; // cancel, stay in wall mode but reset points
+      }
+
+      // Deduct coins proportionally across storages
+      let remaining = totalCost;
+      const next = { ...storedAmountsRef.current };
+      for (const sid of Object.keys(next)) {
+        if (remaining <= 0) break;
+        const c = next[sid]?.coins ?? 0;
+        if (c > 0) { const take = Math.min(c, remaining); next[sid] = { ...next[sid], coins: c - take }; remaining -= take; }
+      }
+      storedAmountsRef.current = next;
+      setStoredAmounts({ ...next });
+
+      const newWall = { id: Date.now(), from: prev, to: snapped, level: 1 };
+      setPlacedWalls(p => { const n = [...p, newWall]; placedWallsRef.current = n; return n; });
+
+      // Reset: ready for next independent wall segment
+      return null;
+    });
+  }, []); // eslint-disable-line
+
+  const handleTowerGroundClick = useCallback((x, z) => {
+    if (!towerModeRef.current) return;
+    const GRID = 2;
+    const snapped = { x: Math.round(x / GRID) * GRID, z: Math.round(z / GRID) * GRID };
+    const totalCoins = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
+    if (totalCoins < TOWER_COIN_COST) {
+      alert(`Нужно ${TOWER_COIN_COST} монет для башни!`);
+      setTowerMode(false); towerModeRef.current = false; return;
+    }
+    let remaining = TOWER_COIN_COST;
+    const next = { ...storedAmountsRef.current };
+    for (const sid of Object.keys(next)) {
+      if (remaining <= 0) break;
+      const c = next[sid]?.coins ?? 0;
+      if (c > 0) { const take = Math.min(c, remaining); next[sid] = { ...next[sid], coins: c - take }; remaining -= take; }
+    }
+    storedAmountsRef.current = next;
+    setStoredAmounts({ ...next });
+    const newTower = { id: Date.now(), position: [snapped.x, 0, snapped.z], rotation: 0, level: 1 };
+    setPlacedTowers(p => { const n = [...p, newTower]; placedTowersRef.current = n; return n; });
+    setTowerMode(false); towerModeRef.current = false;
+  }, []); // eslint-disable-line
+
+  // ─── Placement tracking ───────────────────────────────────────────────────
+  const placedHitRef     = useRef(false);
   const [selectedPlacedId, setSelectedPlacedId] = useState(null);
   const placementPosRef  = useRef(null);
   const placementRotYRef = useRef(0);
-  const placingItemRef   = useRef(null);  // mirror for sync access in event handlers
+  const placingItemRef   = useRef(null);
+  const movingItemIdRef  = useRef(null); // set when moving an existing building — reuse its id on re-placement
   useEffect(() => { placingItemRef.current = placingItem; }, [placingItem]);
 
   const startPlacing = useCallback((type) => {
@@ -949,7 +503,196 @@ export default function OpenCity({ onBack }) {
     setPlacingItem(type);
   }, []);
 
-  // Selection state
+  // ─── Context menu handlers ────────────────────────────────────────────────
+  const handleBuildingRightClick = useCallback((itemId, itemType, x, y) => {
+    rightClickRef.current = { itemId, itemType, x, y };
+  }, []);
+
+  const handleConveyorRightClick = useCallback((convId, x, y) => {
+    rightClickRef.current = { itemId: convId, itemType: 'conveyor', x, y };
+  }, []);
+
+  const handleCableRightClick = useCallback((cableId, x, y) => {
+    rightClickRef.current = { itemId: cableId, itemType: 'cable', x, y };
+  }, []);
+
+  const handleWallRightClick = useCallback((wallId, x, y) => {
+    rightClickHitRef.current = true; // prevent pan from starting on RMB
+    rightClickRef.current = { itemId: wallId, itemType: 'wall', x, y };
+  }, []);
+
+  const handleTowerRightClick = useCallback((towerId, x, y) => {
+    rightClickHitRef.current = true;
+    rightClickRef.current = { itemId: towerId, itemType: 'tower', x, y };
+  }, []);
+
+  // ─── Upgrade building level ───────────────────────────────────────────────
+  const handleUpgrade = useCallback(async () => {
+    if (!contextMenu) return;
+    const { itemId, itemType } = contextMenu;
+
+    // ── Wall coin-based upgrade (instant, no builder needed) ─────────────────
+    if (itemType === 'wall') {
+      const wall = placedWallsRef.current.find(w => w.id === itemId);
+      const level = wall?.level ?? 1;
+      if (level >= 7) return;
+      const nextCfg = WALL_LEVELS[level]; // 0-indexed: level N is at index N (level 1→index 0, so next after level N is index N)
+      if (!nextCfg) return;
+      const cost = nextCfg.upgradeCoinCost;
+      const totalCoins = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
+      if (totalCoins < cost) return;
+      let remaining = cost;
+      const next = { ...storedAmountsRef.current };
+      for (const sid of Object.keys(next)) {
+        if (remaining <= 0) break;
+        const c = next[sid]?.coins ?? 0;
+        if (c > 0) { const take = Math.min(c, remaining); next[sid] = { ...next[sid], coins: c - take }; remaining -= take; }
+      }
+      storedAmountsRef.current = next;
+      setStoredAmounts({ ...next });
+      setPlacedWalls(prev => { const u = prev.map(w => w.id === itemId ? { ...w, level: level + 1 } : w); placedWallsRef.current = u; return u; });
+      setContextMenu(null);
+      return;
+    }
+
+    // ── Tower coin-based upgrade (instant, no builder needed) ────────────────
+    if (itemType === 'tower') {
+      const tower = placedTowersRef.current.find(t => t.id === itemId);
+      const level = tower?.level ?? 1;
+      if (level >= 5) return;
+      const nextCfg = TOWER_LEVELS[level];
+      if (!nextCfg) return;
+      const cost = nextCfg.upgradeCoinCost;
+      const totalCoins = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
+      if (totalCoins < cost) return;
+      let remaining = cost;
+      const next = { ...storedAmountsRef.current };
+      for (const sid of Object.keys(next)) {
+        if (remaining <= 0) break;
+        const c = next[sid]?.coins ?? 0;
+        if (c > 0) { const take = Math.min(c, remaining); next[sid] = { ...next[sid], coins: c - take }; remaining -= take; }
+      }
+      storedAmountsRef.current = next;
+      setStoredAmounts({ ...next });
+      setPlacedTowers(prev => { const u = prev.map(t => t.id === itemId ? { ...t, level: level + 1 } : t); placedTowersRef.current = u; return u; });
+      setContextMenu(null);
+      return;
+    }
+
+    const currentLevel = buildingLevelsRef.current[String(itemId)] ?? 1;
+    const next = getNextLevelConfig(itemType, currentLevel);
+    if (!next) return;
+    // Use real platform points, not in-game town-hall amounts
+    if (userPoints < next.pointsCost) return;
+    if (userXp < next.xpRequired) return;
+    // Block if this building is already mid-upgrade
+    if (upgradingBuildingsRef.current[String(itemId)]) return;
+    // Require a free builder
+    const fb = countFreeBuilders(placedItemsRef.current, buildingLevelsRef.current, constructingBuildingsRef.current, upgradingBuildingsRef.current);
+    if (fb <= 0) { alert('Нет свободных строителей! Постройте или улучшите Дом строителя.'); return; }
+
+    // Deduct from the real platform points via backend
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/points/spend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ amount: next.pointsCost, reason: `city_upgrade_${itemType}_lv${currentLevel + 1}` }),
+      });
+      if (!res.ok) return; // server rejected (race condition, etc.)
+      const data = await res.json();
+      setUserPoints(data.newBalance);
+    } catch {
+      return;
+    }
+
+    // Timed upgrade – show progress badge, complete after durationMs
+    const durationMs = next.upgradeDurationMs ?? 15_000;
+    const entry   = { startReal: Date.now(), durationMs, targetLevel: currentLevel + 1 };
+    const nb      = { ...upgradingBuildingsRef.current, [String(itemId)]: entry };
+    upgradingBuildingsRef.current = nb;
+    setUpgradingBuildings({ ...nb });
+    setContextMenu(null);
+  }, [contextMenu, userXp, userPoints]); // eslint-disable-line
+
+  // ─── Check for completed timed upgrades every second ─────────────────────
+  useEffect(() => {
+    const id = setInterval(() => {
+      const upgrading = upgradingBuildingsRef.current;
+      const now = Date.now();
+      const completed = Object.entries(upgrading).filter(
+        ([, v]) => now >= v.startReal + v.durationMs
+      );
+      if (!completed.length) return;
+      const nextUpgrading = { ...upgrading };
+      const nextLevels    = { ...buildingLevelsRef.current };
+      for (const [bid, v] of completed) {
+        nextLevels[bid] = v.targetLevel;
+        delete nextUpgrading[bid];
+      }
+      buildingLevelsRef.current    = nextLevels;
+      upgradingBuildingsRef.current = nextUpgrading;
+      setBuildingLevels({ ...nextLevels });
+      setUpgradingBuildings({ ...nextUpgrading });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []); // eslint-disable-line
+
+  // ─── Check for completed constructions every second ───────────────────────
+  useEffect(() => {
+    const id = setInterval(() => {
+      const constructing = constructingBuildingsRef.current;
+      const now = Date.now();
+      const completed = Object.entries(constructing).filter(([, v]) => now >= v.startReal + v.durationMs);
+      if (!completed.length) return;
+      const next = { ...constructing };
+      for (const [bid] of completed) delete next[bid];
+      constructingBuildingsRef.current = next;
+      setConstructingBuildings({ ...next });
+      // Remove completed runners
+      setMovingBuilders(prev => prev.filter(r => !completed.some(([bid]) => r.itemId === bid)));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []); // eslint-disable-line
+
+  const handleSell = useCallback(() => {
+    if (!contextMenu) return;
+    const { itemId: id, itemType } = contextMenu;
+    if (itemType === 'conveyor') {
+      setConveyors(prev => prev.filter(c => c.id !== id));
+    } else if (itemType === 'cable') {
+      setEnergyCables(prev => prev.filter(c => c.id !== id));
+    } else if (itemType === 'wall') {
+      setPlacedWalls(prev => { const u = prev.filter(w => w.id !== id); placedWallsRef.current = u; return u; });
+    } else if (itemType === 'tower') {
+      setPlacedTowers(prev => { const u = prev.filter(t => t.id !== id); placedTowersRef.current = u; return u; });
+    } else {
+      // building — also remove attached connections
+      setPlacedItems(prev => prev.filter(i => i.id !== id));
+      setConveyors(prev => prev.filter(c => c.fromId !== id && c.toId !== id));
+      setEnergyCables(prev => prev.filter(c => c.fromId !== id && c.toId !== id));
+    }
+    setContextMenu(null);
+  }, [contextMenu]);
+
+  const handleMove = useCallback(() => {
+    if (!contextMenu) return;
+    // Walls and towers cannot be moved (they are placed by points)
+    if (contextMenu.itemType === 'wall' || contextMenu.itemType === 'tower') { setContextMenu(null); return; }
+    const item = placedItemsRef.current.find(i => i.id === contextMenu.itemId);
+    if (item) {
+      movingItemIdRef.current = item.id; // remember old id so level is preserved
+      setPlacedItems(prev => prev.filter(i => i.id !== item.id));
+      setConveyors(prev => prev.filter(c => c.fromId !== item.id && c.toId !== item.id));
+      startPlacing(item.type);
+    }
+    setContextMenu(null);
+  }, [contextMenu, startPlacing]);
+
+  // ─── Chunk selection state ────────────────────────────────────────────────
   const lmbHeldRef   = useRef(false);
   const selectedRef  = useRef(new Set());
   const meshMapRef   = useRef(new Map());
@@ -968,17 +711,26 @@ export default function OpenCity({ onBack }) {
   }, []);
 
   const cityCtx = useMemo(
-    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef, placedItemsRef, placedHitRef }),
+    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef, placedItemsRef, placedHitRef, conveyorModeRef, rightClickHitRef, cableModeRef, wallModeRef, towerModeRef }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
-  // Keyboard
+  // ─── Keyboard ────────────────────────────────────────────────────────────
   useEffect(() => {
     const down = (e) => {
       keysRef.current[e.code] = true;
       if (e.code === 'Escape') {
-        if (placingItemRef.current) { setPlacingItem(null); e.preventDefault(); return; }
+        if (wallModeRef.current || towerModeRef.current) {
+          setWallMode(false); setTowerMode(false); setWallFromPoint(null); e.preventDefault(); return;
+        }
+        if (cableModeRef.current) {
+          setCableMode(false); setCableFromId(null); e.preventDefault(); return;
+        }
+        if (conveyorModeRef.current) {
+          setConveyorMode(false); setConveyorFromId(null); e.preventDefault(); return;
+        }
+        if (placingItemRef.current) { movingItemIdRef.current = null; setPlacingItem(null); e.preventDefault(); return; }
         clearSelection();
         setSelectedPlacedId(null);
       }
@@ -993,7 +745,7 @@ export default function OpenCity({ onBack }) {
     };
   }, [clearSelection, setSelectedPlacedId]);
 
-  // Mouse events
+  // ─── Mouse events ─────────────────────────────────────────────────────────
   const canvasWrapRef = useRef(null);
   useEffect(() => {
     const el = canvasWrapRef.current;
@@ -1013,17 +765,119 @@ export default function OpenCity({ onBack }) {
     const onDown = (e) => {
       if (e.button === 0) {
         if (placingItemRef.current) {
-          // LMB click during placement → place the object
           if (placementPosRef.current) {
-            const pos = placementPosRef.current;
-            // Block if overlapping an existing item
-            if (isColliding({ x: pos.x, z: pos.z }, placingItemRef.current, placedItemsRef.current)) return;
-            setPlacedItems(prev => [...prev, {
-              id: Date.now(),
-              type: placingItemRef.current,
-              position: [pos.x, pos.y, pos.z],
-              rotation: placementRotYRef.current,
-            }]);
+            const pos  = placementPosRef.current;
+            const type = placingItemRef.current;
+            if (isColliding({ x: pos.x, z: pos.z }, type, placedItemsRef.current)) return;
+
+            // ── Place limits ──────────────────────────────────────────────
+            if (type === 'town-hall' && countPlacedType(placedItemsRef.current, 'town-hall') >= 1) {
+              alert('Ратуша может быть только одна!'); return;
+            }
+            if (type === 'builder-house' && countPlacedType(placedItemsRef.current, 'builder-house') >= 3) {
+              alert('Можно построить не более 3 домиков строителя!'); return;
+            }
+
+            // ── Extractor — must be on ore ────────────────────────────────
+            let nearOre = null;
+            if (type === 'extractor') {
+              nearOre = findNearestOreDeposit(pos.x, pos.z);
+              if (!nearOre) return;
+            }
+
+            // ── Builder-house — no builder needed; 2nd/3rd costs coins (skip cost if moving) ───
+            if (type === 'builder-house') {
+              const isMove = movingItemIdRef.current != null;
+              const bhCount = countPlacedType(placedItemsRef.current, 'builder-house');
+              if (!isMove && bhCount > 0) {
+                // Deduct coins from the in-game coin storage (storedAmounts)
+                const totalCoins = Object.values(storedAmountsRef.current)
+                  .reduce((s, v) => s + (v?.coins ?? 0), 0);
+                if (totalCoins < BUILDER_HOUSE_EXTRA_COST_COINS) {
+                  alert(`Нужно ${BUILDER_HOUSE_EXTRA_COST_COINS} монет для второго/третьего дома строителя!`);
+                  return;
+                }
+                // Deduct coins proportionally from storages that have coins
+                let remaining = BUILDER_HOUSE_EXTRA_COST_COINS;
+                const next = { ...storedAmountsRef.current };
+                for (const sid of Object.keys(next)) {
+                  if (remaining <= 0) break;
+                  const coins = next[sid]?.coins ?? 0;
+                  if (coins > 0) {
+                    const take = Math.min(coins, remaining);
+                    next[sid] = { ...next[sid], coins: coins - take };
+                    remaining -= take;
+                  }
+                }
+                storedAmountsRef.current = next;
+                setStoredAmounts({ ...next });
+              }
+              const bhId = isMove ? movingItemIdRef.current : Date.now();
+              movingItemIdRef.current = null;
+              const newItem = { id: bhId, type: 'builder-house', position: [pos.x, pos.y, pos.z], rotation: placementRotYRef.current };
+              setPlacedItems(prev => [...prev, newItem]);
+              setPlacingItem(null);
+              return;
+            }
+
+            // ── All other buildings — require a free builder + spend points ──
+            // Skip cost/builder checks when re-placing a moved building.
+            const isMove = movingItemIdRef.current != null;
+            if (!isMove) {
+              const freeB = countFreeBuilders(placedItemsRef.current, buildingLevelsRef.current, constructingBuildingsRef.current, upgradingBuildingsRef.current);
+              if (freeB <= 0) {
+                alert('Нет свободных строителей! Постройте или улучшите Дом строителя.');
+                return;
+              }
+            }
+            const pointCost = isMove ? 0 : (ITEM_POINT_COST[type] ?? 0);
+            if (pointCost > 0 && userPointsRef.current < pointCost) {
+              alert(`Нужно ${pointCost} баллов для постройки!`);
+              return;
+            }
+
+            // ── Deduct platform points via API ────────────────────────────
+            const placeItem = async () => {
+              if (pointCost > 0) {
+                try {
+                  const token = localStorage.getItem('token');
+                  const res = await fetch('/api/points/spend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                    body: JSON.stringify({ amount: pointCost, reason: `city_place_${type}` }),
+                  });
+                  if (!res.ok) { alert('Не удалось списать баллы.'); return; }
+                  const data = await res.json();
+                  setUserPoints(data.newBalance);
+                  userPointsRef.current = data.newBalance;
+                } catch { alert('Ошибка сервера при списании баллов.'); return; }
+              }
+
+              // If this is a moved building, reuse its old id so buildingLevels entry is preserved.
+              const newId = isMove ? movingItemIdRef.current : Date.now();
+              movingItemIdRef.current = null; // reset
+              const newItem = nearOre
+                ? { id: newId, type, position: [pos.x, pos.y, pos.z], rotation: placementRotYRef.current, oreType: nearOre.name }
+                : { id: newId, type, position: [pos.x, pos.y, pos.z], rotation: placementRotYRef.current };
+              setPlacedItems(prev => [...prev, newItem]);
+
+              // ── Start construction timer (skip for moved buildings) ──────
+              if (!isMove) {
+                const dur = CONSTRUCTION_DURATION_MS[type] ?? 0;
+                if (dur > 0) {
+                  const entry = { startReal: Date.now(), durationMs: dur };
+                  const nb = { ...constructingBuildingsRef.current, [String(newId)]: entry };
+                  constructingBuildingsRef.current = nb;
+                  setConstructingBuildings({ ...nb });
+                  // Spawn a moving builder runner from nearest builder house
+                  const housePos = findIdleBuilderHousePos(placedItemsRef.current, buildingLevelsRef.current, constructingBuildingsRef.current, upgradingBuildingsRef.current);
+                  if (housePos) {
+                    setMovingBuilders(prev => [...prev, { id: `runner_${newId}`, itemId: String(newId), fromPos: housePos, toPos: [pos.x, pos.y, pos.z], startReal: Date.now() }]);
+                  }
+                }
+              }
+            };
+            placeItem();
             setPlacingItem(null);
           }
           return;
@@ -1032,14 +886,18 @@ export default function OpenCity({ onBack }) {
         inputRef.current.middleDrag = true;
         inputRef.current.lastMX = e.clientX;
         inputRef.current.lastMY = e.clientY;
-        // If the click did NOT hit a placed model, clear zone selection
         if (placedHitRef.current) {
           placedHitRef.current = false;
-        } else {
+        } else if (!wallModeRef.current && !towerModeRef.current) {
           setSelectedPlacedId(null);
         }
       }
       if (e.button === 1 || e.button === 2) {
+        if (e.button === 2 && rightClickHitRef.current) {
+          rightClickHitRef.current = false;
+          e.preventDefault();
+          return;
+        }
         inputRef.current.middleDrag = true;
         inputRef.current.lastMX = e.clientX;
         inputRef.current.lastMY = e.clientY;
@@ -1061,14 +919,19 @@ export default function OpenCity({ onBack }) {
     };
     const onWheel = (e) => {
       if (placingItemRef.current) {
-        // Scroll rotates the object being placed
         placementRotYRef.current += e.deltaY > 0 ? 0.2 : -0.2;
       } else {
         inputRef.current.wheelDelta += e.deltaY > 0 ? 1 : -1;
       }
       e.preventDefault();
     };
-    const onContext = (e) => e.preventDefault();
+    const onContext = (e) => {
+      e.preventDefault();
+      if (rightClickRef.current) {
+        setContextMenu(rightClickRef.current);
+        rightClickRef.current = null;
+      }
+    };
 
     el.addEventListener('mousemove',    onMove);
     el.addEventListener('mousedown',    onDown);
@@ -1086,13 +949,13 @@ export default function OpenCity({ onBack }) {
     };
   }, []);
 
-  // HUD update ~10fps
+  // ─── HUD update ~10fps ────────────────────────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => {
       setDisplayPos({ x: camTargetRef.current.x, z: camTargetRef.current.z });
       setDisplayZoom(camStateRef.current.zoom);
       setSelectedCount(selectedRef.current.size);
-    }, 100);
+    }, 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -1101,6 +964,8 @@ export default function OpenCity({ onBack }) {
       <div className={styles.wrapper} ref={canvasWrapRef}>
         <Canvas
           shadows
+          dpr={[1, 2]}
+          performance={{ min: 0.5 }}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
           style={{ width: '100%', height: '100%', position: 'relative', zIndex: 0 }}
         >
@@ -1116,6 +981,35 @@ export default function OpenCity({ onBack }) {
             selectedPlacedId={selectedPlacedId}
             setSelectedPlacedId={setSelectedPlacedId}
             gameTimeRef={gameTimeRef}
+            conveyors={conveyors}
+            conveyorFromId={conveyorFromId}
+            onConveyorBuildingClick={handleConveyorBuildingClick}
+            energyCables={energyCables}
+            cableFromId={cableFromId}
+            onCableBuildingClick={handleCableBuildingClick}
+            poweredIds={poweredIds}
+            storedAmounts={storedAmounts}
+            pointsAmounts={pointsAmounts}
+            buildingLevels={buildingLevels}
+            upgradingBuildings={upgradingBuildings}
+            constructingBuildings={constructingBuildings}
+            movingBuilders={movingBuilders}
+            totalBuilders={countTotalBuilders(placedItems, buildingLevels)}
+            freeBuilders={countFreeBuilders(placedItems, buildingLevels, constructingBuildings, upgradingBuildings)}
+            onBuildingRightClick={handleBuildingRightClick}
+            onConveyorRightClick={handleConveyorRightClick}
+            onCableRightClick={handleCableRightClick}
+            placedWalls={placedWalls}
+            placedTowers={placedTowers}
+            wallMode={wallMode}
+            towerMode={towerMode}
+            wallFromPoint={wallFromPoint}
+            wallCursorRef={wallCursorRef}
+            onWallGroundClick={handleWallGroundClick}
+            onTowerGroundClick={handleTowerGroundClick}
+            onWallRightClick={handleWallRightClick}
+            onTowerRightClick={handleTowerRightClick}
+            otherPlayers={otherPlayers}
           />
         </Canvas>
 
@@ -1129,10 +1023,75 @@ export default function OpenCity({ onBack }) {
           placingItem={placingItem}
           timeString={timeString}
           energyTotals={energyTotals}
+          storageTotals={storageTotals}
+          conveyorMode={conveyorMode}
+          conveyorFromId={conveyorFromId}
+          cableMode={cableMode}
+          cableFromId={cableFromId}
+          wallMode={wallMode}
+          wallFromPoint={wallFromPoint}
+          towerMode={towerMode}
+          points={Object.values(pointsAmounts).reduce((s, v) => s + v, 0)}
         />
-        {shopOpen && <ShopModal onClose={() => setShopOpen(false)} onBuy={startPlacing} />}
+        {shopOpen && (
+          <ShopModal
+            onClose={() => setShopOpen(false)}
+            onBuy={startPlacing}
+            onConveyor={startConveyorMode}
+            onCable={startCableMode}
+            onWallMode={startWallMode}
+            onTowerMode={startTowerMode}
+            userPoints={userPoints}
+            coinBalance={Object.values(storedAmounts).reduce((s, v) => s + (v?.coins ?? 0), 0)}
+            freeBuilders={countFreeBuilders(placedItems, buildingLevels, constructingBuildings, upgradingBuildings)}
+            totalBuilders={countTotalBuilders(placedItems, buildingLevels)}
+            townHallCount={countPlacedType(placedItems, 'town-hall')}
+            builderHouseCount={countPlacedType(placedItems, 'builder-house')}
+          />
+        )}
 
-        {/* Loading overlay while world is being fetched */}
+        {contextMenu && (() => {
+          const { itemId, itemType } = contextMenu;
+          // Compute correct level per item type
+          const ctxItemLevel =
+            itemType === 'wall'  ? (placedWalls.find(w => w.id === itemId)?.level ?? 1) :
+            itemType === 'tower' ? (placedTowers.find(t => t.id === itemId)?.level ?? 1) :
+            (buildingLevels[String(itemId)] ?? 1);
+          // Coin upgrade info for walls/towers
+          const coinBal = Object.values(storedAmounts).reduce((s, v) => s + (v?.coins ?? 0), 0);
+          let coinUpgradeNext = null;
+          if (itemType === 'wall') {
+            const lvl = ctxItemLevel;
+            if (lvl < 7) {
+              const nc = WALL_LEVELS[lvl]; // index = current level (levels are 1-based, array 0-based)
+              if (nc) coinUpgradeNext = { name: nc.name, level: nc.level, coinCost: nc.upgradeCoinCost, canAfford: coinBal >= nc.upgradeCoinCost, description: nc.description };
+            }
+          } else if (itemType === 'tower') {
+            const lvl = ctxItemLevel;
+            if (lvl < 5) {
+              const nc = TOWER_LEVELS[lvl];
+              if (nc) coinUpgradeNext = { name: nc.name, level: nc.level, coinCost: nc.upgradeCoinCost, canAfford: coinBal >= nc.upgradeCoinCost, description: nc.description };
+            }
+          }
+          return (
+            <ContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              itemType={itemType}
+              itemLevel={ctxItemLevel}
+              totalPoints={userPoints}
+              userXp={userXp}
+              freeBuilders={countFreeBuilders(placedItems, buildingLevels, constructingBuildings, upgradingBuildings)}
+              onSell={handleSell}
+              onMove={handleMove}
+              onUpgrade={handleUpgrade}
+              onClose={() => setContextMenu(null)}
+              upgradeInfo={upgradingBuildings[String(itemId)] ?? null}
+              coinUpgradeNext={coinUpgradeNext}
+            />
+          );
+        })()}
+
         {worldLoading && (
           <div className={styles.worldLoading}>
             <div className={styles.worldLoadingSpinner} />
@@ -1140,7 +1099,6 @@ export default function OpenCity({ onBack }) {
           </div>
         )}
 
-        {/* Offline progress toast */}
         {offlineToast && (
           <div className={styles.offlineToast}>
             🕒 Пока вас не было: прошло <strong>{offlineHours.toFixed(1)} игр. ч.</strong>

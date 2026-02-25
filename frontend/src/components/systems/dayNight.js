@@ -32,9 +32,9 @@ export function getSkyParams(h) {
   const elev = Math.sin(((h / 24) * 2 - 0.5) * Math.PI);
   const t    = 1 - Math.max(0, elev); // 0 at noon, 1 near/below horizon
   return {
-    turbidity:       3  + t * 14,       // clear noon → heavy dusk
-    rayleigh:        0.3 + t * 3.5,
-    mieCoefficient:  0.003 + t * 0.04,
+    turbidity:       2  + t * 10,       // crisp noon → heavy dusk
+    rayleigh:        0.5 + t * 2.5,
+    mieCoefficient:  0.002 + t * 0.03,
     mieDirectionalG: 0.98,
   };
 }
@@ -48,15 +48,19 @@ export function getSkyParams(h) {
 export function getLighting(h) {
   const elev      = Math.sin(((h / 24) * 2 - 0.5) * Math.PI);
   const dayFactor = Math.max(0, elev);
-  const isGolden  = elev > -0.12 && elev < 0.28; // sunrise / sunset glow
+  const dusk      = Math.max(0, Math.min(1, (elev + 0.15) / 0.15)); // 0→1 around horizon
+  const isGolden  = elev > -0.15 && elev < 0.32; // sunrise / sunset glow
   return {
-    ambientIntensity: 0.06 + dayFactor * 0.55,
-    ambientColor:     elev > 0 ? '#cce0ff' : '#0a0e1a',
-    dirIntensity:     dayFactor * 2.4,
-    dirColor:         isGolden ? '#ffbc66' : '#fff8e0',
-    hemiIntensity:    0.08 + dayFactor * 0.38,
-    hemiSky:          elev > 0 ? '#9ec8ff' : '#060d1c',
-    hemiGround:       elev > 0 ? '#3a5a3a' : '#060906',
+    // Night: 0.45 ambient (moonlit), ramps to 1.8 at clear noon
+    ambientIntensity: 0.45 + dayFactor * 1.35,
+    ambientColor:     elev > 0 ? '#ddeeff' : '#1a2240',
+    // Sun: 0 at night, peaks at 5.5 at noon
+    dirIntensity:     dayFactor * 5.5,
+    dirColor:         isGolden ? '#ffcc88' : '#fff8e8',
+    // Hemisphere: 0.55 at night (subtle sky glow), 2.2 at noon
+    hemiIntensity:    0.55 + dayFactor * 1.65,
+    hemiSky:          elev > 0 ? '#a8d4ff' : '#141e3c',
+    hemiGround:       elev > 0 ? '#4a7a4a' : '#0d120d',
   };
 }
 
@@ -68,10 +72,10 @@ export function getLighting(h) {
  */
 export function getFogColor(h) {
   const elev = Math.sin(((h / 24) * 2 - 0.5) * Math.PI);
-  if (elev < -0.1)  return '#04080f';              // night
-  if (elev <  0.2)  return '#c04810';              // golden hour
-  const bright = Math.round(30 + elev * 35);
-  return `hsl(205, 45%, ${bright}%)`;              // blue daytime haze
+  if (elev < -0.1)  return '#080f1e';              // deep night — slightly lighter
+  if (elev <  0.2)  return '#d05820';              // golden hour
+  const bright = Math.round(55 + elev * 30);       // brighter daytime haze
+  return `hsl(205, 50%, ${bright}%)`;
 }
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────

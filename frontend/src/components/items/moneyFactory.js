@@ -19,7 +19,7 @@ export const MONEY_FACTORY_CONFIG = {
 // ─── Energy production ──────────────────────────────────────────────
 registerProducer('money-factory', [
   {
-    type:        'fuel',
-    ratePerHour: 5,   // л в игровой час, без условий (24/7)
+    type:        'coins',
+    ratePerHour: 10,  // монет в игровой час, без условий (24/7)
   },
 ]);
