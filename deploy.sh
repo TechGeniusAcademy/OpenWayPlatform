@@ -49,6 +49,7 @@ fi
 
 # 5. Сборка Frontend
 echo -e "${YELLOW}🔨 Сборка Frontend...${NC}"
+export NODE_OPTIONS=--max-old-space-size=4096
 npm run build
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Ошибка при сборке Frontend${NC}"

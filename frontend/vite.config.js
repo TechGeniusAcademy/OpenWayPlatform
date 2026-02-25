@@ -5,6 +5,18 @@ export default defineConfig({
   plugins: [react()],
   build: {
     sourcemap: false, // Отключаем source maps в production
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'three-core':  ['three'],
+          'r3f':         ['@react-three/fiber', '@react-three/drei'],
+          'monaco':      ['@monaco-editor/react'],
+          'mui':         ['@mui/material', '@mui/icons-material'],
+          'react-vendor':['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
   },
   server: {
     host: '0.0.0.0', // Слушаем все интерфейсы

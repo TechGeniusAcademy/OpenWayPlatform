@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node --max-old-space-size=4096 node_modules/.bin/vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -58,7 +58,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "styled-components": "^5.3.5",
-    "three": "^0.158.0",
+    "three": "^0.165.0",
     "use-sound": "^4.0.1",
     "uvcanvas": "^0.2.1",
     "web-vitals": "^2.1.4"
