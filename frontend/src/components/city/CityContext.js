@@ -5,7 +5,7 @@ export const CityContext = createContext(null);
 
 // ─── World constants ─────────────────────────────────────────────────────────
 export const CHUNK_SIZE  = 40;   // world units per chunk side
-export const RENDER_DIST = 4;    // chunks radius
+export const RENDER_DIST = 2;    // chunks radius (was 4 = 81 chunks; 2 = 25 chunks)
 
 // ─── RTS Camera constants ─────────────────────────────────────────────────────
 export const CAM_PAN_SPEED  = 22;    // units/sec keyboard pan

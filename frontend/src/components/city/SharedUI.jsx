@@ -325,14 +325,17 @@ export function LevelBadge({ level = 1, height = 10 }) {
  * @param {{ level?: number, radius?: number }} props
  */
 export function LevelRing({ level = 1, radius = 4 }) {
-  const g1   = useRef();
-  const g2   = useRef();
-  const g3   = useRef();
-  const mat1 = useRef();
-  const mat2 = useRef();
-  const mat3 = useRef();
+  const g1      = useRef();
+  const g2      = useRef();
+  const g3      = useRef();
+  const mat1    = useRef();
+  const mat2    = useRef();
+  const mat3    = useRef();
+  const frameRef = useRef(0); // throttle counter
 
+  // Update every 3rd frame — rings rotate very slowly, nobody notices ~20fps refresh
   useFrame(({ clock }) => {
+    if (++frameRef.current % 3 !== 0) return;
     const t = clock.getElapsedTime();
     if (g1.current)   g1.current.rotation.y   =  t * 0.7;
     if (g2.current)   g2.current.rotation.y   = -t * 1.1;
@@ -375,15 +378,9 @@ export function LevelRing({ level = 1, radius = 4 }) {
           </mesh>
         </group>
       )}
-      {/* Точечный свет — castShadow отключён для производительности */}
-      <pointLight
-        color={color}
-        intensity={level === 2 ? 0.8 : level === 3 ? 2.0 : 4.0}
-        distance={level === 2 ? 8 : level === 3 ? 14 : 20}
-        decay={2}
-        castShadow={false}
-        position={[0, 2.5, 0]}
-      />
+      {/* PointLight removed — routed through LampLightPool would be needed for
+          correctness; for now the emissive rings give sufficient visual indication
+          without the per-building GPU lighting cost */}
     </group>
   );
 }

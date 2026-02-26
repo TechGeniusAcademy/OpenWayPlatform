@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -125,9 +125,9 @@ function PineTree({ x, z, rng }) {
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <group position={[x, 0, z]} rotation={[0, ry, 0]} scale={[scale, scale, scale]}>
-      <mesh castShadow geometry={GEO.trunkTall} material={MAT.trunk}  position={[0, 1.6, 0]} />
-      <mesh castShadow geometry={GEO.cone}      material={leafMat}    position={[0, 4.6, 0]} />
-      <mesh castShadow geometry={GEO.coneTop}   material={leafMat}    position={[0, 6.2, 0]} scale={[0.78, 0.88, 0.78]} />
+      <mesh geometry={GEO.trunkTall} material={MAT.trunk}  position={[0, 1.6, 0]} />
+      <mesh geometry={GEO.cone}      material={leafMat}    position={[0, 4.6, 0]} />
+      <mesh geometry={GEO.coneTop}   material={leafMat}    position={[0, 6.2, 0]} scale={[0.78, 0.88, 0.78]} />
       {/* Hitbox */}
       <mesh position={[0, 3.5, 0]} material={HITBOX_MAT}
         onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
@@ -155,8 +155,8 @@ function RoundTree({ x, z, rng }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <group position={[x, 0, z]} rotation={[0, ry, 0]} scale={[scale, scale, scale]}>
-      <mesh castShadow geometry={GEO.trunk}   material={MAT.trunk}  position={[0, 1.1, 0]} />
-      <mesh castShadow geometry={crownGeo}    material={leafMat}    position={[0, 3.4, 0]} />
+      <mesh geometry={GEO.trunk}   material={MAT.trunk}  position={[0, 1.1, 0]} />
+      <mesh geometry={crownGeo}    material={leafMat}    position={[0, 3.4, 0]} />
       {/* Hitbox */}
       <mesh position={[0, 2.5, 0]} material={HITBOX_MAT}
         onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
@@ -186,9 +186,9 @@ function BushyTree({ x, z, rng }) {
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <group position={[x, 0, z]} rotation={[0, ry, 0]} scale={[scale, scale, scale]}>
-      <mesh castShadow geometry={GEO.trunkShort} material={MAT.trunk} position={[0, 0.7, 0]} />
+      <mesh geometry={GEO.trunkShort} material={MAT.trunk} position={[0, 0.7, 0]} />
       {BUSH_OFFSETS.map(([ox, oy, oz, s], i) => (
-        <mesh key={i} castShadow
+        <mesh key={i}
           geometry={bushMats[i].geo}
           material={bushMats[i].mat}
           position={[ox, oy, oz]}
@@ -228,7 +228,7 @@ function RockCluster({ x, z, rng }) {
   return (
     <group position={[x, 0, z]}>
       {rocks.map((r, i) => (
-        <mesh key={i} castShadow receiveShadow
+        <mesh key={i}
           geometry={r.geo} material={mat}
           position={[r.ox, r.s * 0.4, r.oz]}
           rotation={[r.rx, r.ry, r.rz]}
@@ -296,7 +296,7 @@ function OreDeposit({ x, z, rng }) {
   return (
     <group position={[x, 0, z]} rotation={[0, baseRy, 0]}>
       {oreRocks.map((r, i) => (
-        <mesh key={`r${i}`} castShadow receiveShadow
+        <mesh key={`r${i}`}
           geometry={r.geo} material={ore.rockMat}
           position={[r.ox, r.s * 0.35, r.oz]}
           rotation={[r.rx, r.ry, r.rz]}
@@ -453,7 +453,6 @@ function WaterBody({ x, z, rng }) {
 // ─── River segment ────────────────────────────────────────────────────────────
 
 function RiverSegment({ x, z, rng }) {
-  const riverRef = useRef();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
 
@@ -472,10 +471,7 @@ function RiverSegment({ x, z, rng }) {
     return { ry: r, len: l, wid: w, waterGeo: wG, bankGeo: bG, rocks: rks };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useFrame(({ clock }) => {
-    if (riverRef.current)
-      riverRef.current.material.opacity = 0.75 + Math.sin(clock.getElapsedTime() * 1.1 + z) * 0.09;
-  });
+  // Opacity animation removed — mutated shared material causing flicker
 
   return (
     <group position={[x, 0.03, z]} rotation={[0, ry, 0]}>
@@ -485,13 +481,13 @@ function RiverSegment({ x, z, rng }) {
         <primitive object={MAT.shore} attach="material" />
       </mesh>
       {/* Curved water */}
-      <mesh ref={riverRef} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <primitive object={waterGeo} />
         <primitive object={MAT.waterSurf} attach="material" />
       </mesh>
       {/* Bank rocks */}
       {rocks.map((r, i) => (
-        <mesh key={i} castShadow
+        <mesh key={i}
           geometry={GEO.rockSmall} material={MAT.rockGray}
           position={[r.ox, r.s * 0.25, r.oz]}
           scale={[r.s, r.s * 0.6, r.s]}
@@ -566,8 +562,8 @@ function Chunk({ cx, cz }) {
       if (mark(wx, wz)) items.push({ type: 'rock', x: wx, z: wz });
     }
 
-    // Trees (0-6)
-    const treeCount = Math.floor(rng() * 7);
+    // Trees (0-4)
+    const treeCount = Math.floor(rng() * 5);
     for (let i = 0; i < treeCount; i++) {
       const wx = ox + rand(); const wz = oz + rand();
       if (!mark(wx, wz)) continue;
