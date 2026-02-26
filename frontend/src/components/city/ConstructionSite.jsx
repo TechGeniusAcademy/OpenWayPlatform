@@ -59,7 +59,7 @@ function Scaffolding({ halfW = 3.5, halfH = 3.0 }) {
 
       {/* Vertical poles */}
       {corners.map(([cx, , cz], i) => (
-        <mesh key={`p${i}`} castShadow position={[cx, hh * 0.5, cz]}>
+        <mesh key={`p${i}`} position={[cx, hh * 0.5, cz]}>
           <cylinderGeometry args={[0.12, 0.12, hh, 6]} />
           <primitive object={POLE_MAT} attach="material" />
         </mesh>
@@ -68,7 +68,7 @@ function Scaffolding({ halfW = 3.5, halfH = 3.0 }) {
       {/* Horizontal beams — front/back (along X) */}
       {[hh * 0.5, hh].map((y, ri) => (
         [-hw - 0.1, hw + 0.1].map((bz, ci) => (
-          <mesh key={`bfb${ri}${ci}`} castShadow position={[0, y, bz]}>
+          <mesh key={`bfb${ri}${ci}`} position={[0, y, bz]}>
             <cylinderGeometry args={[0.07, 0.07, hw * 2, 5]} />
             <primitive object={BOARD_MAT} attach="material" />
           </mesh>
@@ -78,7 +78,7 @@ function Scaffolding({ halfW = 3.5, halfH = 3.0 }) {
       {/* Horizontal beams — left/right (along Z via rotation) */}
       {[hh * 0.5, hh].map((y, ri) => (
         [-hw - 0.1, hw + 0.1].map((bx, ci) => (
-          <mesh key={`blr${ri}${ci}`} castShadow position={[bx, y, 0]}
+          <mesh key={`blr${ri}${ci}`} position={[bx, y, 0]}
             rotation={[0, Math.PI / 2, 0]}>
             <cylinderGeometry args={[0.07, 0.07, hw * 2, 5]} />
             <primitive object={BOARD_MAT} attach="material" />
@@ -87,7 +87,7 @@ function Scaffolding({ halfW = 3.5, halfH = 3.0 }) {
       ))}
 
       {/* Top frame */}
-      <mesh castShadow position={[0, hh + 0.1, 0]}>
+      <mesh position={[0, hh + 0.1, 0]}>
         <boxGeometry args={[hw * 2 + 0.2, 0.18, hw * 2 + 0.2]} />
         <primitive object={BOARD_MAT} attach="material" />
       </mesh>

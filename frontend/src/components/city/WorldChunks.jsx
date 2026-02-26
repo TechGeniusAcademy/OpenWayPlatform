@@ -24,6 +24,10 @@ const GEO = {
   oreVein:    new THREE.OctahedronGeometry(0.28, 0),
   lake:       new THREE.CircleGeometry(5.5, 20),
   lakeSm:     new THREE.CircleGeometry(3.2, 16),
+  // Shared reed geometries — 3 size buckets instead of per-reed inline allocation
+  reedSm:     new THREE.CylinderGeometry(0.04, 0.07, 0.6,  4),
+  reedMd:     new THREE.CylinderGeometry(0.04, 0.07, 0.9,  4),
+  reedLg:     new THREE.CylinderGeometry(0.04, 0.07, 1.15, 4),
 };
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
@@ -424,21 +428,21 @@ function WaterBody({ x, z, rng }) {
       </mesh>
       {/* Shore rocks */}
       {rocks.map((r, i) => (
-        <mesh key={`r${i}`} castShadow
+        <mesh key={`r${i}`}
           geometry={GEO.rockSmall} material={MAT.rockGray}
           position={[r.ox, r.s * 0.28, r.oz]}
           scale={[r.s, r.s * 0.7, r.s]}
         />
       ))}
-      {/* Reeds */}
-      {reeds.map((rd, i) => (
-        <mesh key={`rd${i}`} castShadow
-          position={[rd.ox, rd.h * 0.5, rd.oz]}
-        >
-          <cylinderGeometry args={[0.04, 0.07, rd.h, 4]} />
-          <primitive object={MAT.reed} attach="material" />
-        </mesh>
-      ))}
+      {/* Reeds — shared geometries (3 size buckets), no castShadow */}
+      {reeds.map((rd, i) => {
+        const geo = rd.h < 0.7 ? GEO.reedSm : rd.h < 0.95 ? GEO.reedMd : GEO.reedLg;
+        const hy  = rd.h < 0.7 ? 0.30 : rd.h < 0.95 ? 0.45 : 0.575;
+        return (
+          <mesh key={`rd${i}`} geometry={geo} material={MAT.reed}
+            position={[rd.ox, hy, rd.oz]} />
+        );
+      })}
       {/* Hitbox */}
       <mesh position={[0, 0.3, 0]} material={HITBOX_MAT}
         onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}

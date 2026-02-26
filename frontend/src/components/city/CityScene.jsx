@@ -25,9 +25,11 @@ import * as THREE from 'three';
 
 // Ref-driven cursor ring: shows where the next wall point will snap (green = start, amber = end)
 function WallCursorRing({ cursorRef, hasStart }) {
-  const meshRef = useRef();
+  const meshRef  = useRef();
+  const frameRef = useRef(0);
   const GRID = 2;
   useFrame(({ clock }) => {
+    if (++frameRef.current % 2 !== 0) return;
     const mesh = meshRef.current;
     if (!mesh) return;
     if (!cursorRef?.current) { mesh.visible = false; return; }
@@ -47,9 +49,11 @@ function WallCursorRing({ cursorRef, hasStart }) {
 
 // Pulsing amber ring shown on a building while it's being upgraded
 function UpgradeRing({ position, radius = 3.2 }) {
-  const meshRef = useRef();
+  const meshRef  = useRef();
+  const frameRef = useRef(0);
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
+    if (++frameRef.current % 2 !== 0) return;
     const t = (Math.sin(clock.getElapsedTime() * 3) + 1) / 2; // 0..1
     meshRef.current.material.opacity = 0.25 + t * 0.55;
     const s = 1 + t * 0.08;

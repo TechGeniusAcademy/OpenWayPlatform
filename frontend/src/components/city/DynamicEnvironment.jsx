@@ -80,7 +80,7 @@ export function DynamicEnvironment({ gameTimeRef }) {
       />
       {/* Stars: 1200 (was 3000), speed=0 → static, no per-frame animation */}
       <Stars radius={400} depth={60} count={1200} factor={4} fade speed={0} />
-      <fog attach="fog" args={[getFogColor(8), 120, 450]} />
+      <fog attach="fog" args={[getFogColor(8), 80, 180]} />
 
       <ambientLight ref={ambRef} intensity={1.2} color="#ddeeff" />
 
@@ -94,10 +94,10 @@ export function DynamicEnvironment({ gameTimeRef }) {
         shadow-mapSize={[1024, 1024]}
         shadow-camera-near={1}
         shadow-camera-far={400}
-        shadow-camera-left={-100}
-        shadow-camera-right={100}
-        shadow-camera-top={100}
-        shadow-camera-bottom={-100}
+        shadow-camera-left={-60}
+        shadow-camera-right={60}
+        shadow-camera-top={60}
+        shadow-camera-bottom={-60}
         shadow-bias={-0.0005}
       />
 

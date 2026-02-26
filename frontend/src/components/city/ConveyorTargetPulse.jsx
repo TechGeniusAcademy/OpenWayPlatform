@@ -21,10 +21,12 @@ import { canConnect, getConveyorOutLimit, getConveyorInLimit } from '../systems/
 // ─── Single pulsing ring ──────────────────────────────────────────────────────
 
 function PulseRing({ position }) {
-  const outerRef = useRef();
-  const innerRef = useRef();
+  const outerRef  = useRef();
+  const innerRef  = useRef();
+  const frameRef  = useRef(0);
 
   useFrame(({ clock }) => {
+    if (++frameRef.current % 2 !== 0) return;
     const t       = clock.getElapsedTime();
     const pulse   = Math.abs(Math.sin(t * 3.2));
     const s       = 1.0 + 0.20 * pulse;

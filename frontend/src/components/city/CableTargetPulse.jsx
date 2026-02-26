@@ -20,10 +20,12 @@ import { canCableConnect } from '../systems/energyCable.js';
 // ─── Single pulsing ring ──────────────────────────────────────────────────────
 
 function PulseRing({ position }) {
-  const outerRef = useRef();
-  const innerRef = useRef();
+  const outerRef  = useRef();
+  const innerRef  = useRef();
+  const frameRef  = useRef(0);
 
   useFrame(({ clock }) => {
+    if (++frameRef.current % 2 !== 0) return;
     const t   = clock.getElapsedTime();
     const s   = 1.0 + 0.22 * Math.abs(Math.sin(t * 3.5));
     const opacity = 0.55 + 0.45 * Math.abs(Math.sin(t * 3.5));
