@@ -20,6 +20,7 @@ import { calcConveyorRates, calcCableRates } from '../systems/connectionRates.js
 import { WallSegment, WallPlacementPreview, SnapIndicator } from './buildings/Wall.jsx';
 import { TowerPlaced, TowerPreview } from './buildings/Tower.jsx';
 import { OtherPlayerCity } from './OtherPlayerCity.jsx';
+import { LampLightPool } from './LampLightPool.jsx';
 import * as THREE from 'three';
 
 // Ref-driven cursor ring: shows where the next wall point will snap (green = start, amber = end)
@@ -129,6 +130,8 @@ function SceneInner({
 
   return (
     <>
+      {/* Global PointLight pool — only MAX 5 real lights, assigned to nearest lamps */}
+      <LampLightPool />
       <DynamicEnvironment gameTimeRef={gameTimeRef} />
       <World camTargetRef={camTargetRef} />
       <RTSCamera
@@ -408,7 +411,7 @@ function SceneInner({
       {/* Wall cursor ring — shows snapped grid position while in wall mode */}
       {wallMode && <WallCursorRing cursorRef={wallCursorRef} hasStart={!!wallFromPoint} />}
 
-      {/* Tower placement preview */}}
+      {/* Tower placement preview */}
       {towerMode && (
         <TowerPreview cursorRef={wallCursorRef} />
       )}

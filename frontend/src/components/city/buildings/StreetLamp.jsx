@@ -6,7 +6,7 @@
 //
 // To tune all visual / gameplay values → edit items/streetLamp.js
 
-import { useRef, useContext } from 'react';
+import { useRef, useContext, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CityContext } from '../CityContext.js';
@@ -16,6 +16,7 @@ import { CableSourceRing } from '../EnergyCable.jsx';
 import { FaBolt } from 'react-icons/fa';
 import { STREET_LAMP_CONFIG } from '../../items/streetLamp.js';
 import { getLevelConfig } from '../../systems/upgrades.js';
+import { registerLamp, unregisterLamp, updateLampIntensity } from '../LampLightPool.jsx';
 
 const {
   poleHeight, poleRadius, armLength, armHeight,
@@ -177,22 +178,33 @@ function StreetLampPlacedBase({
   const scale   = 1 + (lvlConf.scaleBonus ?? 0);
   const accentColor = lvlConf.accentColor ?? lightColor;
 
-  const lightRef     = useRef();
   const bulbMatRef   = useRef();
   const reflMatRef   = useRef();
+  // Local intensity tracker for smooth lerp (pool light state is write-only)
+  const intensityRef = useRef(0);
+  const lampIdRef    = useRef(null);
+
+  // Register / unregister with the global lamp pool
+  useEffect(() => {
+    const id = registerLamp({
+      x: position[0],
+      y: armHeight - 0.5,
+      z: position[2],
+      color: accentColor,
+    });
+    lampIdRef.current = id;
+    return () => unregisterLamp(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Animate light on/off based on game clock AND power state ────────────
   useFrame(() => {
     const hour = gameTimeRef?.current ?? 0;
     const on   = isPowered !== false && isLampOn(hour);
 
-    if (lightRef.current) {
-      // Smooth intensity transition
-      const target = on ? lightIntensity : 0;
-      lightRef.current.intensity = THREE.MathUtils.lerp(
-        lightRef.current.intensity, target, 0.05,
-      );
-    }
+    // Smooth transition on local intensity tracker, then push to pool
+    const target = on ? lightIntensity : 0;
+    intensityRef.current = THREE.MathUtils.lerp(intensityRef.current, target, 0.05);
+    if (lampIdRef.current !== null) updateLampIntensity(lampIdRef.current, intensityRef.current);
 
     if (bulbMatRef.current) {
       const targetEI = on ? 6.0 : 0.0;
@@ -276,16 +288,7 @@ function StreetLampPlacedBase({
           />
         </mesh>
 
-        {/* ── Three.js PointLight (casts actual scene lighting) ── */}
-        <pointLight
-          ref={lightRef}
-          position={[armLength, armHeight - 0.5, 0]}
-          color={accentColor}
-          intensity={0}           // starts at 0; animated in useFrame
-          distance={lightDistance}
-          decay={lightDecay}
-          castShadow={false}      // shadow from every street lamp is expensive; enable if needed
-        />
+        {/* PointLight is now managed by LampLightPool — no per-instance light */}
       </group>
 
       {isCableSource && <CableSourceRing />}

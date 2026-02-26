@@ -8,6 +8,9 @@ import { CityContext } from './CityContext.js';
 // Base rate used to normalise token count / speed ("full belt" reference)
 const BASE_RATE = 10;
 
+// Shared dummy Object3D for instanced matrix updates — one per module
+const _dummy = new THREE.Object3D();
+
 // ─── Source ring (glows orange when building is selected as conveyor source) ──
 
 export function ConveyorSourceRing() {
@@ -25,32 +28,42 @@ export function ConveyorSourceRing() {
   );
 }
 
-// ─── Animated resource token ──────────────────────────────────────────────────
+// ─── Optimised animated tokens — ONE InstancedMesh + ONE useFrame ────────────
+// Replaces the old per-coin AnimatedCoin components that each registered their
+// own useFrame callback.  With 4 tokens × 10 conveyors that was 40 callbacks/frame.
+// Now it is 1 callback per belt regardless of token count.
 
-export function AnimatedCoin({ fromVec, toVec, offset, speed, color }) {
-  const meshRef = useRef();
-  const tRef    = useRef(offset);
+function AnimatedCoins({ fromVec, toVec, offsets, speed, color }) {
+  const meshRef  = useRef();
+  const timesRef = useRef(offsets.slice()); // mutable progress per coin
 
   useFrame((_, dt) => {
-    tRef.current = (tRef.current + dt * speed) % 1;
-    if (meshRef.current) {
-      meshRef.current.position.lerpVectors(fromVec, toVec, tRef.current);
-      meshRef.current.position.y = fromVec.y + 0.13;
+    const mesh = meshRef.current;
+    if (!mesh || offsets.length === 0) return;
+    const times = timesRef.current;
+    for (let i = 0; i < times.length; i++) {
+      times[i] = (times[i] + dt * speed) % 1;
+      _dummy.position.lerpVectors(fromVec, toVec, times[i]);
+      _dummy.position.y = fromVec.y + 0.13;
+      _dummy.updateMatrix();
+      mesh.setMatrixAt(i, _dummy.matrix);
     }
+    mesh.instanceMatrix.needsUpdate = true;
   });
 
-  const initPos = new THREE.Vector3().lerpVectors(fromVec, toVec, offset);
+  if (offsets.length === 0) return null;
   return (
-    <mesh ref={meshRef} position={[initPos.x, fromVec.y + 0.13, initPos.z]}>
-      <cylinderGeometry args={[0.2, 0.2, 0.07, 10]} />
+    <instancedMesh ref={meshRef} args={[undefined, undefined, offsets.length]}>
+      {/* 6 segments (was 10) — tokens are tiny, nobody sees the difference */}
+      <cylinderGeometry args={[0.2, 0.2, 0.07, 6]} />
       <meshStandardMaterial
         color={color}
-        emissive={new THREE.Color(color)}
+        emissive={color}
         emissiveIntensity={0.75}
         metalness={0.85}
         roughness={0.12}
       />
-    </mesh>
+    </instancedMesh>
   );
 }
 
@@ -82,9 +95,9 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
     return { mid, angle, len };
   }, [fromVec, toVec]);
 
-  // ─ Animation: token count & speed both scale with effectiveRate ───────────
+  // Cap tokens at 4 (was 8) — saves ½ the instanced draw work
   const tokenCount = effectiveRate > 0
-    ? Math.max(1, Math.min(8, Math.round(6 * effectiveRate / BASE_RATE)))
+    ? Math.max(1, Math.min(4, Math.round(4 * effectiveRate / BASE_RATE)))
     : 0;
   const SPEED = effectiveRate > 0 ? Math.max(0.06, 0.4 * effectiveRate / BASE_RATE) : 0;
   const coinOffsets = useMemo(
@@ -92,6 +105,8 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const ruleColor = rule?.color ?? '#fbbf24';
+  // Memoize THREE.Color to avoid creating new objects every render
+  const ruleColorObj = useMemo(() => new THREE.Color(ruleColor), [ruleColor]);
   const tickCount = Math.max(1, Math.floor(len / 2.5));
 
   return (
@@ -129,7 +144,7 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
         ))}
         <mesh position={[0, 0.095, 0]}>
           <boxGeometry args={[0.22, 0.025, len - 0.3]} />
-          <meshStandardMaterial color={ruleColor} emissive={new THREE.Color(ruleColor)} emissiveIntensity={0.35} />
+          <meshStandardMaterial color={ruleColor} emissive={ruleColorObj} emissiveIntensity={0.35} />
         </mesh>
         {Array.from({ length: tickCount }, (_, i) => {
           const step = len / tickCount;
@@ -137,23 +152,20 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
           return (
             <mesh key={i} position={[0, 0.1, z]} rotation={[0, Math.PI / 4, 0]}>
               <boxGeometry args={[0.24, 0.025, 0.24]} />
-              <meshStandardMaterial color={ruleColor} emissive={new THREE.Color(ruleColor)} emissiveIntensity={0.5} />
+              <meshStandardMaterial color={ruleColor} emissive={ruleColorObj} emissiveIntensity={0.5} />
             </mesh>
           );
         })}
       </group>
 
-      {/* Animated tokens */}
-      {coinOffsets.map((off, i) => (
-        <AnimatedCoin
-          key={i}
-          fromVec={fromVec}
-          toVec={toVec}
-          offset={off}
-          speed={SPEED}
-          color={ruleColor}
-        />
-      ))}
+      {/* Animated tokens — single instanced component (one useFrame for all coins) */}
+      <AnimatedCoins
+        fromVec={fromVec}
+        toVec={toVec}
+        offsets={coinOffsets}
+        speed={SPEED}
+        color={ruleColor}
+      />
 
       {/* Transfer rate label */}
       <ConnectionLabel
@@ -166,3 +178,4 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
     </group>
   );
 }
+

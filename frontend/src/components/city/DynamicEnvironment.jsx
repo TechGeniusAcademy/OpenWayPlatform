@@ -4,19 +4,29 @@ import { Sky, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { getSunPosition, getSkyParams, getLighting, getFogColor } from '../systems/dayNight.js';
 
+// ─── Performance-tuned environment ──────────────────────────────────────────
+// Sky / lighting updates are throttled to every 4 frames (game clock moves
+// slowly — per-frame updates are pure waste with no visible difference).
+// Shadow map reduced 2048→1024; shadow camera tightened 200→100 (better
+// shadow resolution in the playable area); Stars halved to 1200 (static).
+
 export function DynamicEnvironment({ gameTimeRef }) {
   const skyRef   = useRef();
   const sunRef   = useRef();
   const ambRef   = useRef();
   const hemiRef  = useRef();
-  const moonRef  = useRef();   // soft fill at night
+  const moonRef  = useRef();
+  const frameRef = useRef(0);        // throttle counter
   const { scene, gl } = useThree();
 
-  // Enable ACESFilmic tone mapping for realistic brightness balance
-  gl.toneMapping          = THREE.ACESFilmicToneMapping;
-  gl.toneMappingExposure  = 1.4;
+  // Set tone-mapping once (not every render)
+  gl.toneMapping         = THREE.ACESFilmicToneMapping;
+  gl.toneMappingExposure = 1.4;
 
   useFrame(() => {
+    // Only update sky/lights every 4 frames — saves ~75 % of JS work here
+    if (++frameRef.current % 4 !== 0) return;
+
     const h = gameTimeRef.current;
     const [sx, sy, sz] = getSunPosition(h);
     const lit = getLighting(h);
@@ -49,11 +59,9 @@ export function DynamicEnvironment({ gameTimeRef }) {
       hemiRef.current.groundColor.set(lit.hemiGround);
     }
 
-    // Moon / fill light: strongest at night, fades during day
     if (moonRef.current) {
       const elev = Math.sin(((h / 24) * 2 - 0.5) * Math.PI);
-      const nightFactor = Math.max(0, -elev);
-      moonRef.current.intensity = 0.4 + nightFactor * 0.9;
+      moonRef.current.intensity = 0.4 + Math.max(0, -elev) * 0.9;
     }
 
     if (scene.fog) scene.fog.color.set(getFogColor(h));
@@ -70,33 +78,31 @@ export function DynamicEnvironment({ gameTimeRef }) {
         mieCoefficient={0.002}
         mieDirectionalG={0.98}
       />
-      <Stars radius={400} depth={60} count={3000} factor={4} fade speed={0.3} />
+      {/* Stars: 1200 (was 3000), speed=0 → static, no per-frame animation */}
+      <Stars radius={400} depth={60} count={1200} factor={4} fade speed={0} />
       <fog attach="fog" args={[getFogColor(8), 120, 450]} />
 
-      {/* Main ambient — reasonably bright to avoid pitch black */}
       <ambientLight ref={ambRef} intensity={1.2} color="#ddeeff" />
 
-      {/* Sun */}
+      {/* Sun — shadow map 1024×1024 (was 2048), tighter camera for better texel density */}
       <directionalLight
         ref={sunRef}
         castShadow
         intensity={4.5}
         color="#fff8e8"
         position={[200, 200, 60]}
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-camera-near={1}
-        shadow-camera-far={600}
-        shadow-camera-left={-200}
-        shadow-camera-right={200}
-        shadow-camera-top={200}
-        shadow-camera-bottom={-200}
+        shadow-camera-far={400}
+        shadow-camera-left={-100}
+        shadow-camera-right={100}
+        shadow-camera-top={100}
+        shadow-camera-bottom={-100}
         shadow-bias={-0.0005}
       />
 
-      {/* Sky/ground gradient light */}
       <hemisphereLight ref={hemiRef} args={['#a8d4ff', '#4a7a4a', 2.0]} />
 
-      {/* Night fill — moonlight from above, always visible */}
       <directionalLight
         ref={moonRef}
         intensity={0.8}
@@ -107,4 +113,3 @@ export function DynamicEnvironment({ gameTimeRef }) {
     </>
   );
 }
-
