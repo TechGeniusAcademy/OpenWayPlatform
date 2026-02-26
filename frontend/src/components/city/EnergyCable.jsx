@@ -158,29 +158,3 @@ export function EnergyCable({ fromId, toId, placedItems, effectiveRate, onRightC
     </group>
   );
 }
-
-
-// ─── Cable source indicator ring (yellow pulsing ring) ────────────────────────
-
-export function CableSourceRing() {
-  const ringRef = useRef();
-  useFrame(({ clock }) => {
-    if (ringRef.current) {
-      ringRef.current.material.opacity =
-        0.35 + Math.sin(clock.getElapsedTime() * 6) * 0.3;
-    }
-  });
-  return (
-    <mesh ref={ringRef} position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[2.2, 3.2, 32]} />
-      <meshBasicMaterial
-        color="#facc15"
-        transparent
-        opacity={0.55}
-        side={THREE.DoubleSide}
-        depthWrite={false}
-      />
-    </mesh>
-  );
-}
-
