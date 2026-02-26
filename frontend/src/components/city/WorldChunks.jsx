@@ -46,8 +46,9 @@ const MAT = {
   goldVein:   new THREE.MeshStandardMaterial({ color: '#f0c030', roughness: 0.2,  metalness: 0.85, emissive: new THREE.Color('#604800') }),
   diamond:    new THREE.MeshStandardMaterial({ color: '#4a5a6a', roughness: 0.5,  metalness: 0.2  }),
   diamondVein:new THREE.MeshStandardMaterial({ color: '#80d8ff', roughness: 0.05, metalness: 0.9,  emissive: new THREE.Color('#003060'), transparent: true, opacity: 0.92 }),
-  waterSurf:  new THREE.MeshStandardMaterial({ color: '#1a6a9a', roughness: 0.05, metalness: 0.35, transparent: true, opacity: 0.82 }),
-  waterShore: new THREE.MeshStandardMaterial({ color: '#144060', roughness: 0.3,  metalness: 0.1,  transparent: true, opacity: 0.45 }),
+  // roughness 0.55 + metalness 0.05 → no mirror specular, no harsh glinting
+  waterSurf:  new THREE.MeshStandardMaterial({ color: '#1a6a9a', roughness: 0.55, metalness: 0.05, transparent: true, opacity: 0.82 }),
+  waterShore: new THREE.MeshStandardMaterial({ color: '#144060', roughness: 0.6,  metalness: 0.0,  transparent: true, opacity: 0.45 }),
   shore:      new THREE.MeshStandardMaterial({ color: '#8a7a5a', roughness: 0.97, metalness: 0 }),
   reed:       new THREE.MeshStandardMaterial({ color: '#5a7a3a', roughness: 0.9,  metalness: 0 }),
 };
@@ -376,7 +377,6 @@ function buildRiverGeo(rng, len, wid) {
 // ─── Water body (lake / pond) ─────────────────────────────────────────────────
 
 function WaterBody({ x, z, rng }) {
-  const waterRef = useRef();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
 
@@ -402,10 +402,8 @@ function WaterBody({ x, z, rng }) {
     return { isLake: il, ry: rySeed, radius: r, waterGeo: wGeo, shoreGeo: sGeo, bankGeo: bGeo, rocks: rks, reeds: rds };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useFrame(({ clock }) => {
-    if (waterRef.current)
-      waterRef.current.material.opacity = 0.74 + Math.sin(clock.getElapsedTime() * 0.8 + x) * 0.08;
-  });
+  // Opacity animation removed — it was mutating the shared MAT.waterSurf material
+  // from multiple instances simultaneously, causing constant flickering.
 
   return (
     <group position={[x, 0.03, z]} rotation={[0, ry, 0]}>
@@ -420,7 +418,7 @@ function WaterBody({ x, z, rng }) {
         <primitive object={MAT.waterShore} attach="material" />
       </mesh>
       {/* Water surface */}
-      <mesh ref={waterRef} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <primitive object={waterGeo} />
         <primitive object={MAT.waterSurf} attach="material" />
       </mesh>
