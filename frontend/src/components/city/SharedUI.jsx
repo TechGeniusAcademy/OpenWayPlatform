@@ -60,8 +60,10 @@ export function usePlacementTracker(placementPosRef, inputRef, placementRotYRef)
   const hitPoint    = useMemo(() => new THREE.Vector3(), []);
   // Reuse a single Vector2 to avoid per-frame garbage collection
   const ndcVec      = useMemo(() => new THREE.Vector2(), []);
+  const trackFrameRef = useRef(0); // throttle: raycaster+isColliding every 2nd frame
 
   useFrame(() => {
+    if (++trackFrameRef.current % 2 !== 0) return;
     const inp = inputRef.current;
     if (inp.mouseX === null || !groupRef.current) return;
     ndcVec.set(
@@ -88,7 +90,9 @@ export function usePlacementTracker(placementPosRef, inputRef, placementRotYRef)
 export function GlowBoxPreview({ placementPosRef, inputRef, placementRotYRef }) {
   const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
   const matRef = useRef();
+  const glowFrameRef = useRef(0); // throttle: pulse at ~20fps is imperceptible
   useFrame(({ clock }) => {
+    if (++glowFrameRef.current % 3 !== 0) return;
     if (!matRef.current) return;
     const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
     const blocked = blockedRef.current;
@@ -356,7 +360,7 @@ export function LevelRing({ level = 1, radius = 4 }) {
       {/* Кольцо 1 — уровень 2+ */}
       <group ref={g1}>
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[r1 - 0.14, r1 + 0.14, 32]} />
+          <ringGeometry args={[r1 - 0.14, r1 + 0.14, 20]} />
           <meshBasicMaterial ref={mat1} color={color} transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
       </group>
@@ -364,7 +368,7 @@ export function LevelRing({ level = 1, radius = 4 }) {
       {level >= 3 && (
         <group ref={g2}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[r2 - 0.14, r2 + 0.14, 32]} />
+            <ringGeometry args={[r2 - 0.14, r2 + 0.14, 20]} />
             <meshBasicMaterial ref={mat2} color={color} transparent opacity={0.4} side={THREE.DoubleSide} depthWrite={false} />
           </mesh>
         </group>
@@ -373,7 +377,7 @@ export function LevelRing({ level = 1, radius = 4 }) {
       {level >= 4 && (
         <group ref={g3}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[r3 - 0.14, r3 + 0.14, 32]} />
+            <ringGeometry args={[r3 - 0.14, r3 + 0.14, 20]} />
             <meshBasicMaterial ref={mat3} color={color} transparent opacity={0.28} side={THREE.DoubleSide} depthWrite={false} />
           </mesh>
         </group>

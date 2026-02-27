@@ -11,7 +11,7 @@ import { CityContext } from './CityContext.js';
 export function CableSourceRing() {
   return (
     <mesh position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[2.2, 3.2, 32]} />
+      <ringGeometry args={[2.2, 3.2, 20]} />
       <meshBasicMaterial
         color="#facc15"
         transparent

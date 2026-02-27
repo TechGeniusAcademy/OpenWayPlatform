@@ -31,14 +31,16 @@ import { calcConveyorRates, calcCableRates }          from '../systems/connectio
 
 // ── Territory ring — pulsing circle that marks the base boundary ──────────────
 function TerritoryRing({ cx, cz, radius }) {
-  const ringRef = useRef();
+  const ringRef  = useRef();
+  const frameRef = useRef(0); // slow pulse — throttle ×3 is fine
   useFrame(({ clock }) => {
+    if (++frameRef.current % 3 !== 0) return;
     if (!ringRef.current) return;
     ringRef.current.material.opacity = 0.28 + Math.sin(clock.getElapsedTime() * 1.5) * 0.12;
   });
   return (
     <mesh ref={ringRef} position={[cx, 0.08, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[radius - 0.6, radius + 0.6, 64]} />
+      <ringGeometry args={[radius - 0.6, radius + 0.6, 24]} />
       <meshBasicMaterial color="#60a5fa" transparent opacity={0.35} side={THREE.DoubleSide} depthWrite={false} />
     </mesh>
   );
@@ -48,7 +50,7 @@ function TerritoryRing({ cx, cz, radius }) {
 function TerritoryGround({ cx, cz, radius }) {
   return (
     <mesh position={[cx, 0.04, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[radius, 64]} />
+      <circleGeometry args={[radius, 24]} />
       <meshBasicMaterial color="#3b82f6" transparent opacity={0.05} side={THREE.DoubleSide} depthWrite={false} />
     </mesh>
   );

@@ -130,9 +130,11 @@ export function ExtractorBody({
   const drillRef  = useRef();
   const gearRef   = useRef();
   const lightRef  = useRef();
+  const exFrameRef = useRef(0); // throttle: drill spin at ~30fps still looks fluid
 
   useFrame(({ clock }) => {
     if (!animating) return;
+    if (++exFrameRef.current % 2 !== 0) return;
     const t = clock.getElapsedTime();
     if (drillRef.current)  drillRef.current.rotation.y  =  t * 3.5;
     if (gearRef.current)   gearRef.current.rotation.z   = -t * 2.2;
@@ -254,8 +256,10 @@ function ExtractorPreviewInner({ placementPosRef, inputRef, placementRotYRef }) 
   const coneMat    = useRef();
   const noOreRef   = useRef(true);
   const hintDivRef = useRef(null);
+  const prevFrameRef = useRef(0); // throttle: ore check every 2nd frame
 
   useFrame(({ clock }) => {
+    if (++prevFrameRef.current % 2 !== 0) return;
     const pos = placementPosRef.current;
     if (pos) {
       const nearOre    = findNearestOreDeposit(pos.x, pos.z);

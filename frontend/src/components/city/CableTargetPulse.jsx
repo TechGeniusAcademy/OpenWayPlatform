@@ -25,7 +25,7 @@ function PulseRing({ position }) {
   const frameRef  = useRef(0);
 
   useFrame(({ clock }) => {
-    if (++frameRef.current % 2 !== 0) return;
+    if (++frameRef.current % 3 !== 0) return;
     const t   = clock.getElapsedTime();
     const s   = 1.0 + 0.22 * Math.abs(Math.sin(t * 3.5));
     const opacity = 0.55 + 0.45 * Math.abs(Math.sin(t * 3.5));
@@ -44,7 +44,7 @@ function PulseRing({ position }) {
     <group position={[position[0], 0.08, position[2]]}>
       {/* Outer glow disc */}
       <mesh ref={outerRef} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.6, 2.4, 32]} />
+        <ringGeometry args={[1.6, 2.4, 20]} />
         <meshBasicMaterial
           color="#facc15"
           transparent
@@ -56,7 +56,7 @@ function PulseRing({ position }) {
 
       {/* Inner fill disc */}
       <mesh ref={innerRef} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.55, 32]} />
+        <circleGeometry args={[1.55, 20]} />
         <meshBasicMaterial
           color="#fef08a"
           transparent

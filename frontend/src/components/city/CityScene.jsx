@@ -61,7 +61,7 @@ function UpgradeRing({ position, radius = 3.2 }) {
   });
   return (
     <mesh ref={meshRef} position={[position[0], (position[1] ?? 0) + 0.12, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[radius, 0.18, 6, 40]} />
+      <torusGeometry args={[radius, 0.18, 5, 16]} />
       <meshBasicMaterial color="#fbbf24" transparent opacity={0.55} />
     </mesh>
   );
