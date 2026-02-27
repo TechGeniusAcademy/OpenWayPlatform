@@ -96,7 +96,7 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
   const tokenCount = effectiveRate > 0
     ? Math.max(1, Math.min(2, Math.round(2 * effectiveRate / BASE_RATE)))
     : 0;
-  const SPEED = effectiveRate > 0 ? Math.max(0.04, 0.25 * effectiveRate / BASE_RATE) : 0;
+  const SPEED = effectiveRate > 0 ? Math.max(0.02, 0.10 * effectiveRate / BASE_RATE) : 0;
   const coinOffsets = useMemo(
     () => tokenCount > 0 ? Array.from({ length: tokenCount }, (_, i) => i / tokenCount) : [],
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps
