@@ -1,19 +1,48 @@
-import { useRef, useMemo, useContext } from 'react';
+import { useRef, useMemo, useContext, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getTransferRule } from '../systems/conveyor.js';
 import { ConnectionLabel } from './ConnectionLabel.jsx';
 import { CityContext } from './CityContext.js';
 
-// Base rate used to normalise token count / speed ("full belt" reference)
-const BASE_RATE = 10;
+// ─── Constants ────────────────────────────────────────────────────────────────
+const BASE_RATE  = 10;
+const BELT_Y     = 0.42;   // height of belt surface above ground (on legs)
+const BELT_W     = 0.96;   // rubber tread width
+const BELT_H     = 0.07;   // rubber tread thickness
+const RAIL_H     = 0.26;   // side rail height
+const RAIL_X     = 0.54;   // side rail X offset from centre
+const ROLLER_R   = 0.055;  // roller cylinder radius
+const ROLLER_SEG = 6;      // cylinder segments (low poly)
+const LEG_SPACE  = 3.6;    // distance between support leg pairs
 
 // Shared dummy Object3D for instanced matrix updates — one per module
 const _dummy = new THREE.Object3D();
 
-// ─── Source ring (glows orange when building is selected as conveyor source) ──
+// ─── Module-level shared geometries (created once, reused forever) ────────────
+const GEO = {
+  beltSurface: new THREE.BoxGeometry(BELT_W, BELT_H, 1),
+  sideRail:    new THREE.BoxGeometry(0.09, RAIL_H, 1),
+  legPost:     new THREE.BoxGeometry(0.07, 0.36, 0.07),
+  legCross:    new THREE.BoxGeometry(0.88, 0.05, 0.06),
+  stripe:      new THREE.BoxGeometry(0.16, 0.012, 1),
+  endCap:      new THREE.CylinderGeometry(RAIL_H * 0.5, RAIL_H * 0.5, BELT_W + 0.18, 8),
+  roller:      new THREE.CylinderGeometry(ROLLER_R, ROLLER_R, BELT_W + 0.12, ROLLER_SEG),
+  item:        new THREE.BoxGeometry(0.30, 0.24, 0.30),
+  hitbox:      new THREE.BoxGeometry(1.4, 0.5, 1),
+};
 
-// Source ring — static, no useFrame
+// ─── Shared static materials ──────────────────────────────────────────────────
+const MAT = {
+  rubber: new THREE.MeshStandardMaterial({ color: '#17202a', roughness: 0.97, metalness: 0.02 }),
+  rail:   new THREE.MeshStandardMaterial({ color: '#2d3e50', roughness: 0.55, metalness: 0.65 }),
+  roller: new THREE.MeshStandardMaterial({ color: '#718096', roughness: 0.35, metalness: 0.80 }),
+  leg:    new THREE.MeshStandardMaterial({ color: '#1e2d3d', roughness: 0.65, metalness: 0.50 }),
+  endCap: new THREE.MeshStandardMaterial({ color: '#3b4e63', roughness: 0.45, metalness: 0.70 }),
+  hitbox: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }),
+};
+
+// ─── Source ring (static — no useFrame) ──────────────────────────────────────
 export function ConveyorSourceRing() {
   return (
     <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -23,25 +52,78 @@ export function ConveyorSourceRing() {
   );
 }
 
-// ─── Optimised animated tokens — ONE InstancedMesh + ONE useFrame ────────────
-// Replaces the old per-coin AnimatedCoin components that each registered their
-// own useFrame callback.  With 4 tokens × 10 conveyors that was 40 callbacks/frame.
-// Now it is 1 callback per belt regardless of token count.
+// ─── Rollers — ONE InstancedMesh = ONE draw call regardless of belt length ────
+function BeltRollers({ len }) {
+  const meshRef = useRef();
+  const count   = useMemo(() => Math.max(2, Math.floor(len / 1.05)), [len]);
 
-function AnimatedCoins({ fromVec, toVec, offsets, speed, color }) {
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const step = len / count;
+    for (let i = 0; i < count; i++) {
+      const z = -len / 2 + step * (i + 0.5);
+      _dummy.position.set(0, -BELT_H * 0.5 + ROLLER_R * 0.5, z);
+      _dummy.rotation.set(0, 0, Math.PI / 2); // lie along X axis
+      _dummy.scale.setScalar(1);
+      _dummy.updateMatrix();
+      mesh.setMatrixAt(i, _dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [len, count]);
+
+  return (
+    <instancedMesh ref={meshRef} args={[GEO.roller, MAT.roller, count]} />
+  );
+}
+
+// ─── Support legs — pairs of posts + cross brace at regular intervals ─────────
+function SupportLegs({ len }) {
+  const positions = useMemo(() => {
+    const n = Math.max(2, Math.round(len / LEG_SPACE) + 1);
+    return Array.from({ length: n }, (_, i) => -len / 2 + (len / (n - 1)) * i);
+  }, [len]);
+
+  return (
+    <>
+      {positions.map((z, i) => (
+        <group key={i} position={[0, -(RAIL_H * 0.5 + 0.17), z]}>
+          <mesh geometry={GEO.legPost} material={MAT.leg} position={[-0.40, 0, 0]} rotation={[0, 0,  0.10]} />
+          <mesh geometry={GEO.legPost} material={MAT.leg} position={[ 0.40, 0, 0]} rotation={[0, 0, -0.10]} />
+          <mesh geometry={GEO.legCross} material={MAT.leg} />
+        </group>
+      ))}
+    </>
+  );
+}
+
+// ─── Moving crates — InstancedMesh + throttled useFrame ───────────────────────
+function AnimatedItems({ fromVec, toVec, offsets, speed, color }) {
   const meshRef  = useRef();
   const frameRef = useRef(0);
-  const timesRef = useRef(offsets.slice()); // mutable progress per coin
+  const timesRef = useRef(offsets.slice());
+
+  const mat = useMemo(
+    () => new THREE.MeshStandardMaterial({
+      color,
+      emissive:          new THREE.Color(color),
+      emissiveIntensity: 0.35,
+      roughness:         0.65,
+      metalness:         0.25,
+    }),
+    [color],
+  );
 
   useFrame((_, dt) => {
-    if (++frameRef.current % 2 !== 0) return; // throttle every 2 frames
+    if (++frameRef.current % 2 !== 0) return;
     const mesh = meshRef.current;
     if (!mesh || offsets.length === 0) return;
     const times = timesRef.current;
     for (let i = 0; i < times.length; i++) {
       times[i] = (times[i] + dt * speed) % 1;
       _dummy.position.lerpVectors(fromVec, toVec, times[i]);
-      _dummy.position.y = fromVec.y + 0.13;
+      _dummy.position.y = fromVec.y + 0.20;
+      _dummy.rotation.set(0, times[i] * Math.PI * 0.3, 0);
       _dummy.updateMatrix();
       mesh.setMatrixAt(i, _dummy.matrix);
     }
@@ -49,23 +131,10 @@ function AnimatedCoins({ fromVec, toVec, offsets, speed, color }) {
   });
 
   if (offsets.length === 0) return null;
-  return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, offsets.length]}>
-      {/* 6 segments (was 10) — tokens are tiny, nobody sees the difference */}
-      <cylinderGeometry args={[0.2, 0.2, 0.07, 6]} />
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={0.75}
-        metalness={0.85}
-        roughness={0.12}
-      />
-    </instancedMesh>
-  );
+  return <instancedMesh ref={meshRef} args={[GEO.item, mat, offsets.length]} />;
 }
 
-// ─── Conveyor belt 3-D visual ─────────────────────────────────────────────────
-
+// ─── Conveyor belt — realistic industrial 3-D visual ─────────────────────────
 export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRightClick }) {
   const { rightClickHitRef } = useContext(CityContext);
   const from = placedItems.find(i => i.id === fromId);
@@ -74,41 +143,50 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
 
   const rule = getTransferRule(from.type, to.type);
 
-  const BELT_Y  = 0.22;
   const fromVec = useMemo(
     () => new THREE.Vector3(from.position[0], BELT_Y, from.position[2]),
-    [from.position[0], from.position[2]] // eslint-disable-line react-hooks/exhaustive-deps
+    [from.position[0], from.position[2]], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const toVec = useMemo(
     () => new THREE.Vector3(to.position[0], BELT_Y, to.position[2]),
-    [to.position[0], to.position[2]] // eslint-disable-line react-hooks/exhaustive-deps
+    [to.position[0], to.position[2]], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const { mid, angle, len } = useMemo(() => {
-    const dir   = new THREE.Vector3().subVectors(toVec, fromVec);
-    const len   = dir.length();
-    const mid   = new THREE.Vector3().addVectors(fromVec, toVec).multiplyScalar(0.5);
-    const angle = Math.atan2(dir.x, dir.z);
-    return { mid, angle, len };
+    const dir = new THREE.Vector3().subVectors(toVec, fromVec);
+    const l   = dir.length();
+    const m   = new THREE.Vector3().addVectors(fromVec, toVec).multiplyScalar(0.5);
+    const a   = Math.atan2(dir.x, dir.z);
+    return { mid: m, angle: a, len: l };
   }, [fromVec, toVec]);
 
-  // Cap tokens at 2 — minimal visual, minimal GPU cost
+  // 1-3 crates depending on rate
   const tokenCount = effectiveRate > 0
-    ? Math.max(1, Math.min(2, Math.round(2 * effectiveRate / BASE_RATE)))
+    ? Math.max(1, Math.min(3, Math.round(3 * effectiveRate / BASE_RATE)))
     : 0;
-  const SPEED = effectiveRate > 0 ? Math.max(0.02, 0.10 * effectiveRate / BASE_RATE) : 0;
-  const coinOffsets = useMemo(
+  const SPEED = effectiveRate > 0 ? Math.max(0.02, 0.12 * effectiveRate / BASE_RATE) : 0;
+  const itemOffsets = useMemo(
     () => tokenCount > 0 ? Array.from({ length: tokenCount }, (_, i) => i / tokenCount) : [],
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const ruleColor = rule?.color ?? '#fbbf24';
-  // Memoize THREE.Color to avoid creating new objects every render
+
+  const ruleColor    = rule?.color ?? '#fbbf24';
   const ruleColorObj = useMemo(() => new THREE.Color(ruleColor), [ruleColor]);
-  const tickCount = Math.max(1, Math.floor(len / 2.5));
+
+  // Per-belt colour stripe material
+  const stripeMat = useMemo(
+    () => new THREE.MeshStandardMaterial({
+      color:             ruleColor,
+      emissive:          ruleColorObj,
+      emissiveIntensity: 0.65,
+      roughness:         0.5,
+    }),
+    [ruleColor, ruleColorObj],
+  );
 
   return (
     <group>
-      {/* Belt body */}
+      {/* ── Belt body (centred at mid, oriented along belt direction) ── */}
       <group
         position={mid.toArray()}
         rotation={[0, angle, 0]}
@@ -120,46 +198,40 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
           }
         }}
       >
-        {/* Invisible hit surface for pointer events */}
-        <mesh visible={false}>
-          <boxGeometry args={[1.2, 0.5, len]} />
-          <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-        <mesh receiveShadow>
-          <boxGeometry args={[0.9, 0.14, len]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.85} metalness={0.2} />
-        </mesh>
-        <mesh position={[0, 0.075, 0]}>
-          <boxGeometry args={[0.78, 0.03, len - 0.15]} />
-          <meshStandardMaterial color="#374151" roughness={0.9} />
-        </mesh>
-        {[-0.43, 0.43].map((x, i) => (
-          <mesh key={i} position={[x, 0.08, 0]}>
-            <boxGeometry args={[0.08, 0.22, len]} />
-            <meshStandardMaterial color="#475569" roughness={0.5} metalness={0.5} />
-          </mesh>
-        ))}
-        <mesh position={[0, 0.095, 0]}>
-          <boxGeometry args={[0.22, 0.025, len - 0.3]} />
-          <meshStandardMaterial color={ruleColor} emissive={ruleColorObj} emissiveIntensity={0.35} />
-        </mesh>
-        {Array.from({ length: tickCount }, (_, i) => {
-          const step = len / tickCount;
-          const z    = -len / 2 + step * (i + 0.5);
-          return (
-            <mesh key={i} position={[0, 0.1, z]} rotation={[0, Math.PI / 4, 0]}>
-              <boxGeometry args={[0.24, 0.025, 0.24]} />
-              <meshStandardMaterial color={ruleColor} emissive={ruleColorObj} emissiveIntensity={0.5} />
-            </mesh>
-          );
-        })}
+        {/* Invisible wide hit surface for easy right-click */}
+        <mesh visible={false} geometry={GEO.hitbox} material={MAT.hitbox} scale={[1, 1, len]} />
+
+        {/* Rubber belt tread */}
+        <mesh receiveShadow geometry={GEO.beltSurface} material={MAT.rubber} scale={[1, 1, len]} />
+
+        {/* Left & right side rails */}
+        <mesh geometry={GEO.sideRail} material={MAT.rail}
+          position={[-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.14]} />
+        <mesh geometry={GEO.sideRail} material={MAT.rail}
+          position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.14]} />
+
+        {/* End drums / pulleys */}
+        <mesh geometry={GEO.endCap} material={MAT.endCap}
+          rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, -len / 2]} />
+        <mesh geometry={GEO.endCap} material={MAT.endCap}
+          rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R,  len / 2]} />
+
+        {/* Rollers — one InstancedMesh, one draw call */}
+        <BeltRollers len={len} />
+
+        {/* Support legs */}
+        <SupportLegs len={len} />
+
+        {/* Colour identifier stripe (rule type) */}
+        <mesh geometry={GEO.stripe} material={stripeMat}
+          position={[0, BELT_H * 0.52, 0]} scale={[1, 1, len - 0.28]} />
       </group>
 
-      {/* Animated tokens — single instanced component (one useFrame for all coins) */}
-      <AnimatedCoins
+      {/* Moving crates */}
+      <AnimatedItems
         fromVec={fromVec}
         toVec={toVec}
-        offsets={coinOffsets}
+        offsets={itemOffsets}
         speed={SPEED}
         color={ruleColor}
       />
@@ -175,4 +247,3 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
     </group>
   );
 }
-
