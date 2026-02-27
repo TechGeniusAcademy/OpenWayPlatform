@@ -1,6 +1,6 @@
-import { useRef, useContext } from 'react';
+import { Suspense, useMemo, useEffect, useRef, useContext } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox, MeshTransmissionMaterial, Sparkles, Float } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CityContext, MONEY_FACTORY_Y, MONEY_FACTORY_TILT_X, MONEY_FACTORY_TILT_Z } from '../CityContext.js';
 import { usePlacementTracker, EnergyBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, memo, buildingPropsEqual } from '../SharedUI.jsx';
@@ -9,182 +9,117 @@ import { CableSourceRing } from '../EnergyCable.jsx';
 import { MONEY_FACTORY_CONFIG } from '../../items/moneyFactory.js';
 import { getLevelConfig } from '../../systems/upgrades.js';
 
-// Shared chimney smoke colour
-const SMOKE_COL = new THREE.Color('#aaaaaa');
+const MODEL_URL = '/models/money-factory.glb';
+useGLTF.preload(MODEL_URL);
 
-// ─── MoneyFactoryBody — shared between placed + preview ───────────────────────────
-export function MoneyFactoryBody({ emissiveColor, emissiveIntensity, opacity = 1, transparent = false, accentOverride, isPreview = false }) {
-  const ec     = emissiveColor ?? '#000000';
-  const ei     = emissiveIntensity ?? 0;
-  const accent = accentOverride ?? '#22c55e';
-  const m      = { roughness: 0.55, metalness: 0.35, transparent, opacity };
+const _tint = new THREE.Color();
 
+function FactoryGLB({ emissiveColor, emissiveIntensity }) {
+  const { scene } = useGLTF(MODEL_URL);
+  const model = useMemo(() => scene.clone(true), [scene]);
+  useEffect(() => {
+    const ei = emissiveIntensity ?? 0;
+    _tint.set(ei > 0 ? (emissiveColor ?? '#000000') : '#000000');
+    model.traverse((obj) => {
+      if (!obj.isMesh || !obj.material) return;
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach((mat) => {
+        if (mat.emissive) { mat.emissive.copy(_tint); mat.emissiveIntensity = ei; }
+        mat.needsUpdate = true;
+      });
+    });
+  }, [model, emissiveColor, emissiveIntensity]);
+  return (
+    <primitive
+      object={model}
+      scale={[2.25, 2.25, 2.25]}
+      position={[0, MONEY_FACTORY_Y, 0]}
+      rotation={[MONEY_FACTORY_TILT_X, 0, MONEY_FACTORY_TILT_Z]}
+      castShadow
+      receiveShadow
+    />
+  );
+}
+
+function ProceduralBody({ emissiveColor, emissiveIntensity, opacity = 1, transparent = false, accentOverride }) {
+  const m = { transparent, opacity, roughness: 0.55, metalness: 0.3 };
+  const ec = emissiveColor ?? '#000000';
+  const ei = emissiveIntensity ?? 0;
   return (
     <group position={[0, MONEY_FACTORY_Y, 0]} rotation={[MONEY_FACTORY_TILT_X, 0, MONEY_FACTORY_TILT_Z]}>
-
-      {/* ─ Foundation slab ─ */}
-      <RoundedBox args={[9, 0.45, 9]} radius={0.08} smoothness={2} receiveShadow position={[0, 0.22, 0]}>
-        <meshStandardMaterial color="#2d3748" emissive={ec} emissiveIntensity={ei * 0.15} {...m} />
-      </RoundedBox>
-
-      {/* ─ Main warehouse body ─ */}
-      <RoundedBox args={[7.2, 7.4, 6.6]} radius={0.25} smoothness={3} castShadow receiveShadow position={[0, 4.15, 0]}>
-        <meshStandardMaterial color="#1a2535" emissive={ec} emissiveIntensity={ei * 0.35} {...m} />
-      </RoundedBox>
-
-      {/* ─ Roof panel ─ */}
-      <RoundedBox args={[7.6, 0.35, 7.0]} radius={0.1} smoothness={2} castShadow position={[0, 7.95, 0]}>
-        <meshStandardMaterial color="#374151" emissive={ec} emissiveIntensity={ei * 0.2} {...m} />
-      </RoundedBox>
-
-      {/* ─ Front office tower ─ */}
-      <RoundedBox args={[4.6, 5.4, 2.1]} radius={0.2} smoothness={3} castShadow receiveShadow position={[0, 3.1, 3.9]}>
-        <meshStandardMaterial color="#0f172a" emissive={ec} emissiveIntensity={ei * 0.4} {...m} />
-      </RoundedBox>
-
-      {/* ─ Office cornice (top trim on front tower) ─ */}
-      <RoundedBox args={[4.9, 0.22, 2.4]} radius={0.06} smoothness={2} position={[0, 5.95, 3.9]}>
-        <meshStandardMaterial color="#4b5563" emissive={ec} emissiveIntensity={ei * 0.2} {...m} />
-      </RoundedBox>
-
-      {/* ─ Loading dock platform ─ */}
-      <RoundedBox args={[5.2, 0.55, 1.5]} radius={0.06} smoothness={2} receiveShadow position={[0, 0.7, 5.3]}>
-        <meshStandardMaterial color="#334155" emissive={ec} emissiveIntensity={ei * 0.15} {...m} />
-      </RoundedBox>
-
-      {/* ─ Front windows (glass — MeshTransmissionMaterial in placed mode) ─ */}
-      {[-1.45, 0, 1.45].map((x, i) => (
-        <mesh key={i} position={[x, 3.5, 4.96]}>
-          <boxGeometry args={[0.95, 1.35, 0.08]} />
-          {isPreview ? (
-            <meshStandardMaterial color="#fbbf24" emissive={emissiveColor ?? '#fbbf24'} emissiveIntensity={(ei || 0) + 0.8} transparent opacity={transparent ? opacity : 0.9} />
-          ) : (
-            <MeshTransmissionMaterial
-              backside={false}
-              samples={2}
-              thickness={0.08}
-              roughness={0.05}
-              transmission={0.92}
-              chromaticAberration={0.04}
-              color="#fde68a"
-              emissive="#fbbf24"
-              emissiveIntensity={(ei || 0) + 0.5}
-            />
-          )}
+      <mesh receiveShadow position={[0, 0.2, 0]}>
+        <boxGeometry args={[8.5, 0.4, 8.5]} />
+        <meshStandardMaterial color="#374151" emissive={new THREE.Color(ec)} emissiveIntensity={ei * 0.2} {...m} />
+      </mesh>
+      <mesh castShadow receiveShadow position={[0, 4, 0]}>
+        <boxGeometry args={[7, 7.2, 6.5]} />
+        <meshStandardMaterial color="#1f2937" emissive={new THREE.Color(ec)} emissiveIntensity={ei * 0.35} {...m} />
+      </mesh>
+      <mesh castShadow receiveShadow position={[0, 3, 3.8]}>
+        <boxGeometry args={[4.5, 5.2, 2]} />
+        <meshStandardMaterial color="#111827" emissive={new THREE.Color(ec)} emissiveIntensity={ei * 0.4} {...m} />
+      </mesh>
+      <mesh castShadow position={[-2.2, 10.5, -2.2]}>
+        <cylinderGeometry args={[0.38, 0.45, 6.5, 8]} />
+        <meshStandardMaterial color="#374151" emissive={new THREE.Color(ec)} emissiveIntensity={ei * 0.3} {...m} />
+      </mesh>
+      <mesh castShadow position={[2.2, 10, -2.2]}>
+        <cylinderGeometry args={[0.38, 0.45, 5.5, 8]} />
+        <meshStandardMaterial color="#374151" emissive={new THREE.Color(ec)} emissiveIntensity={ei * 0.3} {...m} />
+      </mesh>
+      <mesh castShadow position={[-2.2, 13.95, -2.2]}>
+        <cylinderGeometry args={[0.55, 0.38, 0.55, 8]} />
+        <meshStandardMaterial color={accentOverride ?? '#4b5563'} emissive={new THREE.Color(accentOverride ?? ec)} emissiveIntensity={ei + 0.4} {...m} />
+      </mesh>
+      <mesh castShadow position={[2.2, 12.95, -2.2]}>
+        <cylinderGeometry args={[0.55, 0.38, 0.55, 8]} />
+        <meshStandardMaterial color={accentOverride ?? '#4b5563'} emissive={new THREE.Color(accentOverride ?? ec)} emissiveIntensity={ei + 0.4} {...m} />
+      </mesh>
+      {[-1.4, 0, 1.4].map((x, i) => (
+        <mesh key={i} position={[x, 3.5, 4.82]}>
+          <boxGeometry args={[0.9, 1.3, 0.06]} />
+          <meshStandardMaterial color="#fbbf24" emissive={new THREE.Color(emissiveColor ?? '#fbbf24')} emissiveIntensity={ei + 0.6} transparent opacity={opacity} />
         </mesh>
       ))}
-
-      {/* ─ Wide factory windows (side of main body) ─ */}
-      {[1.8, -1.8].map((x, i) => (
-        <mesh key={i} position={[x, 4.5, 3.36]}>
-          <boxGeometry args={[1.4, 1.8, 0.07]} />
-          {isPreview ? (
-            <meshStandardMaterial color="#60a5fa" emissive="#3b82f6" emissiveIntensity={(ei || 0) + 0.4} transparent opacity={transparent ? opacity : 0.85} />
-          ) : (
-            <MeshTransmissionMaterial
-              backside={false}
-              samples={2}
-              thickness={0.07}
-              roughness={0.08}
-              transmission={0.88}
-              chromaticAberration={0.03}
-              color="#93c5fd"
-              emissive="#3b82f6"
-              emissiveIntensity={(ei || 0) + 0.3}
-            />
-          )}
-        </mesh>
-      ))}
-
-      {/* ─ Money $ sign on facade (Float = gentle bob in placed mode) ─ */}
-      {isPreview ? (
-        <mesh position={[0, 5.5, 4.0]}>
-          <boxGeometry args={[1.5, 1.9, 0.07]} />
-          <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={(ei || 0) + 1.2} transparent opacity={transparent ? opacity : 1} />
-        </mesh>
-      ) : (
-        <Float speed={1.4} floatIntensity={0.18} rotationIntensity={0}>
-          <mesh position={[0, 5.5, 4.0]}>
-            <boxGeometry args={[1.5, 1.9, 0.07]} />
-            <meshStandardMaterial color={accent} emissive={new THREE.Color(accent)} emissiveIntensity={(ei || 0) + 1.2} />
-          </mesh>
-        </Float>
-      )}
-
-      {/* ─ Side vents ─ */}
-      {[0.0, 1.3, 2.6].map((z, i) => (
-        <mesh key={i} position={[3.64, 2.5, z - 1.3]}>
-          <boxGeometry args={[0.07, 0.22, 0.82]} />
-          <meshStandardMaterial color="#6b7280" emissive={ec} emissiveIntensity={ei * 0.2} transparent={transparent} opacity={opacity} />
-        </mesh>
-      ))}
-
-      {/* ─ Chimney left ─ */}
-      <mesh castShadow position={[-2.2, 10.7, -2.2]}>
-        <cylinderGeometry args={[0.38, 0.48, 6.8, 10]} />
-        <meshStandardMaterial color="#374151" roughness={0.7} metalness={0.4} emissive={ec} emissiveIntensity={ei * 0.25} transparent={transparent} opacity={opacity} />
+      <mesh position={[0, 5.5, 3.82]}>
+        <boxGeometry args={[1.4, 1.8, 0.06]} />
+        <meshStandardMaterial color={accentOverride ?? '#22c55e'} emissive={new THREE.Color(accentOverride ?? ec)} emissiveIntensity={ei + 0.8} transparent opacity={opacity} />
       </mesh>
-      {/* Chimney left cap */}
-      <mesh castShadow position={[-2.2, 14.2, -2.2]}>
-        <cylinderGeometry args={[0.56, 0.38, 0.5, 10]} />
-        <meshStandardMaterial color={accent} emissive={new THREE.Color(accent)} emissiveIntensity={(ei || 0) + 0.5} roughness={0.4} metalness={0.5} transparent={transparent} opacity={opacity} />
-      </mesh>
-      {/* Chimney left smoke */}
-      {!isPreview && (
-        <Sparkles position={[-2.2, 15.0, -2.2]} count={14} scale={[1.2, 2.2, 1.2]} size={3.5} speed={0.25} color={SMOKE_COL} opacity={0.45} />
-      )}
-
-      {/* ─ Chimney right ─ */}
-      <mesh castShadow position={[2.2, 10.2, -2.2]}>
-        <cylinderGeometry args={[0.38, 0.48, 5.8, 10]} />
-        <meshStandardMaterial color="#374151" roughness={0.7} metalness={0.4} emissive={ec} emissiveIntensity={ei * 0.25} transparent={transparent} opacity={opacity} />
-      </mesh>
-      {/* Chimney right cap */}
-      <mesh castShadow position={[2.2, 13.2, -2.2]}>
-        <cylinderGeometry args={[0.56, 0.38, 0.5, 10]} />
-        <meshStandardMaterial color={accent} emissive={new THREE.Color(accent)} emissiveIntensity={(ei || 0) + 0.5} roughness={0.4} metalness={0.5} transparent={transparent} opacity={opacity} />
-      </mesh>
-      {/* Chimney right smoke */}
-      {!isPreview && (
-        <Sparkles position={[2.2, 14.0, -2.2]} count={10} scale={[1.0, 1.8, 1.0]} size={3.0} speed={0.2} color={SMOKE_COL} opacity={0.38} />
-      )}
-
     </group>
   );
 }
 
-// ─── Preview (placement ghost) ────────────────────────────────────────────────
+export function MoneyFactoryBody({ emissiveColor, emissiveIntensity, opacity = 1, transparent = false, accentOverride, isPreview = false }) {
+  if (isPreview) {
+    return <ProceduralBody emissiveColor={emissiveColor} emissiveIntensity={emissiveIntensity} opacity={opacity} transparent={transparent} accentOverride={accentOverride} />;
+  }
+  return (
+    <Suspense fallback={<ProceduralBody emissiveColor={emissiveColor} emissiveIntensity={emissiveIntensity} opacity={opacity} transparent={transparent} accentOverride={accentOverride} />}>
+      <FactoryGLB emissiveColor={emissiveColor} emissiveIntensity={emissiveIntensity} accentOverride={accentOverride} />
+    </Suspense>
+  );
+}
 
-const _col = new THREE.Color();
+const _previewCol = new THREE.Color();
 
 function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
   const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-
-  // Traverse all materials each frame to pulse emissive + keep opacity
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
     const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    const hex   = blockedRef.current ? 0xff2200 : 0x00ff88;
-    _col.setHex(hex);
+    _previewCol.setHex(blockedRef.current ? 0xff2200 : 0x00ff88);
     groupRef.current.traverse((obj) => {
       if (!obj.isMesh || !obj.material) return;
       const mat = obj.material;
-      if (mat.emissive) mat.emissive.copy(_col);
+      if (mat.emissive) mat.emissive.copy(_previewCol);
       mat.emissiveIntensity = pulse * 0.5 + 0.3;
       mat.opacity = 0.82;
       mat.transparent = true;
     });
   });
-
   return (
     <group ref={groupRef}>
-      <MoneyFactoryBody
-        emissiveColor="#00ff88"
-        emissiveIntensity={0.35}
-        transparent
-        opacity={0.82}
-        isPreview
-      />
+      <MoneyFactoryBody emissiveColor="#00ff88" emissiveIntensity={0.35} transparent opacity={0.82} isPreview />
     </group>
   );
 }
@@ -232,8 +167,6 @@ function MoneyFactoryGLTFPlaced({ position, rotation, isSelected, onSelect, onCo
     </group>
   );
 }
-
-// ─── Public API ───────────────────────────────────────────────────────────────
 
 export function MoneyFactoryPreview({ placementPosRef, inputRef, placementRotYRef }) {
   return <MoneyFactoryGLTFPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />;
