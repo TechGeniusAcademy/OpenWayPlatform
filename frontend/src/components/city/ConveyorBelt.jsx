@@ -30,6 +30,10 @@ const GEO = {
   roller:      new THREE.CylinderGeometry(ROLLER_R, ROLLER_R, BELT_W + 0.12, ROLLER_SEG),
   item:        new THREE.BoxGeometry(0.30, 0.24, 0.30),
   hitbox:      new THREE.BoxGeometry(1.4, 0.5, 1),
+  // Квадратный патч ленты для заполнения щели на стыках сегментов
+  jointPad:    new THREE.BoxGeometry(BELT_W, BELT_H, BELT_W),
+  // Заглушки рельсов на стыках
+  railBump:    new THREE.BoxGeometry(0.12, RAIL_H, 0.28),
 };
 
 // ─── Shared static materials ──────────────────────────────────────────────────
@@ -41,6 +45,24 @@ const MAT = {
   endCap: new THREE.MeshStandardMaterial({ color: '#3b4e63', roughness: 0.45, metalness: 0.70 }),
   hitbox: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }),
 };
+
+// ─── Заглушка-соединитель на стыке двух сегментов (покрывает угловую щель) ───
+function JointCap({ x, z }) {
+  return (
+    <group position={[x, BELT_Y, z]}>
+      {/* Квадратный патч закрывает щель в ленте под любым углом */}
+      <mesh receiveShadow geometry={GEO.jointPad} material={MAT.rubber} />
+      {/* Заглушки левого и правого рельса */}
+      <mesh geometry={GEO.railBump} material={MAT.rail}
+        position={[-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} />
+      <mesh geometry={GEO.railBump} material={MAT.rail}
+        position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} />
+      {/* Поворотный барабан на стыке */}
+      <mesh geometry={GEO.endCap} material={MAT.endCap}
+        rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, 0]} />
+    </group>
+  );
+}
 
 // ─── Source ring (static — no useFrame) ──────────────────────────────────────
 export function ConveyorSourceRing() {
@@ -177,11 +199,12 @@ function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap }) {
   return (
     <group position={mid.toArray()} rotation={[0, angle, 0]} onPointerDown={onPointerDown}>
       <mesh visible={false} geometry={GEO.hitbox} material={MAT.hitbox} scale={[1, 1, len]} />
-      <mesh receiveShadow geometry={GEO.beltSurface} material={MAT.rubber} scale={[1, 1, len]} />
+      {/* +0.10 перекрытие убирает микро-щели в конце/начале сегмента */}
+      <mesh receiveShadow geometry={GEO.beltSurface} material={MAT.rubber} scale={[1, 1, len + 0.10]} />
       <mesh geometry={GEO.sideRail} material={MAT.rail}
-        position={[-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.14]} />
+        position={[-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.18]} />
       <mesh geometry={GEO.sideRail} material={MAT.rail}
-        position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.14]} />
+        position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.18]} />
       {/* Барабан/шкив на начале каждого сегмента */}
       <mesh geometry={GEO.endCap} material={MAT.endCap}
         rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, -len / 2]} />
@@ -253,6 +276,11 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
           onPointerDown={handlePointerDown}
           showEndCap={i === allPoints.length - 2}
         />
+      ))}
+
+      {/* Стыковые заглушки на каждой промежуточной точке маршрута */}
+      {allPoints.slice(1, -1).map((pt, i) => (
+        <JointCap key={`jc${i}`} x={pt.x} z={pt.z} />
       ))}
 
       {/* Грузы, движущиеся вдоль всего маршрута */}
