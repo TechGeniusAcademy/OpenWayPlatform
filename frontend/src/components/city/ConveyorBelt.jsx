@@ -6,53 +6,185 @@ import { ConnectionLabel } from './ConnectionLabel.jsx';
 import { CityContext } from './CityContext.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const BASE_RATE     = 10;
-const BELT_Y        = 0.42;   // height of belt surface above ground (on legs)
-const BELT_W        = 0.96;   // rubber tread width
-const BELT_H        = 0.07;   // rubber tread thickness
-const RAIL_H        = 0.26;   // side rail height
-const RAIL_X        = 0.54;   // side rail X offset from centre
-const ROLLER_R      = 0.055;  // roller cylinder radius
-const ROLLER_SEG    = 6;      // cylinder segments (low poly)
-const LEG_SPACE     = 3.6;    // distance between support leg pairs
+const BASE_RATE  = 10;
+const BELT_Y     = 0.42;
+const BELT_W     = 0.96;
+const BELT_H     = 0.07;
+const RAIL_H     = 0.26;
+const RAIL_X     = 0.54;
+const ROLLER_R   = 0.055;
+const ROLLER_SEG = 6;
+const LEG_SPACE  = 3.6;
 
-// Shared dummy Object3D for instanced matrix updates — one per module
+// Shared dummy for frame-level instanced updates
 const _dummy = new THREE.Object3D();
+const _dir   = new THREE.Vector3();
 
-// ─── Module-level shared geometries (created once, reused forever) ────────────
-const GEO = {
+// ─── Template geometries (unit-size, never mutated — cloned per merge) ────────
+const TMPL = {
   beltSurface: new THREE.BoxGeometry(BELT_W, BELT_H, 1),
   sideRail:    new THREE.BoxGeometry(0.09, RAIL_H, 1),
   legPost:     new THREE.BoxGeometry(0.07, 0.36, 0.07),
   legCross:    new THREE.BoxGeometry(0.88, 0.05, 0.06),
-  coin:        new THREE.CylinderGeometry(0.18, 0.18, 0.06, 10),
   endCap:      new THREE.CylinderGeometry(RAIL_H * 0.5, RAIL_H * 0.5, BELT_W + 0.18, 8),
   roller:      new THREE.CylinderGeometry(ROLLER_R, ROLLER_R, BELT_W + 0.12, ROLLER_SEG),
+  coin:        new THREE.CylinderGeometry(0.18, 0.18, 0.06, 10),
   item:        new THREE.BoxGeometry(0.30, 0.24, 0.30),
-  hitbox:      new THREE.BoxGeometry(1.4, 0.5, 1),
+  hitSeg:      new THREE.BoxGeometry(1.4, 0.5, 1),
 };
 
-// ─── Shared static materials ──────────────────────────────────────────────────
+// ─── Shared materials ─────────────────────────────────────────────────────────
 const MAT = {
   rubber: new THREE.MeshStandardMaterial({ color: '#17202a', roughness: 0.97, metalness: 0.02 }),
   rail:   new THREE.MeshStandardMaterial({ color: '#2d3e50', roughness: 0.55, metalness: 0.65 }),
   roller: new THREE.MeshStandardMaterial({ color: '#718096', roughness: 0.35, metalness: 0.80 }),
   leg:    new THREE.MeshStandardMaterial({ color: '#1e2d3d', roughness: 0.65, metalness: 0.50 }),
   endCap: new THREE.MeshStandardMaterial({ color: '#3b4e63', roughness: 0.45, metalness: 0.70 }),
-  hitbox: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }),
+  hitbox: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
 };
 
-// ─── Параметры скругления стыков через квадратическую кривую Безье ───────────
-const JOINT_RADIUS = 0.75; // длина (в ед.) отступа от точки поворота до начала кривой
-const CURVE_STEPS  = 8;    // количество мини-сегментов на кривой
+// ─── Bezier routing parameters ────────────────────────────────────────────────
+const JOINT_RADIUS = 0.75;
+const CURVE_STEPS  = 8;
 
-/**
- * Преобразует сырые точки маршрута в набор сегментов для рендера с плавными
- * закруглениями на каждой промежуточной точке:
- *   - straightSegs : прямые участки между скруглениями
- *   - curveSegs    : массив массивов мини-сегментов (по одному на каждый поворот)
- *   - animPoints   : густая ломаная (включая точки безье) для анимации грузов
- */
+// ─── Geometry merge helper (no external deps) ─────────────────────────────────
+function mergeGeos(geos) {
+  if (geos.length === 0) return new THREE.BufferGeometry();
+  if (geos.length === 1) return geos[0];
+
+  let totalVerts = 0;
+  let totalIdxs  = 0;
+  let hasIdx     = false;
+  for (const g of geos) {
+    totalVerts += g.attributes.position.count;
+    if (g.index) { totalIdxs += g.index.count; hasIdx = true; }
+  }
+
+  const posBuf = new Float32Array(totalVerts * 3);
+  const norBuf = new Float32Array(totalVerts * 3);
+  const uvBuf  = new Float32Array(totalVerts * 2);
+  const idxArr = hasIdx ? [] : null;
+
+  let vOff = 0;
+  for (const g of geos) {
+    const n = g.attributes.position.count;
+    posBuf.set(g.attributes.position.array, vOff * 3);
+    if (g.attributes.normal) norBuf.set(g.attributes.normal.array, vOff * 3);
+    if (g.attributes.uv)     uvBuf.set(g.attributes.uv.array,     vOff * 2);
+    if (idxArr && g.index) {
+      const ia = g.index.array;
+      for (let i = 0; i < ia.length; i++) idxArr.push(ia[i] + vOff);
+    }
+    vOff += n;
+  }
+
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(posBuf, 3));
+  out.setAttribute('normal',   new THREE.BufferAttribute(norBuf, 3));
+  out.setAttribute('uv',       new THREE.BufferAttribute(uvBuf,  2));
+  if (idxArr) out.setIndex(idxArr);
+  return out;
+}
+
+// ─── World-space transformed geometry clone ───────────────────────────────────
+const _pObj = new THREE.Object3D();
+const _cObj = new THREE.Object3D();
+const _mat4 = new THREE.Matrix4();
+const _V0   = new THREE.Vector3(0, 0, 0);
+const _V1   = new THREE.Vector3(1, 1, 1);
+
+function tGeo(tmpl, groupPos, groupAngleY, localPos, localScaleVec, localRz) {
+  const geo = tmpl.clone();
+  _pObj.position.copy(groupPos);
+  _pObj.rotation.set(0, groupAngleY, 0);
+  _pObj.scale.set(1, 1, 1);
+  _pObj.updateMatrix();
+  _cObj.position.copy(localPos ?? _V0);
+  _cObj.scale.copy(localScaleVec ?? _V1);
+  _cObj.rotation.set(0, 0, localRz ?? 0);
+  _cObj.updateMatrix();
+  _mat4.multiplyMatrices(_pObj.matrix, _cObj.matrix);
+  geo.applyMatrix4(_mat4);
+  return geo;
+}
+
+// ─── Segment mid/angle/len ────────────────────────────────────────────────────
+function segInfo(ax, az, bx, bz) {
+  const from  = new THREE.Vector3(ax, BELT_Y, az);
+  const to    = new THREE.Vector3(bx, BELT_Y, bz);
+  const dir   = new THREE.Vector3().subVectors(to, from);
+  const len   = dir.length();
+  const mid   = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
+  const angle = Math.atan2(dir.x, dir.z);
+  return { mid, angle, len };
+}
+
+// ─── Build full merged belt geometry (called in useMemo) ──────────────────────
+function buildMergedBelt(straightSegs, curveSegs) {
+  const rubberGeos = [];
+  const railGeos   = [];
+  const legGeos    = [];
+  const rollerGeos = [];
+  const endCapGeos = [];
+
+  function addBeltRail(mid, angle, len) {
+    rubberGeos.push(tGeo(TMPL.beltSurface, mid, angle, null, new THREE.Vector3(1, 1, len + 0.10)));
+    railGeos.push(tGeo(TMPL.sideRail, mid, angle, new THREE.Vector3(-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0), new THREE.Vector3(1, 1, len + 0.18)));
+    railGeos.push(tGeo(TMPL.sideRail, mid, angle, new THREE.Vector3( RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0), new THREE.Vector3(1, 1, len + 0.18)));
+  }
+
+  // Compact curve mini-segments — belt + rails only
+  for (const segs of curveSegs) {
+    for (const seg of segs) {
+      const { mid, angle, len } = segInfo(seg.ax, seg.az, seg.bx, seg.bz);
+      if (len < 0.05) continue;
+      addBeltRail(mid, angle, len);
+    }
+  }
+
+  // Straight segments — belt + rails + rollers + legs + endCaps
+  for (let si = 0; si < straightSegs.length; si++) {
+    const seg    = straightSegs[si];
+    const { mid, angle, len } = segInfo(seg.ax, seg.az, seg.bx, seg.bz);
+    if (len < 0.05) continue;
+    const isLast = si === straightSegs.length - 1;
+
+    addBeltRail(mid, angle, len);
+
+    // Rollers
+    const rCount = Math.max(2, Math.floor(len / 1.05));
+    const rStep  = len / rCount;
+    for (let i = 0; i < rCount; i++) {
+      const z = -len / 2 + rStep * (i + 0.5);
+      rollerGeos.push(tGeo(TMPL.roller, mid, angle, new THREE.Vector3(0, -BELT_H * 0.5 + ROLLER_R * 0.5, z), null, Math.PI / 2));
+    }
+
+    // EndCap at start of every straight segment
+    endCapGeos.push(tGeo(TMPL.endCap, mid, angle, new THREE.Vector3(0, ROLLER_R, -len / 2), null, Math.PI / 2));
+    if (isLast)
+      endCapGeos.push(tGeo(TMPL.endCap, mid, angle, new THREE.Vector3(0, ROLLER_R,  len / 2), null, Math.PI / 2));
+
+    // Support legs
+    const legCount = Math.max(2, Math.round(len / LEG_SPACE) + 1);
+    const legY     = -(RAIL_H * 0.5 + 0.17);
+    for (let li = 0; li < legCount; li++) {
+      const lz = -len / 2 + (len / (legCount - 1)) * li;
+      legGeos.push(tGeo(TMPL.legPost,  mid, angle, new THREE.Vector3(-0.40, legY, lz), null,  0.10));
+      legGeos.push(tGeo(TMPL.legPost,  mid, angle, new THREE.Vector3( 0.40, legY, lz), null, -0.10));
+      legGeos.push(tGeo(TMPL.legCross, mid, angle, new THREE.Vector3(0,    legY, lz)));
+    }
+  }
+
+  return {
+    rubberGeo: mergeGeos(rubberGeos),
+    railGeo:   mergeGeos(railGeos),
+    rollerGeo: mergeGeos(rollerGeos),
+    endCapGeo: mergeGeos(endCapGeos),
+    legGeo:    mergeGeos(legGeos),
+  };
+}
+
+// ─── Bezier route builder ─────────────────────────────────────────────────────
 function buildBeltRoute(pts) {
   if (pts.length < 2) return { straightSegs: [], curveSegs: [], animPoints: pts };
   const n = pts.length;
@@ -63,40 +195,25 @@ function buildBeltRoute(pts) {
 
   for (let i = 1; i < n; i++) {
     const isLast = i === n - 1;
-    const cur = pts[i];
-
+    const cur    = pts[i];
     if (!isLast) {
       const dirIn  = new THREE.Vector3().subVectors(cur, pts[i - 1]).normalize();
       const dirOut = new THREE.Vector3().subVectors(pts[i + 1], cur).normalize();
-      // Ограничиваем радиус, чтобы не выйти за пределы смежных сегментов
-      const r = Math.min(
-        JOINT_RADIUS,
-        pts[i - 1].distanceTo(cur) * 0.45,
-        cur.distanceTo(pts[i + 1]) * 0.45,
-      );
+      const r = Math.min(JOINT_RADIUS, pts[i - 1].distanceTo(cur) * 0.45, cur.distanceTo(pts[i + 1]) * 0.45);
       const jIn  = cur.clone().sub(dirIn.clone().multiplyScalar(r));
       const jOut = cur.clone().add(dirOut.clone().multiplyScalar(r));
-
-      // Прямой участок до начала скругления
       if (segStart.distanceTo(jIn) > 0.05)
         straightSegs.push({ ax: segStart.x, az: segStart.z, bx: jIn.x, bz: jIn.z });
       animPoints.push(jIn.clone());
-
-      // Кривая Безье jIn → cur (контрольная) → jOut
-      const curve    = new THREE.QuadraticBezierCurve3(jIn, cur, jOut);
-      const curvePts = curve.getPoints(CURVE_STEPS);
+      const curvePts = new THREE.QuadraticBezierCurve3(jIn, cur, jOut).getPoints(CURVE_STEPS);
       const miniSegs = [];
       for (let k = 0; k < curvePts.length - 1; k++) {
-        miniSegs.push({
-          ax: curvePts[k].x,     az: curvePts[k].z,
-          bx: curvePts[k + 1].x, bz: curvePts[k + 1].z,
-        });
+        miniSegs.push({ ax: curvePts[k].x, az: curvePts[k].z, bx: curvePts[k+1].x, bz: curvePts[k+1].z });
         animPoints.push(curvePts[k + 1].clone());
       }
       curveSegs.push(miniSegs);
       segStart = jOut.clone();
     } else {
-      // Финальный прямой участок
       if (segStart.distanceTo(cur) > 0.05)
         straightSegs.push({ ax: segStart.x, az: segStart.z, bx: cur.x, bz: cur.z });
       animPoints.push(cur.clone());
@@ -105,7 +222,7 @@ function buildBeltRoute(pts) {
   return { straightSegs, curveSegs, animPoints };
 }
 
-// ─── Source ring (static — no useFrame) ──────────────────────────────────────
+// ─── Source ring ──────────────────────────────────────────────────────────────
 export function ConveyorSourceRing() {
   return (
     <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -115,92 +232,39 @@ export function ConveyorSourceRing() {
   );
 }
 
-// ─── Rollers — ONE InstancedMesh = ONE draw call regardless of belt length ────
-function BeltRollers({ len }) {
-  const meshRef = useRef();
-  const count   = useMemo(() => Math.max(2, Math.floor(len / 1.05)), [len]);
-
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
-    const step = len / count;
-    for (let i = 0; i < count; i++) {
-      const z = -len / 2 + step * (i + 0.5);
-      _dummy.position.set(0, -BELT_H * 0.5 + ROLLER_R * 0.5, z);
-      _dummy.rotation.set(0, 0, Math.PI / 2); // lie along X axis
-      _dummy.scale.setScalar(1);
-      _dummy.updateMatrix();
-      mesh.setMatrixAt(i, _dummy.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  }, [len, count]);
-
-  return (
-    <instancedMesh ref={meshRef} args={[GEO.roller, MAT.roller, count]} />
-  );
-}
-
-// ─── Support legs — pairs of posts + cross brace at regular intervals ─────────
-function SupportLegs({ len }) {
-  const positions = useMemo(() => {
-    const n = Math.max(2, Math.round(len / LEG_SPACE) + 1);
-    return Array.from({ length: n }, (_, i) => -len / 2 + (len / (n - 1)) * i);
-  }, [len]);
-
-  return (
-    <>
-      {positions.map((z, i) => (
-        <group key={i} position={[0, -(RAIL_H * 0.5 + 0.17), z]}>
-          <mesh geometry={GEO.legPost} material={MAT.leg} position={[-0.40, 0, 0]} rotation={[0, 0,  0.10]} />
-          <mesh geometry={GEO.legPost} material={MAT.leg} position={[ 0.40, 0, 0]} rotation={[0, 0, -0.10]} />
-          <mesh geometry={GEO.legCross} material={MAT.leg} />
-        </group>
-      ))}
-    </>
-  );
-}
-
-// ─── Интерполяция позиции вдоль ломаной (polyline) ───────────────────────────
+// ─── Polyline helpers ─────────────────────────────────────────────────────────
 function lerpPolyline(pts, t, out) {
   let total = 0;
   const lens = [0];
-  for (let i = 1; i < pts.length; i++) {
-    total += pts[i - 1].distanceTo(pts[i]);
-    lens.push(total);
-  }
+  for (let i = 1; i < pts.length; i++) { total += pts[i-1].distanceTo(pts[i]); lens.push(total); }
   if (total < 0.001) { out.copy(pts[0]); return; }
   const d = Math.max(0, Math.min(1, t)) * total;
   for (let i = 1; i < pts.length; i++) {
     if (d <= lens[i] || i === pts.length - 1) {
-      const segLen = lens[i] - lens[i - 1];
-      const segT   = segLen > 0.001 ? (d - lens[i - 1]) / segLen : 0;
-      out.lerpVectors(pts[i - 1], pts[i], Math.max(0, Math.min(1, segT)));
+      const segLen = lens[i] - lens[i-1];
+      out.lerpVectors(pts[i-1], pts[i], segLen > 0.001 ? Math.max(0, Math.min(1, (d - lens[i-1]) / segLen)) : 0);
       return;
     }
   }
 }
 
-/** Направление движения в точке t вдоль ломаной (out — нормализованный Vector3) */
 function lerpPolylineDir(pts, t, out) {
   let total = 0;
   const lens = [0];
-  for (let i = 1; i < pts.length; i++) {
-    total += pts[i - 1].distanceTo(pts[i]);
-    lens.push(total);
-  }
+  for (let i = 1; i < pts.length; i++) { total += pts[i-1].distanceTo(pts[i]); lens.push(total); }
   if (total < 0.001) { out.set(0, 0, 1); return; }
   const d = Math.max(0, Math.min(1, t)) * total;
   for (let i = 1; i < pts.length; i++) {
     if (d <= lens[i] || i === pts.length - 1) {
-      out.subVectors(pts[i], pts[i - 1]).normalize();
+      out.subVectors(pts[i], pts[i-1]).normalize();
       return;
     }
   }
 }
 
-// ─── Движущиеся грузы вдоль ломаной ──────────────────────────────────────────const _dir = new THREE.Vector3(); // направление движения на текущем участке ломаной
+// ─── Animated cargo items ─────────────────────────────────────────────────────
 function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
-  const geo      = resource === 'coins' ? GEO.coin : GEO.item;
+  const geo      = resource === 'coins' ? TMPL.coin : TMPL.item;
   const meshRef  = useRef();
   const frameRef = useRef(0);
   const timesRef = useRef(offsets.slice());
@@ -208,10 +272,8 @@ function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
   const mat = useMemo(
     () => new THREE.MeshStandardMaterial({
       color,
-      emissive:          new THREE.Color(color),
-      emissiveIntensity: 0.35,
-      roughness:         0.65,
-      metalness:         0.25,
+      emissive: new THREE.Color(color), emissiveIntensity: 0.35,
+      roughness: 0.65, metalness: 0.25,
     }),
     [color],
   );
@@ -226,11 +288,9 @@ function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
       lerpPolyline(points, times[i], _dummy.position);
       lerpPolylineDir(points, times[i], _dir);
       if (resource === 'coins') {
-        // Монета лежит плашмя на бельте
         _dummy.position.y += 0.12;
         _dummy.rotation.set(Math.PI / 2, 0, 0);
       } else {
-        // Ящик смотрит вперёд по ходу движения ленты
         _dummy.position.y += 0.20;
         _dummy.rotation.set(0, Math.atan2(_dir.x, _dir.z), 0);
       }
@@ -245,48 +305,7 @@ function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
   return <instancedMesh ref={meshRef} args={[geo, mat, offsets.length]} />;
 }
 
-// ─── Один сегмент ленты между двумя точками ───────────────────────────────────
-// compact=true — режим для мини-сегментов кривой (без ног, роликов, барабанов)
-function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap, compact }) {
-  const { mid, angle, len } = useMemo(() => {
-    const from = new THREE.Vector3(ax, BELT_Y, az);
-    const to   = new THREE.Vector3(bx, BELT_Y, bz);
-    const dir  = new THREE.Vector3().subVectors(to, from);
-    const l    = dir.length();
-    const m    = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
-    const a    = Math.atan2(dir.x, dir.z);
-    return { mid: m, angle: a, len: l };
-  }, [ax, az, bx, bz]);
-
-  if (len < 0.05) return null;
-
-  return (
-    <group position={mid.toArray()} rotation={[0, angle, 0]} onPointerDown={onPointerDown}>
-      <mesh visible={false} geometry={GEO.hitbox} material={MAT.hitbox} scale={[1, 1, len]} />
-      {/* +0.10 перекрытие убирает микро-щели в конце/начале сегмента */}
-      <mesh receiveShadow geometry={GEO.beltSurface} material={MAT.rubber} scale={[1, 1, len + 0.10]} />
-      <mesh geometry={GEO.sideRail} material={MAT.rail}
-        position={[-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.18]} />
-      <mesh geometry={GEO.sideRail} material={MAT.rail}
-        position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.18]} />
-      {/* Барабан/шкив на начале каждого сегмента */}
-      {!compact && (
-        <mesh geometry={GEO.endCap} material={MAT.endCap}
-          rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, -len / 2]} />
-      )}
-      {/* Барабан/шкив на конце только финального сегмента */}
-      {!compact && showEndCap && (
-        <mesh geometry={GEO.endCap} material={MAT.endCap}
-          rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, len / 2]} />
-      )}
-      {!compact && <BeltRollers len={len} />}
-      {!compact && <SupportLegs len={len} />}
-
-    </group>
-  );
-}
-
-// ─── Конвейерная лента — поддерживает waypoints (маршрут с изгибами) ──────────
+// ─── Main ConveyorBelt component ──────────────────────────────────────────────
 export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effectiveRate, onRightClick }) {
   const { rightClickHitRef } = useContext(CityContext);
   const from = placedItems.find(i => i.id === fromId);
@@ -297,38 +316,44 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
   const outPort = getConveyorOutPort(from.type);
   const inPort  = getConveyorInPort(to.type);
 
-  // Полный маршрут: выходной порт источника → точки пути → входной порт назначения
   const allPoints = useMemo(() => [
-    new THREE.Vector3(
-      from.position[0] + (outPort?.dx ?? 0), BELT_Y,
-      from.position[2] + (outPort?.dz ?? 0),
-    ),
+    new THREE.Vector3(from.position[0] + (outPort?.dx ?? 0), BELT_Y, from.position[2] + (outPort?.dz ?? 0)),
     ...(waypoints ?? []).map(w => new THREE.Vector3(w.x, BELT_Y, w.z)),
-    new THREE.Vector3(
-      to.position[0] + (inPort?.dx ?? 0), BELT_Y,
-      to.position[2] + (inPort?.dz ?? 0),
-    ),
-  ], // eslint-disable-next-line react-hooks/exhaustive-deps
-  [from.position[0], from.position[2], to.position[0], to.position[2], JSON.stringify(waypoints)]);
+    new THREE.Vector3(to.position[0] + (inPort?.dx ?? 0),   BELT_Y, to.position[2] + (inPort?.dz ?? 0)),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [from.position[0], from.position[2], to.position[0], to.position[2], JSON.stringify(waypoints)]);
 
-  // Разбиваем маршрут на прямые участки + скруглённые повороты (кривые Безье)
   const { straightSegs, curveSegs, animPoints } = useMemo(
     () => buildBeltRoute(allPoints),
     [allPoints], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const tokenCount = effectiveRate > 0
-    ? Math.max(1, Math.min(3, Math.round(3 * effectiveRate / BASE_RATE)))
-    : 0;
-  const SPEED = effectiveRate > 0 ? Math.max(0.02, 0.12 * effectiveRate / BASE_RATE) : 0;
+  // Merged geometry — 5 draw calls per belt regardless of length or waypoint count
+  const merged = useMemo(
+    () => buildMergedBelt(straightSegs, curveSegs),
+    [straightSegs, curveSegs], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  // Dispose geometries on update / unmount
+  const mergedRef = useRef(null);
+  useEffect(() => {
+    const prev = mergedRef.current;
+    if (prev && prev !== merged) {
+      Object.values(prev).forEach(g => g?.dispose?.());
+    }
+    mergedRef.current = merged;
+    return () => { Object.values(merged).forEach(g => g?.dispose?.()); };
+  }, [merged]);
+
+  const tokenCount = effectiveRate > 0 ? Math.max(1, Math.min(3, Math.round(3 * effectiveRate / BASE_RATE))) : 0;
+  const SPEED      = effectiveRate > 0 ? Math.max(0.02, 0.12 * effectiveRate / BASE_RATE) : 0;
   const itemOffsets = useMemo(
     () => tokenCount > 0 ? Array.from({ length: tokenCount }, (_, i) => i / tokenCount) : [],
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const ruleColor = rule?.color ?? '#fbbf24';
-  // Лейбл ставится примерно в центр пути
-  const midPoint = allPoints[Math.floor(allPoints.length / 2)];
+  const midPoint  = allPoints[Math.floor(allPoints.length / 2)];
 
   const handlePointerDown = (e) => {
     if (e.button === 2) {
@@ -340,41 +365,33 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
 
   return (
     <group>
-      {/* Прямые участки ленты */}
-      {straightSegs.map((s, i) => (
-        <BeltSegmentBody
-          key={`s${i}`}
-          ax={s.ax} az={s.az} bx={s.bx} bz={s.bz}
-          onPointerDown={handlePointerDown}
-          showEndCap={i === 0 || i === straightSegs.length - 1}
-        />
-      ))}
+      {/* 5 draw calls — entire belt merged per material */}
+      <mesh receiveShadow geometry={merged.rubberGeo} material={MAT.rubber} />
+      <mesh geometry={merged.railGeo}   material={MAT.rail}   />
+      <mesh geometry={merged.rollerGeo} material={MAT.roller} />
+      <mesh geometry={merged.endCapGeo} material={MAT.endCap} />
+      <mesh geometry={merged.legGeo}    material={MAT.leg}    />
 
-      {/* Скруглённые повороты (мини-сегменты вдоль кривой Безье) */}
-      {curveSegs.map((segs, ji) =>
-        segs.map((s, si) => (
-          <BeltSegmentBody
-            key={`c${ji}_${si}`}
-            ax={s.ax} az={s.az} bx={s.bx} bz={s.bz}
+      {/* Invisible hitboxes for right-click detection (per straight segment) */}
+      {straightSegs.map((s, i) => {
+        const { mid, angle, len } = segInfo(s.ax, s.az, s.bx, s.bz);
+        return (
+          <mesh key={i} position={mid.toArray()} rotation={[0, angle, 0]}
+            geometry={TMPL.hitSeg} material={MAT.hitbox} scale={[1, 1, len]}
             onPointerDown={handlePointerDown}
-            compact
           />
-        ))
-      )}
+        );
+      })}
 
-      {/* Грузы движутся по плотной (включает точки кривых) ломаной */}
+      {/* Cargo items animate along a dense bezier-accurate polyline */}
       <AnimatedItemsPolyline
-        points={animPoints}
-        offsets={itemOffsets}
-        speed={SPEED}
-        color={ruleColor}
-        resource={rule?.resource}
+        points={animPoints} offsets={itemOffsets}
+        speed={SPEED} color={ruleColor} resource={rule?.resource}
       />
 
-      {/* Лейбл с текущей скоростью передачи */}
       <ConnectionLabel
         midPos={[midPoint.x, midPoint.y + 2, midPoint.z]}
-        icon={rule?.icon ?? '🛤️'}
+        icon={rule?.icon ?? 'road'}
         rate={effectiveRate}
         unit={rule?.unit ?? '/ч'}
         color={ruleColor}
