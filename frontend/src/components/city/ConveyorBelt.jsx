@@ -30,10 +30,6 @@ const GEO = {
   roller:      new THREE.CylinderGeometry(ROLLER_R, ROLLER_R, BELT_W + 0.12, ROLLER_SEG),
   item:        new THREE.BoxGeometry(0.30, 0.24, 0.30),
   hitbox:      new THREE.BoxGeometry(1.4, 0.5, 1),
-  // Квадратный патч ленты для заполнения щели на стыках сегментов
-  jointPad:    new THREE.BoxGeometry(BELT_W, BELT_H, BELT_W),
-  // Заглушки рельсов на стыках
-  railBump:    new THREE.BoxGeometry(0.12, RAIL_H, 0.28),
 };
 
 // ─── Shared static materials ──────────────────────────────────────────────────
@@ -46,22 +42,67 @@ const MAT = {
   hitbox: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }),
 };
 
-// ─── Заглушка-соединитель на стыке двух сегментов (покрывает угловую щель) ───
-function JointCap({ x, z }) {
-  return (
-    <group position={[x, BELT_Y, z]}>
-      {/* Квадратный патч закрывает щель в ленте под любым углом */}
-      <mesh receiveShadow geometry={GEO.jointPad} material={MAT.rubber} />
-      {/* Заглушки левого и правого рельса */}
-      <mesh geometry={GEO.railBump} material={MAT.rail}
-        position={[-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} />
-      <mesh geometry={GEO.railBump} material={MAT.rail}
-        position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} />
-      {/* Поворотный барабан на стыке */}
-      <mesh geometry={GEO.endCap} material={MAT.endCap}
-        rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, 0]} />
-    </group>
-  );
+// ─── Параметры скругления стыков через квадратическую кривую Безье ───────────
+const JOINT_RADIUS = 0.75; // длина (в ед.) отступа от точки поворота до начала кривой
+const CURVE_STEPS  = 8;    // количество мини-сегментов на кривой
+
+/**
+ * Преобразует сырые точки маршрута в набор сегментов для рендера с плавными
+ * закруглениями на каждой промежуточной точке:
+ *   - straightSegs : прямые участки между скруглениями
+ *   - curveSegs    : массив массивов мини-сегментов (по одному на каждый поворот)
+ *   - animPoints   : густая ломаная (включая точки безье) для анимации грузов
+ */
+function buildBeltRoute(pts) {
+  if (pts.length < 2) return { straightSegs: [], curveSegs: [], animPoints: pts };
+  const n = pts.length;
+  const straightSegs = [];
+  const curveSegs    = [];
+  const animPoints   = [pts[0].clone()];
+  let segStart = pts[0].clone();
+
+  for (let i = 1; i < n; i++) {
+    const isLast = i === n - 1;
+    const cur = pts[i];
+
+    if (!isLast) {
+      const dirIn  = new THREE.Vector3().subVectors(cur, pts[i - 1]).normalize();
+      const dirOut = new THREE.Vector3().subVectors(pts[i + 1], cur).normalize();
+      // Ограничиваем радиус, чтобы не выйти за пределы смежных сегментов
+      const r = Math.min(
+        JOINT_RADIUS,
+        pts[i - 1].distanceTo(cur) * 0.45,
+        cur.distanceTo(pts[i + 1]) * 0.45,
+      );
+      const jIn  = cur.clone().sub(dirIn.clone().multiplyScalar(r));
+      const jOut = cur.clone().add(dirOut.clone().multiplyScalar(r));
+
+      // Прямой участок до начала скругления
+      if (segStart.distanceTo(jIn) > 0.05)
+        straightSegs.push({ ax: segStart.x, az: segStart.z, bx: jIn.x, bz: jIn.z });
+      animPoints.push(jIn.clone());
+
+      // Кривая Безье jIn → cur (контрольная) → jOut
+      const curve    = new THREE.QuadraticBezierCurve3(jIn, cur, jOut);
+      const curvePts = curve.getPoints(CURVE_STEPS);
+      const miniSegs = [];
+      for (let k = 0; k < curvePts.length - 1; k++) {
+        miniSegs.push({
+          ax: curvePts[k].x,     az: curvePts[k].z,
+          bx: curvePts[k + 1].x, bz: curvePts[k + 1].z,
+        });
+        animPoints.push(curvePts[k + 1].clone());
+      }
+      curveSegs.push(miniSegs);
+      segStart = jOut.clone();
+    } else {
+      // Финальный прямой участок
+      if (segStart.distanceTo(cur) > 0.05)
+        straightSegs.push({ ax: segStart.x, az: segStart.z, bx: cur.x, bz: cur.z });
+      animPoints.push(cur.clone());
+    }
+  }
+  return { straightSegs, curveSegs, animPoints };
 }
 
 // ─── Source ring (static — no useFrame) ──────────────────────────────────────
@@ -183,7 +224,8 @@ function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
 }
 
 // ─── Один сегмент ленты между двумя точками ───────────────────────────────────
-function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap }) {
+// compact=true — режим для мини-сегментов кривой (без ног и роликов, без барабанов)
+function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap, compact }) {
   const { mid, angle, len } = useMemo(() => {
     const from = new THREE.Vector3(ax, BELT_Y, az);
     const to   = new THREE.Vector3(bx, BELT_Y, bz);
@@ -206,15 +248,17 @@ function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap }) {
       <mesh geometry={GEO.sideRail} material={MAT.rail}
         position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.18]} />
       {/* Барабан/шкив на начале каждого сегмента */}
-      <mesh geometry={GEO.endCap} material={MAT.endCap}
-        rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, -len / 2]} />
+      {!compact && (
+        <mesh geometry={GEO.endCap} material={MAT.endCap}
+          rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, -len / 2]} />
+      )}
       {/* Барабан/шкив на конце только финального сегмента */}
-      {showEndCap && (
+      {!compact && showEndCap && (
         <mesh geometry={GEO.endCap} material={MAT.endCap}
           rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, len / 2]} />
       )}
-      <BeltRollers len={len} />
-      <SupportLegs len={len} />
+      {!compact && <BeltRollers len={len} />}
+      {!compact && <SupportLegs len={len} />}
     </group>
   );
 }
@@ -244,6 +288,12 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
   ], // eslint-disable-next-line react-hooks/exhaustive-deps
   [from.position[0], from.position[2], to.position[0], to.position[2], JSON.stringify(waypoints)]);
 
+  // Разбиваем маршрут на прямые участки + скруглённые повороты (кривые Безье)
+  const { straightSegs, curveSegs, animPoints } = useMemo(
+    () => buildBeltRoute(allPoints),
+    [allPoints], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
   const tokenCount = effectiveRate > 0
     ? Math.max(1, Math.min(3, Math.round(3 * effectiveRate / BASE_RATE)))
     : 0;
@@ -267,25 +317,31 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
 
   return (
     <group>
-      {/* Все сегменты ленты по маршруту */}
-      {allPoints.slice(0, -1).map((pt, i) => (
+      {/* Прямые участки ленты */}
+      {straightSegs.map((s, i) => (
         <BeltSegmentBody
-          key={i}
-          ax={pt.x} az={pt.z}
-          bx={allPoints[i + 1].x} bz={allPoints[i + 1].z}
+          key={`s${i}`}
+          ax={s.ax} az={s.az} bx={s.bx} bz={s.bz}
           onPointerDown={handlePointerDown}
-          showEndCap={i === allPoints.length - 2}
+          showEndCap={i === 0 || i === straightSegs.length - 1}
         />
       ))}
 
-      {/* Стыковые заглушки на каждой промежуточной точке маршрута */}
-      {allPoints.slice(1, -1).map((pt, i) => (
-        <JointCap key={`jc${i}`} x={pt.x} z={pt.z} />
-      ))}
+      {/* Скруглённые повороты (мини-сегменты вдоль кривой Безье) */}
+      {curveSegs.map((segs, ji) =>
+        segs.map((s, si) => (
+          <BeltSegmentBody
+            key={`c${ji}_${si}`}
+            ax={s.ax} az={s.az} bx={s.bx} bz={s.bz}
+            onPointerDown={handlePointerDown}
+            compact
+          />
+        ))
+      )}
 
-      {/* Грузы, движущиеся вдоль всего маршрута */}
+      {/* Грузы движутся по плотной (включает точки кривых) ломаной */}
       <AnimatedItemsPolyline
-        points={allPoints}
+        points={animPoints}
         offsets={itemOffsets}
         speed={SPEED}
         color={ruleColor}
