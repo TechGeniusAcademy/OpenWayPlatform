@@ -94,6 +94,7 @@ function SceneInner({
   setSelectedPlacedId,
   gameTimeRef,
   conveyors,
+  conveyorMode,
   conveyorFromId,
   onConveyorBuildingClick,
   energyCables,
@@ -436,8 +437,9 @@ function SceneInner({
         <SnapIndicator position={wallFromPoint} />
       )}
 
-      {/* Невидимая земля для прокладки маршрута конвейера */}
-      {conveyorFromId !== null && !placingItem && (
+      {/* Невидимая земля для прокладки маршрута конвейера —
+           активна в ЛЮБОМ состоянии conveyor mode, не только после выбора источника */}
+      {conveyorMode && !placingItem && (
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, 0.03, 0]}

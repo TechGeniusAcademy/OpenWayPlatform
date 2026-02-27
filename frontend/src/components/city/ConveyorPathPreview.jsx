@@ -77,14 +77,21 @@ export function ConveyorPathPreview({ sourceId, placedItems, waypointsRef, curso
   const lineRef  = useRef();
   const frameRef = useRef(0);
 
-  const geo = useMemo(() => new THREE.BufferGeometry(), []);
+  // Инициализируем с 2 фиктивными точками — без них bounding sphere = null
+  // и Three.js culls объект до первого реального обновления
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]);
+    g.computeBoundingSphere();
+    return g;
+  }, []);
   useEffect(() => () => geo.dispose(), [geo]);
 
   const source = placedItems.find(i => i.id === sourceId);
 
   useFrame(() => {
     if (++frameRef.current % 2 !== 0) return;
-    if (!source || !lineRef.current) return;
+    if (!source) return;
 
     const outPort = getConveyorOutPort(source.type);
     const pts = [
@@ -101,18 +108,24 @@ export function ConveyorPathPreview({ sourceId, placedItems, waypointsRef, curso
       pts.push(new THREE.Vector3(x, PREVIEW_Y, z));
     }
 
-    if (pts.length >= 2) {
-      geo.setFromPoints(pts);
+    // Нужно минимум 2 точки, иначе Three.js не рисует линию
+    if (pts.length < 2) {
+      // Скрываем — повторяем последнюю точку чтобы длина = 0
+      pts.push(pts[0].clone());
     }
+
+    geo.setFromPoints(pts);
+    geo.computeBoundingSphere(); // без этого фрустум-куллинг скрывает линию!
+    if (geo.attributes.position) geo.attributes.position.needsUpdate = true;
   });
 
   if (!source) return null;
 
   return (
     <group>
-      {/* Линия пути */}
-      <line ref={lineRef} geometry={geo}>
-        <lineBasicMaterial color="#f97316" transparent opacity={0.85} depthTest={false} />
+      {/* frustumCulled=false — иначе линия пропадает при пустом BBox */}
+      <line ref={lineRef} geometry={geo} frustumCulled={false}>
+        <lineBasicMaterial color="#f97316" linewidth={2} transparent opacity={0.9} depthTest={false} />
       </line>
 
       {/* Маркеры точек-ориентиров */}

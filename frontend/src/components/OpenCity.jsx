@@ -11,7 +11,7 @@ import { findNearestOreDeposit, canMineOre } from './systems/oreRegistry.js';
 import { countFreeBuilders, countTotalBuilders, countPlacedType, findIdleBuilderHousePos } from './systems/builderSystem.js';
 import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, CONSTRUCTION_DURATION_MS, BUILDER_HOUSE_EXTRA_COST_COINS } from './items/shopPrices.js';
 import { snapWallPoint, WALL_SEGMENT_COIN_COST, TOWER_COIN_COST, WALL_LEVELS, TOWER_LEVELS, WALL_GRID_SNAP } from './items/wallSystem.js';
-import { canConnect, canBeSource, getTransferRule, getConveyorOutLimit, getConveyorInLimit, checkConveyorSideOk } from './systems/conveyor.js';
+import { canConnect, canBeSource, getTransferRule, getConveyorOutLimit, getConveyorInLimit } from './systems/conveyor.js';
 import { canCableConnect, getCableRule, calcCablePoweredIds } from './systems/energyCable.js';
 import { calcConveyorRates, calcCableRates } from './systems/connectionRates.js';
 import { getLevelConfig, getNextLevelConfig } from './systems/upgrades.js';
@@ -382,7 +382,7 @@ export default function OpenCity({ onBack }) {
     } else {
       const from = placedItemsRef.current.find(i => i.id === fromId);
       const to   = placedItemsRef.current.find(i => i.id === itemId);
-      if (from && to && canConnect(from.type, to.type) && checkConveyorSideOk(from.type, to.type, from.position, to.position)) {
+      if (from && to && canConnect(from.type, to.type)) {
         const dupSrc = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
         const inCount = conveyorsRef.current.filter(c => c.toId === itemId).length;
         if (!dupSrc && inCount < getConveyorInLimit(to.type)) {
@@ -1004,6 +1004,7 @@ export default function OpenCity({ onBack }) {
             setSelectedPlacedId={setSelectedPlacedId}
             gameTimeRef={gameTimeRef}
             conveyors={conveyors}
+            conveyorMode={conveyorMode}
             conveyorFromId={conveyorFromId}
             onConveyorBuildingClick={handleConveyorBuildingClick}
             conveyorWaypointsRef={conveyorWaypointsRef}
