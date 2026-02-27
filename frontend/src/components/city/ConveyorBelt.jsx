@@ -25,7 +25,7 @@ const GEO = {
   sideRail:    new THREE.BoxGeometry(0.09, RAIL_H, 1),
   legPost:     new THREE.BoxGeometry(0.07, 0.36, 0.07),
   legCross:    new THREE.BoxGeometry(0.88, 0.05, 0.06),
-  stripe:      new THREE.BoxGeometry(0.16, 0.012, 1),
+  coin:        new THREE.CylinderGeometry(0.18, 0.18, 0.06, 10),
   endCap:      new THREE.CylinderGeometry(RAIL_H * 0.5, RAIL_H * 0.5, BELT_W + 0.18, 8),
   roller:      new THREE.CylinderGeometry(ROLLER_R, ROLLER_R, BELT_W + 0.12, ROLLER_SEG),
   item:        new THREE.BoxGeometry(0.30, 0.24, 0.30),
@@ -98,7 +98,8 @@ function SupportLegs({ len }) {
 }
 
 // ─── Moving crates — InstancedMesh + throttled useFrame ───────────────────────
-function AnimatedItems({ fromVec, toVec, offsets, speed, color }) {
+// resource = 'coins' | 'ore' | 'solar' | …
+function AnimatedItems({ fromVec, toVec, offsets, speed, color, resource }) {const geo = resource === 'coins' ? GEO.coin : GEO.item;
   const meshRef  = useRef();
   const frameRef = useRef(0);
   const timesRef = useRef(offsets.slice());
@@ -122,8 +123,13 @@ function AnimatedItems({ fromVec, toVec, offsets, speed, color }) {
     for (let i = 0; i < times.length; i++) {
       times[i] = (times[i] + dt * speed) % 1;
       _dummy.position.lerpVectors(fromVec, toVec, times[i]);
-      _dummy.position.y = fromVec.y + 0.20;
-      _dummy.rotation.set(0, times[i] * Math.PI * 0.3, 0);
+        _dummy.position.y = resource === 'coins' ? fromVec.y + 0.12 : fromVec.y + 0.20;
+        // coins spin flat; crates wobble upright
+        if (resource === 'coins') {
+          _dummy.rotation.set(Math.PI / 2, times[i] * Math.PI * 4, 0);
+        } else {
+          _dummy.rotation.set(0, times[i] * Math.PI * 0.3, 0);
+        }
       _dummy.updateMatrix();
       mesh.setMatrixAt(i, _dummy.matrix);
     }
@@ -131,7 +137,7 @@ function AnimatedItems({ fromVec, toVec, offsets, speed, color }) {
   });
 
   if (offsets.length === 0) return null;
-  return <instancedMesh ref={meshRef} args={[GEO.item, mat, offsets.length]} />;
+  return <instancedMesh ref={meshRef} args={[geo, mat, offsets.length]} />;
 }
 
 // ─── Conveyor belt — realistic industrial 3-D visual ─────────────────────────
@@ -173,17 +179,6 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
   const ruleColor    = rule?.color ?? '#fbbf24';
   const ruleColorObj = useMemo(() => new THREE.Color(ruleColor), [ruleColor]);
 
-  // Per-belt colour stripe material
-  const stripeMat = useMemo(
-    () => new THREE.MeshStandardMaterial({
-      color:             ruleColor,
-      emissive:          ruleColorObj,
-      emissiveIntensity: 0.65,
-      roughness:         0.5,
-    }),
-    [ruleColor, ruleColorObj],
-  );
-
   return (
     <group>
       {/* ── Belt body (centred at mid, oriented along belt direction) ── */}
@@ -222,9 +217,6 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
         {/* Support legs */}
         <SupportLegs len={len} />
 
-        {/* Colour identifier stripe (rule type) */}
-        <mesh geometry={GEO.stripe} material={stripeMat}
-          position={[0, BELT_H * 0.52, 0]} scale={[1, 1, len - 0.28]} />
       </group>
 
       {/* Moving crates */}
@@ -234,6 +226,7 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
         offsets={itemOffsets}
         speed={SPEED}
         color={ruleColor}
+        resource={rule?.resource}
       />
 
       {/* Transfer rate label */}
