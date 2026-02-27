@@ -97,12 +97,20 @@ function SupportLegs({ len }) {
   );
 }
 
-// ─── Moving crates — InstancedMesh + throttled useFrame ───────────────────────
 // resource = 'coins' | 'ore' | 'solar' | …
-function AnimatedItems({ fromVec, toVec, offsets, speed, color, resource }) {const geo = resource === 'coins' ? GEO.coin : GEO.item;
+function AnimatedItems({ fromVec, toVec, offsets, speed, color, resource }) {
+  const geo = resource === 'coins' ? GEO.coin : GEO.item;
   const meshRef  = useRef();
   const frameRef = useRef(0);
   const timesRef = useRef(offsets.slice());
+
+  // Re-sync when item count changes (rate change → different token count)
+  useEffect(() => {
+    timesRef.current = Array.from(
+      { length: offsets.length },
+      (_, i) => i / offsets.length,
+    );
+  }, [offsets.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mat = useMemo(
     () => new THREE.MeshStandardMaterial({
@@ -166,11 +174,9 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
     return { mid: m, angle: a, len: l };
   }, [fromVec, toVec]);
 
-  // 1-3 crates depending on rate
-  const tokenCount = effectiveRate > 0
-    ? Math.max(1, Math.min(3, Math.round(3 * effectiveRate / BASE_RATE)))
-    : 0;
-  const SPEED = effectiveRate > 0 ? Math.max(0.02, 0.12 * effectiveRate / BASE_RATE) : 0;
+  // Always show at least 1 item so belt looks alive even at low rate
+  const tokenCount = Math.max(1, Math.min(3, Math.round(3 * (effectiveRate || 0.5) / BASE_RATE)));
+  const SPEED = Math.max(0.018, 0.12 * (effectiveRate || 0.5) / BASE_RATE);
   const itemOffsets = useMemo(
     () => tokenCount > 0 ? Array.from({ length: tokenCount }, (_, i) => i / tokenCount) : [],
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps
