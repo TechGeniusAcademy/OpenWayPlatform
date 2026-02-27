@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -71,9 +71,68 @@ function chunkSeed(cx, cz) {
   return ((cx * 73856093) ^ (cz * 19349663)) >>> 0;
 }
 
-// ─── Shared info popup (rendered inside canvas via Html) ─────────────────────
+// ─── Shared hitbox geometries ─────────────────────────────────────────────────
 
-const HITBOX_MAT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+const HITBOX_MAT  = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+const HIT_GEO = {
+  pine:  new THREE.CylinderGeometry(1.4, 1.4, 7,   6),
+  round: new THREE.CylinderGeometry(1.8, 1.8, 5,   6),
+  bushy: new THREE.CylinderGeometry(1.6, 1.6, 3.5, 6),
+  rock:  new THREE.CylinderGeometry(1.8, 1.8, 1.5, 6),
+};
+
+// ─── Geometry merge (no external deps) ───────────────────────────────────────
+
+function mergeGeos(geos) {
+  if (geos.length === 0) return null;
+  if (geos.length === 1) return geos[0];
+  let totalVerts = 0; let hasIdx = false;
+  for (const g of geos) {
+    totalVerts += g.attributes.position.count;
+    if (g.index) hasIdx = true;
+  }
+  const posBuf = new Float32Array(totalVerts * 3);
+  const norBuf = new Float32Array(totalVerts * 3);
+  const idxArr = hasIdx ? [] : null;
+  let vOff = 0;
+  for (const g of geos) {
+    const n = g.attributes.position.count;
+    posBuf.set(g.attributes.position.array, vOff * 3);
+    if (g.attributes.normal) norBuf.set(g.attributes.normal.array, vOff * 3);
+    if (idxArr && g.index) { const ia = g.index.array; for (let i = 0; i < ia.length; i++) idxArr.push(ia[i] + vOff); }
+    vOff += n;
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(posBuf, 3));
+  out.setAttribute('normal',   new THREE.BufferAttribute(norBuf, 3));
+  if (idxArr) out.setIndex(idxArr);
+  return out;
+}
+
+// Reusable objects for wGeo (avoids allocation in hot useMemo loops)
+const _wPObj = new THREE.Object3D();
+const _wCObj = new THREE.Object3D();
+const _wMat4 = new THREE.Matrix4();
+
+// Return a transformed clone of template geometry.
+// Parent: positioned at (px, 0, pz), rotated by pry Y, scaled uniformly psc.
+// Child:  positioned at (lx, ly, lz), scaled by (lsx, lsy, lsz), rotated by lrx/lry/lrz.
+function wGeo(tmpl, px, pz, pry, psc, lx, ly, lz, lsx = 1, lsy = 1, lsz = 1, lrx = 0, lry = 0, lrz = 0) {
+  const g = tmpl.clone();
+  _wPObj.position.set(px, 0, pz);
+  _wPObj.rotation.set(0, pry, 0);
+  _wPObj.scale.setScalar(psc);
+  _wPObj.updateMatrix();
+  _wCObj.position.set(lx, ly, lz);
+  _wCObj.scale.set(lsx, lsy, lsz);
+  _wCObj.rotation.set(lrx, lry, lrz);
+  _wCObj.updateMatrix();
+  _wMat4.multiplyMatrices(_wPObj.matrix, _wCObj.matrix);
+  g.applyMatrix4(_wMat4);
+  return g;
+}
+
+// ─── Shared info popup (rendered inside canvas via Html) ─────────────────────
 
 // Module-level tracker — only one info popup open at a time
 let _closeActive = null;
@@ -247,6 +306,56 @@ function RockCluster({ x, z, rng }) {
       </mesh>
       {open && <InfoPopup height={2.8} icon="🪨" title="Каменная россыпь" subtitle="Источник камня" color="#d1d5db" onClose={close} />}
     </group>
+  );
+}
+
+// ─── Hitbox-only interactive stubs (visual geometry is chunk-merged) ─────────
+
+function PineHitbox({ x, z, sc }) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  return (
+    <mesh position={[x, 3.5 * sc, z]} geometry={HIT_GEO.pine} material={HITBOX_MAT}
+      onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
+    >
+      {open && <InfoPopup height={5.5} icon="🌲" title="Сосна" subtitle="Источник древесины" color="#4ade80" onClose={close} />}
+    </mesh>
+  );
+}
+
+function RoundHitbox({ x, z, sc }) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  return (
+    <mesh position={[x, 2.5 * sc, z]} geometry={HIT_GEO.round} material={HITBOX_MAT}
+      onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
+    >
+      {open && <InfoPopup height={4.5} icon="🌳" title="Дерево" subtitle="Источник древесины" color="#86efac" onClose={close} />}
+    </mesh>
+  );
+}
+
+function BushyHitbox({ x, z, sc }) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  return (
+    <mesh position={[x, 1.5 * sc, z]} geometry={HIT_GEO.bushy} material={HITBOX_MAT}
+      onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
+    >
+      {open && <InfoPopup height={3.5} icon="🌿" title="Кустарник" subtitle="Источник древесины" color="#bbf7d0" onClose={close} />}
+    </mesh>
+  );
+}
+
+function RockHitbox({ x, z }) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  return (
+    <mesh position={[x, 0.6, z]} geometry={HIT_GEO.rock} material={HITBOX_MAT}
+      onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
+    >
+      {open && <InfoPopup height={2.8} icon="🪨" title="Каменная россыпь" subtitle="Источник камня" color="#d1d5db" onClose={close} />}
+    </mesh>
   );
 }
 
@@ -523,26 +632,36 @@ const PLANE_GEO = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
 // Grid-cell size used to prevent spawn overlaps
 const CELL = 6;
 
+// Rock: no parent transform, full world-space clone from individual Object3D
+const _wRObj = new THREE.Object3D();
+function wRock(tmpl, wx, wy, wz, sx, sy, sz, rx, ry, rz) {
+  const g = tmpl.clone();
+  _wRObj.position.set(wx, wy, wz);
+  _wRObj.scale.set(sx, sy, sz);
+  _wRObj.rotation.set(rx, ry, rz);
+  _wRObj.updateMatrix();
+  g.applyMatrix4(_wRObj.matrix);
+  return g;
+}
+
 function Chunk({ cx, cz }) {
   const ox = cx * CHUNK_SIZE;
   const oz = cz * CHUNK_SIZE;
 
-  const { spawns, groundMat } = useMemo(() => {
-    const rng     = mkRng(chunkSeed(cx, cz));
-    const cells   = new Set();
-
-    const mark = (wx, wz) => {
+  // ── Spawn placement + merged visual geometry (both computed once per cx/cz) ──
+  const { spawns, groundMat, merged } = useMemo(() => {
+    // ── Step 1: same main-rng spawn placement as before (unchanged) ──
+    const rng   = mkRng(chunkSeed(cx, cz));
+    const cells = new Set();
+    const mark  = (wx, wz) => {
       const key = `${Math.round(wx / CELL)}_${Math.round(wz / CELL)}`;
       if (cells.has(key)) return false;
-      cells.add(key);
-      return true;
+      cells.add(key); return true;
     };
-
     const halfC = (CHUNK_SIZE / 2) * 0.86;
     const rand  = () => (rng() - 0.5) * 2 * halfC;
     const items = [];
 
-    // Water bodies (lake 7%, river 3%) — reduced from 12%/6%
     const waterRoll = rng();
     if (waterRoll < 0.07) {
       const wx = ox + rand(); const wz = oz + rand();
@@ -552,33 +671,116 @@ function Chunk({ cx, cz }) {
       if (mark(wx, wz)) items.push({ type: 'river', x: wx, z: wz });
     }
 
-    // Ore deposits (0-1) — reduced from 0-2
     const oreCount = Math.floor(rng() * 2);
     for (let i = 0; i < oreCount; i++) {
       const wx = ox + rand(); const wz = oz + rand();
       if (mark(wx, wz)) items.push({ type: 'ore', x: wx, z: wz });
     }
 
-    // Rock clusters (0-2) — reduced from 0-3
     const rockCount = Math.floor(rng() * 3);
     for (let i = 0; i < rockCount; i++) {
       const wx = ox + rand(); const wz = oz + rand();
+      // main rng not used for rock visual details — keeps rng sequence identical
       if (mark(wx, wz)) items.push({ type: 'rock', x: wx, z: wz });
     }
 
-    // Trees (0-2) — reduced from 0-4
     const treeCount = Math.floor(rng() * 3);
     for (let i = 0; i < treeCount; i++) {
       const wx = ox + rand(); const wz = oz + rand();
       if (!mark(wx, wz)) continue;
-      const tr = rng();
+      const tr   = rng();
       const kind = tr < 0.38 ? 'pine' : tr < 0.68 ? 'round' : 'bushy';
       items.push({ type: kind, x: wx, z: wz });
     }
 
     const gMat = GROUND_MATS[((Math.abs(cx) + Math.abs(cz)) % GROUND_MATS.length)];
-    return { spawns: items, groundMat: gMat };
+
+    // ── Step 2: per-item visual params — exact same rng calls as original components ──
+    const enriched = items.map((sp, i) => {
+      const srng = mkRng(chunkSeed(cx * 1000 + i, cz * 1000 + i));
+      if (sp.type === 'pine') {
+        const sc      = 0.8 + srng() * 0.7;
+        const ry      = srng() * Math.PI * 2;
+        const leafKey = srng() > 0.5 ? 'leafDark' : 'leafGreen';
+        return { ...sp, sc, ry, leafKey };
+      }
+      if (sp.type === 'round') {
+        const sc       = 0.75 + srng() * 0.8;
+        const ry       = srng() * Math.PI * 2;
+        const lkeys    = ['leafGreen', 'leafLight', 'leafAutumn'];
+        const leafKey  = lkeys[Math.floor(srng() * lkeys.length)];
+        const crownGeo = srng() > 0.45 ? GEO.crownWide : GEO.crown;
+        return { ...sp, sc, ry, leafKey, crownGeo };
+      }
+      if (sp.type === 'bushy') {
+        const sc       = 0.7  + srng() * 0.5;
+        const ry       = srng() * Math.PI * 2;
+        const bushData = BUSH_OFFSETS.map(() => ({
+          geo:     srng() > 0.5 ? GEO.crown : GEO.crownSmall,
+          leafKey: srng() > 0.4 ? 'leafGreen' : 'leafDark',
+        }));
+        return { ...sp, sc, ry, bushData };
+      }
+      if (sp.type === 'rock') {
+        // Exact RockCluster useMemo order: mat → count → per-rock(ox,oz,s,ry,rx,geo,rz)
+        const matKey = srng() > 0.55 ? 'rockBrown' : 'rockGray';
+        const count  = 2 + Math.floor(srng() * 3);
+        const rocks  = Array.from({ length: count }, () => ({
+          ox:  (srng() - 0.5) * 2.4,
+          oz:  (srng() - 0.5) * 2.4,
+          s:   0.5 + srng() * 0.9,
+          ry:  srng() * Math.PI,
+          rx:  srng() * 0.5,
+          geo: srng() > 0.5 ? GEO.rockBig : GEO.rock,
+          rz:  srng() * 0.4,
+        }));
+        return { ...sp, matKey, rocks };
+      }
+      return sp;
+    });
+
+    // ── Step 3: build merged geometry per material ────────────────────────────
+    const bags = {
+      trunk: [], leafGreen: [], leafDark: [], leafLight: [], leafAutumn: [],
+      rockGray: [], rockBrown: [],
+    };
+
+    for (const sp of enriched) {
+      if (sp.type === 'pine') {
+        bags.trunk.push(wGeo(GEO.trunkTall, sp.x, sp.z, sp.ry, sp.sc, 0, 1.6, 0));
+        bags[sp.leafKey].push(wGeo(GEO.cone,    sp.x, sp.z, sp.ry, sp.sc, 0, 4.6, 0));
+        bags[sp.leafKey].push(wGeo(GEO.coneTop, sp.x, sp.z, sp.ry, sp.sc, 0, 6.2, 0, 0.78, 0.88, 0.78));
+      } else if (sp.type === 'round') {
+        bags.trunk.push(wGeo(GEO.trunk,     sp.x, sp.z, sp.ry, sp.sc, 0, 1.1, 0));
+        bags[sp.leafKey].push(wGeo(sp.crownGeo, sp.x, sp.z, sp.ry, sp.sc, 0, 3.4, 0));
+      } else if (sp.type === 'bushy') {
+        bags.trunk.push(wGeo(GEO.trunkShort, sp.x, sp.z, sp.ry, sp.sc, 0, 0.7, 0));
+        BUSH_OFFSETS.forEach(([bx, by, bz, bs], bi) => {
+          const { geo, leafKey } = sp.bushData[bi];
+          bags[leafKey].push(wGeo(geo, sp.x, sp.z, sp.ry, sp.sc, bx, by, bz, bs, bs, bs));
+        });
+      } else if (sp.type === 'rock') {
+        const bag = bags[sp.matKey];
+        for (const r of sp.rocks) {
+          bag.push(wRock(r.geo, sp.x + r.ox, r.s * 0.4, sp.z + r.oz, r.s, r.s * 0.7, r.s, r.rx, r.ry, r.rz));
+        }
+      }
+    }
+
+    const m = {};
+    for (const [k, geos] of Object.entries(bags)) m[k] = mergeGeos(geos);
+
+    return { spawns: enriched, groundMat: gMat, merged: m };
   }, [cx, cz]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Dispose merged geos when chunk unmounts or re-computes
+  const mergedRef = useRef(null);
+  useEffect(() => {
+    const prev = mergedRef.current;
+    if (prev && prev !== merged) Object.values(prev).forEach(g => g?.dispose?.());
+    mergedRef.current = merged;
+    return () => { Object.values(merged).forEach(g => g?.dispose?.()); };
+  }, [merged]);
 
   return (
     <group>
@@ -588,16 +790,25 @@ function Chunk({ cx, cz }) {
         <primitive object={groundMat} attach="material" />
       </mesh>
 
-      {/* Natural features */}
+      {/* Merged static visuals: all trees + rocks → 7 draw calls max per chunk */}
+      {merged.trunk      && <mesh castShadow receiveShadow geometry={merged.trunk}       material={MAT.trunk}      />}
+      {merged.leafGreen  && <mesh castShadow geometry={merged.leafGreen}  material={MAT.leafGreen}  />}
+      {merged.leafDark   && <mesh castShadow geometry={merged.leafDark}   material={MAT.leafDark}   />}
+      {merged.leafLight  && <mesh castShadow geometry={merged.leafLight}  material={MAT.leafLight}  />}
+      {merged.leafAutumn && <mesh castShadow geometry={merged.leafAutumn} material={MAT.leafAutumn} />}
+      {merged.rockGray   && <mesh castShadow geometry={merged.rockGray}   material={MAT.rockGray}   />}
+      {merged.rockBrown  && <mesh castShadow geometry={merged.rockBrown}  material={MAT.rockBrown}  />}
+
+      {/* Interactive hitboxes — 1 transparent mesh per tree/rock */}
       {spawns.map((sp, i) => {
         const rng = mkRng(chunkSeed(cx * 1000 + i, cz * 1000 + i));
         switch (sp.type) {
-          case 'pine':  return <PineTree    key={i} x={sp.x} z={sp.z} rng={rng} />;
-          case 'round': return <RoundTree   key={i} x={sp.x} z={sp.z} rng={rng} />;
-          case 'bushy': return <BushyTree   key={i} x={sp.x} z={sp.z} rng={rng} />;
-          case 'rock':  return <RockCluster key={i} x={sp.x} z={sp.z} rng={rng} />;
-          case 'ore':   return <OreDeposit  key={i} x={sp.x} z={sp.z} rng={rng} />;
-          case 'lake':  return <WaterBody   key={i} x={sp.x} z={sp.z} rng={rng} />;
+          case 'pine':  return <PineHitbox  key={i} x={sp.x} z={sp.z} sc={sp.sc ?? 1} />;
+          case 'round': return <RoundHitbox key={i} x={sp.x} z={sp.z} sc={sp.sc ?? 1} />;
+          case 'bushy': return <BushyHitbox key={i} x={sp.x} z={sp.z} sc={sp.sc ?? 1} />;
+          case 'rock':  return <RockHitbox  key={i} x={sp.x} z={sp.z} />;
+          case 'ore':   return <OreDeposit   key={i} x={sp.x} z={sp.z} rng={rng} />;
+          case 'lake':  return <WaterBody    key={i} x={sp.x} z={sp.z} rng={rng} />;
           case 'river': return <RiverSegment key={i} x={sp.x} z={sp.z} rng={rng} />;
           default:      return null;
         }
