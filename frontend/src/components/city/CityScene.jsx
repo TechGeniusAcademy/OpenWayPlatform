@@ -444,10 +444,12 @@ function SceneInner({
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, 0.03, 0]}
           onPointerMove={(e) => {
-            e.stopPropagation();
+            // НЕ stopPropagation — здания должны получать hover-события
             if (conveyorCursorRef) conveyorCursorRef.current = { x: e.point.x, z: e.point.z };
           }}
-          onClick={(e) => {
+          onPointerDown={(e) => {
+            // Только левая кнопка, не правая (ПКМ = контекстное меню)
+            if (e.nativeEvent.button !== 0) return;
             e.stopPropagation();
             onConveyorGroundClick?.(e.point.x, e.point.z);
           }}

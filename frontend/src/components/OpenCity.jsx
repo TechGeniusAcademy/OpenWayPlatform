@@ -372,6 +372,7 @@ export default function OpenCity({ onBack }) {
       if (!canBeSource(item.type)) return;
       const outCount = conveyorsRef.current.filter(c => c.fromId === itemId).length;
       if (outCount >= getConveyorOutLimit(item.type)) return;   // slot limit
+      conveyorBuildingHitRef.current = true; // источник выбран — земля не должна записать точку
       setConveyorFromId(itemId);
 
     } else if (fromId === itemId) {
@@ -382,6 +383,7 @@ export default function OpenCity({ onBack }) {
     } else {
       const from = placedItemsRef.current.find(i => i.id === fromId);
       const to   = placedItemsRef.current.find(i => i.id === itemId);
+      conveyorBuildingHitRef.current = true; // назначение выбрано — земля не должна записать точку
       if (from && to && canConnect(from.type, to.type)) {
         const dupSrc = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
         const inCount = conveyorsRef.current.filter(c => c.toId === itemId).length;
@@ -426,9 +428,14 @@ export default function OpenCity({ onBack }) {
     }
   }, []);
 
+  // Флаг: клик по зданию уже обработан — земляная плоскость не должна записывать точку
+  const conveyorBuildingHitRef = useRef(false);
+
   // Добавление точки-ориентира при клике по земле в режиме прокладки маршрута
   const handleConveyorGroundClick = useCallback((x, z) => {
     if (!conveyorModeRef.current || conveyorFromIdRef.current === null) return;
+    // Если в этом же фрейме было нажатие на здание — пропускаем
+    if (conveyorBuildingHitRef.current) { conveyorBuildingHitRef.current = false; return; }
     const SNAP = 1;
     const snapped = { x: Math.round(x / SNAP) * SNAP, z: Math.round(z / SNAP) * SNAP };
     conveyorWaypointsRef.current = [...conveyorWaypointsRef.current, snapped];
@@ -905,9 +912,12 @@ export default function OpenCity({ onBack }) {
           return;
         }
         lmbHeldRef.current = true;
-        inputRef.current.middleDrag = true;
-        inputRef.current.lastMX = e.clientX;
-        inputRef.current.lastMY = e.clientY;
+        // В режиме конвейера левый клик записывает точку маршрута — не запускать панорамирование камеры
+        if (!conveyorModeRef.current) {
+          inputRef.current.middleDrag = true;
+          inputRef.current.lastMX = e.clientX;
+          inputRef.current.lastMY = e.clientY;
+        }
         if (placedHitRef.current) {
           placedHitRef.current = false;
         } else if (!wallModeRef.current && !towerModeRef.current) {
