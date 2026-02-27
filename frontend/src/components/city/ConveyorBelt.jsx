@@ -6,15 +6,16 @@ import { ConnectionLabel } from './ConnectionLabel.jsx';
 import { CityContext } from './CityContext.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const BASE_RATE  = 10;
-const BELT_Y     = 0.42;   // height of belt surface above ground (on legs)
-const BELT_W     = 0.96;   // rubber tread width
-const BELT_H     = 0.07;   // rubber tread thickness
-const RAIL_H     = 0.26;   // side rail height
-const RAIL_X     = 0.54;   // side rail X offset from centre
-const ROLLER_R   = 0.055;  // roller cylinder radius
-const ROLLER_SEG = 6;      // cylinder segments (low poly)
-const LEG_SPACE  = 3.6;    // distance between support leg pairs
+const BASE_RATE     = 10;
+const BELT_Y        = 0.42;   // height of belt surface above ground (on legs)
+const BELT_W        = 0.96;   // rubber tread width
+const BELT_H        = 0.07;   // rubber tread thickness
+const RAIL_H        = 0.26;   // side rail height
+const RAIL_X        = 0.54;   // side rail X offset from centre
+const ROLLER_R      = 0.055;  // roller cylinder radius
+const ROLLER_SEG    = 6;      // cylinder segments (low poly)
+const LEG_SPACE     = 3.6;    // distance between support leg pairs
+const TREAD_SPACING = 0.72;   // distance between scrolling tread bars
 
 // Shared dummy Object3D for instanced matrix updates — one per module
 const _dummy = new THREE.Object3D();
@@ -30,6 +31,8 @@ const GEO = {
   roller:      new THREE.CylinderGeometry(ROLLER_R, ROLLER_R, BELT_W + 0.12, ROLLER_SEG),
   item:        new THREE.BoxGeometry(0.30, 0.24, 0.30),
   hitbox:      new THREE.BoxGeometry(1.4, 0.5, 1),
+  // Поперечная планка-нить, скроллящаяся по длине сегмента (по BELT_W)
+  treadBar:    new THREE.BoxGeometry(BELT_W - 0.06, BELT_H * 1.8, 0.07),
 };
 
 // ─── Shared static materials ──────────────────────────────────────────────────
@@ -40,6 +43,8 @@ const MAT = {
   leg:    new THREE.MeshStandardMaterial({ color: '#1e2d3d', roughness: 0.65, metalness: 0.50 }),
   endCap: new THREE.MeshStandardMaterial({ color: '#3b4e63', roughness: 0.45, metalness: 0.70 }),
   hitbox: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }),
+  // Планки-нити на ленте — чуть светлее резины, видны на тёмном фоне
+  tread:  new THREE.MeshStandardMaterial({ color: '#2c3e50', roughness: 0.90, metalness: 0.10 }),
 };
 
 // ─── Параметры скругления стыков через квадратическую кривую Безье ───────────
@@ -115,6 +120,50 @@ export function ConveyorSourceRing() {
   );
 }
 
+// ─── Анимированные поперечные планки-нити, скролляющиеся вдоль сегмента ───────────────
+function BeltTread({ len, beltSpeed }) {
+  const meshRef  = useRef();
+  const offsetRef = useRef(0);
+  const frameRef  = useRef(0);
+  const count = useMemo(() => Math.ceil(len / TREAD_SPACING) + 2, [len]);
+  const span  = count * TREAD_SPACING;
+
+  // Инициальная расстановка до первого фрейма
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    for (let i = 0; i < count; i++) {
+      const z = -len / 2 + ((i * TREAD_SPACING) % span);
+      _dummy.position.set(0, BELT_H * 0.9, z);
+      _dummy.rotation.set(0, 0, 0);
+      _dummy.scale.setScalar(1);
+      _dummy.updateMatrix();
+      mesh.setMatrixAt(i, _dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [len, count, span]);
+
+  useFrame((_, dt) => {
+    if (++frameRef.current % 2 !== 0) return;
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    // Скорость скролла = beltSpeed (мировых ед. в сек.); направление: от A к B (+Z)
+    offsetRef.current = (offsetRef.current + dt * beltSpeed) % TREAD_SPACING;
+    const off = offsetRef.current;
+    for (let i = 0; i < count; i++) {
+      const z = -len / 2 + ((i * TREAD_SPACING + off) % span);
+      _dummy.position.set(0, BELT_H * 0.9, z);
+      _dummy.rotation.set(0, 0, 0);
+      _dummy.scale.setScalar(1);
+      _dummy.updateMatrix();
+      mesh.setMatrixAt(i, _dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  });
+
+  return <instancedMesh ref={meshRef} args={[GEO.treadBar, MAT.tread, count]} />;
+}
+
 // ─── Rollers — ONE InstancedMesh = ONE draw call regardless of belt length ────
 function BeltRollers({ len }) {
   const meshRef = useRef();
@@ -180,7 +229,25 @@ function lerpPolyline(pts, t, out) {
   }
 }
 
-// ─── Движущиеся грузы вдоль ломаной ──────────────────────────────────────────
+/** Направление движения в точке t вдоль ломаной (out — нормализованный Vector3) */
+function lerpPolylineDir(pts, t, out) {
+  let total = 0;
+  const lens = [0];
+  for (let i = 1; i < pts.length; i++) {
+    total += pts[i - 1].distanceTo(pts[i]);
+    lens.push(total);
+  }
+  if (total < 0.001) { out.set(0, 0, 1); return; }
+  const d = Math.max(0, Math.min(1, t)) * total;
+  for (let i = 1; i < pts.length; i++) {
+    if (d <= lens[i] || i === pts.length - 1) {
+      out.subVectors(pts[i], pts[i - 1]).normalize();
+      return;
+    }
+  }
+}
+
+// ─── Движущиеся грузы вдоль ломаной ──────────────────────────────────────────const _dir = new THREE.Vector3(); // направление движения на текущем участке ломаной
 function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
   const geo      = resource === 'coins' ? GEO.coin : GEO.item;
   const meshRef  = useRef();
@@ -206,11 +273,15 @@ function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
     for (let i = 0; i < times.length; i++) {
       times[i] = (times[i] + dt * speed) % 1;
       lerpPolyline(points, times[i], _dummy.position);
-      _dummy.position.y += resource === 'coins' ? 0.12 : 0.20;
+      lerpPolylineDir(points, times[i], _dir);
       if (resource === 'coins') {
-        _dummy.rotation.set(Math.PI / 2, times[i] * Math.PI * 4, 0);
+        // Монета лежит плашмя на бельте
+        _dummy.position.y += 0.12;
+        _dummy.rotation.set(Math.PI / 2, 0, 0);
       } else {
-        _dummy.rotation.set(0, times[i] * Math.PI * 0.3, 0);
+        // Ящик смотрит вперёд по ходу движения ленты
+        _dummy.position.y += 0.20;
+        _dummy.rotation.set(0, Math.atan2(_dir.x, _dir.z), 0);
       }
       _dummy.scale.setScalar(1);
       _dummy.updateMatrix();
@@ -224,8 +295,8 @@ function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
 }
 
 // ─── Один сегмент ленты между двумя точками ───────────────────────────────────
-// compact=true — режим для мини-сегментов кривой (без ног и роликов, без барабанов)
-function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap, compact }) {
+// compact=true — режим для мини-сегментов кривой (без ног, роликов, барабанов, нитей)
+function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap, compact, beltSpeed = 0 }) {
   const { mid, angle, len } = useMemo(() => {
     const from = new THREE.Vector3(ax, BELT_Y, az);
     const to   = new THREE.Vector3(bx, BELT_Y, bz);
@@ -259,6 +330,8 @@ function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap, compact })
       )}
       {!compact && <BeltRollers len={len} />}
       {!compact && <SupportLegs len={len} />}
+      {/* Планки-нити скролляются вдоль ленты — создают ощущение движения бельта */}
+      {!compact && beltSpeed > 0 && <BeltTread len={len} beltSpeed={beltSpeed} />}
     </group>
   );
 }
@@ -298,6 +371,15 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
     ? Math.max(1, Math.min(3, Math.round(3 * effectiveRate / BASE_RATE)))
     : 0;
   const SPEED = effectiveRate > 0 ? Math.max(0.02, 0.12 * effectiveRate / BASE_RATE) : 0;
+  // Скорость ленты в мировых ед. в сек. — используется для скролла нитей
+  const beltSpeed = useMemo(() => {
+    if (SPEED === 0) return 0;
+    let len = 0;
+    for (let i = 1; i < animPoints.length; i++)
+      len += animPoints[i - 1].distanceTo(animPoints[i]);
+    return SPEED * Math.max(1, len);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [SPEED, animPoints.length]);
   const itemOffsets = useMemo(
     () => tokenCount > 0 ? Array.from({ length: tokenCount }, (_, i) => i / tokenCount) : [],
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps
@@ -324,6 +406,7 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
           ax={s.ax} az={s.az} bx={s.bx} bz={s.bz}
           onPointerDown={handlePointerDown}
           showEndCap={i === 0 || i === straightSegs.length - 1}
+          beltSpeed={beltSpeed}
         />
       ))}
 
