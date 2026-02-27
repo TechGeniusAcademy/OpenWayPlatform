@@ -11,7 +11,7 @@ import { findNearestOreDeposit, canMineOre } from './systems/oreRegistry.js';
 import { countFreeBuilders, countTotalBuilders, countPlacedType, findIdleBuilderHousePos } from './systems/builderSystem.js';
 import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, CONSTRUCTION_DURATION_MS, BUILDER_HOUSE_EXTRA_COST_COINS } from './items/shopPrices.js';
 import { snapWallPoint, WALL_SEGMENT_COIN_COST, TOWER_COIN_COST, WALL_LEVELS, TOWER_LEVELS, WALL_GRID_SNAP } from './items/wallSystem.js';
-import { canConnect, canBeSource, getTransferRule, getConveyorOutLimit, getConveyorInLimit } from './systems/conveyor.js';
+import { canConnect, canBeSource, getTransferRule, getConveyorOutLimit, getConveyorInLimit, checkConveyorSideOk } from './systems/conveyor.js';
 import { canCableConnect, getCableRule, calcCablePoweredIds } from './systems/energyCable.js';
 import { calcConveyorRates, calcCableRates } from './systems/connectionRates.js';
 import { getLevelConfig, getNextLevelConfig } from './systems/upgrades.js';
@@ -79,6 +79,10 @@ export default function OpenCity({ onBack }) {
   const conveyorFromIdRef = useRef(null);
   useEffect(() => { conveyorModeRef.current   = conveyorMode;   }, [conveyorMode]);
   useEffect(() => { conveyorFromIdRef.current = conveyorFromId; }, [conveyorFromId]);
+  // Массив точек-ориентиров (waypoints) для текущего маршрута конвейера
+  const conveyorWaypointsRef = useRef([]);
+  // Позиция мыши в 3D для превью маршрута (ref — без React-ререндера)
+  const conveyorCursorRef = useRef(null);
   // ─── Energy cable state — declared BEFORE useCitySync ─────────────────────────
   const [energyCables,      setEnergyCables]      = useState([]);
   const energyCablesRef     = useRef([]);
@@ -371,16 +375,24 @@ export default function OpenCity({ onBack }) {
       setConveyorFromId(itemId);
 
     } else if (fromId === itemId) {
+      // Отмена выбора истока — сбрасываем и наполненный маршрут
+      conveyorWaypointsRef.current = [];
       setConveyorFromId(null);
 
     } else {
       const from = placedItemsRef.current.find(i => i.id === fromId);
       const to   = placedItemsRef.current.find(i => i.id === itemId);
-      if (from && to && canConnect(from.type, to.type)) {
+      if (from && to && canConnect(from.type, to.type) && checkConveyorSideOk(from.type, to.type, from.position, to.position)) {
         const dupSrc = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
         const inCount = conveyorsRef.current.filter(c => c.toId === itemId).length;
         if (!dupSrc && inCount < getConveyorInLimit(to.type)) {
-          setConveyors(prev => [...prev, { id: Date.now(), fromId, toId: itemId }]);
+          setConveyors(prev => [...prev, {
+            id: Date.now(),
+            fromId,
+            toId: itemId,
+            waypoints: [...conveyorWaypointsRef.current],
+          }]);
+          conveyorWaypointsRef.current = []; // сбрасываем маршрут после создания
         }
       }
       setConveyorFromId(null);
@@ -390,6 +402,7 @@ export default function OpenCity({ onBack }) {
   const startConveyorMode = useCallback(() => {
     setConveyorMode(true);
     setConveyorFromId(null);
+    conveyorWaypointsRef.current = []; // чистим маршрут при входе в режим
   }, []);
 
   // ─── Energy cable handler ────────────────────────────────────────────────────
@@ -411,6 +424,14 @@ export default function OpenCity({ onBack }) {
       }
       setCableFromId(null);
     }
+  }, []);
+
+  // Добавление точки-ориентира при клике по земле в режиме прокладки маршрута
+  const handleConveyorGroundClick = useCallback((x, z) => {
+    if (!conveyorModeRef.current || conveyorFromIdRef.current === null) return;
+    const SNAP = 1;
+    const snapped = { x: Math.round(x / SNAP) * SNAP, z: Math.round(z / SNAP) * SNAP };
+    conveyorWaypointsRef.current = [...conveyorWaypointsRef.current, snapped];
   }, []);
 
   const startCableMode = useCallback(() => {
@@ -728,6 +749,7 @@ export default function OpenCity({ onBack }) {
           setCableMode(false); setCableFromId(null); e.preventDefault(); return;
         }
         if (conveyorModeRef.current) {
+          conveyorWaypointsRef.current = [];
           setConveyorMode(false); setConveyorFromId(null); e.preventDefault(); return;
         }
         if (placingItemRef.current) { movingItemIdRef.current = null; setPlacingItem(null); e.preventDefault(); return; }
@@ -984,6 +1006,9 @@ export default function OpenCity({ onBack }) {
             conveyors={conveyors}
             conveyorFromId={conveyorFromId}
             onConveyorBuildingClick={handleConveyorBuildingClick}
+            conveyorWaypointsRef={conveyorWaypointsRef}
+            conveyorCursorRef={conveyorCursorRef}
+            onConveyorGroundClick={handleConveyorGroundClick}
             energyCables={energyCables}
             cableFromId={cableFromId}
             onCableBuildingClick={handleCableBuildingClick}

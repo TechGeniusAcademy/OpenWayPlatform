@@ -19,6 +19,7 @@ import { ConstructionSite } from './ConstructionSite.jsx';
 import { calcConveyorRates, calcCableRates } from '../systems/connectionRates.js';
 import { WallSegment, WallPlacementPreview, SnapIndicator } from './buildings/Wall.jsx';
 import { TowerPlaced, TowerPreview } from './buildings/Tower.jsx';
+import { ConveyorPathPreview } from './ConveyorPathPreview.jsx';
 import { OtherPlayerCity } from './OtherPlayerCity.jsx';
 import { LampLightPool } from './LampLightPool.jsx';
 import * as THREE from 'three';
@@ -121,6 +122,10 @@ function SceneInner({
   onTowerGroundClick,
   onWallRightClick,
   onTowerRightClick,
+  // Conveyor path routing
+  conveyorWaypointsRef,
+  conveyorCursorRef,
+  onConveyorGroundClick,
   otherPlayers,
 }) {
   const conveyorRates = useMemo(
@@ -371,6 +376,7 @@ function SceneInner({
           key={conv.id}
           fromId={conv.fromId}
           toId={conv.toId}
+          waypoints={conv.waypoints ?? []}
           placedItems={placedItems}
           effectiveRate={conveyorRates.get(conv.id) ?? 0}
           onRightClick={(x, y) => onConveyorRightClick?.(conv.id, x, y)}
@@ -428,6 +434,35 @@ function SceneInner({
       {/* Snap indicator at start point */}
       {wallMode && wallFromPoint && (
         <SnapIndicator position={wallFromPoint} />
+      )}
+
+      {/* Невидимая земля для прокладки маршрута конвейера */}
+      {conveyorFromId !== null && !placingItem && (
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, 0.03, 0]}
+          onPointerMove={(e) => {
+            e.stopPropagation();
+            if (conveyorCursorRef) conveyorCursorRef.current = { x: e.point.x, z: e.point.z };
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onConveyorGroundClick?.(e.point.x, e.point.z);
+          }}
+        >
+          <planeGeometry args={[2000, 2000]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
+
+      {/* Призрак маршрута конвейера в режиме прокладки пути */}
+      {conveyorFromId !== null && conveyorWaypointsRef && (
+        <ConveyorPathPreview
+          sourceId={conveyorFromId}
+          placedItems={placedItems}
+          waypointsRef={conveyorWaypointsRef}
+          cursorRef={conveyorCursorRef}
+        />
       )}
 
       {/* Invisible ground plane — captures pointer events in wall/tower mode */}

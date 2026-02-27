@@ -1,7 +1,7 @@
 import { useRef, useMemo, useContext, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { getTransferRule } from '../systems/conveyor.js';
+import { getTransferRule, getConveyorOutPort, getConveyorInPort } from '../systems/conveyor.js';
 import { ConnectionLabel } from './ConnectionLabel.jsx';
 import { CityContext } from './CityContext.js';
 
@@ -97,20 +97,32 @@ function SupportLegs({ len }) {
   );
 }
 
-// resource = 'coins' | 'ore' | 'solar' | …
-function AnimatedItems({ fromVec, toVec, offsets, speed, color, resource }) {
-  const geo = resource === 'coins' ? GEO.coin : GEO.item;
+// ─── Интерполяция позиции вдоль ломаной (polyline) ───────────────────────────
+function lerpPolyline(pts, t, out) {
+  let total = 0;
+  const lens = [0];
+  for (let i = 1; i < pts.length; i++) {
+    total += pts[i - 1].distanceTo(pts[i]);
+    lens.push(total);
+  }
+  if (total < 0.001) { out.copy(pts[0]); return; }
+  const d = Math.max(0, Math.min(1, t)) * total;
+  for (let i = 1; i < pts.length; i++) {
+    if (d <= lens[i] || i === pts.length - 1) {
+      const segLen = lens[i] - lens[i - 1];
+      const segT   = segLen > 0.001 ? (d - lens[i - 1]) / segLen : 0;
+      out.lerpVectors(pts[i - 1], pts[i], Math.max(0, Math.min(1, segT)));
+      return;
+    }
+  }
+}
+
+// ─── Движущиеся грузы вдоль ломаной ──────────────────────────────────────────
+function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
+  const geo      = resource === 'coins' ? GEO.coin : GEO.item;
   const meshRef  = useRef();
   const frameRef = useRef(0);
   const timesRef = useRef(offsets.slice());
-
-  // Re-sync when item count changes (rate change → different token count)
-  useEffect(() => {
-    timesRef.current = Array.from(
-      { length: offsets.length },
-      (_, i) => i / offsets.length,
-    );
-  }, [offsets.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mat = useMemo(
     () => new THREE.MeshStandardMaterial({
@@ -126,18 +138,18 @@ function AnimatedItems({ fromVec, toVec, offsets, speed, color, resource }) {
   useFrame((_, dt) => {
     if (++frameRef.current % 2 !== 0) return;
     const mesh = meshRef.current;
-    if (!mesh || offsets.length === 0) return;
+    if (!mesh || !points || points.length < 2 || offsets.length === 0) return;
     const times = timesRef.current;
     for (let i = 0; i < times.length; i++) {
       times[i] = (times[i] + dt * speed) % 1;
-      _dummy.position.lerpVectors(fromVec, toVec, times[i]);
-        _dummy.position.y = resource === 'coins' ? fromVec.y + 0.12 : fromVec.y + 0.20;
-        // coins spin flat; crates wobble upright
-        if (resource === 'coins') {
-          _dummy.rotation.set(Math.PI / 2, times[i] * Math.PI * 4, 0);
-        } else {
-          _dummy.rotation.set(0, times[i] * Math.PI * 0.3, 0);
-        }
+      lerpPolyline(points, times[i], _dummy.position);
+      _dummy.position.y += resource === 'coins' ? 0.12 : 0.20;
+      if (resource === 'coins') {
+        _dummy.rotation.set(Math.PI / 2, times[i] * Math.PI * 4, 0);
+      } else {
+        _dummy.rotation.set(0, times[i] * Math.PI * 0.3, 0);
+      }
+      _dummy.scale.setScalar(1);
       _dummy.updateMatrix();
       mesh.setMatrixAt(i, _dummy.matrix);
     }
@@ -148,96 +160,113 @@ function AnimatedItems({ fromVec, toVec, offsets, speed, color, resource }) {
   return <instancedMesh ref={meshRef} args={[geo, mat, offsets.length]} />;
 }
 
-// ─── Conveyor belt — realistic industrial 3-D visual ─────────────────────────
-export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRightClick }) {
+// ─── Один сегмент ленты между двумя точками ───────────────────────────────────
+function BeltSegmentBody({ ax, az, bx, bz, onPointerDown, showEndCap }) {
+  const { mid, angle, len } = useMemo(() => {
+    const from = new THREE.Vector3(ax, BELT_Y, az);
+    const to   = new THREE.Vector3(bx, BELT_Y, bz);
+    const dir  = new THREE.Vector3().subVectors(to, from);
+    const l    = dir.length();
+    const m    = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
+    const a    = Math.atan2(dir.x, dir.z);
+    return { mid: m, angle: a, len: l };
+  }, [ax, az, bx, bz]);
+
+  if (len < 0.05) return null;
+
+  return (
+    <group position={mid.toArray()} rotation={[0, angle, 0]} onPointerDown={onPointerDown}>
+      <mesh visible={false} geometry={GEO.hitbox} material={MAT.hitbox} scale={[1, 1, len]} />
+      <mesh receiveShadow geometry={GEO.beltSurface} material={MAT.rubber} scale={[1, 1, len]} />
+      <mesh geometry={GEO.sideRail} material={MAT.rail}
+        position={[-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.14]} />
+      <mesh geometry={GEO.sideRail} material={MAT.rail}
+        position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.14]} />
+      {/* Барабан/шкив на начале каждого сегмента */}
+      <mesh geometry={GEO.endCap} material={MAT.endCap}
+        rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, -len / 2]} />
+      {/* Барабан/шкив на конце только финального сегмента */}
+      {showEndCap && (
+        <mesh geometry={GEO.endCap} material={MAT.endCap}
+          rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, len / 2]} />
+      )}
+      <BeltRollers len={len} />
+      <SupportLegs len={len} />
+    </group>
+  );
+}
+
+// ─── Конвейерная лента — поддерживает waypoints (маршрут с изгибами) ──────────
+export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effectiveRate, onRightClick }) {
   const { rightClickHitRef } = useContext(CityContext);
   const from = placedItems.find(i => i.id === fromId);
   const to   = placedItems.find(i => i.id === toId);
   if (!from || !to) return null;
 
-  const rule = getTransferRule(from.type, to.type);
+  const rule    = getTransferRule(from.type, to.type);
+  const outPort = getConveyorOutPort(from.type);
+  const inPort  = getConveyorInPort(to.type);
 
-  const fromVec = useMemo(
-    () => new THREE.Vector3(from.position[0], BELT_Y, from.position[2]),
-    [from.position[0], from.position[2]], // eslint-disable-line react-hooks/exhaustive-deps
-  );
-  const toVec = useMemo(
-    () => new THREE.Vector3(to.position[0], BELT_Y, to.position[2]),
-    [to.position[0], to.position[2]], // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  // Полный маршрут: выходной порт источника → точки пути → входной порт назначения
+  const allPoints = useMemo(() => [
+    new THREE.Vector3(
+      from.position[0] + (outPort?.dx ?? 0), BELT_Y,
+      from.position[2] + (outPort?.dz ?? 0),
+    ),
+    ...(waypoints ?? []).map(w => new THREE.Vector3(w.x, BELT_Y, w.z)),
+    new THREE.Vector3(
+      to.position[0] + (inPort?.dx ?? 0), BELT_Y,
+      to.position[2] + (inPort?.dz ?? 0),
+    ),
+  ], // eslint-disable-next-line react-hooks/exhaustive-deps
+  [from.position[0], from.position[2], to.position[0], to.position[2], JSON.stringify(waypoints)]);
 
-  const { mid, angle, len } = useMemo(() => {
-    const dir = new THREE.Vector3().subVectors(toVec, fromVec);
-    const l   = dir.length();
-    const m   = new THREE.Vector3().addVectors(fromVec, toVec).multiplyScalar(0.5);
-    const a   = Math.atan2(dir.x, dir.z);
-    return { mid: m, angle: a, len: l };
-  }, [fromVec, toVec]);
-
-  // Always show at least 1 item so belt looks alive even at low rate
-  const tokenCount = Math.max(1, Math.min(3, Math.round(3 * (effectiveRate || 0.5) / BASE_RATE)));
-  const SPEED = Math.max(0.018, 0.12 * (effectiveRate || 0.5) / BASE_RATE);
+  const tokenCount = effectiveRate > 0
+    ? Math.max(1, Math.min(3, Math.round(3 * effectiveRate / BASE_RATE)))
+    : 0;
+  const SPEED = effectiveRate > 0 ? Math.max(0.02, 0.12 * effectiveRate / BASE_RATE) : 0;
   const itemOffsets = useMemo(
     () => tokenCount > 0 ? Array.from({ length: tokenCount }, (_, i) => i / tokenCount) : [],
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const ruleColor    = rule?.color ?? '#fbbf24';
-  const ruleColorObj = useMemo(() => new THREE.Color(ruleColor), [ruleColor]);
+  const ruleColor = rule?.color ?? '#fbbf24';
+  // Лейбл ставится примерно в центр пути
+  const midPoint = allPoints[Math.floor(allPoints.length / 2)];
+
+  const handlePointerDown = (e) => {
+    if (e.button === 2) {
+      e.stopPropagation();
+      rightClickHitRef.current = true;
+      onRightClick?.(e.nativeEvent.clientX, e.nativeEvent.clientY);
+    }
+  };
 
   return (
     <group>
-      {/* ── Belt body (centred at mid, oriented along belt direction) ── */}
-      <group
-        position={mid.toArray()}
-        rotation={[0, angle, 0]}
-        onPointerDown={(e) => {
-          if (e.button === 2) {
-            e.stopPropagation();
-            rightClickHitRef.current = true;
-            onRightClick?.(e.nativeEvent.clientX, e.nativeEvent.clientY);
-          }
-        }}
-      >
-        {/* Invisible wide hit surface for easy right-click */}
-        <mesh visible={false} geometry={GEO.hitbox} material={MAT.hitbox} scale={[1, 1, len]} />
+      {/* Все сегменты ленты по маршруту */}
+      {allPoints.slice(0, -1).map((pt, i) => (
+        <BeltSegmentBody
+          key={i}
+          ax={pt.x} az={pt.z}
+          bx={allPoints[i + 1].x} bz={allPoints[i + 1].z}
+          onPointerDown={handlePointerDown}
+          showEndCap={i === allPoints.length - 2}
+        />
+      ))}
 
-        {/* Rubber belt tread */}
-        <mesh receiveShadow geometry={GEO.beltSurface} material={MAT.rubber} scale={[1, 1, len]} />
-
-        {/* Left & right side rails */}
-        <mesh geometry={GEO.sideRail} material={MAT.rail}
-          position={[-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.14]} />
-        <mesh geometry={GEO.sideRail} material={MAT.rail}
-          position={[ RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0]} scale={[1, 1, len + 0.14]} />
-
-        {/* End drums / pulleys */}
-        <mesh geometry={GEO.endCap} material={MAT.endCap}
-          rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R, -len / 2]} />
-        <mesh geometry={GEO.endCap} material={MAT.endCap}
-          rotation={[0, 0, Math.PI / 2]} position={[0, ROLLER_R,  len / 2]} />
-
-        {/* Rollers — one InstancedMesh, one draw call */}
-        <BeltRollers len={len} />
-
-        {/* Support legs */}
-        <SupportLegs len={len} />
-
-      </group>
-
-      {/* Moving crates */}
-      <AnimatedItems
-        fromVec={fromVec}
-        toVec={toVec}
+      {/* Грузы, движущиеся вдоль всего маршрута */}
+      <AnimatedItemsPolyline
+        points={allPoints}
         offsets={itemOffsets}
         speed={SPEED}
         color={ruleColor}
         resource={rule?.resource}
       />
 
-      {/* Transfer rate label */}
+      {/* Лейбл с текущей скоростью передачи */}
       <ConnectionLabel
-        midPos={[mid.x, mid.y + 2, mid.z]}
+        midPos={[midPoint.x, midPoint.y + 2, midPoint.z]}
         icon={rule?.icon ?? '🛤️'}
         rate={effectiveRate}
         unit={rule?.unit ?? '/ч'}
