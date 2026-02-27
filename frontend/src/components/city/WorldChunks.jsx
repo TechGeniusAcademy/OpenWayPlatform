@@ -542,32 +542,32 @@ function Chunk({ cx, cz }) {
     const rand  = () => (rng() - 0.5) * 2 * halfC;
     const items = [];
 
-    // Water bodies (lake 12%, river 6%)
+    // Water bodies (lake 7%, river 3%) — reduced from 12%/6%
     const waterRoll = rng();
-    if (waterRoll < 0.12) {
+    if (waterRoll < 0.07) {
       const wx = ox + rand(); const wz = oz + rand();
       if (mark(wx, wz)) items.push({ type: 'lake', x: wx, z: wz });
-    } else if (waterRoll < 0.18) {
+    } else if (waterRoll < 0.10) {
       const wx = ox + rand(); const wz = oz + rand();
       if (mark(wx, wz)) items.push({ type: 'river', x: wx, z: wz });
     }
 
-    // Ore deposits (0-2)
-    const oreCount = Math.floor(rng() * 3);
+    // Ore deposits (0-1) — reduced from 0-2
+    const oreCount = Math.floor(rng() * 2);
     for (let i = 0; i < oreCount; i++) {
       const wx = ox + rand(); const wz = oz + rand();
       if (mark(wx, wz)) items.push({ type: 'ore', x: wx, z: wz });
     }
 
-    // Rock clusters (0-3)
-    const rockCount = Math.floor(rng() * 4);
+    // Rock clusters (0-2) — reduced from 0-3
+    const rockCount = Math.floor(rng() * 3);
     for (let i = 0; i < rockCount; i++) {
       const wx = ox + rand(); const wz = oz + rand();
       if (mark(wx, wz)) items.push({ type: 'rock', x: wx, z: wz });
     }
 
-    // Trees (0-4)
-    const treeCount = Math.floor(rng() * 5);
+    // Trees (0-2) — reduced from 0-4
+    const treeCount = Math.floor(rng() * 3);
     for (let i = 0; i < treeCount; i++) {
       const wx = ox + rand(); const wz = oz + rand();
       if (!mark(wx, wz)) continue;

@@ -13,15 +13,10 @@ const _dummy = new THREE.Object3D();
 
 // ─── Source ring (glows orange when building is selected as conveyor source) ──
 
+// Source ring — static, no useFrame
 export function ConveyorSourceRing() {
-  const ringRef = useRef();
-  useFrame(({ clock }) => {
-    if (ringRef.current) {
-      ringRef.current.material.opacity = 0.35 + Math.sin(clock.getElapsedTime() * 5) * 0.3;
-    }
-  });
   return (
-    <mesh ref={ringRef} position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[2.0, 2.8, 32]} />
       <meshBasicMaterial color="#f97316" transparent opacity={0.55} side={THREE.DoubleSide} depthWrite={false} />
     </mesh>
@@ -35,9 +30,11 @@ export function ConveyorSourceRing() {
 
 function AnimatedCoins({ fromVec, toVec, offsets, speed, color }) {
   const meshRef  = useRef();
+  const frameRef = useRef(0);
   const timesRef = useRef(offsets.slice()); // mutable progress per coin
 
   useFrame((_, dt) => {
+    if (++frameRef.current % 2 !== 0) return; // throttle every 2 frames
     const mesh = meshRef.current;
     if (!mesh || offsets.length === 0) return;
     const times = timesRef.current;
@@ -95,11 +92,11 @@ export function ConveyorBelt({ fromId, toId, placedItems, effectiveRate, onRight
     return { mid, angle, len };
   }, [fromVec, toVec]);
 
-  // Cap tokens at 4 (was 8) — saves ½ the instanced draw work
+  // Cap tokens at 2 — minimal visual, minimal GPU cost
   const tokenCount = effectiveRate > 0
-    ? Math.max(1, Math.min(4, Math.round(4 * effectiveRate / BASE_RATE)))
+    ? Math.max(1, Math.min(2, Math.round(2 * effectiveRate / BASE_RATE)))
     : 0;
-  const SPEED = effectiveRate > 0 ? Math.max(0.06, 0.4 * effectiveRate / BASE_RATE) : 0;
+  const SPEED = effectiveRate > 0 ? Math.max(0.04, 0.25 * effectiveRate / BASE_RATE) : 0;
   const coinOffsets = useMemo(
     () => tokenCount > 0 ? Array.from({ length: tokenCount }, (_, i) => i / tokenCount) : [],
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps

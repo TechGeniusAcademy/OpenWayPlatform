@@ -1,55 +1,16 @@
-import { useRef, useMemo, useContext } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useMemo, useContext } from 'react';
 import * as THREE from 'three';
 import { getCableRule } from '../systems/energyCable.js';
 import { ConnectionLabel } from './ConnectionLabel.jsx';
 import { CityContext } from './CityContext.js';
 
-// Shared dummy for instanced matrix writes
-const _dummy = new THREE.Object3D();
+// ─── Sparks REMOVED — were a major useFrame cost per cable ───────────────────
 
-// ─── Optimised animated sparks — ONE InstancedMesh + ONE useFrame ─────────────
-// Replaces individual ElectricSpark components each with their own useFrame.
-
-function ElectricSparks({ fromVec, toVec, offsets, speed, color }) {
-  const meshRef  = useRef();
-  const timesRef = useRef(offsets.slice());
-
-  useFrame((_, dt) => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
-    const times = timesRef.current;
-    for (let i = 0; i < times.length; i++) {
-      times[i] = (times[i] + dt * speed) % 1;
-      _dummy.position.lerpVectors(fromVec, toVec, times[i]);
-      _dummy.position.y = 0.35 + Math.sin(times[i] * Math.PI) * 0.7;
-      _dummy.updateMatrix();
-      mesh.setMatrixAt(i, _dummy.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  });
-
-  if (offsets.length === 0) return null;
-  return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, offsets.length]}>
-      <sphereGeometry args={[0.15, 5, 4]} />
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.2} toneMapped={false} />
-    </instancedMesh>
-  );
-}
-
-// ─── Cable source indicator ring (yellow pulsing ring) ────────────────────────
+// ─── Cable source indicator ring (static — no useFrame) ─────────────────────
 
 export function CableSourceRing() {
-  const ringRef = useRef();
-  useFrame(({ clock }) => {
-    if (ringRef.current) {
-      ringRef.current.material.opacity =
-        0.35 + Math.sin(clock.getElapsedTime() * 6) * 0.3;
-    }
-  });
   return (
-    <mesh ref={ringRef} position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[2.2, 3.2, 32]} />
       <meshBasicMaterial
         color="#facc15"
@@ -93,15 +54,8 @@ export function EnergyCable({ fromId, toId, placedItems, effectiveRate, onRightC
     return { mid, angle, len: length };
   }, [fromVec, toVec]);
 
-  const coreRef = useRef();
-  useFrame(({ clock }) => {
-    if (coreRef.current) {
-      coreRef.current.material.emissiveIntensity =
-        0.9 + Math.sin(clock.getElapsedTime() * 4) * 0.4;
-    }
-  });
-
-  const sparkOffsets = useMemo(() => [0, 0.25, 0.5, 0.75], []);
+  // Core pulse animation removed — saves one useFrame per cable
+  const sparkOffsets = useMemo(() => [], []);
 
   return (
     <group>
@@ -126,8 +80,8 @@ export function EnergyCable({ fromId, toId, placedItems, effectiveRate, onRightC
           <boxGeometry args={[0.2, 0.2, len]} />
           <meshStandardMaterial color="#1e293b" roughness={0.7} metalness={0.4} />
         </mesh>
-        {/* Glowing energy core */}
-        <mesh ref={coreRef}>
+        {/* Glowing energy core — static emissive */}
+        <mesh>
           <boxGeometry args={[0.08, 0.08, len]} />
           <meshStandardMaterial
             color={color}
@@ -138,14 +92,7 @@ export function EnergyCable({ fromId, toId, placedItems, effectiveRate, onRightC
         </mesh>
       </group>
 
-      {/* Animated electric sparks — single instanced component */}
-      <ElectricSparks
-        fromVec={fromVec}
-        toVec={toVec}
-        offsets={sparkOffsets}
-        speed={0.55}
-        color={color}
-      />
+      {/* Sparks removed — use static cable only */}
 
       {/* Transfer rate label */}
       <ConnectionLabel
