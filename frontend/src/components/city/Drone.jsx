@@ -63,7 +63,7 @@ function DroneInner({ from, to, rule, effectiveRate }) {
   const toHover   = toBase.clone().setY(toBase.y   + HOVER_Y);
 
   // Load the drone GLB (cached by useGLTF)
-  const { scene: droneScene } = useGLTF('/models/worker drone.glb');
+  const { scene: droneScene } = useGLTF('/models/Little Drone.glb');
 
   // Each drone instance needs its own cloned scene graph
   const cloneRef   = useRef(null);
@@ -185,4 +185,4 @@ export const Drone = memo(function Drone({ fromId, toId, placedItems, effectiveR
 });
 
 // Pre-load the drone model so it's ready before first render
-useGLTF.preload('/models/worker drone.glb');
+useGLTF.preload('/models/Little Drone.glb');

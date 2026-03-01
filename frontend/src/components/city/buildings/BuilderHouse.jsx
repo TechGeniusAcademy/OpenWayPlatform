@@ -138,21 +138,27 @@ function BuilderFigure({ animation = 'idle', scale = 1 }) {
   );
 }
 
-// ─── Builder at work — figure shown at any active build/upgrade site ──────────
+// ─── Builder at work — drone shown at any active build/upgrade site ──────────
 
 export function BuilderAtWork({ position }) {
+  const { scene } = useGLTF('/models/worker drone.glb');
+  const cloneRef = useRef(null);
+  if (!cloneRef.current) cloneRef.current = scene.clone(true);
   return (
-    <group position={[position[0] + 1.2, 0, position[2] + 1.2]}>
-      <BuilderFigure animation="working" scale={1.1} />
+    <group position={[position[0] + 1.2, 2.5, position[2] + 1.2]}>
+      <primitive object={cloneRef.current} scale={0.6} />
     </group>
   );
 }
 
-// ─── Builder runner — figure traveling from builder house to target ────────────
+// ─── Builder runner — drone flying from builder house to target ────────────
 
 export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000 }) {
   const groupRef = useRef();
   const [done, setDone] = useState(false);
+  const { scene } = useGLTF('/models/worker drone.glb');
+  const cloneRef = useRef(null);
+  if (!cloneRef.current) cloneRef.current = scene.clone(true);
 
   useFrame(() => {
     if (done || !groupRef.current) return;
@@ -160,8 +166,7 @@ export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000 }) 
     if (progress >= 1) { setDone(true); return; }
     const x = fromPos[0] + (toPos[0] - fromPos[0]) * progress;
     const z = fromPos[2] + (toPos[2] - fromPos[2]) * progress;
-    groupRef.current.position.set(x, 0, z);
-    // Face direction of movement
+    groupRef.current.position.set(x, 3.5, z);
     const dx = toPos[0] - fromPos[0];
     const dz = toPos[2] - fromPos[2];
     groupRef.current.rotation.y = Math.atan2(dx, dz);
@@ -169,8 +174,8 @@ export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000 }) 
 
   if (done) return null;
   return (
-    <group ref={groupRef} position={[fromPos[0], 0, fromPos[2]]}>
-      <BuilderFigure animation="running" scale={1.1} />
+    <group ref={groupRef} position={[fromPos[0], 3.5, fromPos[2]]}>
+      <primitive object={cloneRef.current} scale={0.6} />
     </group>
   );
 }
@@ -449,3 +454,4 @@ export function UpgradeBadgeInline({ upgradeInfo, badgeHeight, position }) {
 export const BuilderHousePlaced = memo(BuilderHousePlacedBase, buildingPropsEqual);
 
 useGLTF.preload('/models/workers platform.glb');
+useGLTF.preload('/models/worker drone.glb');
