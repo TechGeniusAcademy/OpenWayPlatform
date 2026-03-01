@@ -249,6 +249,33 @@ export const LEVEL_CONFIGS = {
     },
   ],
 
+  // ── Coal Generator (Угольный генератор) — 3 levels ─────────────────────────
+  'coal-generator': [
+    {
+      level: 1, name: 'Базовый',
+      pointsCost: 0,  xpRequired: 0,
+      rateMultiplier: 1.0, scaleBonus: 0, glowIntensity: 0,
+      accentColor: '#f97316',
+      description: 'Сжигает уголь — 8 топлива/ч',
+    },
+    {
+      level: 2, name: 'Улучшенный',
+      pointsCost: 12, xpRequired: 300,
+      upgradeDurationMs: 45_000,
+      rateMultiplier: 1.5, scaleBonus: 0.05, glowIntensity: 0.15,
+      accentColor: '#fb923c',
+      description: '+50% топлива → 12 топлива/ч',
+    },
+    {
+      level: 3, name: 'Промышленный',
+      pointsCost: 40, xpRequired: 1200,
+      upgradeDurationMs: 90_000,
+      rateMultiplier: 2.5, scaleBonus: 0.12, glowIntensity: 0.40,
+      accentColor: '#ef4444',
+      description: '+150% топлива → 20 топлива/ч',
+    },
+  ],
+
   // ── Builder's House (Дом строителя) — 3 levels, each adds +1 builder ────────
   'builder-house': [
     {

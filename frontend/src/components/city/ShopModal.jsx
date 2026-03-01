@@ -4,7 +4,7 @@ import {
   FaHardHat, FaLink, FaBolt, FaHome, FaMedal,
   FaCoins, FaTimes, FaStore, FaHammer, FaInfoCircle, FaShieldAlt, FaChessRook,
 } from 'react-icons/fa';
-import { GiMining } from 'react-icons/gi';
+import { GiMining, GiFireBowl } from 'react-icons/gi';
 import styles from '../OpenCity.module.css';
 import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, BUILDER_HOUSE_EXTRA_COST_COINS } from '../items/shopPrices.js';
 
@@ -354,6 +354,12 @@ export function ShopModal({
                   desc="Размещайте на рудных залежах. Ур.1→уголь · Ур.5→алмаз" {...P('extractor')}
                   disabled={itemDisabled('extractor')} disabledReason={itemDisabled('extractor')}
                   onPlace={() => { onBuy('extractor'); onClose(); }} />
+              </div>
+              <div style={{ gridColumn: '1/-1' }}>
+                <ShopCard Icon={GiFireBowl} iconColor="#f97316" name="Угольный генератор"
+                  desc="Принимает уголь от добытчика через дронов, вырабатывает 8 л топлива/ч и отдаёт в хранилище" {...P('coal-generator')}
+                  disabled={itemDisabled('coal-generator')} disabledReason={itemDisabled('coal-generator')}
+                  onPlace={() => { onBuy('coal-generator'); onClose(); }} />
               </div>
             </div>
           )}

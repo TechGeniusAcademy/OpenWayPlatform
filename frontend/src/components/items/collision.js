@@ -42,6 +42,10 @@ export const ITEM_FOOTPRINTS = {
     hw: 3.5,
     hd: 3.5,
   },
+  'coal-generator': {
+    hw: 5,
+    hd: 5,
+  },
 };
 
 // ─── Collision check ──────────────────────────────────────────────────────────

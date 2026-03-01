@@ -6,6 +6,7 @@ import './items/conveyorRules.js';   // side-effect: registers all transfer rule
 import './items/solarPanel.js';      // side-effect: registers solar-panel energy zone
 import './items/townHall.js';         // side-effect: registers town-hall storage
 import './items/extractor.js';        // side-effect: registers extractor storage
+import './items/coalGenerator.js';    // side-effect: registers coal-generator storage + production
 import { findNearestOreDeposit, canMineOre } from './systems/oreRegistry.js';
 import { countFreeBuilders, countTotalBuilders, countPlacedType, findIdleBuilderHousePos } from './systems/builderSystem.js';
 import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, CONSTRUCTION_DURATION_MS, BUILDER_HOUSE_EXTRA_COST_COINS } from './items/shopPrices.js';

@@ -9,7 +9,7 @@ import {
   FaRobot, FaLongArrowAltRight, FaPlus,
 } from 'react-icons/fa';
 import { MdCallMerge } from 'react-icons/md';
-import { GiMining } from 'react-icons/gi';
+import { GiMining, GiFireBowl } from 'react-icons/gi';
 
 // ─── Display names ───────────────────────────────────────────────────────────
 const BUILDING_LABELS = {
@@ -23,6 +23,7 @@ const BUILDING_LABELS = {
   'conveyor':       'Конвейер',
   'cable':          'Энергокабель',
   'extractor':      'Добытчик руды',
+  'coal-generator': 'Угольный генератор',
   'builder-house':  'Дом строителя',
   'wall':           'Стена',
   'tower':          'Башня',
@@ -40,6 +41,7 @@ const BUILDING_ICONS = {
   'conveyor':       FaLink,
   'cable':          FaBolt,
   'extractor':      GiMining,
+  'coal-generator': GiFireBowl,
   'builder-house':  FaHome,
   'wall':           FaShieldAlt,
   'tower':          FaChessRook,

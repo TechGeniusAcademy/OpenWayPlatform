@@ -176,7 +176,8 @@ const HOTBAR_ITEMS = [
   { key: '4', type: 'money-factory',  Icon: FaIndustry,    color: '#818cf8', name: 'Денежная фабрика' },
   { key: '5', type: 'town-hall',      Icon: FaLandmark,    color: '#a78bfa', name: 'Ратуша' },
   { key: '6', type: 'extractor',      Icon: GiMining,      color: '#f97316', name: 'Добытчик руды' },
-  { key: '7', type: 'builder-house',  Icon: FaHome,        color: '#fb923c', name: 'Дом строителя' },
+  { key: '7', type: 'builder-house',    Icon: FaHome,        color: '#fb923c', name: 'Дом строителя' },
+  { key: '8', type: 'coal-generator',   Icon: GiFireBowl,    color: '#f97316', name: 'Угольный генератор' },
 ];
 
 function BuildingHotbar({ onStartPlacing, placingItem }) {

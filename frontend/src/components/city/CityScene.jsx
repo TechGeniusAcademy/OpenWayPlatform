@@ -11,6 +11,7 @@ import { TownHallPreview, TownHallPlaced } from './buildings/TownHall.jsx';
 import { StreetLampPreview, StreetLampPlaced } from './buildings/StreetLamp.jsx';
 import { ExtractorPreview, ExtractorPlaced } from './buildings/Extractor.jsx';
 import { BuilderHousePreview, BuilderHousePlaced, BuilderAtWork, BuilderRunner, UpgradeBadgeInline } from './buildings/BuilderHouse.jsx';
+import { CoalGeneratorPreview, CoalGeneratorPlaced } from './buildings/CoalGenerator.jsx';
 import { ConveyorTargetPulse } from './ConveyorTargetPulse.jsx';
 import { ConstructionSite } from './ConstructionSite.jsx';
 import { calcConveyorRates } from '../systems/connectionRates.js';
@@ -99,6 +100,7 @@ const BUILDING_HALF_SIZE = {
   'splitter':       { hw: 2.0, hh: 2.0 },
   'merger':         { hw: 2.0, hh: 2.0 },
   'builder-house':  { hw: 3.5, hh: 4.0 },
+  'coal-generator': { hw: 5.0, hh: 5.0 },
 };
 
 // ─── View-distance culling radii ─────────────────────────────────────────────
@@ -213,6 +215,9 @@ function SceneInner({
       {placingItem === 'builder-house' && (
         <BuilderHousePreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
       )}
+      {placingItem === 'coal-generator' && (
+        <CoalGeneratorPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      )}
 
       {/* Placed buildings — culled to SELF_RENDER_R around camera target */}
       {placedItems.filter(item => inSelfRange(item.position)).map(item =>
@@ -309,6 +314,20 @@ function SceneInner({
             level={buildingLevels?.[String(item.id)] ?? 1}
             totalBuilders={totalBuilders}
             freeBuilders={freeBuilders}
+          />
+        ) : item.type === 'coal-generator' ? (
+          <CoalGeneratorPlaced
+            key={item.id}
+            position={item.position}
+            rotation={item.rotation}
+            isSelected={selectedPlacedId === item.id}
+            onSelect={() => setSelectedPlacedId(item.id)}
+            isConveyorSource={droneFromId === item.id}
+            onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
+            isPowered={poweredIds ? poweredIds.has(item.id) : true}
+            onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
+            currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
+            level={buildingLevels?.[String(item.id)] ?? 1}
           />
         ) : null
       )}

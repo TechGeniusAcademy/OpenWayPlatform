@@ -17,6 +17,8 @@ registerConveyorLimits('energy-storage', { maxOut: 4,  maxIn: 20 });
 registerConveyorLimits('town-hall',      { maxOut: 1,  maxIn: 20 });
 // Money factory can send drones to many targets — coins split evenly.
 registerConveyorLimits('money-factory',  { maxOut: 10, maxIn: 1  });
+// Угольный генератор: принимает уголь из множества добытчиков, отдаёт топливо во хранилища.
+registerConveyorLimits('coal-generator', { maxOut: 6, maxIn: 6  });
 
 
 // ─── Money Factory: output port & side constraint ───────────────────────────
@@ -79,6 +81,28 @@ registerTransferRule('energy-storage', 'town-hall', {
   icon:        '🪙',
   label:       'Монеты',
   unit:        'монет/ч',
+});
+
+// Экстрактор → Угольный генератор
+// Уголь доставляется с добытчика в генератор для сжигания.
+registerTransferRule('extractor', 'coal-generator', {
+  resource:    'ore',
+  ratePerHour: 3,
+  color:       '#44403c',
+  icon:        '⬛',
+  label:       'Уголь',
+  unit:        'ед./ч',
+});
+
+// Угольный генератор → Хранилище энергии
+// Выработанное топливо передаётся в хранилище.
+registerTransferRule('coal-generator', 'energy-storage', {
+  resource:    'fuel',
+  ratePerHour: 8,
+  color:       '#f97316',
+  icon:        '🔥',
+  label:       'Топливо',
+  unit:        'л/ч',
 });
 
 // Экстрактор → Хранилище энергии
