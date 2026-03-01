@@ -20,12 +20,11 @@ import { MoneyFactoryPlaced }                        from './buildings/MoneyFact
 import { EnergyStoragePlaced }                       from './buildings/EnergyStorage.jsx';
 import { TownHallPlaced }                            from './buildings/TownHall.jsx';
 import { StreetLampPlaced }                          from './buildings/StreetLamp.jsx';
-import { SplitterPlaced, MergerPlaced }              from './buildings/SplitterMerger.jsx';
 import { ExtractorPlaced }                           from './buildings/Extractor.jsx';
 import { BuilderHousePlaced }                        from './buildings/BuilderHouse.jsx';
 import { WallSegment }                               from './buildings/Wall.jsx';
 import { TowerPlaced }                               from './buildings/Tower.jsx';
-import { ConveyorBelt }                              from './ConveyorBelt.jsx';
+import { Drone }                                     from './Drone.jsx';
 import { EnergyCable }                               from './EnergyCable.jsx';
 import { calcConveyorRates, calcCableRates }          from '../systems/connectionRates.js';
 
@@ -93,7 +92,7 @@ function OtherPlayerCityInner({ player, gameTimeRef, camCenter }) {
   const { username, placedItems = [], placedWalls = [], placedTowers = [], buildingLevels = {},
           conveyors = [], energyCables = [], storedAmounts = {}, pointsAmounts = {} } = player;
 
-  const conveyorRates = useMemo(
+  const droneRates = useMemo(
     () => calcConveyorRates(placedItems, conveyors, buildingLevels),
     [placedItems, conveyors, buildingLevels],
   );
@@ -175,14 +174,6 @@ function OtherPlayerCityInner({ player, gameTimeRef, camCenter }) {
           <StreetLampPlaced key={key} position={pos} rotation={rot} level={level}
             gameTimeRef={gameTimeRef} isPowered />
         );
-        if (item.type === 'splitter') return (
-          <SplitterPlaced key={key} position={pos} rotation={rot} level={level}
-            currentAmounts={storedAmounts[String(item.id)] ?? {}} />
-        );
-        if (item.type === 'merger') return (
-          <MergerPlaced key={key} position={pos} rotation={rot} level={level}
-            currentAmounts={storedAmounts[String(item.id)] ?? {}} />
-        );
         if (item.type === 'extractor') return (
           <ExtractorPlaced key={key} position={pos} rotation={rot} level={level}
             oreType={item.oreType} currentAmounts={storedAmounts[String(item.id)] ?? {}} isPowered />
@@ -193,14 +184,14 @@ function OtherPlayerCityInner({ player, gameTimeRef, camCenter }) {
         return null;
       })}
 
-      {/* ── Conveyors ─────────────────────────────────────────────────── */}
-      {conveyors.map(conv => (
-        <ConveyorBelt
-          key={`other_${player.userId}_conv_${conv.id}`}
-          fromId={conv.fromId}
-          toId={conv.toId}
+      {/* ── Drones ────────────────────────────────────────────────────── */}
+      {conveyors.map(drone => (
+        <Drone
+          key={`other_${player.userId}_drone_${drone.id}`}
+          fromId={drone.fromId}
+          toId={drone.toId}
           placedItems={placedItems}
-          effectiveRate={conveyorRates.get(conv.id) ?? 0}
+          effectiveRate={droneRates.get(drone.id) ?? 0}
         />
       ))}
 

@@ -28,7 +28,7 @@ function DayPeriodIcon({ hour }) {
   return <FaMoon style={{ verticalAlign: 'middle', color: '#818cf8' }} />;
 }
 
-export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, conveyorMode, conveyorFromId, cableMode, cableFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, conveyorsCount, cablesCount }) {
+export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, cableMode, cableFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, cablesCount }) {
   const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
 
   // thresholds: [goodMax, warnMax]  — above warnMax = critical
@@ -106,12 +106,12 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
         </div>
       )}
 
-      {conveyorMode && (
+      {droneMode && (
         <div className={styles.placingHint}>
           <FaLink style={{ verticalAlign: 'middle', marginRight: 5 }} />&nbsp;
-          {conveyorFromId === null
-            ? 'Нажмите на здание-источник (подсвеченные — доступные цели)'
-            : 'Нажмите на зелёное пульсирующее здание — цель'}
+          {droneFromId === null
+            ? 'Нажмите на здание-источник дрона (подсвеченные — доступные цели)'
+            : 'Нажмите на здание-цель для маршрута дрона'}
           &nbsp;·&nbsp; <kbd>Esc</kbd> отмена
         </div>
       )}
@@ -193,7 +193,7 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
           <div className={styles.debugDivider} />
           <div className={styles.debugGrid}>
             {stat('Зданий',       itemsCount,                    '<20',   20,  40)}
-            {stat('Конвейеров',  conveyorsCount,                '<10',   10,  30)}
+            {stat('Дронов',       dronesCount,                   '<10',   10,  30)}
             {stat('Кабелей',       cablesCount,                   '<10',   10,  30)}
             {stat('Зум камеры',   zoom,                          '<40',   40,  50,  v => v.toFixed(1))}
           </div>

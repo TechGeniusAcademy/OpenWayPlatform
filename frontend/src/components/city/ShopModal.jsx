@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import {
   FaSun, FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark,
-  FaHardHat, FaLink, FaBolt, FaCodeBranch, FaHome, FaMedal,
+  FaHardHat, FaLink, FaBolt, FaHome, FaMedal,
   FaCoins, FaTimes, FaStore, FaHammer, FaInfoCircle, FaShieldAlt, FaChessRook,
 } from 'react-icons/fa';
-import { MdCallMerge } from 'react-icons/md';
 import { GiMining } from 'react-icons/gi';
 import styles from '../OpenCity.module.css';
 import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, BUILDER_HOUSE_EXTRA_COST_COINS } from '../items/shopPrices.js';
@@ -193,7 +192,7 @@ function InfoTip({ lines }) {
 
 // ── Main shop modal ───────────────────────────────────────────────────────────
 export function ShopModal({
-  onClose, onBuy, onConveyor, onCable,
+  onClose, onBuy, onDrone, onCable,
   onWallMode, onTowerMode,
   userPoints = 0, coinBalance = 0,
   freeBuilders = 0, totalBuilders = 0,
@@ -231,7 +230,7 @@ export function ShopModal({
     return null;
   }
 
-  const conveyorCost = ITEM_POINT_COST['conveyor'] ?? 20;
+  const droneCost  = ITEM_POINT_COST['drone']    ?? 5;
   const cableCost    = ITEM_POINT_COST['cable']    ?? 10;
 
   const P = (type) => ({ cost: ITEM_POINT_COST[type] ?? 0 });
@@ -363,24 +362,14 @@ export function ShopModal({
           {/* ── Logistics ── */}
           {activeTab === 'logistics' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <ShopCard Icon={FaLink} iconColor="#06b6d4" name="Конвейер"
-                desc="Соединяет здания для передачи ресурсов" {...P('conveyor')}
-                disabled={userPoints < conveyorCost ? 'Мало баллов' : null}
-                disabledReason="Мало баллов"
-                onPlace={() => { onConveyor(); onClose(); }} btnLabel="Соединить" />
+              <ShopCard Icon={FaLink} iconColor="#06b6d4" name="Маршрут дрона"
+                desc="Дрон перетаскивает ресурсы между двумя зданиями" cost={droneCost}
+                onPlace={() => { onDrone(); onClose(); }} btnLabel="Назначить" />
               <ShopCard Icon={FaBolt} iconColor="#fde68a" name="Энергокабель"
                 desc="Передаёт энергию от генераторов" {...P('cable')}
                 disabled={userPoints < cableCost ? 'Мало баллов' : null}
                 disabledReason="Мало баллов"
                 onPlace={() => { onCable?.(); onClose(); }} btnLabel="Провести" />
-              <ShopCard Icon={FaCodeBranch} iconColor="#34d399" name="Распределитель"
-                desc="1 вход → 2 выхода. Делит поток на два" {...P('splitter')}
-                disabled={itemDisabled('splitter')} disabledReason={itemDisabled('splitter')}
-                onPlace={() => { onBuy('splitter'); onClose(); }} />
-              <ShopCard Icon={MdCallMerge} iconColor="#f472b6" name="Соединитель"
-                desc="2 входа → 1 выход. Объединяет два потока" {...P('merger')}
-                disabled={itemDisabled('merger')} disabledReason={itemDisabled('merger')}
-                onPlace={() => { onBuy('merger'); onClose(); }} />
             </div>
           )}
 

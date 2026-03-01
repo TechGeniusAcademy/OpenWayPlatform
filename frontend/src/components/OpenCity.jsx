@@ -1,11 +1,10 @@
 import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import styles from './OpenCity.module.css';
-import { isColliding, isPointInsideBuilding, isSegmentIntersectsBuilding } from './items/collision.js';
+import { isColliding } from './items/collision.js';
 import './items/conveyorRules.js';   // side-effect: registers all transfer rules
 import './items/energyCableRules.js'; // side-effect: registers cable rules
 import './items/townHall.js';         // side-effect: registers town-hall storage
-import './items/splitterMerger.js';   // side-effect: registers splitter/merger rules + slot limits
 import './items/extractor.js';        // side-effect: registers extractor storage
 import { findNearestOreDeposit, canMineOre } from './systems/oreRegistry.js';
 import { countFreeBuilders, countTotalBuilders, countPlacedType, findIdleBuilderHousePos } from './systems/builderSystem.js';
@@ -79,20 +78,16 @@ export default function OpenCity({ onBack }) {
   const placedItemsRef = useRef([]);
   useEffect(() => { placedItemsRef.current = placedItems; }, [placedItems]);
 
-  // ─── Conveyor state — declared BEFORE useCitySync ─────────────────────────
-  const [conveyors,      setConveyors]      = useState([]);
-  const conveyorsRef     = useRef([]);
-  useEffect(() => { conveyorsRef.current = conveyors; }, [conveyors]);
-  const [conveyorMode,   setConveyorMode]   = useState(false);
-  const conveyorModeRef  = useRef(false);
-  const [conveyorFromId, setConveyorFromId] = useState(null);
-  const conveyorFromIdRef = useRef(null);
-  useEffect(() => { conveyorModeRef.current   = conveyorMode;   }, [conveyorMode]);
-  useEffect(() => { conveyorFromIdRef.current = conveyorFromId; }, [conveyorFromId]);
-  // Массив точек-ориентиров (waypoints) для текущего маршрута конвейера
-  const conveyorWaypointsRef = useRef([]);
-  // Позиция мыши в 3D для превью маршрута (ref — без React-ререндера)
-  const conveyorCursorRef = useRef(null);
+  // ─── Drone (route) state — declared BEFORE useCitySync ─────────────────────
+  const [drones,      setDrones]      = useState([]);
+  const conveyorsRef  = useRef([]);  // kept as 'conveyorsRef' for backend-sync compat
+  useEffect(() => { conveyorsRef.current = drones; }, [drones]);
+  const [droneMode,   setDroneMode]   = useState(false);
+  const droneModeRef  = useRef(false);
+  const [droneFromId, setDroneFromId] = useState(null);
+  const droneFromIdRef = useRef(null);
+  useEffect(() => { droneModeRef.current   = droneMode;   }, [droneMode]);
+  useEffect(() => { droneFromIdRef.current = droneFromId; }, [droneFromId]);
   // ─── Energy cable state — declared BEFORE useCitySync ─────────────────────────
   const [energyCables,      setEnergyCables]      = useState([]);
   const energyCablesRef     = useRef([]);
@@ -168,7 +163,7 @@ export default function OpenCity({ onBack }) {
     placedItemsRef,
     setPlacedItems,
     conveyorsRef,
-    setConveyors,
+    setConveyors: setDrones,
     energyCablesRef,
     setEnergyCables,
     storedAmountsRef,
@@ -374,58 +369,40 @@ export default function OpenCity({ onBack }) {
   const rightClickRef    = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
 
-  // ─── Conveyor handler ─────────────────────────────────────────────────────
-  const handleConveyorBuildingClick = useCallback((itemId) => {
-    if (!conveyorModeRef.current) return;
-    const fromId = conveyorFromIdRef.current;
+  // ─── Drone route handler ──────────────────────────────────────────────────
+  const handleDroneRouteBuildingClick = useCallback((itemId) => {
+    if (!droneModeRef.current) return;
+    const fromId = droneFromIdRef.current;
 
     if (fromId === null) {
-      // ─ Select source: must be a valid source type AND not already have max outgoing conveyors
+      // Select source
       const item = placedItemsRef.current.find(i => i.id === itemId);
       if (!item) return;
       if (!canBeSource(item.type)) return;
       const outCount = conveyorsRef.current.filter(c => c.fromId === itemId).length;
-      if (outCount >= getConveyorOutLimit(item.type)) return;   // slot limit
-      setConveyorFromId(itemId);
+      if (outCount >= getConveyorOutLimit(item.type)) return;
+      setDroneFromId(itemId);
 
     } else if (fromId === itemId) {
-      // Отмена выбора истока — сбрасываем и наполненный маршрут
-      conveyorWaypointsRef.current = [];
-      setConveyorFromId(null);
+      setDroneFromId(null);
 
     } else {
       const from = placedItemsRef.current.find(i => i.id === fromId);
       const to   = placedItemsRef.current.find(i => i.id === itemId);
       if (from && to && canConnect(from.type, to.type)) {
-        const dupSrc  = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
+        const dup     = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
         const inCount = conveyorsRef.current.filter(c => c.toId === itemId).length;
-        if (!dupSrc && inCount < getConveyorInLimit(to.type)) {
-          // Проверяем последний сегмент: от последнего waypoint (или источника) до здания-назначения
-          const wps       = conveyorWaypointsRef.current;
-          const lastPt    = wps.length > 0 ? wps[wps.length - 1] : { x: from.position[0], z: from.position[2] };
-          const toCenter  = { x: to.position[0], z: to.position[2] };
-          const exclude   = new Set([fromId, itemId]);
-          const lastBlocked = isSegmentIntersectsBuilding(lastPt.x, lastPt.z, toCenter.x, toCenter.z, placedItemsRef.current, exclude);
-          console.log('[CONV] saving belt, waypoints:', JSON.stringify(conveyorWaypointsRef.current));
-          if (!lastBlocked) {
-            setConveyors(prev => [...prev, {
-              id: Date.now(),
-              fromId,
-              toId: itemId,
-              waypoints: [...conveyorWaypointsRef.current],
-            }]);
-          }
-          conveyorWaypointsRef.current = []; // сбрасываем маршрут в любом случае
+        if (!dup && inCount < getConveyorInLimit(to.type)) {
+          setDrones(prev => [...prev, { id: Date.now(), fromId, toId: itemId }]);
         }
       }
-      setConveyorFromId(null);
+      setDroneFromId(null);
     }
   }, []);
 
-  const startConveyorMode = useCallback(() => {
-    setConveyorMode(true);
-    setConveyorFromId(null);
-    conveyorWaypointsRef.current = []; // чистим маршрут при входе в режим
+  const startDroneMode = useCallback(() => {
+    setDroneMode(true);
+    setDroneFromId(null);
   }, []);
 
   // ─── Energy cable handler ────────────────────────────────────────────────────
@@ -447,49 +424,6 @@ export default function OpenCity({ onBack }) {
       }
       setCableFromId(null);
     }
-  }, []);
-
-  // Флаг: клик по зданию уже обработан — земляная плоскость не должна записывать точку
-  const conveyorBuildingHitRef = useRef(false);
-
-  // Добавление точки-ориентира при клике по земле в режиме прокладки маршрута
-  const handleConveyorGroundClick = useCallback((x, z) => {
-    console.log('[CONV] groundClick', x, z, 'mode:', conveyorModeRef.current, 'fromId:', conveyorFromIdRef.current);
-    if (!conveyorModeRef.current || conveyorFromIdRef.current === null) return;
-    // Если в этом же фрейме было нажатие на здание — пропускаем
-    if (conveyorBuildingHitRef.current) { conveyorBuildingHitRef.current = false; return; }
-    const SNAP = 1;
-    const snapped = { x: Math.round(x / SNAP) * SNAP, z: Math.round(z / SNAP) * SNAP };
-
-    // ── Проверка коллизий конвейера со зданиями ─────────────────────────────
-    const placed   = placedItemsRef.current;
-    const srcId    = conveyorFromIdRef.current;
-    const srcItem  = placed.find(i => i.id === srcId);
-    // Источник исключаем из проверки — конвейер должен выходить из него
-    const exclude  = new Set([srcId]);
-
-    // 1. Сама точка не должна быть внутри здания
-    if (isPointInsideBuilding(snapped.x, snapped.z, placed, exclude)) {
-      console.log('[CONV] blocked: point inside building', snapped);
-      return;
-    }
-
-    // 2. Сегмент от предыдущей точки (или центра источника) до новой точки
-    //    не должен проходить сквозь здание
-    const prevWps = conveyorWaypointsRef.current;
-    const prev = prevWps.length > 0
-      ? prevWps[prevWps.length - 1]
-      : srcItem
-        ? { x: srcItem.position[0], z: srcItem.position[2] }
-        : null;
-    if (prev && isSegmentIntersectsBuilding(prev.x, prev.z, snapped.x, snapped.z, placed, exclude)) {
-      console.log('[CONV] blocked: segment intersects building', prev, '->', snapped);
-      return;
-    }
-    // ────────────────────────────────────────────────────────────────────────
-
-    console.log('[CONV] waypoint added', snapped, 'total:', conveyorWaypointsRef.current.length + 1);
-    conveyorWaypointsRef.current = [...conveyorWaypointsRef.current, snapped];
   }, []);
 
   const startCableMode = useCallback(() => {
@@ -587,8 +521,8 @@ export default function OpenCity({ onBack }) {
     rightClickRef.current = { itemId, itemType, x, y };
   }, []);
 
-  const handleConveyorRightClick = useCallback((convId, x, y) => {
-    rightClickRef.current = { itemId: convId, itemType: 'conveyor', x, y };
+  const handleDroneRightClick = useCallback((droneId, x, y) => {
+    rightClickRef.current = { itemId: droneId, itemType: 'drone', x, y };
   }, []);
 
   const handleCableRightClick = useCallback((cableId, x, y) => {
@@ -740,8 +674,8 @@ export default function OpenCity({ onBack }) {
   const handleSell = useCallback(() => {
     if (!contextMenu) return;
     const { itemId: id, itemType } = contextMenu;
-    if (itemType === 'conveyor') {
-      setConveyors(prev => prev.filter(c => c.id !== id));
+    if (itemType === 'drone') {
+      setDrones(prev => prev.filter(c => c.id !== id));
     } else if (itemType === 'cable') {
       setEnergyCables(prev => prev.filter(c => c.id !== id));
     } else if (itemType === 'wall') {
@@ -751,7 +685,7 @@ export default function OpenCity({ onBack }) {
     } else {
       // building — also remove attached connections
       setPlacedItems(prev => prev.filter(i => i.id !== id));
-      setConveyors(prev => prev.filter(c => c.fromId !== id && c.toId !== id));
+      setDrones(prev => prev.filter(c => c.fromId !== id && c.toId !== id));
       setEnergyCables(prev => prev.filter(c => c.fromId !== id && c.toId !== id));
     }
     setContextMenu(null);
@@ -765,7 +699,7 @@ export default function OpenCity({ onBack }) {
     if (item) {
       movingItemIdRef.current = item.id; // remember old id so level is preserved
       setPlacedItems(prev => prev.filter(i => i.id !== item.id));
-      setConveyors(prev => prev.filter(c => c.fromId !== item.id && c.toId !== item.id));
+      setDrones(prev => prev.filter(c => c.fromId !== item.id && c.toId !== item.id));
       startPlacing(item.type);
     }
     setContextMenu(null);
@@ -790,7 +724,7 @@ export default function OpenCity({ onBack }) {
   }, []);
 
   const cityCtx = useMemo(
-    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef, placedItemsRef, placedHitRef, conveyorModeRef, rightClickHitRef, cableModeRef, wallModeRef, towerModeRef }),
+    () => ({ lmbHeldRef, selectedRef, meshMapRef, placingItemRef, placedItemsRef, placedHitRef, conveyorModeRef: droneModeRef, rightClickHitRef, cableModeRef, wallModeRef, towerModeRef }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
@@ -806,9 +740,8 @@ export default function OpenCity({ onBack }) {
         if (cableModeRef.current) {
           setCableMode(false); setCableFromId(null); e.preventDefault(); return;
         }
-        if (conveyorModeRef.current) {
-          conveyorWaypointsRef.current = [];
-          setConveyorMode(false); setConveyorFromId(null); e.preventDefault(); return;
+        if (droneModeRef.current) {
+          setDroneMode(false); setDroneFromId(null); e.preventDefault(); return;
         }
         if (placingItemRef.current) { movingItemIdRef.current = null; setPlacingItem(null); e.preventDefault(); return; }
         clearSelection();
@@ -964,8 +897,8 @@ export default function OpenCity({ onBack }) {
           return;
         }
         lmbHeldRef.current = true;
-        // В режиме конвейера левый клик записывает точку маршрута — не запускать панорамирование камеры
-        if (!conveyorModeRef.current) {
+        // В режиме дронов левый клик не запускает панорамирование камеры
+        if (!droneModeRef.current) {
           inputRef.current.middleDrag = true;
           inputRef.current.lastMX = e.clientX;
           inputRef.current.lastMY = e.clientY;
@@ -1067,13 +1000,10 @@ export default function OpenCity({ onBack }) {
             selectedPlacedId={selectedPlacedId}
             setSelectedPlacedId={setSelectedPlacedId}
             gameTimeRef={gameTimeRef}
-            conveyors={conveyors}
-            conveyorMode={conveyorMode}
-            conveyorFromId={conveyorFromId}
-            onConveyorBuildingClick={handleConveyorBuildingClick}
-            conveyorWaypointsRef={conveyorWaypointsRef}
-            conveyorCursorRef={conveyorCursorRef}
-            onConveyorGroundClick={handleConveyorGroundClick}
+            drones={drones}
+            droneMode={droneMode}
+            droneFromId={droneFromId}
+            onDroneRouteBuildingClick={handleDroneRouteBuildingClick}
             energyCables={energyCables}
             cableFromId={cableFromId}
             onCableBuildingClick={handleCableBuildingClick}
@@ -1089,7 +1019,7 @@ export default function OpenCity({ onBack }) {
             totalBuilders={countTotalBuilders(placedItems, buildingLevels)}
             freeBuilders={countFreeBuilders(placedItems, buildingLevels, constructingBuildings, upgradingBuildings)}
             onBuildingRightClick={handleBuildingRightClick}
-            onConveyorRightClick={handleConveyorRightClick}
+            onDroneRightClick={handleDroneRightClick}
             onCableRightClick={handleCableRightClick}
             placedWalls={placedWalls}
             placedTowers={placedTowers}
@@ -1121,10 +1051,10 @@ export default function OpenCity({ onBack }) {
           onToggleDebug={() => setDebugOpen(v => !v)}
           rendererStats={rendererStats}
           itemsCount={placedItems.length}
-          conveyorsCount={conveyors.length}
+          dronesCount={drones.length}
           cablesCount={energyCables.length}
-          conveyorMode={conveyorMode}
-          conveyorFromId={conveyorFromId}
+          droneMode={droneMode}
+          droneFromId={droneFromId}
           cableMode={cableMode}
           cableFromId={cableFromId}
           wallMode={wallMode}
@@ -1136,7 +1066,7 @@ export default function OpenCity({ onBack }) {
           <ShopModal
             onClose={() => setShopOpen(false)}
             onBuy={startPlacing}
-            onConveyor={startConveyorMode}
+            onDrone={startDroneMode}
             onCable={startCableMode}
             onWallMode={startWallMode}
             onTowerMode={startTowerMode}
