@@ -139,44 +139,101 @@ function BuilderFigure({ animation = 'idle', scale = 1 }) {
   );
 }
 
-// ─── Builder at work — drone shown at any active build/upgrade site ──────────
+// ─── Builder at work — drone orbits the active build/upgrade site ───────────
 
 export function BuilderAtWork({ position }) {
   const { scene } = useGLTF('/models/worker drone.glb');
   const cloneRef = useRef(null);
   if (!cloneRef.current) cloneRef.current = scene.clone(true);
+  const groupRef = useRef();
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    const t = clock.getElapsedTime();
+    const orbitR = 1.4;
+    const angle  = t * 0.9;
+    groupRef.current.position.set(
+      position[0] + Math.cos(angle) * orbitR,
+      2.5 + Math.sin(t * 2.2) * 0.18,
+      position[2] + Math.sin(angle) * orbitR,
+    );
+    groupRef.current.rotation.y = angle + Math.PI;
+  });
+
   return (
-    <group position={[position[0] + 1.2, 2.5, position[2] + 1.2]}>
+    <group ref={groupRef} position={[position[0] + 1.4, 2.5, position[2]]}>
       <primitive object={cloneRef.current} scale={0.6} />
     </group>
   );
 }
 
-// ─── Builder runner — drone flying from builder house to target ────────────
+// ─── Builder runner — flies to target and returns to platform ──────────────
 
 export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000 }) {
   const groupRef = useRef();
   const [done, setDone] = useState(false);
+  const phaseRef       = useRef('going');  // 'going' | 'returning'
+  const returnStartRef = useRef(null);
   const { scene } = useGLTF('/models/worker drone.glb');
   const cloneRef = useRef(null);
   if (!cloneRef.current) cloneRef.current = scene.clone(true);
 
   useFrame(() => {
     if (done || !groupRef.current) return;
-    const progress = Math.min(1, (Date.now() - startReal) / durationMs);
-    if (progress >= 1) { setDone(true); return; }
-    const x = fromPos[0] + (toPos[0] - fromPos[0]) * progress;
-    const z = fromPos[2] + (toPos[2] - fromPos[2]) * progress;
-    groupRef.current.position.set(x, 3.5, z);
-    const dx = toPos[0] - fromPos[0];
-    const dz = toPos[2] - fromPos[2];
-    groupRef.current.rotation.y = Math.atan2(dx, dz);
+    if (phaseRef.current === 'going') {
+      const progress = Math.min(1, (Date.now() - startReal) / durationMs);
+      const x = fromPos[0] + (toPos[0] - fromPos[0]) * progress;
+      const z = fromPos[2] + (toPos[2] - fromPos[2]) * progress;
+      groupRef.current.position.set(x, 3.5, z);
+      groupRef.current.rotation.y = Math.atan2(toPos[0] - fromPos[0], toPos[2] - fromPos[2]);
+      if (progress >= 1) {
+        phaseRef.current = 'returning';
+        returnStartRef.current = Date.now();
+      }
+    } else {
+      const progress = Math.min(1, (Date.now() - returnStartRef.current) / durationMs);
+      const x = toPos[0] + (fromPos[0] - toPos[0]) * progress;
+      const z = toPos[2] + (fromPos[2] - toPos[2]) * progress;
+      groupRef.current.position.set(x, 3.5, z);
+      groupRef.current.rotation.y = Math.atan2(fromPos[0] - toPos[0], fromPos[2] - toPos[2]);
+      if (progress >= 1) setDone(true);
+    }
   });
 
   if (done) return null;
   return (
     <group ref={groupRef} position={[fromPos[0], 3.5, fromPos[2]]}>
       <primitive object={cloneRef.current} scale={0.6} />
+    </group>
+  );
+}
+
+// ─── Dock positions on the platform (up to 6 drones) ───────────────────────
+
+const DOCK_POSITIONS = [
+  [-1.4,  1.3, -1.4],
+  [ 1.4,  1.3, -1.4],
+  [-1.4,  1.3,  1.4],
+  [ 1.4,  1.3,  1.4],
+  [ 0,    1.3,  0  ],
+  [ 0,    1.3, -2.2],
+];
+
+function PlatformDrone({ dockPos, index }) {
+  const { scene } = useGLTF('/models/worker drone.glb');
+  const cloneRef = useRef(null);
+  if (!cloneRef.current) cloneRef.current = scene.clone(true);
+  const groupRef = useRef();
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    const t = clock.getElapsedTime() + index * 1.57;
+    groupRef.current.position.y = dockPos[1] + Math.sin(t * 1.3) * 0.12;
+  });
+
+  return (
+    <group ref={groupRef} position={dockPos}>
+      <primitive object={cloneRef.current} scale={0.5} />
     </group>
   );
 }
@@ -407,6 +464,11 @@ function BuilderHousePlacedBase({
       />
 
       <LevelPlinth level={level} size={4.5} />
+
+      {/* Idle drones parked on platform */}
+      {Array.from({ length: Math.max(0, freeBuilders ?? lvlConf?.buildersCount ?? level) }).map((_, i) => (
+        <PlatformDrone key={i} dockPos={DOCK_POSITIONS[i % DOCK_POSITIONS.length]} index={i} />
+      ))}
 
       {/* Upgrade progress badge */}
       {upgradeInfo && <UpgradeBadgeInline upgradeInfo={upgradeInfo} badgeHeight={BUILDER_HOUSE_CONFIG.badgeHeight + 6} />}
