@@ -48,48 +48,28 @@ export function EnergyStorageBody({ emissiveColor, emissiveIntensity, opacity = 
 
 function EnergyStorageGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
   const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-  const mat0 = useRef(); // body
-  const mat1 = useRef(); // cap
-  const mat2 = useRef(); // nub
-  const mat3 = useRef(); // band 1
-  const mat4 = useRef(); // band 2
+  const { scene } = useGLTF('/models/Storage Unit.glb');
+  const cloneRef = useRef(null);
+  if (!cloneRef.current) cloneRef.current = scene.clone(true);
+  const _col = useRef(new THREE.Color());
 
   useFrame(({ clock }) => {
-    const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    const blocked = blockedRef.current;
-    const col     = blocked ? 0xff2200 : 0xaa44ff;
-    for (const m of [mat0, mat1, mat2]) {
-      if (m.current) { m.current.emissive.setHex(col); m.current.emissiveIntensity = pulse; m.current.opacity = 0.82; }
-    }
-    for (const m of [mat3, mat4]) {
-      if (m.current) { m.current.emissive.setHex(col); m.current.emissiveIntensity = pulse + 0.3; }
-    }
+    if (!groupRef.current) return;
+    const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    _col.current.setHex(blockedRef.current ? 0xff2200 : 0xaa44ff);
+    cloneRef.current?.traverse((obj) => {
+      if (!obj.isMesh || !obj.material) return;
+      const mat = obj.material;
+      if (mat.emissive) mat.emissive.copy(_col.current);
+      mat.emissiveIntensity = pulse * 0.5 + 0.3;
+      mat.opacity = 0.78;
+      mat.transparent = true;
+    });
   });
 
   return (
     <group ref={groupRef}>
-      <group position={[0, ENERGY_STORAGE_Y, 0]} rotation={[ENERGY_STORAGE_TILT_X, 0, ENERGY_STORAGE_TILT_Z]}>
-        <mesh castShadow position={[0, 2, 0]}>
-          <boxGeometry args={[3, 4, 3]} />
-          <meshStandardMaterial ref={mat0} color="#1e293b" emissive={new THREE.Color(0xaa44ff)} emissiveIntensity={0.8} transparent opacity={0.82} roughness={0.35} metalness={0.6} />
-        </mesh>
-        <mesh castShadow position={[0, 4.35, 0]}>
-          <boxGeometry args={[2, 0.7, 2]} />
-          <meshStandardMaterial ref={mat1} color="#64748b" emissive={new THREE.Color(0xaa44ff)} emissiveIntensity={0.5} transparent opacity={0.82} roughness={0.35} metalness={0.6} />
-        </mesh>
-        <mesh castShadow position={[0, 4.85, 0]}>
-          <cylinderGeometry args={[0.35, 0.35, 0.3, 8]} />
-          <meshStandardMaterial ref={mat2} color="#94a3b8" emissive={new THREE.Color(0xaa44ff)} emissiveIntensity={0.3} transparent opacity={0.82} roughness={0.35} metalness={0.6} />
-        </mesh>
-        <mesh position={[0, 1.5, 0]}>
-          <boxGeometry args={[3.04, 0.18, 3.04]} />
-          <meshStandardMaterial ref={mat3} color="#a855f7" emissive={new THREE.Color(0xaa44ff)} emissiveIntensity={1.1} transparent opacity={0.9} />
-        </mesh>
-        <mesh position={[0, 2.8, 0]}>
-          <boxGeometry args={[3.04, 0.18, 3.04]} />
-          <meshStandardMaterial ref={mat4} color="#a855f7" emissive={new THREE.Color(0xaa44ff)} emissiveIntensity={1.1} transparent opacity={0.9} />
-        </mesh>
-      </group>
+      <primitive object={cloneRef.current} />
     </group>
   );
 }

@@ -169,22 +169,28 @@ const _previewCol = new THREE.Color();
 
 function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
   const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
+  const { scene: factoryPreviewScene } = useGLTF('/models/Factory.glb');
+  const previewCloneRef = useRef(null);
+  if (!previewCloneRef.current) previewCloneRef.current = factoryPreviewScene.clone(true);
+
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
     const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
     _previewCol.setHex(blockedRef.current ? 0xff2200 : 0x00ff88);
-    groupRef.current.traverse((obj) => {
-      if (!obj.isMesh || !obj.material) return;
-      const mat = obj.material;
-      if (mat.emissive) mat.emissive.copy(_previewCol);
-      mat.emissiveIntensity = pulse * 0.5 + 0.3;
-      mat.opacity = 0.82;
-      mat.transparent = true;
-    });
+    if (previewCloneRef.current) {
+      previewCloneRef.current.traverse((obj) => {
+        if (!obj.isMesh || !obj.material) return;
+        const mat = obj.material;
+        if (mat.emissive) mat.emissive.copy(_previewCol);
+        mat.emissiveIntensity = pulse * 0.5 + 0.3;
+        mat.opacity = 0.82;
+        mat.transparent = true;
+      });
+    }
   });
   return (
     <group ref={groupRef}>
-      <MoneyFactoryBody emissiveColor="#00ff88" emissiveIntensity={0.35} transparent opacity={0.82} isPreview />
+      <primitive object={previewCloneRef.current} />
     </group>
   );
 }

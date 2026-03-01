@@ -254,11 +254,13 @@ export function ExtractorBody({
 
 function ExtractorPreviewInner({ placementPosRef, inputRef, placementRotYRef }) {
   const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-  const matRef     = useRef();
-  const coneMat    = useRef();
+  const { scene: drillScene } = useGLTF('/models/Drill.glb');
+  const drillPreviewRef = useRef(null);
+  if (!drillPreviewRef.current) drillPreviewRef.current = drillScene.clone(true);
   const noOreRef   = useRef(true);
   const hintDivRef = useRef(null);
-  const prevFrameRef = useRef(0); // throttle: ore check every 2nd frame
+  const prevFrameRef = useRef(0);
+  const _col = useRef(new THREE.Color());
 
   useFrame(({ clock }) => {
     if (++prevFrameRef.current % 2 !== 0) return;
@@ -266,8 +268,7 @@ function ExtractorPreviewInner({ placementPosRef, inputRef, placementRotYRef }) 
     if (pos) {
       const nearOre    = findNearestOreDeposit(pos.x, pos.z);
       noOreRef.current = !nearOre;
-      if (!nearOre) blockedRef.current = true; // force blocked – not on ore
-      // Update hint via direct DOM mutation (avoids React re-render overhead)
+      if (!nearOre) blockedRef.current = true;
       if (hintDivRef.current) {
         if (!nearOre) {
           hintDivRef.current.textContent = '! Только на руду';
@@ -279,43 +280,23 @@ function ExtractorPreviewInner({ placementPosRef, inputRef, placementRotYRef }) 
       }
     }
     const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    // green = valid ore spot, orange = ore but collision, red = no ore
-    const col = noOreRef.current
-      ? 0xcc0000        // red – no ore deposit nearby
-      : blockedRef.current
-        ? 0xff6600     // orange – on ore but collision
-        : 0x00bb44;    // green – valid placement
-    if (matRef.current) {
-      matRef.current.emissive.setHex(col);
-      matRef.current.emissiveIntensity = pulse * 0.6;
-    }
-    if (coneMat.current) {
-      coneMat.current.emissive.setHex(col);
-      coneMat.current.emissiveIntensity = pulse * 0.5;
+    const col = noOreRef.current ? 0xcc0000 : blockedRef.current ? 0xff6600 : 0x00bb44;
+    _col.current.setHex(col);
+    if (drillPreviewRef.current) {
+      drillPreviewRef.current.traverse((obj) => {
+        if (!obj.isMesh || !obj.material) return;
+        const mat = obj.material;
+        if (mat.emissive) mat.emissive.copy(_col.current);
+        mat.emissiveIntensity = pulse * 0.5 + 0.3;
+        mat.opacity = 0.78;
+        mat.transparent = true;
+      });
     }
   });
 
   return (
     <group ref={groupRef}>
-      {/* Simplified ghost preview */}
-      <mesh castShadow position={[0, 1.2, 0]}>
-        <boxGeometry args={[3.5, 2.4, 3.5]} />
-        <meshStandardMaterial
-          ref={matRef}
-          color="#92400e"
-          emissive={new THREE.Color(0x00bb44)}
-          emissiveIntensity={0.5}
-          transparent
-          opacity={0.75}
-          roughness={0.7}
-          metalness={0.3}
-        />
-      </mesh>
-      <mesh position={[0, 3.5, 0]}>
-        <coneGeometry args={[0.4, 1.2, 6]} />
-        <meshStandardMaterial ref={coneMat} color="#a16207" transparent opacity={0.75}
-          emissive={new THREE.Color(0x00bb44)} emissiveIntensity={0.5} />
-      </mesh>
+      <primitive object={drillPreviewRef.current} />
       {/* Placement hint: which ore / warning */}
       <Html position={[0, 5.5, 0]} center distanceFactor={28} zIndexRange={[10, 11]} style={{ pointerEvents: 'none' }}>
         <div

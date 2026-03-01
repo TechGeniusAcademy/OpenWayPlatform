@@ -424,38 +424,28 @@ function BuilderCountBadge({ totalBuilders, freeBuilders, badgeHeight }) {
 
 function BuilderHousePreviewInner({ placementPosRef, inputRef, placementRotYRef }) {
   const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-  const matRef = useRef();
+  const { scene: platformPreviewScene } = useGLTF('/models/workers platform.glb');
+  const previewCloneRef = useRef(null);
+  if (!previewCloneRef.current) previewCloneRef.current = platformPreviewScene.clone(true);
+  const _col = useRef(new THREE.Color());
 
   useFrame(({ clock }) => {
+    if (!groupRef.current) return;
     const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    const col   = blockedRef.current ? 0xff2200 : 0x22cc55;
-    if (matRef.current) {
-      matRef.current.emissive.setHex(col);
-      matRef.current.emissiveIntensity = pulse * 0.6;
-      matRef.current.opacity = 0.72;
-    }
+    _col.current.setHex(blockedRef.current ? 0xff2200 : 0x22cc55);
+    previewCloneRef.current?.traverse((obj) => {
+      if (!obj.isMesh || !obj.material) return;
+      const mat = obj.material;
+      if (mat.emissive) mat.emissive.copy(_col.current);
+      mat.emissiveIntensity = pulse * 0.5 + 0.2;
+      mat.opacity = 0.78;
+      mat.transparent = true;
+    });
   });
 
   return (
     <group ref={groupRef}>
-      <mesh castShadow position={[0, 2.0, 0]}>
-        <boxGeometry args={[5.6, 3.7, 5.6]} />
-        <meshStandardMaterial
-          ref={matRef}
-          color="#d97706"
-          emissive={new THREE.Color(0x22cc55)}
-          emissiveIntensity={0.5}
-          transparent
-          opacity={0.72}
-          roughness={0.8}
-          metalness={0.05}
-        />
-      </mesh>
-      <mesh castShadow position={[0, 4.8, 0]}>
-        <coneGeometry args={[4.2, 2.2, 4]} />
-        <meshStandardMaterial color="#7f1d1d" transparent opacity={0.72}
-          emissive={new THREE.Color(0x22cc55)} emissiveIntensity={0.3} />
-      </mesh>
+      <primitive object={previewCloneRef.current} />
     </group>
   );
 }

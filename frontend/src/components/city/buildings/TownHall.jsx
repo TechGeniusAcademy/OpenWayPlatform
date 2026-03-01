@@ -139,24 +139,28 @@ export function PointsBadge({ points = 0, badgeHeight = 13 }) {
 
 function TownHallGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
   const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
-  const matRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
+  const { scene } = useGLTF('/models/Space rocket.glb');
+  const cloneRef = useRef(null);
+  if (!cloneRef.current) cloneRef.current = scene.clone(true);
+  const _col = useRef(new THREE.Color());
 
   useFrame(({ clock }) => {
-    const pulse   = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
-    const blocked = blockedRef.current;
-    const col     = blocked ? 0xff2200 : 0xf59e0b;
-    for (const r of matRefs) {
-      if (r.current) {
-        r.current.emissive.setHex(col);
-        r.current.emissiveIntensity = pulse;
-        r.current.opacity = 0.82;
-      }
-    }
+    if (!groupRef.current) return;
+    const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
+    _col.current.setHex(blockedRef.current ? 0xff2200 : 0xf59e0b);
+    cloneRef.current?.traverse((obj) => {
+      if (!obj.isMesh || !obj.material) return;
+      const mat = obj.material;
+      if (mat.emissive) mat.emissive.copy(_col.current);
+      mat.emissiveIntensity = pulse * 0.5 + 0.3;
+      mat.opacity = 0.78;
+      mat.transparent = true;
+    });
   });
 
   return (
     <group ref={groupRef}>
-      <TownHallBody emissiveColor={0xf59e0b} emissiveIntensity={0.6} opacity={0.82} transparent />
+      <primitive object={cloneRef.current} />
     </group>
   );
 }
