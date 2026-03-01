@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { CityContext } from '../CityContext.js';
-import { usePlacementTracker, StorageBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, memo, buildingPropsEqual } from '../SharedUI.jsx';
+import { usePlacementTracker, StorageBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, LevelPlinth, memo, buildingPropsEqual } from '../SharedUI.jsx';
 import { ConveyorSourceRing } from '../ConveyorBelt.jsx';
 import { TOWN_HALL_CONFIG } from '../../items/townHall.js';
 import { getLevelConfig } from '../../systems/upgrades.js';
@@ -209,6 +209,7 @@ function TownHallGLTFPlaced({
       )}
       <StorageBadge itemType="town-hall" badgeHeight={badgeHeight} currentAmounts={currentAmounts} level={level} />
       <PointsBadge points={points ?? 0} badgeHeight={badgeHeight} />
+      <LevelPlinth level={level} size={6} />
       {isConveyorSource && <ConveyorSourceRing />}
     </group>
   );

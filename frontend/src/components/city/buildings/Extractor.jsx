@@ -9,6 +9,7 @@ import {
   WorkAreaOverlay,
   LevelBadge,
   LevelRing,
+  LevelPlinth,
   memo,
   buildingPropsEqual,
 } from '../SharedUI.jsx';
@@ -382,6 +383,7 @@ function ExtractorGLTFPlaced({
       <UpgradeProgressBadge upgradeInfo={upgradeInfo} badgeHeight={EXTRACTOR_CONFIG.badgeHeight} />
 
       <StorageBadge itemType="extractor" badgeHeight={EXTRACTOR_CONFIG.badgeHeight + 3} currentAmounts={currentAmounts} level={level} />
+      <LevelPlinth level={level} size={3.5} />
       {isConveyorSource && <ConveyorSourceRing />}
 
       {isSelected && (

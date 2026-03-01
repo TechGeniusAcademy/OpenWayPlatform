@@ -388,3 +388,37 @@ export function LevelRing({ level = 1, radius = 4 }) {
     </group>
   );
 }
+// ─── Level plinth: static corner pips on the ground ─────────────────────────
+/**
+ * Renders N small glowing corner posts at the base of a building.
+ * N = level (capped at 4). Nothing shown at level 1.
+ * No animation — purely static colored geometry.
+ */
+export function LevelPlinth({ level = 1, size = 4 }) {
+  if (level <= 1) return null;
+  const color = LEVEL_COLORS[level] ?? '#4ade80';
+  const h = size * 0.5;
+  const corners = [
+    [ h,  h],
+    [-h,  h],
+    [-h, -h],
+    [ h, -h],
+  ];
+  const count = Math.min(level, 4);
+  return (
+    <group position={[0, 0.08, 0]}>
+      {corners.slice(0, count).map(([x, z], i) => (
+        <mesh key={i} position={[x, 0, z]}>
+          <boxGeometry args={[0.28, 0.28, 0.28]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={0.8}
+            roughness={0.2}
+            metalness={0.6}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}

@@ -2,7 +2,7 @@ import { useRef, useContext } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CityContext, SOLAR_PANEL_Y, SOLAR_PANEL_TILT_X, SOLAR_PANEL_TILT_Z } from '../CityContext.js';
-import { usePlacementTracker, EnergyBadge, WorkAreaOverlay, LevelBadge, LevelRing, memo, buildingPropsEqual } from '../SharedUI.jsx';
+import { usePlacementTracker, EnergyBadge, WorkAreaOverlay, LevelBadge, LevelRing, LevelPlinth, memo, buildingPropsEqual } from '../SharedUI.jsx';
 import { ConveyorSourceRing } from '../ConveyorBelt.jsx';
 import { CableSourceRing } from '../EnergyCable.jsx';
 import { SOLAR_PANEL_CONFIG } from '../../items/solarPanel.js';
@@ -128,6 +128,7 @@ function SolarPanelGLTFPlaced({ position, rotation, isSelected, onSelect, onConv
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
         <SolarPanelBody accentOverride={accent} emissiveColor={accent} emissiveIntensity={glow} />
       </group>
+      <LevelPlinth level={level} size={4} />
       {isConveyorSource && <ConveyorSourceRing />}
       {isCableSource && <CableSourceRing />}
       {isSelected && (

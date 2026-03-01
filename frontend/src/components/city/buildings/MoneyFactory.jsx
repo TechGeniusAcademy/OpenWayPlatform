@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CityContext, MONEY_FACTORY_Y, MONEY_FACTORY_TILT_X, MONEY_FACTORY_TILT_Z } from '../CityContext.js';
-import { usePlacementTracker, EnergyBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, memo, buildingPropsEqual } from '../SharedUI.jsx';
+import { usePlacementTracker, EnergyBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, LevelPlinth, memo, buildingPropsEqual } from '../SharedUI.jsx';
 import { ConveyorSourceRing } from '../ConveyorBelt.jsx';
 import { CableSourceRing } from '../EnergyCable.jsx';
 import { MONEY_FACTORY_CONFIG } from '../../items/moneyFactory.js';
@@ -215,6 +215,7 @@ function MoneyFactoryGLTFPlaced({ position, rotation, isSelected, onSelect, onCo
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
         <MoneyFactoryBody accentOverride={accent} emissiveColor={accent} emissiveIntensity={glow} />
       </group>
+      <LevelPlinth level={level} size={5} />
       {isConveyorSource && <ConveyorSourceRing />}
       {isCableSource && <CableSourceRing />}
       {isSelected && (

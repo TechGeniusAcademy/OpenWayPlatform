@@ -18,6 +18,7 @@ import {
   WorkAreaOverlay,
   LevelBadge,
   LevelRing,
+  LevelPlinth,
   memo,
   buildingPropsEqual,
 } from '../SharedUI.jsx';
@@ -404,6 +405,8 @@ function BuilderHousePlacedBase({
         freeBuilders={freeBuilders ?? lvlConf?.buildersCount ?? level}
         badgeHeight={BUILDER_HOUSE_CONFIG.badgeHeight}
       />
+
+      <LevelPlinth level={level} size={4.5} />
 
       {/* Upgrade progress badge */}
       {upgradeInfo && <UpgradeBadgeInline upgradeInfo={upgradeInfo} badgeHeight={BUILDER_HOUSE_CONFIG.badgeHeight + 6} />}

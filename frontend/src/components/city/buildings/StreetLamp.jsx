@@ -10,7 +10,7 @@ import { useRef, useContext, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CityContext } from '../CityContext.js';
-import { usePlacementTracker, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, memo, buildingPropsEqual } from '../SharedUI.jsx';
+import { usePlacementTracker, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, LevelPlinth, memo, buildingPropsEqual } from '../SharedUI.jsx';
 import { Html } from '@react-three/drei';
 import { CableSourceRing } from '../EnergyCable.jsx';
 import { FaBolt } from 'react-icons/fa';
@@ -293,6 +293,7 @@ function StreetLampPlacedBase({
         />
       )}
 
+      <LevelPlinth level={level} size={2.5} />
     </group>
   );
 }

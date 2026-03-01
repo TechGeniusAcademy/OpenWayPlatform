@@ -2,7 +2,7 @@ import { useRef, useContext } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CityContext, ENERGY_STORAGE_Y, ENERGY_STORAGE_TILT_X, ENERGY_STORAGE_TILT_Z } from '../CityContext.js';
-import { usePlacementTracker, StorageBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, memo, buildingPropsEqual } from '../SharedUI.jsx';
+import { usePlacementTracker, StorageBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, LevelPlinth, memo, buildingPropsEqual } from '../SharedUI.jsx';
 import { ConveyorSourceRing } from '../ConveyorBelt.jsx';
 import { CableSourceRing } from '../EnergyCable.jsx';
 import { ENERGY_STORAGE_CONFIG } from '../../items/energyStorage.js';
@@ -120,6 +120,7 @@ function EnergyStorageGLTFPlaced({ position, rotation, isSelected, onSelect, onC
         <EnergyStorageBody accentOverride={accent} emissiveColor={accent} emissiveIntensity={glow} />
       </group>
       <StorageBadge itemType="energy-storage" badgeHeight={ENERGY_STORAGE_CONFIG.badgeHeight} currentAmounts={currentAmounts} level={level} />
+      <LevelPlinth level={level} size={4} />
       {isConveyorSource && <ConveyorSourceRing />}
       {isCableSource && <CableSourceRing />}
       {isPowered === false && <NoPowerBadge badgeHeight={ENERGY_STORAGE_CONFIG.badgeHeight} />}
