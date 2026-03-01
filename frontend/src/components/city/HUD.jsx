@@ -319,6 +319,46 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
         </div>
       )}
 
+      {energyTotals && Object.keys(energyTotals).length > 0 && (
+        <div className={styles.energyPanel}>
+          {Object.entries(energyTotals).map(([type, val]) => {
+            const meta = ENERGY_TYPES[type];
+            return (
+              <div key={type} className={styles.energyRow} style={{ color: meta?.color ?? '#fff' }}>
+                <span><EnergyIcon type={type} /></span>
+                <span>{meta?.label ?? type}</span>
+                <strong>{val} {meta?.unit ?? ''}/ч</strong>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {points > 0 && (
+        <div className={styles.energyPanel} style={{ marginTop: 6, borderColor: 'rgba(245,158,11,0.6)', background: 'rgba(120,60,0,0.72)' }}>
+          <div className={styles.energyRow} style={{ color: '#fbbf24' }}>
+            <span><FaTrophy style={{ verticalAlign: 'middle' }} /></span>
+            <span>Очки города</span>
+            <strong>{points}</strong>
+          </div>
+        </div>
+      )}
+
+      {storageTotals && Object.keys(storageTotals).length > 0 && (
+        <div className={styles.energyPanel} style={{ marginTop: 6, borderColor: 'rgba(168,85,247,0.4)' }}>
+          {Object.entries(storageTotals).map(([type, val]) => {
+            const meta = ENERGY_TYPES[type];
+            return (
+              <div key={type} className={styles.energyRow} style={{ color: '#d8b4fe' }}>
+                <span><GiBattery100 style={{ verticalAlign: 'middle' }} /></span>
+                <span>{meta?.label ?? type} запас</span>
+                <strong>{val} {meta?.unit ?? ''}</strong>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {placingItem && (
         <div className={styles.placingHint}>
           <FaWrench style={{ verticalAlign: 'middle', marginRight: 5 }} /> Перемещайте объект &nbsp;·&nbsp; <kbd>Колесо</kbd> поворот &nbsp;·&nbsp; <kbd>ЛКМ</kbd> поставить &nbsp;·&nbsp; <kbd>Esc</kbd> отмена
