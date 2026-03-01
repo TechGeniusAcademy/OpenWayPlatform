@@ -47,7 +47,7 @@ export default function OpenCity({ onBack }) {
   // ─── Day / night time tracking ────────────────────────────────────────────
   // Derived from wall-clock so all players share the same game time.
   // DEV: set to a number (0–24) to freeze the clock; null = live cycle.
-  const DEV_FREEZE_TIME = 12; // ← заморозка на 12:00; поставь null чтобы снять
+  const DEV_FREEZE_TIME = null; // ← null = живое время; число (0-24) = заморозка
   const GAME_DAY_MS = 24 * REAL_MS_PER_GAME_HOUR;
   const getSharedGameTime = () =>
     DEV_FREEZE_TIME !== null

@@ -27,7 +27,7 @@ const _dummy = new THREE.Object3D();
 // Shared smoke geometry and material — all factory instances reuse these
 const SMOKE_GEO = new THREE.SphereGeometry(0.22, 5, 4);
 const SMOKE_MAT = new THREE.MeshStandardMaterial({
-  color: '#9ca3af', transparent: true, opacity: 0.38,
+  color: '#005eff', transparent: true, opacity: 0.38,
   roughness: 1, metalness: 0, depthWrite: false,
 });
 
@@ -67,7 +67,22 @@ function SmokeParticles() {
 function FactoryGLB({ emissiveColor, emissiveIntensity, accentOverride }) {
   const { gl } = useThree();
   const { scene } = useGLTF(MODEL_URL);
-  const model = useMemo(() => scene.clone(true), [scene]);
+  const model = useMemo(() => {
+    const clone = scene.clone(true);
+    // Clone materials individually and darken colour by 45 %
+    clone.traverse((obj) => {
+      if (!obj.isMesh || !obj.material) return;
+      const darken = (mat) => {
+        const m = mat.clone();
+        if (m.color) m.color.multiplyScalar(0.55);
+        return m;
+      };
+      obj.material = Array.isArray(obj.material)
+        ? obj.material.map(darken)
+        : darken(obj.material);
+    });
+    return clone;
+  }, [scene]);
 
   // Enable local clipping once on the renderer
   useEffect(() => { gl.localClippingEnabled = true; }, [gl]);
