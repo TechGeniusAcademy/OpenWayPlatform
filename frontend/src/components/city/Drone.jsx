@@ -27,7 +27,7 @@ import * as THREE   from 'three';
 import { getTransferRule } from '../systems/conveyor.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DRONE_SCALE  = 0.75;     // world-unit scale of the GLB
+const DRONE_SCALE  = 1.95;     // world-unit scale of the GLB
 const FLY_HEIGHT   = 10;       // arc peak height above the ground line
 const HOVER_Y      = 3.8;      // hover height above building base
 const BOB_AMP      = 0.18;     // hover bob amplitude
