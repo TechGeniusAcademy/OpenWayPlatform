@@ -1102,11 +1102,14 @@ export default function OpenCity({ onBack }) {
             <ContextMenu
               x={contextMenu.x}
               y={contextMenu.y}
+              itemId={itemId}
               itemType={itemType}
               itemLevel={ctxItemLevel}
               totalPoints={userPoints}
               userXp={userXp}
               freeBuilders={countFreeBuilders(placedItems, buildingLevels, constructingBuildings, upgradingBuildings)}
+              drones={drones}
+              placedItems={placedItems}
               onSell={handleSell}
               onMove={handleMove}
               onUpgrade={handleUpgrade}
