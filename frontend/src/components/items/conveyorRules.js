@@ -3,7 +3,20 @@
 // Add new entries here to enable conveyors between different building types.
 // Each call to registerTransferRule creates a directed edge in the transfer graph.
 
-import { registerTransferRule, registerConveyorOutPort, registerConveyorOutSide } from '../systems/conveyor.js';
+import {
+  registerTransferRule,
+  registerConveyorOutPort,
+  registerConveyorOutSide,
+  registerConveyorLimits,
+} from '../systems/conveyor.js';
+
+// ─── Drone slot limits ────────────────────────────────────────────────────────
+// Storage and town-hall are delivery hubs — they can accept drones from many
+// sources simultaneously. Sources keep the default limit of 1 outgoing drone
+// so players can't accidentally flood the city with hundreds of routes.
+registerConveyorLimits('energy-storage', { maxOut: 4, maxIn: 20 });
+registerConveyorLimits('town-hall',      { maxOut: 1, maxIn: 20 });
+
 
 // ─── Money Factory: output port & side constraint ───────────────────────────
 //
