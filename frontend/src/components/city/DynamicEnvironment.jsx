@@ -45,6 +45,7 @@ export function DynamicEnvironment({ gameTimeRef }) {
       sunRef.current.position.set(sx, sy, sz);
       sunRef.current.intensity = lit.dirIntensity;
       sunRef.current.color.set(lit.dirColor);
+      sunRef.current.castShadow = lit.dirIntensity > 0.3;
       sunRef.current.target.updateMatrixWorld();
     }
 
@@ -84,14 +85,14 @@ export function DynamicEnvironment({ gameTimeRef }) {
 
       <ambientLight ref={ambRef} intensity={1.2} color="#ddeeff" />
 
-      {/* Sun — shadow map 1024×1024 (was 2048), tighter camera for better texel density */}
+      {/* Sun — shadow map 2048×2048 for sharp shadows */}
       <directionalLight
         ref={sunRef}
         castShadow
         intensity={4.5}
         color="#fff8e8"
         position={[200, 200, 60]}
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-near={1}
         shadow-camera-far={400}
         shadow-camera-left={-60}

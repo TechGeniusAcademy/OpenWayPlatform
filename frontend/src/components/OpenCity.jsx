@@ -992,9 +992,8 @@ export default function OpenCity({ onBack }) {
       <div className={styles.wrapper} ref={canvasWrapRef}>
         <Canvas
           shadows
-          dpr={[1, 1.5]}
-          performance={{ min: 0.5 }}
-          gl={{ antialias: (navigator.hardwareConcurrency ?? 8) > 4, powerPreference: 'high-performance', stencil: false }}
+          dpr={[1, 2]}
+          gl={{ antialias: true, powerPreference: 'high-performance', stencil: false }}
           style={{ width: '100%', height: '100%', position: 'relative', zIndex: 0 }}
         >
           <Scene
