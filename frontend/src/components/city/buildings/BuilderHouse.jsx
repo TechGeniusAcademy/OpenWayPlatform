@@ -172,7 +172,7 @@ export function BuilderAtWork({ position }) {
 const LIFT_MS       = 1000;  // lift off platform
 const LAND_MS       = 1000;  // descend back onto platform
 const FLIGHT_Y      = 3.5;
-const DRONE_YAW_FIX = Math.PI / 6; // model mesh faces 30° left — compensate
+const DRONE_YAW_FIX = -Math.PI / 3; // model mesh offset correction (-60°)
 
 export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000, workDurationMs = 10000, dockIndex = 0 }) {
   const dock = DOCK_POSITIONS[dockIndex % DOCK_POSITIONS.length];
