@@ -28,7 +28,7 @@ import { getTransferRule } from '../systems/conveyor.js';
 import { ConnectionLabel } from './ConnectionLabel.jsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DRONE_SCALE  = 0.45;     // world-unit scale of the GLB
+const DRONE_SCALE  = 0.75;     // world-unit scale of the GLB
 const FLY_HEIGHT   = 10;       // arc peak height above the ground line
 const HOVER_Y      = 3.8;      // hover height above building base
 const BOB_AMP      = 0.18;     // hover bob amplitude
@@ -41,8 +41,7 @@ const PH_UNLOAD   = 0.58;  // PH_FLY_TO..PH_UNLOAD = unloading at dest
 const PH_FLY_BACK = 0.90;  // PH_UNLOAD..PH_FLY_BACK = flying back
                              // PH_FLY_BACK..1.0 = landing at source
 
-// Shared invisible hit material for right-click detection
-const _HIT_MAT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+// Shared geometry reuse (nothing interactive needed)
 
 // ─── Bezier arc helper ────────────────────────────────────────────────────────
 function bezierArc(t, from, to, height) {
@@ -58,7 +57,7 @@ function bezierArc(t, from, to, height) {
 }
 
 // ─── DroneInner — all hooks live here (satisfies Rules of Hooks) ──────────────
-function DroneInner({ from, to, rule, effectiveRate, onRightClick }) {
+function DroneInner({ from, to, rule, effectiveRate }) {
   const fromBase  = new THREE.Vector3(from.position[0], from.position[1] ?? 0, from.position[2]);
   const toBase    = new THREE.Vector3(to.position[0],   to.position[1]   ?? 0, to.position[2]);
   const fromHover = fromBase.clone().setY(fromBase.y + HOVER_Y);
@@ -149,13 +148,6 @@ function DroneInner({ from, to, rule, effectiveRate, onRightClick }) {
 
   const ruleColor = rule?.color ?? '#38bdf8';
 
-  const onPointerDown = (e) => {
-    if (e.button === 2) {
-      e.stopPropagation();
-      onRightClick?.(e.nativeEvent.clientX, e.nativeEvent.clientY);
-    }
-  };
-
   return (
     <group>
       {/* Drone body */}
@@ -175,19 +167,6 @@ function DroneInner({ from, to, rule, effectiveRate, onRightClick }) {
         />
       </mesh>
 
-      {/* Invisible hitbox for right-click */}
-      <mesh
-        position={[midPos[0], midPos[1] - FLY_HEIGHT * 0.4 + 0.5, midPos[2]]}
-        onPointerDown={onPointerDown}
-      >
-        <boxGeometry args={[
-          Math.max(1.2, Math.abs(toBase.x - fromBase.x) * 0.5 + 1),
-          1.0,
-          Math.max(1.2, Math.abs(toBase.z - fromBase.z) * 0.5 + 1),
-        ]} />
-        <primitive object={_HIT_MAT} />
-      </mesh>
-
       {/* Connection label */}
       <ConnectionLabel
         midPos={midPos}
@@ -203,7 +182,7 @@ function DroneInner({ from, to, rule, effectiveRate, onRightClick }) {
 // ─── Public Drone component ───────────────────────────────────────────────────
 // Null-guard wrapper: if either building is gone, render nothing.
 // DroneInner always mounts so all hooks are called unconditionally.
-export const Drone = memo(function Drone({ fromId, toId, placedItems, effectiveRate, onRightClick }) {
+export const Drone = memo(function Drone({ fromId, toId, placedItems, effectiveRate }) {
   const from = placedItems.find(i => i.id === fromId);
   const to   = placedItems.find(i => i.id === toId);
   if (!from || !to) return null;
@@ -216,7 +195,6 @@ export const Drone = memo(function Drone({ fromId, toId, placedItems, effectiveR
       to={to}
       rule={rule}
       effectiveRate={effectiveRate}
-      onRightClick={onRightClick}
     />
   );
 });
