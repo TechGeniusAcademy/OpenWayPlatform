@@ -28,7 +28,7 @@ function DayPeriodIcon({ hour }) {
   return <FaMoon style={{ verticalAlign: 'middle', color: '#818cf8' }} />;
 }
 
-export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, cableMode, cableFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, cablesCount }) {
+export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount }) {
   const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
 
   // thresholds: [goodMax, warnMax]  — above warnMax = critical
@@ -194,7 +194,6 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
           <div className={styles.debugGrid}>
             {stat('Зданий',       itemsCount,                    '<20',   20,  40)}
             {stat('Дронов',       dronesCount,                   '<10',   10,  30)}
-            {stat('Кабелей',       cablesCount,                   '<10',   10,  30)}
             {stat('Зум камеры',   zoom,                          '<40',   40,  50,  v => v.toFixed(1))}
           </div>
           <div className={styles.debugLegend}>

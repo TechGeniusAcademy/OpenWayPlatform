@@ -145,6 +145,15 @@ export function registerEnergyZone(itemType, zone) {
 }
 
 /**
+ * Get the energy-supply zone for a producer type, or null if none.
+ * @param {string} itemType
+ * @returns {{ width: number, depth: number } | null}
+ */
+export function getEnergyZone(itemType) {
+  return ENERGY_ZONE_REGISTRY.get(itemType) ?? null;
+}
+
+/**
  * Returns a Set of placed-item IDs that are currently powered (within the
  * work zone of at least one active energy generator).
  * Producers are always considered powered (they power themselves).

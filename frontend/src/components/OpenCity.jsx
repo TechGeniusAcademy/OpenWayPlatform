@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import styles from './OpenCity.module.css';
 import { isColliding } from './items/collision.js';
 import './items/conveyorRules.js';   // side-effect: registers all transfer rules
-import './items/energyCableRules.js'; // side-effect: registers cable rules
+import './items/solarPanel.js';      // side-effect: registers solar-panel energy zone
 import './items/townHall.js';         // side-effect: registers town-hall storage
 import './items/extractor.js';        // side-effect: registers extractor storage
 import { findNearestOreDeposit, canMineOre } from './systems/oreRegistry.js';
@@ -11,12 +11,11 @@ import { countFreeBuilders, countTotalBuilders, countPlacedType, findIdleBuilder
 import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, CONSTRUCTION_DURATION_MS, BUILDER_HOUSE_EXTRA_COST_COINS } from './items/shopPrices.js';
 import { snapWallPoint, WALL_SEGMENT_COIN_COST, TOWER_COIN_COST, WALL_LEVELS, TOWER_LEVELS, WALL_GRID_SNAP } from './items/wallSystem.js';
 import { canConnect, canBeSource, getTransferRule, getConveyorOutLimit, getConveyorInLimit } from './systems/conveyor.js';
-import { canCableConnect, getCableRule, calcCablePoweredIds } from './systems/energyCable.js';
-import { calcConveyorRates, calcCableRates } from './systems/connectionRates.js';
+import { calcConveyorRates } from './systems/connectionRates.js';
 import { getLevelConfig, getNextLevelConfig } from './systems/upgrades.js';
 import { useCitySync }             from './systems/citySync.js';
 import { REAL_MS_PER_GAME_HOUR, formatGameTime } from './systems/dayNight.js';
-import { calcEnergyTotals, calcStorageTotals, calcPoweredItems, getStorages } from './systems/energy.js';
+import { calcEnergyTotals, calcStorageTotals, calcPoweredItems, getStorages, getEnergyZone, getProductions } from './systems/energy.js';
 import { CityContext }             from './city/CityContext.js';
 import { Scene }                   from './city/CityScene.jsx';
 import { useOtherPlayers }         from './systems/useOtherPlayers.js';
@@ -223,18 +222,15 @@ export default function OpenCity({ onBack }) {
     setStorageTotals(calcStorageTotals(placedItems));
   }, [placedItems]);
 
-  // ─── Powered items (energy zone + cable check) ─────────────────────────────
+  // ─── Powered items — zone-based only (no cables needed) ─────────────────────
+  // Buildings are powered if they stand within any active generator's work zone.
   const [poweredIds, setPoweredIds] = useState(() => new Set());
   useEffect(() => {
-    const zone   = calcPoweredItems(placedItems, gameTimeRef.current);
-    const cables = calcCablePoweredIds(placedItems, energyCables);
-    setPoweredIds(new Set([...zone, ...cables]));
-  }, [placedItems, energyCables]);
+    setPoweredIds(calcPoweredItems(placedItems, gameTimeRef.current));
+  }, [placedItems]);
   useEffect(() => {
     const id = setInterval(() => {
-      const zone   = calcPoweredItems(placedItemsRef.current, gameTimeRef.current);
-      const cables = calcCablePoweredIds(placedItemsRef.current, energyCablesRef.current);
-      setPoweredIds(new Set([...zone, ...cables]));
+      setPoweredIds(calcPoweredItems(placedItemsRef.current, gameTimeRef.current));
     }, 5000);
     return () => clearInterval(id);
   }, []);
@@ -255,7 +251,6 @@ export default function OpenCity({ onBack }) {
 
       // Compute effective per-connection rates (handles multi-source / multi-target)
       const convRates = calcConveyorRates(placedItemsRef.current, conveyorsRef.current, buildingLevelsRef.current);
-      const cabRates  = calcCableRates(placedItemsRef.current, energyCablesRef.current, buildingLevelsRef.current);
 
       // ─── Extractor mining: fill internal ore buffer ─────────────────────────────
       for (const item of placedItemsRef.current) {
@@ -306,29 +301,37 @@ export default function OpenCity({ onBack }) {
           cap,
         );
       }
-      // ─ Energy cables ───────────────────────────────────────────────────────────────
-      for (const cable of energyCablesRef.current) {
-        const effectiveRate = cabRates.get(cable.id) ?? 0;
-        if (effectiveRate <= 0) continue;
-        const from = placedItemsRef.current.find(i => i.id === cable.fromId);
-        const to   = placedItemsRef.current.find(i => i.id === cable.toId);
-        if (!from || !to) continue;
-        const rule = getCableRule(from.type, to.type);
-        if (!rule) continue;
-        const stors = getStorages(to.type);
-        if (!stors.length) continue;
-        // Level multiplier already applied inside calcCableRates
-        const adjustedRate = effectiveRate;
-        const toLevel   = buildingLevelsRef.current[String(to.id)] ?? 1;
-        const toLvlConf = getLevelConfig(to.type, toLevel);
-        const key = String(to.id);
-        if (!next[key]) next[key] = {};
-        const stor = stors.find(s => s.type === rule.resource) ?? stors[0];
-        const cap  = (stor?.capacity ?? 1000) * (toLvlConf.capacityMultiplier ?? 1.0);
-        next[key][rule.resource] = Math.min(
-          (next[key][rule.resource] ?? 0) + adjustedRate * deltaGameHours,
-          cap,
-        );
+      // ─ Zone-based energy transfer ────────────────────────────────────────────────
+      // Generators автоматически заряжают хранилища и здания внутри своей рабочей зоны.
+      // Кабели больше не нужны — близость к рабочей зоне панели достаточна.
+      for (const producer of placedItemsRef.current) {
+        const prods = getProductions(producer.type);
+        if (!prods.length) continue;
+        const zone = getEnergyZone(producer.type);
+        if (!zone) continue;
+        for (const prod of prods) {
+          const active = !prod.activeWhen || prod.activeWhen(gameTimeRef.current);
+          if (!active) continue;
+          for (const target of placedItemsRef.current) {
+            if (target.id === producer.id) continue;
+            const stors = getStorages(target.type);
+            const stor  = stors.find(s => s.type === prod.type);
+            if (!stor) continue;
+            // Rectangular zone check centred on producer
+            const dx = Math.abs(target.position[0] - producer.position[0]);
+            const dz = Math.abs(target.position[2] - producer.position[2]);
+            if (dx > zone.width / 2 || dz > zone.depth / 2) continue;
+            const key = String(target.id);
+            if (!next[key]) next[key] = {};
+            const toLevel   = buildingLevelsRef.current[key] ?? 1;
+            const toLvlConf = getLevelConfig(target.type, toLevel);
+            const cap = (stor.capacity ?? 1000) * (toLvlConf.capacityMultiplier ?? 1.0);
+            next[key][prod.type] = Math.min(
+              (next[key][prod.type] ?? 0) + prod.ratePerHour * deltaGameHours,
+              cap,
+            );
+          }
+        }
       }
       storedAmountsRef.current = next;
       accumTickRef.current++;
@@ -1004,9 +1007,7 @@ export default function OpenCity({ onBack }) {
             droneMode={droneMode}
             droneFromId={droneFromId}
             onDroneRouteBuildingClick={handleDroneRouteBuildingClick}
-            energyCables={energyCables}
-            cableFromId={cableFromId}
-            onCableBuildingClick={handleCableBuildingClick}
+
             fpsRef={fpsRef}
             rendererStatsRef={rendererStatsRef}
             poweredIds={poweredIds}
@@ -1020,7 +1021,6 @@ export default function OpenCity({ onBack }) {
             freeBuilders={countFreeBuilders(placedItems, buildingLevels, constructingBuildings, upgradingBuildings)}
             onBuildingRightClick={handleBuildingRightClick}
             onDroneRightClick={handleDroneRightClick}
-            onCableRightClick={handleCableRightClick}
             placedWalls={placedWalls}
             placedTowers={placedTowers}
             wallMode={wallMode}
@@ -1052,11 +1052,8 @@ export default function OpenCity({ onBack }) {
           rendererStats={rendererStats}
           itemsCount={placedItems.length}
           dronesCount={drones.length}
-          cablesCount={energyCables.length}
           droneMode={droneMode}
           droneFromId={droneFromId}
-          cableMode={cableMode}
-          cableFromId={cableFromId}
           wallMode={wallMode}
           wallFromPoint={wallFromPoint}
           towerMode={towerMode}
@@ -1067,7 +1064,6 @@ export default function OpenCity({ onBack }) {
             onClose={() => setShopOpen(false)}
             onBuy={startPlacing}
             onDrone={startDroneMode}
-            onCable={startCableMode}
             onWallMode={startWallMode}
             onTowerMode={startTowerMode}
             userPoints={userPoints}

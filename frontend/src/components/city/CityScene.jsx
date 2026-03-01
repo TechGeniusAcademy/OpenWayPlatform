@@ -4,7 +4,6 @@ import { DynamicEnvironment } from './DynamicEnvironment.jsx';
 import { World } from './WorldChunks.jsx';
 import { RTSCamera } from './RTSCamera.jsx';
 import { Drone } from './Drone.jsx';
-import { EnergyCable } from './EnergyCable.jsx';
 import { SolarPanelPreview, SolarPanelPlaced } from './buildings/SolarPanel.jsx';
 import { MoneyFactoryPreview, MoneyFactoryPlaced } from './buildings/MoneyFactory.jsx';
 import { EnergyStoragePreview, EnergyStoragePlaced } from './buildings/EnergyStorage.jsx';
@@ -12,10 +11,9 @@ import { TownHallPreview, TownHallPlaced } from './buildings/TownHall.jsx';
 import { StreetLampPreview, StreetLampPlaced } from './buildings/StreetLamp.jsx';
 import { ExtractorPreview, ExtractorPlaced } from './buildings/Extractor.jsx';
 import { BuilderHousePreview, BuilderHousePlaced, BuilderAtWork, BuilderRunner, UpgradeBadgeInline } from './buildings/BuilderHouse.jsx';
-import { CableTargetPulse } from './CableTargetPulse.jsx';
 import { ConveyorTargetPulse } from './ConveyorTargetPulse.jsx';
 import { ConstructionSite } from './ConstructionSite.jsx';
-import { calcConveyorRates, calcCableRates } from '../systems/connectionRates.js';
+import { calcConveyorRates } from '../systems/connectionRates.js';
 import { WallSegment, WallPlacementPreview, SnapIndicator } from './buildings/Wall.jsx';
 import { TowerPlaced, TowerPreview } from './buildings/Tower.jsx';
 import { OtherPlayerCity } from './OtherPlayerCity.jsx';
@@ -123,9 +121,6 @@ function SceneInner({
   droneMode,
   droneFromId,
   onDroneRouteBuildingClick,
-  energyCables,
-  cableFromId,
-  onCableBuildingClick,
   poweredIds,
   storedAmounts,
   pointsAmounts,
@@ -137,7 +132,6 @@ function SceneInner({
   freeBuilders,
   onBuildingRightClick,
   onDroneRightClick,
-  onCableRightClick,
   // Wall / Tower
   placedWalls,
   placedTowers,
@@ -181,10 +175,6 @@ function SceneInner({
   const droneRates = useMemo(
     () => calcConveyorRates(placedItems, drones, buildingLevels ?? {}),
     [placedItems, drones, buildingLevels],
-  );
-  const cableRates = useMemo(
-    () => calcCableRates(placedItems, energyCables ?? [], buildingLevels ?? {}),
-    [placedItems, energyCables, buildingLevels],
   );
 
   return (
@@ -236,8 +226,6 @@ function SceneInner({
             onSelect={() => setSelectedPlacedId(item.id)}
             isConveyorSource={droneFromId === item.id}
             onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
-            isCableSource={cableFromId === item.id}
-            onCableClick={() => onCableBuildingClick(item.id)}
             isPowered={poweredIds ? poweredIds.has(item.id) : true}
             onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
             level={buildingLevels?.[String(item.id)] ?? 1}
@@ -251,8 +239,6 @@ function SceneInner({
             onSelect={() => setSelectedPlacedId(item.id)}
             isConveyorSource={droneFromId === item.id}
             onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
-            isCableSource={cableFromId === item.id}
-            onCableClick={() => onCableBuildingClick(item.id)}
             isPowered={poweredIds ? poweredIds.has(item.id) : true}
             onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
             level={buildingLevels?.[String(item.id)] ?? 1}
@@ -266,8 +252,6 @@ function SceneInner({
             onSelect={() => setSelectedPlacedId(item.id)}
             isConveyorSource={droneFromId === item.id}
             onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
-            isCableSource={cableFromId === item.id}
-            onCableClick={() => onCableBuildingClick(item.id)}
             isPowered={poweredIds ? poweredIds.has(item.id) : true}
             onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
             currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
@@ -282,8 +266,6 @@ function SceneInner({
             onSelect={() => setSelectedPlacedId(item.id)}
             isConveyorSource={droneFromId === item.id}
             onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
-            isCableSource={cableFromId === item.id}
-            onCableClick={() => onCableBuildingClick(item.id)}
             onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
             currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
             points={pointsAmounts ? (pointsAmounts[String(item.id)] ?? 0) : 0}
@@ -298,8 +280,6 @@ function SceneInner({
             onSelect={() => setSelectedPlacedId(item.id)}
             isConveyorSource={droneFromId === item.id}
             onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
-            isCableSource={cableFromId === item.id}
-            onCableClick={() => onCableBuildingClick(item.id)}
             onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
             gameTimeRef={gameTimeRef}
             isPowered={poweredIds ? poweredIds.has(item.id) : true}
@@ -378,13 +358,6 @@ function SceneInner({
         <BuilderRunner key={r.id} fromPos={r.fromPos} toPos={r.toPos} startReal={r.startReal} />
       ))}
 
-      {/* Cable target pulse hints */}
-      <CableTargetPulse
-        cableFromId={cableFromId}
-        placedItems={placedItems}
-        energyCables={energyCables ?? []}
-      />
-
       {/* Drone route target pulse hints */}
       <ConveyorTargetPulse
         conveyorFromId={droneFromId}
@@ -404,17 +377,6 @@ function SceneInner({
         />
       ))}
 
-      {/* Energy cables — culled by endpoint proximity */}
-      {(energyCables ?? []).filter(connInSelfRange).map(cable => (
-        <EnergyCable
-          key={cable.id}
-          fromId={cable.fromId}
-          toId={cable.toId}
-          placedItems={placedItems}
-          effectiveRate={cableRates.get(cable.id) ?? 0}
-          onRightClick={(x, y) => onCableRightClick?.(cable.id, x, y)}
-        />
-      ))}
 
       {/* ── Wall & Tower system ─────────────────────────────────────────── */}
 

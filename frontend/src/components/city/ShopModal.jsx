@@ -192,7 +192,7 @@ function InfoTip({ lines }) {
 
 // ── Main shop modal ───────────────────────────────────────────────────────────
 export function ShopModal({
-  onClose, onBuy, onDrone, onCable,
+  onClose, onBuy, onDrone,
   onWallMode, onTowerMode,
   userPoints = 0, coinBalance = 0,
   freeBuilders = 0, totalBuilders = 0,
@@ -231,7 +231,6 @@ export function ShopModal({
   }
 
   const droneCost  = ITEM_POINT_COST['drone']    ?? 5;
-  const cableCost    = ITEM_POINT_COST['cable']    ?? 10;
 
   const P = (type) => ({ cost: ITEM_POINT_COST[type] ?? 0 });
 
@@ -365,11 +364,22 @@ export function ShopModal({
               <ShopCard Icon={FaLink} iconColor="#06b6d4" name="Маршрут дрона"
                 desc="Дрон перетаскивает ресурсы между двумя зданиями" cost={droneCost}
                 onPlace={() => { onDrone(); onClose(); }} btnLabel="Назначить" />
-              <ShopCard Icon={FaBolt} iconColor="#fde68a" name="Энергокабель"
-                desc="Передаёт энергию от генераторов" {...P('cable')}
-                disabled={userPoints < cableCost ? 'Мало баллов' : null}
-                disabledReason="Мало баллов"
-                onPlace={() => { onCable?.(); onClose(); }} btnLabel="Провести" />
+              <div style={{
+                  border: '1px solid rgba(250,204,21,0.25)',
+                  borderRadius: 10,
+                  padding: '14px 12px',
+                  background: 'rgba(250,204,21,0.04)',
+                  display: 'flex', flexDirection: 'column', gap: 6,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#fde68a' }}>
+                  <FaBolt style={{ fontSize: 14 }} />
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>Автопитание от зоны</span>
+                </div>
+                <p style={{ fontSize: 10, color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                  Здания внутри рабочей зоны Солнечной панели заряжаются
+                  автоматически. Кабели не нужны.
+                </p>
+              </div>
             </div>
           )}
 
