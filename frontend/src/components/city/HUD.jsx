@@ -30,6 +30,23 @@ function DayPeriodIcon({ hour }) {
 
 export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, conveyorMode, conveyorFromId, cableMode, cableFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, conveyorsCount, cablesCount }) {
   const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
+
+  // thresholds: [goodMax, warnMax]  — above warnMax = critical
+  function stat(label, value, norm, goodMax, warnMax, fmt) {
+    const v      = value ?? 0;
+    const color  = v <= goodMax ? '#4ade80' : v <= warnMax ? '#fbbf24' : '#f87171';
+    const status = v <= goodMax ? '✓' : v <= warnMax ? '!' : '✗';
+    const sColor = v <= goodMax ? '#4ade80' : v <= warnMax ? '#fbbf24' : '#f87171';
+    const display = fmt ? fmt(v) : String(v);
+    return (
+      <>
+        <span className={styles.debugKey}>{label}</span>
+        <span className={styles.debugVal} style={{ color }}>{display}</span>
+        <span className={styles.debugNorm}>{norm}</span>
+        <span className={styles.debugStatus} style={{ color: sColor }}>{status}</span>
+      </>
+    );
+  }
   return (
     <>
       <div className={styles.coords}>
@@ -159,39 +176,31 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
       {debugOpen && (
         <div className={styles.debugPanel}>
           <div className={styles.debugTitle}>⚙ Debug — производительность</div>
+          <div className={styles.debugGridHdr}>
+            <span className={styles.debugHdrCell}>Метрика</span>
+            <span className={styles.debugHdrCell} style={{ textAlign:'right' }}>Текущее</span>
+            <span className={styles.debugHdrCell} style={{ textAlign:'right' }}>Норма</span>
+            <span className={styles.debugHdrCell} style={{ textAlign:'center' }}></span>
+          </div>
           <div className={styles.debugGrid}>
-            <span className={styles.debugKey}>FPS</span>
-            <span className={styles.debugVal} style={{ color: fpsColor }}>{fps}</span>
-
-            <span className={styles.debugKey}>Draw calls</span>
-            <span className={styles.debugVal}>{rendererStats.calls ?? '—'}</span>
-
-            <span className={styles.debugKey}>Треугольники</span>
-            <span className={styles.debugVal}>{(rendererStats.triangles ?? 0).toLocaleString()}</span>
-
-            <span className={styles.debugKey}>Геометрий (GPU)</span>
-            <span className={styles.debugVal}>{rendererStats.geometries ?? '—'}</span>
-
-            <span className={styles.debugKey}>Текстур (GPU)</span>
-            <span className={styles.debugVal}>{rendererStats.textures ?? '—'}</span>
-
-            <span className={styles.debugKey}>Шейдеров</span>
-            <span className={styles.debugVal}>{rendererStats.programs ?? '—'}</span>
-
-            <span className={styles.debugKey}>──────────</span>
-            <span className={styles.debugVal}></span>
-
-            <span className={styles.debugKey}>Зданий</span>
-            <span className={styles.debugVal}>{itemsCount ?? 0}</span>
-
-            <span className={styles.debugKey}>Конвейеров</span>
-            <span className={styles.debugVal}>{conveyorsCount ?? 0}</span>
-
-            <span className={styles.debugKey}>Кабелей</span>
-            <span className={styles.debugVal}>{cablesCount ?? 0}</span>
-
-            <span className={styles.debugKey}>Зум камеры</span>
-            <span className={styles.debugVal}>{zoom.toFixed(1)}</span>
+            {stat('FPS',           fps,                           '≥50',   50, 30,  v => v)}
+            {stat('Draw calls',    rendererStats.calls,           '<100',  100, 300)}
+            {stat('Треугольники',  rendererStats.triangles,       '<200k', 200000, 600000, v => (v/1000).toFixed(0)+'k')}
+            {stat('Геометрий GPU', rendererStats.geometries,      '<80',   80,  200)}
+            {stat('Текстур GPU',    rendererStats.textures,        '<30',   30,  80)}
+            {stat('Шейдеров',     rendererStats.programs,        '<20',   20,  50)}
+          </div>
+          <div className={styles.debugDivider} />
+          <div className={styles.debugGrid}>
+            {stat('Зданий',       itemsCount,                    '<20',   20,  40)}
+            {stat('Конвейеров',  conveyorsCount,                '<10',   10,  30)}
+            {stat('Кабелей',       cablesCount,                   '<10',   10,  30)}
+            {stat('Зум камеры',   zoom,                          '<40',   40,  50,  v => v.toFixed(1))}
+          </div>
+          <div className={styles.debugLegend}>
+            <span style={{ color: '#4ade80' }}>✓ Ок</span>
+            <span style={{ color: '#fbbf24' }}>! Внимание</span>
+            <span style={{ color: '#f87171' }}>✗ Критически</span>
           </div>
           <div className={styles.debugHint}>[F3] или кнопка — закрыть</div>
         </div>
