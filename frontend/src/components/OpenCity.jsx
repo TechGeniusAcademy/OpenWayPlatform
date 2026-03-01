@@ -216,6 +216,29 @@ export default function OpenCity({ onBack }) {
     return () => clearInterval(id);
   }, []);
 
+  // Potential production — time-independent, shown in info panel
+  const allEnergyTotals = useMemo(() => {
+    const t = {};
+    for (const item of placedItems) {
+      for (const prod of getProductions(item.type)) {
+        t[prod.type] = (t[prod.type] ?? 0) + prod.ratePerHour;
+      }
+    }
+    return t;
+  }, [placedItems]);
+
+  // Actual stored amounts summed across all buildings per resource key
+  const storedCurrentTotals = useMemo(() => {
+    const t = {};
+    for (const v of Object.values(storedAmounts)) {
+      if (!v) continue;
+      for (const [key, val] of Object.entries(v)) {
+        if (typeof val === 'number' && val > 0) t[key] = (t[key] ?? 0) + val;
+      }
+    }
+    return t;
+  }, [storedAmounts]);
+
   // ─── Storage totals ───────────────────────────────────────────────────────
   const [storageTotals, setStorageTotals] = useState({});
   useEffect(() => {
@@ -1097,6 +1120,9 @@ export default function OpenCity({ onBack }) {
           constructingCount={Object.keys(constructingBuildings).length}
           upgradingCount={Object.keys(upgradingBuildings).length}
           userPoints={userPoints}
+          allEnergyTotals={allEnergyTotals}
+          storedCurrentTotals={storedCurrentTotals}
+          storageTotals={storageTotals}
           points={Object.values(pointsAmounts).reduce((s, v) => s + v, 0)}
         />
         {shopOpen && (

@@ -54,9 +54,8 @@ function InfoRow({ label, value, unit = '', color = '#e2e8f0', icon: Icon, iconC
   );
 }
 
-function CityInfoPanel({ energyTotals, storageTotals, points, userPoints, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, itemsCount, dronesCount, timeString }) {
+function CityInfoPanel({ energyTotals, storageTotals, storedCurrentTotals, points, userPoints, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, itemsCount, dronesCount, timeString }) {
   const hasProd    = energyTotals  && Object.keys(energyTotals).length  > 0;
-  const hasStorage = storageTotals && Object.keys(storageTotals).length > 0;
 
   const buildersOk   = (freeBuilders ?? 0) > 0;
   const busyBuilders = (totalBuilders ?? 0) - (freeBuilders ?? 0);
@@ -80,7 +79,7 @@ function CityInfoPanel({ energyTotals, storageTotals, points, userPoints, coinBa
           <div>
             <SectionTitle icon={FaCoins} color="#fbbf24" title="Экономика" />
             <InfoRow label="Баллы (личные)" value={userPoints ?? 0} icon={FaMedal}    iconColor="#818cf8" color="#a5b4fc" />
-            <InfoRow label="Очки города"    value={points ?? 0}     icon={FaTrophy}   iconColor="#f59e0b" color="#fde047" />
+            <InfoRow label="Баллы в городе"    value={points ?? 0}     icon={FaTrophy}   iconColor="#f59e0b" color="#fde047" />
             <InfoRow label="Монеты в запасе" value={Math.floor(coinBalance ?? 0)} unit=" ₿" icon={FaCoins} iconColor="#fbbf24" color="#fbbf24" highlight />
           </div>
 
@@ -107,18 +106,23 @@ function CityInfoPanel({ energyTotals, storageTotals, points, userPoints, coinBa
           )}
 
           {/* ── Хранилище ── */}
-          {hasStorage && (
+          {(storedCurrentTotals && Object.keys(storedCurrentTotals).length > 0) && (
             <div>
               <SectionTitle icon={GiBattery100} color="#a78bfa" title="Хранилище" />
-              {Object.entries(storageTotals).map(([type, val]) => {
+              {Object.entries(storedCurrentTotals).map(([type, val]) => {
                 const meta = ENERGY_TYPES[type];
                 const ic   = PROD_ICONS[type];
+                const cap  = storageTotals?.[type];
+                const display = cap
+                  ? `${Math.floor(val)} / ${cap}`
+                  : Math.floor(val);
+                const unit  = meta?.unit ?? '';
                 return (
                   <InfoRow
                     key={type}
                     label={meta?.label ?? type}
-                    value={val}
-                    unit={` ${meta?.unit ?? ''}`}
+                    value={display}
+                    unit={unit ? ` ${unit}` : ''}
                     icon={ic?.Icon ?? FaBatteryFull}
                     iconColor="#a78bfa"
                     color="#d8b4fe"
@@ -283,7 +287,7 @@ function DayPeriodIcon({ hour }) {
   return <FaMoon style={{ verticalAlign: 'middle', color: '#818cf8' }} />;
 }
 
-export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, onStartPlacing, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, userPoints }) {
+export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, onStartPlacing, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, userPoints, allEnergyTotals, storedCurrentTotals }) {
   const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
 
   // thresholds: [goodMax, warnMax]  — above warnMax = critical
@@ -419,8 +423,9 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
       )}
 
       <CityInfoPanel
-        energyTotals={energyTotals}
+        energyTotals={allEnergyTotals ?? energyTotals}
         storageTotals={storageTotals}
+        storedCurrentTotals={storedCurrentTotals}
         points={points}
         userPoints={userPoints}
         coinBalance={coinBalance}
