@@ -405,9 +405,6 @@ function BuilderHousePlacedBase({
         badgeHeight={BUILDER_HOUSE_CONFIG.badgeHeight}
       />
 
-      <LevelBadge   level={level} height={BUILDER_HOUSE_CONFIG.badgeHeight + 3} />
-      <LevelRing    level={level} radius={4} />
-
       {/* Upgrade progress badge */}
       {upgradeInfo && <UpgradeBadgeInline upgradeInfo={upgradeInfo} badgeHeight={BUILDER_HOUSE_CONFIG.badgeHeight + 6} />}
 

@@ -128,8 +128,6 @@ function SolarPanelGLTFPlaced({ position, rotation, isSelected, onSelect, onConv
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
         <SolarPanelBody accentOverride={accent} emissiveColor={accent} emissiveIntensity={glow} />
       </group>
-      <LevelBadge level={level} height={SOLAR_PANEL_CONFIG.badgeHeight + 2} />
-      <LevelRing level={level} radius={4} />
       {isConveyorSource && <ConveyorSourceRing />}
       {isCableSource && <CableSourceRing />}
       {isSelected && (

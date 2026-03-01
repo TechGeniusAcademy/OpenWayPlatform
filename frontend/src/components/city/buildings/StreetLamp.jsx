@@ -293,8 +293,6 @@ function StreetLampPlacedBase({
         />
       )}
 
-      <LevelBadge level={level} height={badgeHeight + 2} />
-      <LevelRing level={level} radius={3} />
     </group>
   );
 }

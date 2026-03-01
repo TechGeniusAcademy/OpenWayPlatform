@@ -381,8 +381,7 @@ function ExtractorGLTFPlaced({
       {/* Upgrade in progress badge */}
       <UpgradeProgressBadge upgradeInfo={upgradeInfo} badgeHeight={EXTRACTOR_CONFIG.badgeHeight} />
 
-      <LevelBadge level={level} height={EXTRACTOR_CONFIG.badgeHeight + 5} />
-      <LevelRing  level={level} radius={3} />
+      <StorageBadge itemType="extractor" badgeHeight={EXTRACTOR_CONFIG.badgeHeight + 3} currentAmounts={currentAmounts} level={level} />
       {isConveyorSource && <ConveyorSourceRing />}
 
       {isSelected && (

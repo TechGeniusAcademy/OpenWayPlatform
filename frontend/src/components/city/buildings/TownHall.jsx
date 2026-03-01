@@ -209,8 +209,6 @@ function TownHallGLTFPlaced({
       )}
       <StorageBadge itemType="town-hall" badgeHeight={badgeHeight} currentAmounts={currentAmounts} level={level} />
       <PointsBadge points={points ?? 0} badgeHeight={badgeHeight} />
-      <LevelBadge level={level} height={badgeHeight + 2} />
-      <LevelRing level={level} radius={6} />
       {isConveyorSource && <ConveyorSourceRing />}
     </group>
   );

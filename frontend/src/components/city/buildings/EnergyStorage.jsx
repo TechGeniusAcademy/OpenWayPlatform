@@ -120,8 +120,6 @@ function EnergyStorageGLTFPlaced({ position, rotation, isSelected, onSelect, onC
         <EnergyStorageBody accentOverride={accent} emissiveColor={accent} emissiveIntensity={glow} />
       </group>
       <StorageBadge itemType="energy-storage" badgeHeight={ENERGY_STORAGE_CONFIG.badgeHeight} currentAmounts={currentAmounts} level={level} />
-      <LevelBadge level={level} height={ENERGY_STORAGE_CONFIG.badgeHeight + 2} />
-      <LevelRing level={level} radius={4} />
       {isConveyorSource && <ConveyorSourceRing />}
       {isCableSource && <CableSourceRing />}
       {isPowered === false && <NoPowerBadge badgeHeight={ENERGY_STORAGE_CONFIG.badgeHeight} />}
