@@ -1091,6 +1091,12 @@ export default function OpenCity({ onBack }) {
           wallFromPoint={wallFromPoint}
           towerMode={towerMode}
           onStartPlacing={startPlacing}
+          coinBalance={Object.values(storedAmounts).reduce((s, v) => s + (v?.coins ?? 0), 0)}
+          freeBuilders={countFreeBuilders(placedItems, buildingLevels, constructingBuildings, upgradingBuildings)}
+          totalBuilders={countTotalBuilders(placedItems, buildingLevels)}
+          constructingCount={Object.keys(constructingBuildings).length}
+          upgradingCount={Object.keys(upgradingBuildings).length}
+          userPoints={userPoints}
           points={Object.values(pointsAmounts).reduce((s, v) => s + v, 0)}
         />
         {shopOpen && (

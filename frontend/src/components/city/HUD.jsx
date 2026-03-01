@@ -6,9 +6,185 @@ import {
   FaSun, FaCoins, FaBolt, FaMoon, FaCloudSun,
   FaShieldAlt, FaChessRook,
   FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark, FaHome,
+  FaHardHat, FaArrowUp, FaBuilding, FaMedal,
+  FaChevronRight, FaChevronLeft,
 } from 'react-icons/fa';
 import { MdArrowBack } from 'react-icons/md';
 import { GiBattery100, GiMining, GiFireBowl, GiWhirlwind } from 'react-icons/gi';
+
+// ─── City Info Panel (right side) ───────────────────────────────────────────
+const PROD_ICONS = {
+  solar: { Icon: FaSun,        color: '#fde047' },
+  wind:  { Icon: GiWhirlwind,  color: '#7dd3fc' },
+  fuel:  { Icon: GiFireBowl,   color: '#fb923c' },
+  coins: { Icon: FaCoins,      color: '#fbbf24' },
+  ore:   { Icon: GiMining,     color: '#a8874a' },
+};
+
+function SectionTitle({ icon: Icon, color, title }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 7,
+      marginBottom: 8, paddingBottom: 6,
+      borderBottom: `1px solid ${color}33`,
+    }}>
+      <Icon style={{ color, fontSize: 12 }} />
+      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', color, textTransform: 'uppercase' }}>
+        {title}
+      </span>
+    </div>
+  );
+}
+
+function InfoRow({ label, value, unit = '', color = '#e2e8f0', icon: Icon, iconColor, highlight }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b', fontSize: 11 }}>
+        {Icon && <Icon style={{ color: iconColor ?? '#64748b', fontSize: 11 }} />}
+        <span>{label}</span>
+      </div>
+      <span style={{
+        fontSize: 11, fontWeight: 700, fontFamily: 'monospace',
+        color,
+        background: highlight ? `${color}18` : 'transparent',
+        borderRadius: 4, padding: highlight ? '1px 5px' : '0',
+      }}>
+        {value}{unit ? <span style={{ fontWeight: 400, color: '#475569', marginLeft: 2 }}>{unit}</span> : null}
+      </span>
+    </div>
+  );
+}
+
+function CityInfoPanel({ energyTotals, storageTotals, points, userPoints, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, itemsCount, dronesCount, timeString }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const hasProd    = energyTotals  && Object.keys(energyTotals).length  > 0;
+  const hasStorage = storageTotals && Object.keys(storageTotals).length > 0;
+
+  const buildersOk = (freeBuilders ?? 0) > 0;
+  const busyBuilders = (totalBuilders ?? 0) - (freeBuilders ?? 0);
+
+  return (
+    <div style={{
+      position: 'fixed', right: 12, top: 12,
+      width: collapsed ? 36 : 210,
+      background: 'rgba(8,15,28,0.84)',
+      border: '1px solid rgba(255,255,255,0.09)',
+      borderRadius: 14,
+      backdropFilter: 'blur(14px)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+      zIndex: 900,
+      overflow: 'hidden',
+      transition: 'width 0.22s ease',
+      pointerEvents: 'all',
+    }}>
+      {/* Collapse toggle */}
+      <button
+        onClick={() => setCollapsed(v => !v)}
+        style={{
+          position: 'absolute', top: 8, right: 8,
+          width: 20, height: 20, borderRadius: 6,
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          color: '#475569', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 10, zIndex: 1,
+          flexShrink: 0,
+        }}
+      >
+        {collapsed ? <FaChevronLeft /> : <FaChevronRight />}
+      </button>
+
+      {!collapsed && (
+        <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* ── Экономика ── */}
+          <div>
+            <SectionTitle icon={FaCoins} color="#fbbf24" title="Экономика" />
+            <InfoRow label="Баллы (личные)" value={userPoints ?? 0} icon={FaMedal}    iconColor="#818cf8" color="#a5b4fc" />
+            <InfoRow label="Очки города"    value={points ?? 0}     icon={FaTrophy}   iconColor="#f59e0b" color="#fde047" />
+            <InfoRow label="Монеты в запасе" value={Math.floor(coinBalance ?? 0)} unit=" ₿" icon={FaCoins} iconColor="#fbbf24" color="#fbbf24" highlight />
+          </div>
+
+          {/* ── Выработка ── */}
+          {hasProd && (
+            <div>
+              <SectionTitle icon={FaArrowUp} color="#4ade80" title="Выработка / ч" />
+              {Object.entries(energyTotals).map(([type, val]) => {
+                const meta = ENERGY_TYPES[type];
+                const ic   = PROD_ICONS[type];
+                return (
+                  <InfoRow
+                    key={type}
+                    label={meta?.label ?? type}
+                    value={val}
+                    unit={` ${meta?.unit ?? ''}/ч`}
+                    icon={ic?.Icon ?? FaBolt}
+                    iconColor={ic?.color ?? '#94a3b8'}
+                    color={ic?.color ?? '#94a3b8'}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Хранилище ── */}
+          {hasStorage && (
+            <div>
+              <SectionTitle icon={GiBattery100} color="#a78bfa" title="Хранилище" />
+              {Object.entries(storageTotals).map(([type, val]) => {
+                const meta = ENERGY_TYPES[type];
+                const ic   = PROD_ICONS[type];
+                return (
+                  <InfoRow
+                    key={type}
+                    label={meta?.label ?? type}
+                    value={val}
+                    unit={` ${meta?.unit ?? ''}`}
+                    icon={ic?.Icon ?? FaBatteryFull}
+                    iconColor="#a78bfa"
+                    color="#d8b4fe"
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Строительство ── */}
+          {(totalBuilders ?? 0) > 0 && (
+            <div>
+              <SectionTitle icon={FaHardHat} color="#fb923c" title="Строители" />
+              <InfoRow
+                label="Свободные"
+                value={`${freeBuilders ?? 0} / ${totalBuilders ?? 0}`}
+                icon={FaHardHat}
+                iconColor={buildersOk ? '#4ade80' : '#f87171'}
+                color={buildersOk ? '#4ade80' : '#f87171'}
+              />
+              {busyBuilders > 0 && (
+                <InfoRow label="Заняты" value={busyBuilders} icon={FaWrench} iconColor="#fb923c" color="#fb923c" />
+              )}
+              {(constructingCount ?? 0) > 0 && (
+                <InfoRow label="В строительстве" value={constructingCount} icon={FaBuilding} iconColor="#38bdf8" color="#38bdf8" />
+              )}
+              {(upgradingCount ?? 0) > 0 && (
+                <InfoRow label="На улучшении" value={upgradingCount} icon={FaArrowUp} iconColor="#34d399" color="#34d399" />
+              )}
+            </div>
+          )}
+
+          {/* ── Город ── */}
+          <div>
+            <SectionTitle icon={FaBuilding} color="#38bdf8" title="Город" />
+            <InfoRow label="Зданий"  value={itemsCount  ?? 0} icon={FaBuilding} iconColor="#38bdf8" color="#7dd3fc" />
+            <InfoRow label="Дронов"  value={dronesCount ?? 0} icon={FaLink}     iconColor="#a78bfa" color="#c4b5fd" />
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Building Hotbar ─────────────────────────────────────────────────────────
 const HOTBAR_ITEMS = [
@@ -129,7 +305,7 @@ function DayPeriodIcon({ hour }) {
   return <FaMoon style={{ verticalAlign: 'middle', color: '#818cf8' }} />;
 }
 
-export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, onStartPlacing }) {
+export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, onStartPlacing, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, userPoints }) {
   const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
 
   // thresholds: [goodMax, warnMax]  — above warnMax = critical
@@ -263,6 +439,21 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
       {onStartPlacing && (
         <BuildingHotbar onStartPlacing={onStartPlacing} placingItem={placingItem} />
       )}
+
+      <CityInfoPanel
+        energyTotals={energyTotals}
+        storageTotals={storageTotals}
+        points={points}
+        userPoints={userPoints}
+        coinBalance={coinBalance}
+        freeBuilders={freeBuilders}
+        totalBuilders={totalBuilders}
+        constructingCount={constructingCount}
+        upgradingCount={upgradingCount}
+        itemsCount={itemsCount}
+        dronesCount={dronesCount}
+        timeString={timeString}
+      />
 
       {/* FPS badge + Debug toggle — anchored below the back button */}
       <div className={styles.fpsRow}>
