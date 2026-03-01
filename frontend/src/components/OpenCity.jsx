@@ -621,12 +621,36 @@ export default function OpenCity({ onBack }) {
       return;
     }
 
-    // Timed upgrade – show progress badge, complete after durationMs
+    // Find idle builder house to spawn a runner drone from
+    const targetItem  = placedItemsRef.current.find(i => i.id === itemId);
+    const toP         = targetItem?.position ?? [0, 0, 0];
+    const housePos    = findIdleBuilderHousePos(
+      placedItemsRef.current, buildingLevelsRef.current,
+      constructingBuildingsRef.current, upgradingBuildingsRef.current,
+    );
+    // Travel time = liftoff (1 s) + distance-based flight
+    const dist     = housePos ? Math.hypot(toP[0] - housePos[0], toP[2] - housePos[2]) : 0;
+    const flightMs = Math.max(1500, Math.min(8000, Math.round((dist / 8) * 1000)));
+    const travelMs = 1000 + flightMs;
+
+    // Timed upgrade – timer starts only when drone arrives
     const durationMs = next.upgradeDurationMs ?? 15_000;
-    const entry   = { startReal: Date.now(), durationMs, targetLevel: currentLevel + 1 };
+    const entry   = { startReal: Date.now() + travelMs, durationMs, targetLevel: currentLevel + 1 };
     const nb      = { ...upgradingBuildingsRef.current, [String(itemId)]: entry };
     upgradingBuildingsRef.current = nb;
     setUpgradingBuildings({ ...nb });
+
+    // Spawn the runner drone
+    if (housePos) {
+      setMovingBuilders(prev => [...prev, {
+        id:         `runner_upg_${itemId}_${Date.now()}`,
+        itemId:     String(itemId),
+        fromPos:    housePos,
+        toPos:      [toP[0], toP[1] ?? 0, toP[2]],
+        startReal:  Date.now(),
+        durationMs: flightMs,
+      }]);
+    }
     setContextMenu(null);
   }, [contextMenu, userXp, userPoints]); // eslint-disable-line
 
@@ -649,6 +673,7 @@ export default function OpenCity({ onBack }) {
       upgradingBuildingsRef.current = nextUpgrading;
       setBuildingLevels({ ...nextLevels });
       setUpgradingBuildings({ ...nextUpgrading });
+      setMovingBuilders(prev => prev.filter(r => !completed.some(([bid]) => r.itemId === bid)));
     }, 1000);
     return () => clearInterval(id);
   }, []); // eslint-disable-line
@@ -888,14 +913,17 @@ export default function OpenCity({ onBack }) {
               if (!isMove) {
                 const dur = CONSTRUCTION_DURATION_MS[type] ?? 0;
                 if (dur > 0) {
-                  const entry = { startReal: Date.now(), durationMs: dur };
+                  const housePos  = findIdleBuilderHousePos(placedItemsRef.current, buildingLevelsRef.current, constructingBuildingsRef.current, upgradingBuildingsRef.current);
+                  const cDist     = housePos ? Math.hypot(pos.x - housePos[0], pos.z - housePos[2]) : 0;
+                  const cFlightMs = Math.max(1500, Math.min(8000, Math.round((cDist / 8) * 1000)));
+                  const cTravelMs = 1000 + cFlightMs;
+                  const entry = { startReal: Date.now() + cTravelMs, durationMs: dur };
                   const nb = { ...constructingBuildingsRef.current, [String(newId)]: entry };
                   constructingBuildingsRef.current = nb;
                   setConstructingBuildings({ ...nb });
-                  // Spawn a moving builder runner from nearest builder house
-                  const housePos = findIdleBuilderHousePos(placedItemsRef.current, buildingLevelsRef.current, constructingBuildingsRef.current, upgradingBuildingsRef.current);
+                  // Spawn a moving builder runner from nearest builder house (drone arrives then work begins)
                   if (housePos) {
-                    setMovingBuilders(prev => [...prev, { id: `runner_${newId}`, itemId: String(newId), fromPos: housePos, toPos: [pos.x, pos.y, pos.z], startReal: Date.now() }]);
+                    setMovingBuilders(prev => [...prev, { id: `runner_${newId}`, itemId: String(newId), fromPos: housePos, toPos: [pos.x, pos.y, pos.z], startReal: Date.now(), durationMs: cFlightMs }]);
                   }
                 }
               }

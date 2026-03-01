@@ -537,9 +537,10 @@ export function UpgradeBadgeInline({ upgradeInfo, badgeHeight, position }) {
     const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  const progress = Math.min(1, (Date.now() - upgradeInfo.startReal) / upgradeInfo.durationMs);
+  const progress = Math.min(1, Math.max(0, (Date.now() - upgradeInfo.startReal) / upgradeInfo.durationMs));
   const pct      = Math.round(progress * 100);
   const secLeft  = Math.max(0, Math.ceil((upgradeInfo.startReal + upgradeInfo.durationMs - Date.now()) / 1000));
+  const waiting  = Date.now() < upgradeInfo.startReal;
   const htmlPos  = position ?? [0, badgeHeight ?? 6, 0];
   return (
     <Html position={htmlPos} center distanceFactor={35} zIndexRange={[12, 13]} style={{ pointerEvents: 'none' }}>
@@ -549,7 +550,7 @@ export function UpgradeBadgeInline({ upgradeInfo, badgeHeight, position }) {
         fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#fbbf24',
         whiteSpace: 'nowrap', minWidth: 110, userSelect: 'none',
       }}>
-        <FaCog style={{ marginRight: 4, verticalAlign: 'middle', fontSize: 11 }} /> Улучшение {pct}% ({secLeft}с)
+        <FaCog style={{ marginRight: 4, verticalAlign: 'middle', fontSize: 11 }} /> {waiting ? 'Дрон летит...' : `Улучшение ${pct}% (${secLeft}с)`}
         <div style={{ height: 4, background: '#374151', borderRadius: 3, marginTop: 3 }}>
           <div style={{ height: '100%', width: `${pct}%`, background: '#fbbf24', borderRadius: 3, transition: 'width 0.9s' }} />
         </div>

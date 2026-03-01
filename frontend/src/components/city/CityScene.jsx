@@ -327,7 +327,7 @@ function SceneInner({
               halfW={sz.hw}
               halfH={sz.hh}
             />
-            <BuilderAtWork position={item.position} />
+            {Date.now() >= (constructInfo.startReal ?? 0) && <BuilderAtWork position={item.position} />}
           </group>
         );
       })}
@@ -343,10 +343,11 @@ function SceneInner({
         const pz     = item.position[2] ?? 0;
         const badgePos = [px, py + sz.hh * 2 + 1.8, pz];
         const ringR  = sz.hw * 1.1;
+        const droneArrived = Date.now() >= (upgradeInfo.startReal ?? 0);
         return (
           <group key={`uw_${bid}`}>
-            <BuilderAtWork position={item.position} />
-            <UpgradeRing position={item.position} radius={ringR} />
+            {droneArrived && <BuilderAtWork position={item.position} />}
+            {droneArrived && <UpgradeRing position={item.position} radius={ringR} />}
             <UpgradeBadgeInline upgradeInfo={upgradeInfo} position={badgePos} />
           </group>
         );
@@ -354,7 +355,7 @@ function SceneInner({
 
       {/* Running builder figures */}
       {(movingBuilders ?? []).map(r => (
-        <BuilderRunner key={r.id} fromPos={r.fromPos} toPos={r.toPos} startReal={r.startReal} />
+        <BuilderRunner key={r.id} fromPos={r.fromPos} toPos={r.toPos} startReal={r.startReal} durationMs={r.durationMs} />
       ))}
 
       {/* Drone route target pulse hints */}

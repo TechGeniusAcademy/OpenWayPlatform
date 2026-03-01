@@ -78,7 +78,8 @@ function UpgradeProgressBadge({ upgradeInfo, badgeHeight }) {
   }, [upgradeInfo]); // eslint-disable-line
   if (!upgradeInfo) return null;
   const now      = Date.now();
-  const progress = Math.min(1, (now - upgradeInfo.startReal) / upgradeInfo.durationMs);
+  const waiting  = now < upgradeInfo.startReal;
+  const progress = Math.min(1, Math.max(0, (now - upgradeInfo.startReal) / upgradeInfo.durationMs));
   const pct      = Math.round(progress * 100);
   const secLeft  = Math.max(0, Math.ceil((upgradeInfo.startReal + upgradeInfo.durationMs - now) / 1000));
   return (
@@ -103,7 +104,7 @@ function UpgradeProgressBadge({ upgradeInfo, badgeHeight }) {
         minWidth:     110,
         userSelect:   'none',
       }}>
-        <FaCog style={{ marginRight: 4, verticalAlign: 'middle', fontSize: 11 }} /> Улучшение {pct}% ({secLeft}с)
+        <FaCog style={{ marginRight: 4, verticalAlign: 'middle', fontSize: 11 }} /> {waiting ? 'Дрон летит...' : `Улучшение ${pct}% (${secLeft}с)`}
         <div style={{ height: 4, background: '#374151', borderRadius: 3, marginTop: 3 }}>
           <div style={{
             height:       '100%',
