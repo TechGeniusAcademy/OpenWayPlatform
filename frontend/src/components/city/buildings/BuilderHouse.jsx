@@ -10,7 +10,7 @@
 import { useRef, useContext, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Html } from '@react-three/drei';
+import { Html, useGLTF } from '@react-three/drei';
 import { FaHardHat, FaCog } from 'react-icons/fa';
 import { CityContext } from '../CityContext.js';
 import {
@@ -371,16 +371,10 @@ function BuilderHousePlacedBase({
   const { placedHitRef, rightClickHitRef } = useContext(CityContext);
   const lvlConf = getLevelConfig('builder-house', level);
   const scale   = 1 + (lvlConf?.scaleBonus ?? 0);
-  const accent  = lvlConf?.accentColor ?? '#f59e0b';
-  const glow    = lvlConf?.glowIntensity ?? 0;
 
-  // Idle builder figures standing by the house (one per free builder, up to 3)
-  const idleCount = Math.min(freeBuilders ?? 0, 3);
-  const idlePositions = [
-    [2.8, 0, 3.0],
-    [-2.8, 0, 3.0],
-    [0, 0, -3.5],
-  ];
+  const { scene: platformScene } = useGLTF('/models/workers platform.glb');
+  const platformCloneRef = useRef(null);
+  if (!platformCloneRef.current) platformCloneRef.current = platformScene.clone(true);
 
   return (
     <group
@@ -397,13 +391,7 @@ function BuilderHousePlacedBase({
       }}
     >
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
-        <BuilderHouseBody accentColor={accent} emissiveColor={accent} emissiveIntensity={glow} />
-        {/* Idle builders stand near the door */}
-        {idlePositions.slice(0, idleCount).map((pos, i) => (
-          <group key={i} position={pos} rotation={[0, i === 2 ? Math.PI : -Math.PI / 4, 0]}>
-            <BuilderFigure animation="idle" scale={1.0} />
-          </group>
-        ))}
+        <primitive object={platformCloneRef.current} />
       </group>
 
       <BuilderCountBadge
@@ -459,3 +447,5 @@ export function UpgradeBadgeInline({ upgradeInfo, badgeHeight, position }) {
 }
 
 export const BuilderHousePlaced = memo(BuilderHousePlacedBase, buildingPropsEqual);
+
+useGLTF.preload('/models/workers platform.glb');

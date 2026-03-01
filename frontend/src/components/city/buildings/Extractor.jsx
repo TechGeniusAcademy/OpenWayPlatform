@@ -15,7 +15,7 @@ import {
 import { ConveyorSourceRing } from '../ConveyorBelt.jsx';
 import { EXTRACTOR_CONFIG } from '../../items/extractor.js';
 import { getLevelConfig } from '../../systems/upgrades.js';
-import { Html } from '@react-three/drei';
+import { Html, useGLTF } from '@react-three/drei';
 import { FaExclamationTriangle, FaCog, FaCheck, FaCircle } from 'react-icons/fa';
 
 // ─── Ore-type label shown above the extractor ─────────────────────────────────
@@ -354,8 +354,10 @@ function ExtractorGLTFPlaced({
   const { placedHitRef, conveyorModeRef, rightClickHitRef } = useContext(CityContext);
   const lvlConf = getLevelConfig('extractor', level);
   const scale   = 1 + (lvlConf?.scaleBonus ?? 0);
-  const accent  = lvlConf?.accentColor ?? '#a8874a';
-  const glow    = lvlConf?.glowIntensity ?? 0;
+
+  const { scene: drillScene } = useGLTF('/models/drill.glb');
+  const drillCloneRef = useRef(null);
+  if (!drillCloneRef.current) drillCloneRef.current = drillScene.clone(true);
 
   return (
     <group
@@ -373,11 +375,7 @@ function ExtractorGLTFPlaced({
       }}
     >
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
-        <ExtractorBody
-          accentOverride={accent}
-          emissiveColor={accent}
-          emissiveIntensity={glow}
-        />
+        <primitive object={drillCloneRef.current} />
       </group>
 
       {/* Upgrade in progress badge */}
@@ -400,6 +398,8 @@ function ExtractorGLTFPlaced({
 }
 
 // ─── Public exports ───────────────────────────────────────────────────────────
+
+useGLTF.preload('/models/drill.glb');
 
 export function ExtractorPreview({ placementPosRef, inputRef, placementRotYRef }) {
   return (
