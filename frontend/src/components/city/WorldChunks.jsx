@@ -33,13 +33,11 @@ const GEO = {
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
 const MAT = {
-  trunk:      new THREE.MeshStandardMaterial({ color: '#5c3d1e', roughness: 0.9, metalness: 0 }),
-  leafGreen:  new THREE.MeshStandardMaterial({ color: '#2a5a2a', roughness: 0.85, metalness: 0 }),
-  leafDark:   new THREE.MeshStandardMaterial({ color: '#1a3d1a', roughness: 0.85, metalness: 0 }),
-  leafLight:  new THREE.MeshStandardMaterial({ color: '#3d7a3d', roughness: 0.8,  metalness: 0 }),
-  leafAutumn: new THREE.MeshStandardMaterial({ color: '#7a4010', roughness: 0.8,  metalness: 0 }),
-  rockGray:   new THREE.MeshStandardMaterial({ color: '#6b6b6b', roughness: 0.95, metalness: 0.05 }),
-  rockBrown:  new THREE.MeshStandardMaterial({ color: '#7a5c3a', roughness: 0.95, metalness: 0 }),
+  trunk:      new THREE.MeshStandardMaterial({ color: '#5c3d1e', roughness: 0.9,  metalness: 0 }),
+  // foliage: all leaf types merged into one geo per chunk (saves 3 extra bags × 49 chunks)
+  foliage:    new THREE.MeshStandardMaterial({ color: '#2a5a2a', roughness: 0.85, metalness: 0 }),
+  // rock: gray + brown merged into one geo per chunk
+  rock:       new THREE.MeshStandardMaterial({ color: '#6b6b6b', roughness: 0.95, metalness: 0.05 }),
   coal:       new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9,  metalness: 0.1  }),
   coalVein:   new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.6,  metalness: 0.25, emissive: new THREE.Color('#0a0a0a') }),
   iron:       new THREE.MeshStandardMaterial({ color: '#5a3a2a', roughness: 0.85, metalness: 0.15 }),
@@ -672,7 +670,14 @@ const GROUND_MATS = [
   new THREE.MeshStandardMaterial({ color: '#222e1c', roughness: 0.92, metalness: 0 }),
   new THREE.MeshStandardMaterial({ color: '#243020', roughness: 0.92, metalness: 0 }),
 ];
+// Single shared material for instancedMesh ground (ignoring per-chunk tint)
+const GROUND_MAT = GROUND_MATS[0];
 const PLANE_GEO = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
+// Pre-allocated rotation to apply to instancedMesh — planes lie flat
+const _GROUND_ROT = new THREE.Euler(-Math.PI / 2, 0, 0);
+const _GROUND_DUMMY = new THREE.Object3D();
+_GROUND_DUMMY.rotation.copy(_GROUND_ROT);
+const MAX_GROUND_INSTANCES = (RENDER_DIST * 2 + 1) ** 2; // 49 at RENDER_DIST=3
 
 // ─── Chunk ────────────────────────────────────────────────────────────────────
 
@@ -696,7 +701,7 @@ function Chunk({ cx, cz }) {
   const oz = cz * CHUNK_SIZE;
 
   // ── Spawn placement + merged visual geometry (both computed once per cx/cz) ──
-  const { spawns, groundMat, merged } = useMemo(() => {
+  const { spawns, merged } = useMemo(() => {
     // ── Step 1: same main-rng spawn placement as before (unchanged) ──
     const rng   = mkRng(chunkSeed(cx, cz));
     const cells = new Set();
@@ -739,8 +744,6 @@ function Chunk({ cx, cz }) {
       const kind = tr < 0.38 ? 'pine' : tr < 0.68 ? 'round' : 'bushy';
       items.push({ type: kind, x: wx, z: wz });
     }
-
-    const gMat = GROUND_MATS[((Math.abs(cx) + Math.abs(cz)) % GROUND_MATS.length)];
 
     // ── Step 2: per-item visual params — exact same rng calls as original components ──
     const enriched = items.map((sp, i) => {
@@ -786,30 +789,27 @@ function Chunk({ cx, cz }) {
       return sp;
     });
 
-    // ── Step 3: build merged geometry per material ────────────────────────────
-    const bags = {
-      trunk: [], leafGreen: [], leafDark: [], leafLight: [], leafAutumn: [],
-      rockGray: [], rockBrown: [],
-    };
+    // ── Step 3: build merged geometry — 3 bags total instead of 7 ─────────────
+    // All leaf types → 'foliage', rockGray + rockBrown → 'rock'
+    const bags = { trunk: [], foliage: [], rock: [] };
 
     for (const sp of enriched) {
       if (sp.type === 'pine') {
         bags.trunk.push(wGeo(GEO.trunkTall, sp.x, sp.z, sp.ry, sp.sc, 0, 1.6, 0));
-        bags[sp.leafKey].push(wGeo(GEO.cone,    sp.x, sp.z, sp.ry, sp.sc, 0, 4.6, 0));
-        bags[sp.leafKey].push(wGeo(GEO.coneTop, sp.x, sp.z, sp.ry, sp.sc, 0, 6.2, 0, 0.78, 0.88, 0.78));
+        bags.foliage.push(wGeo(GEO.cone,    sp.x, sp.z, sp.ry, sp.sc, 0, 4.6, 0));
+        bags.foliage.push(wGeo(GEO.coneTop, sp.x, sp.z, sp.ry, sp.sc, 0, 6.2, 0, 0.78, 0.88, 0.78));
       } else if (sp.type === 'round') {
         bags.trunk.push(wGeo(GEO.trunk,     sp.x, sp.z, sp.ry, sp.sc, 0, 1.1, 0));
-        bags[sp.leafKey].push(wGeo(sp.crownGeo, sp.x, sp.z, sp.ry, sp.sc, 0, 3.4, 0));
+        bags.foliage.push(wGeo(sp.crownGeo, sp.x, sp.z, sp.ry, sp.sc, 0, 3.4, 0));
       } else if (sp.type === 'bushy') {
         bags.trunk.push(wGeo(GEO.trunkShort, sp.x, sp.z, sp.ry, sp.sc, 0, 0.7, 0));
         BUSH_OFFSETS.forEach(([bx, by, bz, bs], bi) => {
-          const { geo, leafKey } = sp.bushData[bi];
-          bags[leafKey].push(wGeo(geo, sp.x, sp.z, sp.ry, sp.sc, bx, by, bz, bs, bs, bs));
+          const { geo } = sp.bushData[bi];
+          bags.foliage.push(wGeo(geo, sp.x, sp.z, sp.ry, sp.sc, bx, by, bz, bs, bs, bs));
         });
       } else if (sp.type === 'rock') {
-        const bag = bags[sp.matKey];
         for (const r of sp.rocks) {
-          bag.push(wRock(r.geo, sp.x + r.ox, r.s * 0.4, sp.z + r.oz, r.s, r.s * 0.7, r.s, r.rx, r.ry, r.rz));
+          bags.rock.push(wRock(r.geo, sp.x + r.ox, r.s * 0.4, sp.z + r.oz, r.s, r.s * 0.7, r.s, r.rx, r.ry, r.rz));
         }
       }
     }
@@ -817,7 +817,7 @@ function Chunk({ cx, cz }) {
     const m = {};
     for (const [k, geos] of Object.entries(bags)) m[k] = mergeGeos(geos);
 
-    return { spawns: enriched, groundMat: gMat, merged: m };
+    return { spawns: enriched, merged: m };
   }, [cx, cz]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dispose merged geos when chunk unmounts or re-computes
@@ -831,20 +831,10 @@ function Chunk({ cx, cz }) {
 
   return (
     <group>
-      {/* Ground tile */}
-      <mesh receiveShadow position={[ox, 0, oz]} rotation={[-Math.PI / 2, 0, 0]}>
-        <primitive object={PLANE_GEO} />
-        <primitive object={groundMat} attach="material" />
-      </mesh>
-
-      {/* Merged static visuals: all trees + rocks → 7 draw calls max per chunk */}
-      {merged.trunk      && <mesh castShadow receiveShadow geometry={merged.trunk}       material={MAT.trunk}      />}
-      {merged.leafGreen  && <mesh castShadow geometry={merged.leafGreen}  material={MAT.leafGreen}  />}
-      {merged.leafDark   && <mesh castShadow geometry={merged.leafDark}   material={MAT.leafDark}   />}
-      {merged.leafLight  && <mesh castShadow geometry={merged.leafLight}  material={MAT.leafLight}  />}
-      {merged.leafAutumn && <mesh castShadow geometry={merged.leafAutumn} material={MAT.leafAutumn} />}
-      {merged.rockGray   && <mesh castShadow geometry={merged.rockGray}   material={MAT.rockGray}   />}
-      {merged.rockBrown  && <mesh castShadow geometry={merged.rockBrown}  material={MAT.rockBrown}  />}
+      {/* Merged static visuals: 3 draw calls max per chunk (trunk / foliage / rock) */}}
+      {merged.trunk   && <mesh castShadow receiveShadow geometry={merged.trunk}   material={MAT.trunk}   />}
+      {merged.foliage && <mesh castShadow               geometry={merged.foliage} material={MAT.foliage} />}
+      {merged.rock    && <mesh castShadow               geometry={merged.rock}    material={MAT.rock}    />}
 
       {/* Interactive hitboxes — 1 transparent mesh per tree/rock */}
       {spawns.map((sp, i) => {
@@ -875,6 +865,23 @@ export function World({ camTargetRef }) {
     return set;
   });
 
+  const groundRef = useRef();
+
+  // Update instancedMesh whenever visible chunk set changes
+  useEffect(() => {
+    const mesh = groundRef.current;
+    if (!mesh) return;
+    let i = 0;
+    for (const key of chunks) {
+      const [cx, cz] = key.split(',').map(Number);
+      _GROUND_DUMMY.position.set(cx * CHUNK_SIZE, 0, cz * CHUNK_SIZE);
+      _GROUND_DUMMY.updateMatrix();
+      mesh.setMatrixAt(i++, _GROUND_DUMMY.matrix);
+    }
+    mesh.count = i;
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [chunks]);
+
   useFrame(() => {
     const pos = camTargetRef.current;
     const cx  = Math.round(pos.x / CHUNK_SIZE);
@@ -889,6 +896,13 @@ export function World({ camTargetRef }) {
 
   return (
     <>
+      {/* All ground tiles as a single instanced draw call */}
+      <instancedMesh
+        ref={groundRef}
+        args={[PLANE_GEO, GROUND_MAT, MAX_GROUND_INSTANCES]}
+        receiveShadow
+        frustumCulled={false}
+      />
       {[...chunks].map(key => {
         const [cx, cz] = key.split(',').map(Number);
         return <Chunk key={key} cx={cx} cz={cz} />;
