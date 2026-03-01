@@ -15,6 +15,8 @@ import { getLevelConfig } from '../../systems/upgrades.js';
 const MODEL_URL = '/models/coal generator.glb';
 useGLTF.preload(MODEL_URL);
 
+const SCALE = 4; // visual scale of the GLB
+
 // ─── Ember / spark particles ─────────────────────────────────────────────────
 const EMBER_N  = 14;
 const EMBER_GEO = new THREE.SphereGeometry(0.12, 4, 3);
@@ -58,7 +60,7 @@ function EmberParticles({ baseY = 0 }) {
 
 function CoalGeneratorGLB({ accentOverride, emissiveColor, emissiveIntensity }) {
   const { scene } = useGLTF(MODEL_URL);
-  const model = useMemo(() => {
+  const { model, yOffset } = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((obj) => {
       if (!obj.isMesh || !obj.material) return;
@@ -69,7 +71,10 @@ function CoalGeneratorGLB({ accentOverride, emissiveColor, emissiveIntensity }) 
       };
       obj.material = Array.isArray(obj.material) ? obj.material.map(fix) : fix(obj.material);
     });
-    return clone;
+    // Compute bounding box to lift model so its bottom sits on y=0
+    const box = new THREE.Box3().setFromObject(clone);
+    const offset = -box.min.y * SCALE;
+    return { model: clone, yOffset: offset };
   }, [scene]);
 
   useEffect(() => {
@@ -92,8 +97,8 @@ function CoalGeneratorGLB({ accentOverride, emissiveColor, emissiveIntensity }) 
     <group>
       <primitive
         object={model}
-        scale={[1, 1, 1]}
-        position={[0, 0, 0]}
+        scale={[SCALE, SCALE, SCALE]}
+        position={[0, yOffset, 0]}
         castShadow
         receiveShadow
       />
@@ -163,6 +168,10 @@ function CoalGeneratorGLTFPreview({ placementPosRef, inputRef, placementRotYRef 
 
   if (!previewCloneRef.current) {
     const clone = rawScene.clone(true);
+    // Compute Y lift so bottom is at ground
+    const box = new THREE.Box3().setFromObject(clone);
+    const yOff = -box.min.y * SCALE;
+    previewCloneRef.current = { mesh: clone, y: yOff };
     clone.traverse((obj) => {
       if (!obj.isMesh) return;
       if (Array.isArray(obj.material)) {
@@ -173,7 +182,6 @@ function CoalGeneratorGLTFPreview({ placementPosRef, inputRef, placementRotYRef 
         obj.material = mc;
       }
     });
-    previewCloneRef.current = clone;
   }
 
   useFrame(({ clock }) => {
@@ -181,7 +189,7 @@ function CoalGeneratorGLTFPreview({ placementPosRef, inputRef, placementRotYRef 
     const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 4) * 0.35;
     _previewCol.setHex(blockedRef.current ? 0xff2200 : 0xff6600);
     if (previewCloneRef.current) {
-      previewCloneRef.current.traverse((obj) => {
+      previewCloneRef.current.mesh.traverse((obj) => {
         if (!obj.isMesh || !obj.material) return;
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
         mats.forEach((mat) => {
@@ -196,7 +204,7 @@ function CoalGeneratorGLTFPreview({ placementPosRef, inputRef, placementRotYRef 
 
   return (
     <group ref={groupRef}>
-      <primitive object={previewCloneRef.current} scale={[1, 1, 1]} position={[0, 0, 0]} />
+      <primitive object={previewCloneRef.current.mesh} scale={[SCALE, SCALE, SCALE]} position={[0, previewCloneRef.current?.y ?? 0, 0]} />
     </group>
   );
 }
