@@ -37,7 +37,7 @@ function BuildingHotbar({ onStartPlacing, placingItem }) {
 
   return (
     <div style={{
-      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+      position: 'fixed', bottom: 10, left: '50%', transform: 'translateX(-50%)',
       display: 'flex', gap: 6,
       background: 'rgba(8,15,28,0.82)',
       border: '1px solid rgba(255,255,255,0.1)',
