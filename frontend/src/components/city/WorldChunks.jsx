@@ -493,7 +493,7 @@ function WaterBody({ x, z, rng }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
 
-  const { isLake, ry, radius, waterGeo, shoreGeo, bankGeo, rocks, reeds } = useMemo(() => {
+  const { isLake, ry, radius, waterGeo, shoreGeo, bankGeo, rocksGeo, reedsGeo } = useMemo(() => {
     const il     = rng() > 0.35;
     const r      = il ? 5.0 : 3.0;
     const rySeed = rng() * Math.PI;
@@ -512,11 +512,44 @@ function WaterBody({ x, z, rng }) {
       const d = r * (0.80 + rng() * 0.22);
       return { ox: Math.cos(a) * d, oz: Math.sin(a) * d, h: 0.5 + rng() * 0.65 };
     });
-    return { isLake: il, ry: rySeed, radius: r, waterGeo: wGeo, shoreGeo: sGeo, bankGeo: bGeo, rocks: rks, reeds: rds };
+    // Merge shore rocks → 1 draw call instead of up to 6
+    const rockGeos = rks.map(rk => {
+      const g = GEO.rockSmall.clone();
+      const tmp = new THREE.Object3D();
+      tmp.position.set(rk.ox, rk.s * 0.28, rk.oz);
+      tmp.scale.set(rk.s, rk.s * 0.7, rk.s);
+      tmp.updateMatrix();
+      g.applyMatrix4(tmp.matrix);
+      return g;
+    });
+    const rGeo = mergeGeos(rockGeos);
+    rockGeos.forEach(g => g.dispose());
+    // Merge reeds → 1 draw call instead of up to 8
+    const reedGeos = rds.map(rd => {
+      const src = rd.h < 0.7 ? GEO.reedSm : rd.h < 0.95 ? GEO.reedMd : GEO.reedLg;
+      const hy  = rd.h < 0.7 ? 0.30 : rd.h < 0.95 ? 0.45 : 0.575;
+      const g = src.clone();
+      const tmp = new THREE.Object3D();
+      tmp.position.set(rd.ox, hy, rd.oz);
+      tmp.updateMatrix();
+      g.applyMatrix4(tmp.matrix);
+      return g;
+    });
+    const rdGeo = mergeGeos(reedGeos);
+    reedGeos.forEach(g => g.dispose());
+    return { isLake: il, ry: rySeed, radius: r, waterGeo: wGeo, shoreGeo: sGeo, bankGeo: bGeo, rocksGeo: rGeo, reedsGeo: rdGeo };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Opacity animation removed — it was mutating the shared MAT.waterSurf material
-  // from multiple instances simultaneously, causing constant flickering.
+  // Dispose <primitive> geometries that R3F won't track — prevents GPU geometry leak on chunk unload
+  useEffect(() => {
+    return () => {
+      waterGeo.dispose();
+      shoreGeo.dispose();
+      bankGeo.dispose();
+      rocksGeo?.dispose();
+      reedsGeo?.dispose();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <group position={[x, 0.03, z]} rotation={[0, ry, 0]}>
@@ -535,23 +568,10 @@ function WaterBody({ x, z, rng }) {
         <primitive object={waterGeo} />
         <primitive object={MAT.waterSurf} attach="material" />
       </mesh>
-      {/* Shore rocks */}
-      {rocks.map((r, i) => (
-        <mesh key={`r${i}`}
-          geometry={GEO.rockSmall} material={MAT.rockGray}
-          position={[r.ox, r.s * 0.28, r.oz]}
-          scale={[r.s, r.s * 0.7, r.s]}
-        />
-      ))}
-      {/* Reeds — shared geometries (3 size buckets), no castShadow */}
-      {reeds.map((rd, i) => {
-        const geo = rd.h < 0.7 ? GEO.reedSm : rd.h < 0.95 ? GEO.reedMd : GEO.reedLg;
-        const hy  = rd.h < 0.7 ? 0.30 : rd.h < 0.95 ? 0.45 : 0.575;
-        return (
-          <mesh key={`rd${i}`} geometry={geo} material={MAT.reed}
-            position={[rd.ox, hy, rd.oz]} />
-        );
-      })}
+      {/* Shore rocks — merged into 1 draw call */}
+      {rocksGeo && <mesh geometry={rocksGeo} material={MAT.rockGray} />}
+      {/* Reeds — merged into 1 draw call */}
+      {reedsGeo && <mesh geometry={reedsGeo} material={MAT.reed} />}
       {/* Hitbox */}
       <mesh position={[0, 0.3, 0]} material={HITBOX_MAT}
         onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
@@ -569,7 +589,7 @@ function RiverSegment({ x, z, rng }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
 
-  const { ry, len, wid, waterGeo, bankGeo, rocks } = useMemo(() => {
+  const { ry, len, wid, waterGeo, bankGeo, rocksGeo } = useMemo(() => {
     const r  = rng() * Math.PI;
     const l  = 10 + rng() * 14;
     const w  = 3.0 + rng() * 2.5;
@@ -581,10 +601,29 @@ function RiverSegment({ x, z, rng }) {
       const perp  = side * (w * 0.5 + 0.3 + rng() * 0.8);
       return { ox: perp, oz: along, s: 0.12 + rng() * 0.2 };
     });
-    return { ry: r, len: l, wid: w, waterGeo: wG, bankGeo: bG, rocks: rks };
+    // Merge bank rocks → 1 draw call
+    const rockGeos = rks.map(rk => {
+      const g = GEO.rockSmall.clone();
+      const tmp = new THREE.Object3D();
+      tmp.position.set(rk.ox, rk.s * 0.25, rk.oz);
+      tmp.scale.set(rk.s, rk.s * 0.6, rk.s);
+      tmp.updateMatrix();
+      g.applyMatrix4(tmp.matrix);
+      return g;
+    });
+    const rGeo = mergeGeos(rockGeos);
+    rockGeos.forEach(g => g.dispose());
+    return { ry: r, len: l, wid: w, waterGeo: wG, bankGeo: bG, rocksGeo: rGeo };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Opacity animation removed — mutated shared material causing flicker
+  // Dispose <primitive> geometries that R3F won't track — prevents GPU geometry leak on chunk unload
+  useEffect(() => {
+    return () => {
+      waterGeo.dispose();
+      bankGeo.dispose();
+      rocksGeo?.dispose();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <group position={[x, 0.03, z]} rotation={[0, ry, 0]}>
@@ -598,14 +637,8 @@ function RiverSegment({ x, z, rng }) {
         <primitive object={waterGeo} />
         <primitive object={MAT.waterSurf} attach="material" />
       </mesh>
-      {/* Bank rocks */}
-      {rocks.map((r, i) => (
-        <mesh key={i}
-          geometry={GEO.rockSmall} material={MAT.rockGray}
-          position={[r.ox, r.s * 0.25, r.oz]}
-          scale={[r.s, r.s * 0.6, r.s]}
-        />
-      ))}
+      {/* Bank rocks — merged into 1 draw call */}
+      {rocksGeo && <mesh geometry={rocksGeo} material={MAT.rockGray} />}
       {/* Hitbox */}
       <mesh position={[0, 0.3, 0]} material={HITBOX_MAT}
         onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}

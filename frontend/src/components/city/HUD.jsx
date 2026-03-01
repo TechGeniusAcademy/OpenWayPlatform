@@ -198,9 +198,9 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
             {stat('Зум камеры',   zoom,                          '<40',   40,  50,  v => v.toFixed(1))}
           </div>
           <div className={styles.debugLegend}>
-            <span style={{ color: '#4ade80' }}>✓ Ок</span>
-            <span style={{ color: '#fbbf24' }}>! Внимание</span>
-            <span style={{ color: '#f87171' }}>✗ Критически</span>
+            <span style={{ color: '#4ade80' }}></span>
+            <span style={{ color: '#fbbf24' }}></span>
+            <span style={{ color: '#f87171' }}></span>
           </div>
           <div className={styles.debugHint}>[F3] или кнопка — закрыть</div>
         </div>
