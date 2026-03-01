@@ -3,7 +3,25 @@
 // Add new entries here to enable conveyors between different building types.
 // Each call to registerTransferRule creates a directed edge in the transfer graph.
 
-import { registerTransferRule } from '../systems/conveyor.js';
+import { registerTransferRule, registerConveyorOutPort, registerConveyorOutSide } from '../systems/conveyor.js';
+
+// ─── Money Factory: output port & side constraint ───────────────────────────
+//
+// PORT — смещение точки подключения ленты относительно центра здания.
+//   dx — вправо/влево,  dz — вперёд/назад  (мировые единицы).
+//   Меняй эти числа пока лента не будет выходить из нужного отверстия фасада.
+const FACTORY_PORT_DX = 0;    // ◄── твоя настройка (по горизонтали)
+const FACTORY_PORT_DZ = 2.5;  // ◄── твоя настройка (глубина выхода)
+
+// SIDE — разрешённое направление выхода (единичный вектор в мировых осях).
+//   { dx: 0, dz: 1 }  = лента может уходить только вперёд (+Z)
+//   { dx: 1, dz: 0 }  = только вправо (+X),  { dx: -1, dz: 0 } = только влево
+//   Dot-порог 0.5 → допуск ±60° вокруг выбранного направления.
+const FACTORY_SIDE_DX = 0;    // ◄── твоя настройка
+const FACTORY_SIDE_DZ = 1;    // ◄── твоя настройка
+
+registerConveyorOutPort('money-factory', { dx: FACTORY_PORT_DX, dz: FACTORY_PORT_DZ });
+registerConveyorOutSide('money-factory', { dx: FACTORY_SIDE_DX, dz: FACTORY_SIDE_DZ });
 
 // Монетная фабрика → Хранилище энергии
 // Монеты движутся с завода в хранилище.

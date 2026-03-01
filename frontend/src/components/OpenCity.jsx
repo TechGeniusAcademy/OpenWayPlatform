@@ -381,7 +381,6 @@ export default function OpenCity({ onBack }) {
       if (!canBeSource(item.type)) return;
       const outCount = conveyorsRef.current.filter(c => c.fromId === itemId).length;
       if (outCount >= getConveyorOutLimit(item.type)) return;   // slot limit
-      conveyorBuildingHitRef.current = true; // источник выбран — земля не должна записать точку
       setConveyorFromId(itemId);
 
     } else if (fromId === itemId) {
@@ -392,7 +391,6 @@ export default function OpenCity({ onBack }) {
     } else {
       const from = placedItemsRef.current.find(i => i.id === fromId);
       const to   = placedItemsRef.current.find(i => i.id === itemId);
-      conveyorBuildingHitRef.current = true; // назначение выбрано — земля не должна записать точку
       if (from && to && canConnect(from.type, to.type)) {
         const dupSrc  = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
         const inCount = conveyorsRef.current.filter(c => c.toId === itemId).length;
@@ -403,6 +401,7 @@ export default function OpenCity({ onBack }) {
           const toCenter  = { x: to.position[0], z: to.position[2] };
           const exclude   = new Set([fromId, itemId]);
           const lastBlocked = isSegmentIntersectsBuilding(lastPt.x, lastPt.z, toCenter.x, toCenter.z, placedItemsRef.current, exclude);
+          console.log('[CONV] saving belt, waypoints:', JSON.stringify(conveyorWaypointsRef.current));
           if (!lastBlocked) {
             setConveyors(prev => [...prev, {
               id: Date.now(),
@@ -450,6 +449,7 @@ export default function OpenCity({ onBack }) {
 
   // Добавление точки-ориентира при клике по земле в режиме прокладки маршрута
   const handleConveyorGroundClick = useCallback((x, z) => {
+    console.log('[CONV] groundClick', x, z, 'mode:', conveyorModeRef.current, 'fromId:', conveyorFromIdRef.current);
     if (!conveyorModeRef.current || conveyorFromIdRef.current === null) return;
     // Если в этом же фрейме было нажатие на здание — пропускаем
     if (conveyorBuildingHitRef.current) { conveyorBuildingHitRef.current = false; return; }
@@ -464,7 +464,10 @@ export default function OpenCity({ onBack }) {
     const exclude  = new Set([srcId]);
 
     // 1. Сама точка не должна быть внутри здания
-    if (isPointInsideBuilding(snapped.x, snapped.z, placed, exclude)) return;
+    if (isPointInsideBuilding(snapped.x, snapped.z, placed, exclude)) {
+      console.log('[CONV] blocked: point inside building', snapped);
+      return;
+    }
 
     // 2. Сегмент от предыдущей точки (или центра источника) до новой точки
     //    не должен проходить сквозь здание
@@ -474,9 +477,13 @@ export default function OpenCity({ onBack }) {
       : srcItem
         ? { x: srcItem.position[0], z: srcItem.position[2] }
         : null;
-    if (prev && isSegmentIntersectsBuilding(prev.x, prev.z, snapped.x, snapped.z, placed, exclude)) return;
+    if (prev && isSegmentIntersectsBuilding(prev.x, prev.z, snapped.x, snapped.z, placed, exclude)) {
+      console.log('[CONV] blocked: segment intersects building', prev, '->', snapped);
+      return;
+    }
     // ────────────────────────────────────────────────────────────────────────
 
+    console.log('[CONV] waypoint added', snapped, 'total:', conveyorWaypointsRef.current.length + 1);
     conveyorWaypointsRef.current = [...conveyorWaypointsRef.current, snapped];
   }, []);
 

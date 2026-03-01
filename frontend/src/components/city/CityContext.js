@@ -5,12 +5,12 @@ export const CityContext = createContext(null);
 
 // ─── World constants ─────────────────────────────────────────────────────────
 export const CHUNK_SIZE  = 40;   // world units per chunk side
-export const RENDER_DIST = 2;    // chunks radius (was 4 = 81 chunks; 2 = 25 chunks)
+export const RENDER_DIST = 3;    // chunks radius (3 = 49 chunks; 2 = 25 chunks)
 
 // ─── RTS Camera constants ─────────────────────────────────────────────────────
 export const CAM_PAN_SPEED  = 22;    // units/sec keyboard pan
 export const CAM_ZOOM_MIN   = 10;    // min height
-export const CAM_ZOOM_MAX   = 140;   // max height
+export const CAM_ZOOM_MAX   = 50;    // max height
 export const CAM_ZOOM_STEP  = 6;
 export const CAM_TILT       = 55;    // degrees above horizon (fixed RTS angle)
 export const CAM_ROT_SPEED  = 1.5;   // radians/sec for Q/E rotation

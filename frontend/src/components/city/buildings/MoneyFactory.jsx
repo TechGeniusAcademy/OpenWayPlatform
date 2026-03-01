@@ -1,5 +1,5 @@
 import { Suspense, useMemo, useEffect, useRef, useContext } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CityContext, MONEY_FACTORY_Y, MONEY_FACTORY_TILT_X, MONEY_FACTORY_TILT_Z } from '../CityContext.js';
@@ -9,35 +9,100 @@ import { CableSourceRing } from '../EnergyCable.jsx';
 import { MONEY_FACTORY_CONFIG } from '../../items/moneyFactory.js';
 import { getLevelConfig } from '../../systems/upgrades.js';
 
-const MODEL_URL = '/models/money-factory.glb';
+const MODEL_URL = '/models/Factory.glb';
 useGLTF.preload(MODEL_URL);
 
-const _tint = new THREE.Color();
+// Clip the model above this Y (world units) — adjust to taste
+const CLIP_HEIGHT = 5.5;
+const HEIGHT_CLIP_PLANE = new THREE.Plane(new THREE.Vector3(0, -1, 0), CLIP_HEIGHT);
 
-function FactoryGLB({ emissiveColor, emissiveIntensity }) {
+// Chimney smoke starts at the clip height (top of visible building)
+const CHIMNEY_POS = [
+  new THREE.Vector3(-1.4, CLIP_HEIGHT, 2.2),
+  new THREE.Vector3( 0.7, CLIP_HEIGHT, 2.2),
+  new THREE.Vector3(-3.1, CLIP_HEIGHT, 2.2),
+];
+const PUFF_N = 10; // 5 puffs per chimney
+const _dummy = new THREE.Object3D();
+
+// Lightweight instanced smoke — no Sparkles, throttled every 3 frames
+function SmokeParticles() {
+  const ref    = useRef();
+  const frame  = useRef(0);
+  const ts     = useRef(Array.from({ length: PUFF_N }, (_, i) => i / PUFF_N));
+  const geoRef = useMemo(() => new THREE.SphereGeometry(0.22, 5, 4), []);
+  const matRef = useMemo(() => new THREE.MeshStandardMaterial({
+    color: '#9ca3af', transparent: true, opacity: 0.38,
+    roughness: 1, metalness: 0, depthWrite: false,
+  }), []);
+
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    frame.current++;
+    if (frame.current % 3 !== 0) return;
+    const RISE = 2.8;
+    for (let i = 0; i < PUFF_N; i++) {
+      ts.current[i] = (ts.current[i] + delta * 0.18) % 1;
+      const t = ts.current[i];
+      const ch = CHIMNEY_POS[i % CHIMNEY_POS.length];
+      const spread = t * 0.7;
+      _dummy.position.set(
+        ch.x + Math.sin(i * 2.39) * spread,
+        ch.y + MONEY_FACTORY_Y + t * RISE,
+        ch.z + Math.cos(i * 2.39) * spread,
+      );
+      _dummy.scale.setScalar(0.18 + t * 0.65);
+      _dummy.updateMatrix();
+      ref.current.setMatrixAt(i, _dummy.matrix);
+    }
+    ref.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return <instancedMesh ref={ref} args={[geoRef, matRef, PUFF_N]} />;
+}
+
+function FactoryGLB({ emissiveColor, emissiveIntensity, accentOverride }) {
+  const { gl } = useThree();
   const { scene } = useGLTF(MODEL_URL);
   const model = useMemo(() => scene.clone(true), [scene]);
+
+  // Enable local clipping once on the renderer
+  useEffect(() => { gl.localClippingEnabled = true; }, [gl]);
+
   useEffect(() => {
     const ei = emissiveIntensity ?? 0;
-    _tint.set(ei > 0 ? (emissiveColor ?? '#000000') : '#000000');
+    const accent = accentOverride ?? '#22c55e';
     model.traverse((obj) => {
       if (!obj.isMesh || !obj.material) return;
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
       mats.forEach((mat) => {
-        if (mat.emissive) { mat.emissive.copy(_tint); mat.emissiveIntensity = ei; }
+        mat.color.set('#2d3a4a');
+        mat.roughness = 0.72;
+        mat.metalness = 0.28;
+        // Height clipping plane
+        mat.clippingPlanes = [HEIGHT_CLIP_PLANE];
+        mat.clipShadows = true;
+        if (mat.emissive) {
+          mat.emissive.set(ei > 0 ? (emissiveColor ?? accent) : '#000000');
+          mat.emissiveIntensity = ei;
+        }
         mat.needsUpdate = true;
       });
     });
-  }, [model, emissiveColor, emissiveIntensity]);
+  }, [model, emissiveColor, emissiveIntensity, accentOverride]);
+
   return (
-    <primitive
-      object={model}
-      scale={[2.25, 2.25, 2.25]}
-      position={[0, MONEY_FACTORY_Y, 0]}
-      rotation={[MONEY_FACTORY_TILT_X, 0, MONEY_FACTORY_TILT_Z]}
-      castShadow
-      receiveShadow
-    />
+    <group>
+      <primitive
+        object={model}
+        scale={[0.0101, 0.0101, 0.0101]}
+        position={[-0.59, MONEY_FACTORY_Y, 1.10]}
+        rotation={[MONEY_FACTORY_TILT_X, 0, MONEY_FACTORY_TILT_Z]}
+        castShadow
+        receiveShadow
+      />
+      <SmokeParticles />
+    </group>
   );
 }
 

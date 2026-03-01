@@ -33,15 +33,50 @@ const TMPL = {
   hitSeg:      new THREE.BoxGeometry(1.4, 0.5, 1),
 };
 
+// ─── Striped belt surface texture (shared, built once at module load) ────────
+// 4×32 RGBA DataTexture — alternating dark ribs give the "rubber tread" look.
+const STRIPE_TEX = (() => {
+  const W = 4, H = 32;
+  const data = new Uint8Array(W * H * 4);
+  for (let y = 0; y < H; y++) {
+    // 2-pixel bright rib, 2-pixel dark groove, repeating
+    const rib = (y % 4) < 2;
+    const r = rib ? 42 : 22;
+    const g = rib ? 54 : 29;
+    const b = rib ? 63 : 36;
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      data[i] = r; data[i+1] = g; data[i+2] = b; data[i+3] = 255;
+    }
+  }
+  const tex = new THREE.DataTexture(data, W, H, THREE.RGBAFormat);
+  tex.wrapS     = THREE.RepeatWrapping;
+  tex.wrapT     = THREE.RepeatWrapping;
+  tex.magFilter = THREE.NearestFilter;  // crisp pixel ribs
+  tex.minFilter = THREE.NearestFilter;
+  tex.needsUpdate = true;
+  return tex;
+})();
+
 // ─── Shared materials ─────────────────────────────────────────────────────────
+// NOTE: rubber is NOT in MAT — each belt gets its own instance so offsets are independent
 const MAT = {
-  rubber: new THREE.MeshStandardMaterial({ color: '#17202a', roughness: 0.97, metalness: 0.02 }),
   rail:   new THREE.MeshStandardMaterial({ color: '#2d3e50', roughness: 0.55, metalness: 0.65 }),
   roller: new THREE.MeshStandardMaterial({ color: '#718096', roughness: 0.35, metalness: 0.80 }),
   leg:    new THREE.MeshStandardMaterial({ color: '#1e2d3d', roughness: 0.65, metalness: 0.50 }),
   endCap: new THREE.MeshStandardMaterial({ color: '#3b4e63', roughness: 0.45, metalness: 0.70 }),
   hitbox: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
 };
+
+// Factory for per-belt animated rubber material (reuses the shared stripe texture)
+function makeRubberMat() {
+  return new THREE.MeshStandardMaterial({
+    color:     '#17202a',
+    map:       STRIPE_TEX,
+    roughness: 0.97,
+    metalness: 0.02,
+  });
+}
 
 // ─── Bezier routing parameters ────────────────────────────────────────────────
 const JOINT_RADIUS = 0.75;
@@ -127,8 +162,15 @@ function buildMergedBelt(straightSegs, curveSegs) {
   const rollerGeos = [];
   const endCapGeos = [];
 
+  // ── Belt surface with UV.v scaled to world length so stripes repeat at 1u density ──
   function addBeltRail(mid, angle, len) {
-    rubberGeos.push(tGeo(TMPL.beltSurface, mid, angle, null, new THREE.Vector3(1, 1, len + 0.10)));
+    const surfGeo = tGeo(TMPL.beltSurface, mid, angle, null, new THREE.Vector3(1, 1, len + 0.10));
+    // Scale V so 1 world unit = 1 texture tile → crisp repeating ribs at any belt length
+    const uvs  = surfGeo.attributes.uv;
+    const vLen = len + 0.10;
+    for (let i = 0; i < uvs.count; i++) uvs.setY(i, uvs.getY(i) * vLen);
+    uvs.needsUpdate = true;
+    rubberGeos.push(surfGeo);
     railGeos.push(tGeo(TMPL.sideRail, mid, angle, new THREE.Vector3(-RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0), new THREE.Vector3(1, 1, len + 0.18)));
     railGeos.push(tGeo(TMPL.sideRail, mid, angle, new THREE.Vector3( RAIL_X, RAIL_H * 0.5 - BELT_H * 0.1, 0), new THREE.Vector3(1, 1, len + 0.18)));
   }
@@ -263,17 +305,20 @@ function lerpPolylineDir(pts, t, out) {
 }
 
 // ─── Animated cargo items ─────────────────────────────────────────────────────
+// Each item bobs up/down with sin() keyed to its slot index → zero extra state,
+// no extra allocations.  Runs every 2 frames (30 fps budget) via frameRef.
 function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
   const geo      = resource === 'coins' ? TMPL.coin : TMPL.item;
   const meshRef  = useRef();
   const frameRef = useRef(0);
   const timesRef = useRef(offsets.slice());
+  const clockRef = useRef(0);
 
   const mat = useMemo(
     () => new THREE.MeshStandardMaterial({
       color,
-      emissive: new THREE.Color(color), emissiveIntensity: 0.35,
-      roughness: 0.65, metalness: 0.25,
+      emissive: new THREE.Color(color), emissiveIntensity: 0.45,
+      roughness: 0.55, metalness: 0.30,
     }),
     [color],
   );
@@ -282,19 +327,24 @@ function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
     if (++frameRef.current % 2 !== 0) return;
     const mesh = meshRef.current;
     if (!mesh || !points || points.length < 2 || offsets.length === 0) return;
+    clockRef.current += dt * 2; // bob clock (radians/s)
     const times = timesRef.current;
     for (let i = 0; i < times.length; i++) {
       times[i] = (times[i] + dt * speed) % 1;
       lerpPolyline(points, times[i], _dummy.position);
       lerpPolylineDir(points, times[i], _dir);
+      // Gentle vertical bob — offset by slot so items don't sync
+      const bob = Math.sin(clockRef.current + i * 2.1) * 0.04;
       if (resource === 'coins') {
-        _dummy.position.y += 0.12;
-        _dummy.rotation.set(Math.PI / 2, 0, 0);
+        _dummy.position.y += 0.13 + bob;
+        _dummy.rotation.set(Math.PI / 2, 0, clockRef.current * 0.8 + i);
       } else {
-        _dummy.position.y += 0.20;
+        _dummy.position.y += 0.21 + bob;
         _dummy.rotation.set(0, Math.atan2(_dir.x, _dir.z), 0);
       }
-      _dummy.scale.setScalar(1);
+      // Tiny scale pulse (0.92 … 1.08)
+      const sc = 0.92 + 0.08 * ((Math.sin(clockRef.current * 1.4 + i * 1.7) + 1) * 0.5);
+      _dummy.scale.setScalar(sc);
       _dummy.updateMatrix();
       mesh.setMatrixAt(i, _dummy.matrix);
     }
@@ -302,7 +352,9 @@ function AnimatedItemsPolyline({ points, offsets, speed, color, resource }) {
   });
 
   if (offsets.length === 0) return null;
-  return <instancedMesh ref={meshRef} args={[geo, mat, offsets.length]} />;
+  // frustumCulled={false}: bounding sphere is never updated for runtime-positioned instances,
+  // so Three.js would incorrectly cull the mesh when the camera is close to the belt.
+  return <instancedMesh ref={meshRef} args={[geo, mat, offsets.length]} frustumCulled={false} />;
 }
 
 // ─── Main ConveyorBelt component ──────────────────────────────────────────────
@@ -334,7 +386,11 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
     [straightSegs, curveSegs], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  // Dispose geometries on update / unmount
+  // Per-belt rubber material (owns texture offset for independent scroll)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const rubberMat = useMemo(() => makeRubberMat(), []);
+
+  // Dispose geometries & per-belt material on update / unmount
   const mergedRef = useRef(null);
   useEffect(() => {
     const prev = mergedRef.current;
@@ -344,6 +400,7 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
     mergedRef.current = merged;
     return () => { Object.values(merged).forEach(g => g?.dispose?.()); };
   }, [merged]);
+  useEffect(() => () => rubberMat.dispose(), [rubberMat]);
 
   const tokenCount = effectiveRate > 0 ? Math.max(1, Math.min(3, Math.round(3 * effectiveRate / BASE_RATE))) : 0;
   const SPEED      = effectiveRate > 0 ? Math.max(0.02, 0.12 * effectiveRate / BASE_RATE) : 0;
@@ -351,6 +408,17 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
     () => tokenCount > 0 ? Array.from({ length: tokenCount }, (_, i) => i / tokenCount) : [],
     [tokenCount], // eslint-disable-line react-hooks/exhaustive-deps
   );
+
+  // ── Belt surface scroll ─────────────────────────────────────────────────────
+  // One float write per belt per frame — essentially free.
+  // We run every 2 frames (≈30 fps animation) to stay GPU-friendly.
+  const beltFrameRef = useRef(0);
+  useFrame((_, dt) => {
+    if (SPEED <= 0) return;
+    if (++beltFrameRef.current % 2 !== 0) return;
+    // Scroll backwards along V (toward the source) — visually the belt "pulls" items forward
+    rubberMat.map.offset.y = ((rubberMat.map.offset.y - dt * SPEED * 0.4) % 1 + 1) % 1;
+  });
 
   const ruleColor = rule?.color ?? '#fbbf24';
   const midPoint  = allPoints[Math.floor(allPoints.length / 2)];
@@ -366,7 +434,7 @@ export function ConveyorBelt({ fromId, toId, waypoints = [], placedItems, effect
   return (
     <group>
       {/* 5 draw calls — entire belt merged per material */}
-      <mesh receiveShadow geometry={merged.rubberGeo} material={MAT.rubber} />
+      <mesh receiveShadow geometry={merged.rubberGeo} material={rubberMat} />
       <mesh geometry={merged.railGeo}   material={MAT.rail}   />
       <mesh geometry={merged.rollerGeo} material={MAT.roller} />
       <mesh geometry={merged.endCapGeo} material={MAT.endCap} />

@@ -26,6 +26,58 @@ const TRANSFER_RULES = new Map(); // key: `${fromType}->${toType}`
 const CONVEYOR_OUT_LIMITS = new Map(); // itemType → max outgoing conveyors
 const CONVEYOR_IN_LIMITS  = new Map(); // itemType → max incoming conveyors
 
+// ─── PORT OFFSETS ────────────────────────────────────────────────────────────
+// Shift where the belt visually starts/ends relative to building center.
+// Register with registerConveyorOutPort / registerConveyorInPort.
+const CONVEYOR_OUT_PORTS = new Map(); // fromType → { dx, dz }
+const CONVEYOR_IN_PORTS  = new Map(); // toType   → { dx, dz }
+
+// ─── SIDE CONSTRAINTS ────────────────────────────────────────────────────────
+// Restrict which direction a belt may leave (out) or approach (in) a building.
+// The direction vector from→to is normalised and dot-tested against the allowed
+// side vector. Dot must be ≥ 0.5 (within ~60° of the allowed direction).
+const CONVEYOR_OUT_SIDES = new Map(); // fromType → { dx, dz }   unit-ish vector
+const CONVEYOR_IN_SIDES  = new Map(); // toType   → { dx, dz }   unit-ish vector pointing TOWARD allowed source area
+
+export function registerConveyorOutPort(itemType, offset) { CONVEYOR_OUT_PORTS.set(itemType, offset); }
+export function registerConveyorInPort(itemType, offset)  { CONVEYOR_IN_PORTS.set(itemType, offset);  }
+export function getConveyorOutPort(itemType) { return CONVEYOR_OUT_PORTS.get(itemType) ?? null; }
+export function getConveyorInPort(itemType)  { return CONVEYOR_IN_PORTS.get(itemType)  ?? null; }
+
+export function registerConveyorOutSide(itemType, sideDir) { CONVEYOR_OUT_SIDES.set(itemType, sideDir); }
+export function registerConveyorInSide(itemType, sideDir)  { CONVEYOR_IN_SIDES.set(itemType, sideDir);  }
+
+/**
+ * Returns true when the belt direction from fromPos → toPos satisfies any
+ * registered side constraints for the source or destination building type.
+ */
+export function checkConveyorSideOk(fromType, toType, fromPos, toPos) {
+  const dx  = toPos[0] - fromPos[0];
+  const dz  = toPos[2] - fromPos[2];
+  const len = Math.sqrt(dx * dx + dz * dz);
+  if (len === 0) return false;
+  const nx = dx / len;
+  const nz = dz / len;
+
+  // Check outgoing side constraint on the source building
+  const outSide = CONVEYOR_OUT_SIDES.get(fromType);
+  if (outSide) {
+    const sl = Math.sqrt(outSide.dx ** 2 + outSide.dz ** 2) || 1;
+    if (nx * (outSide.dx / sl) + nz * (outSide.dz / sl) < 0.5) return false;
+  }
+
+  // Check incoming side constraint on the destination building
+  // inSide points FROM building center TOWARD the allowed source zone,
+  // so (fromPos - toPos) normalised must align with it.
+  const inSide = CONVEYOR_IN_SIDES.get(toType);
+  if (inSide) {
+    const sl = Math.sqrt(inSide.dx ** 2 + inSide.dz ** 2) || 1;
+    if ((-nx) * (inSide.dx / sl) + (-nz) * (inSide.dz / sl) < 0.5) return false;
+  }
+
+  return true;
+}
+
 /**
  * Register non-default conveyor slot limits for a building type.
  * @param {string} itemType
