@@ -43,8 +43,13 @@ export default function OpenCity({ onBack }) {
 
   // ─── Day / night time tracking ────────────────────────────────────────────
   // Derived from wall-clock so all players share the same game time.
+  // DEV: set to a number (0–24) to freeze the clock; null = live cycle.
+  const DEV_FREEZE_TIME = 12; // ← заморозка на 12:00; поставь null чтобы снять
   const GAME_DAY_MS = 24 * REAL_MS_PER_GAME_HOUR;
-  const getSharedGameTime = () => (Date.now() % GAME_DAY_MS) / REAL_MS_PER_GAME_HOUR;
+  const getSharedGameTime = () =>
+    DEV_FREEZE_TIME !== null
+      ? DEV_FREEZE_TIME
+      : (Date.now() % GAME_DAY_MS) / REAL_MS_PER_GAME_HOUR;
   const gameTimeRef  = useRef(getSharedGameTime());
   const [timeString, setTimeString] = useState(() => formatGameTime(gameTimeRef.current));
 
@@ -239,8 +244,13 @@ export default function OpenCity({ onBack }) {
     const id = setInterval(() => {
       const deltaGameHours = 1000 / REAL_MS_PER_GAME_HOUR;
       const validIds = new Set(placedItemsRef.current.map(i => String(i.id)));
+      // Clone each inner object so mutations below don't alias the previous
+      // React state — otherwise buildingPropsEqual sees no change and memo
+      // blocks the re-render (the "frozen badge" bug).
       const next = Object.fromEntries(
-        Object.entries(storedAmountsRef.current).filter(([k]) => validIds.has(k))
+        Object.entries(storedAmountsRef.current)
+          .filter(([k]) => validIds.has(k))
+          .map(([k, v]) => [k, { ...v }])
       );
 
       // Compute effective per-connection rates (handles multi-source / multi-target)
@@ -344,13 +354,12 @@ export default function OpenCity({ onBack }) {
       }
       if (pointsChanged) {
         storedAmountsRef.current = next;  // update again after coin deduction
-        setStoredAmounts({ ...next });
         pointsAmountsRef.current = nextPoints;
         setPointsAmounts({ ...nextPoints });
-      } else if (accumTickRef.current % 3 === 0) {
-        // Push visual update to React every 3 s to avoid 1-Hz full re-renders
-        setStoredAmounts({ ...next });
       }
+      // Всегда пушим обновлённые суммы в React — inner-объекты теперь клонируются
+      // выше, поэтому buildingPropsEqual корректно обнаруживает изменения.
+      setStoredAmounts({ ...next });
     }, 1000);
     return () => clearInterval(id);
   }, []); // eslint-disable-line
