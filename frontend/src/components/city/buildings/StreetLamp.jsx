@@ -25,6 +25,16 @@ const {
   dayStart, dayEnd, powerRequired,
 } = STREET_LAMP_CONFIG;
 
+// ─── Shared geometries — created ONCE, reused by every lamp instance ─────────
+// Without this, each placed lamp creates 7 separate GPU geometry objects.
+const GEO_BASE    = new THREE.CylinderGeometry(poleRadius * 2.8, poleRadius * 3.2, 0.14, 8);
+const GEO_POLE_LO = new THREE.CylinderGeometry(poleRadius * 0.85, poleRadius * 1.3, poleHeight * 0.55, 7);
+const GEO_POLE_HI = new THREE.CylinderGeometry(poleRadius * 0.55, poleRadius * 0.88, poleHeight * 0.44, 7);
+const GEO_ARM     = new THREE.CylinderGeometry(poleRadius * 0.5, poleRadius * 0.5, armLength, 6);
+const GEO_HEAD    = new THREE.CylinderGeometry(headRadius, headRadius * 0.8, headRadius * 0.9, 8);
+const GEO_BULB    = new THREE.SphereGeometry(headRadius * 0.68, 8, 6);
+const GEO_REFL    = new THREE.CircleGeometry(headRadius * 0.72, 8);
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Returns true when the lamp should be ON for a given game hour. */
@@ -46,38 +56,32 @@ export function StreetLampBody({ emissiveColor, emissiveIntensity = 0, opacity =
   return (
     <group>
       {/* ── Base plate ── */}
-      <mesh receiveShadow position={[0, 0.07, 0]}>
-        <cylinderGeometry args={[poleRadius * 2.8, poleRadius * 3.2, 0.14, 12]} />
+      <mesh receiveShadow position={[0, 0.07, 0]} geometry={GEO_BASE}>
         <meshStandardMaterial color={poleColor} roughness={0.6} metalness={0.5} {...m} />
       </mesh>
 
       {/* ── Lower pole (thick) ── */}
-      <mesh castShadow position={[0, poleHeight * 0.28, 0]}>
-        <cylinderGeometry args={[poleRadius * 0.85, poleRadius * 1.3, poleHeight * 0.55, 10]} />
+      <mesh castShadow position={[0, poleHeight * 0.28, 0]} geometry={GEO_POLE_LO}>
         <meshStandardMaterial color={poleColor} roughness={0.5} metalness={0.6} {...m} />
       </mesh>
 
       {/* ── Upper pole (slender) ── */}
-      <mesh castShadow position={[0, poleHeight * 0.72, 0]}>
-        <cylinderGeometry args={[poleRadius * 0.55, poleRadius * 0.88, poleHeight * 0.44, 10]} />
+      <mesh castShadow position={[0, poleHeight * 0.72, 0]} geometry={GEO_POLE_HI}>
         <meshStandardMaterial color={metalColor} roughness={0.4} metalness={0.7} {...m} />
       </mesh>
 
       {/* ── Horizontal arm ── */}
-      <mesh castShadow position={[armLength / 2, armHeight, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[poleRadius * 0.5, poleRadius * 0.5, armLength, 8]} />
+      <mesh castShadow position={[armLength / 2, armHeight, 0]} rotation={[0, 0, Math.PI / 2]} geometry={GEO_ARM}>
         <meshStandardMaterial color={metalColor} roughness={0.4} metalness={0.7} {...m} />
       </mesh>
 
       {/* ── Lamp housing (outer shell) ── */}
-      <mesh castShadow position={[armLength, armHeight - 0.15, 0]}>
-        <cylinderGeometry args={[headRadius, headRadius * 0.8, headRadius * 0.9, 12]} />
+      <mesh castShadow position={[armLength, armHeight - 0.15, 0]} geometry={GEO_HEAD}>
         <meshStandardMaterial color={headColor} roughness={0.5} metalness={0.8} {...m} />
       </mesh>
 
       {/* ── Glass bulb ── */}
-      <mesh position={[armLength, armHeight - 0.35, 0]}>
-        <sphereGeometry args={[headRadius * 0.68, 14, 10]} />
+      <mesh position={[armLength, armHeight - 0.35, 0]} geometry={GEO_BULB}>
         <meshStandardMaterial
           color={lightColor}
           emissive={ec}
@@ -90,8 +94,7 @@ export function StreetLampBody({ emissiveColor, emissiveIntensity = 0, opacity =
       </mesh>
 
       {/* ── Reflector disc (underside of housing) ── */}
-      <mesh position={[armLength, armHeight - 0.52, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[headRadius * 0.72, 12]} />
+      <mesh position={[armLength, armHeight - 0.52, 0]} rotation={[Math.PI / 2, 0, 0]} geometry={GEO_REFL}>
         <meshStandardMaterial
           color="#c0a020"
           emissive={ec}
@@ -126,33 +129,27 @@ function StreetLampPreviewInner({ placementPosRef, inputRef, placementRotYRef })
       {/* Simplified preview version — reuses full body with animated bulb ref */}
       <group>
         {/* Base */}
-        <mesh position={[0, 0.07, 0]}>
-          <cylinderGeometry args={[poleRadius * 2.8, poleRadius * 3.2, 0.14, 12]} />
+        <mesh position={[0, 0.07, 0]} geometry={GEO_BASE}>
           <meshStandardMaterial color="#4a5568" transparent opacity={0.82} />
         </mesh>
         {/* Lower pole */}
-        <mesh position={[0, poleHeight * 0.28, 0]}>
-          <cylinderGeometry args={[poleRadius * 0.85, poleRadius * 1.3, poleHeight * 0.55, 10]} />
+        <mesh position={[0, poleHeight * 0.28, 0]} geometry={GEO_POLE_LO}>
           <meshStandardMaterial color="#4a5568" transparent opacity={0.82} />
         </mesh>
         {/* Upper pole */}
-        <mesh position={[0, poleHeight * 0.72, 0]}>
-          <cylinderGeometry args={[poleRadius * 0.55, poleRadius * 0.88, poleHeight * 0.44, 10]} />
+        <mesh position={[0, poleHeight * 0.72, 0]} geometry={GEO_POLE_HI}>
           <meshStandardMaterial color="#718096" transparent opacity={0.82} />
         </mesh>
         {/* Arm */}
-        <mesh position={[armLength / 2, armHeight, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[poleRadius * 0.5, poleRadius * 0.5, armLength, 8]} />
+        <mesh position={[armLength / 2, armHeight, 0]} rotation={[0, 0, Math.PI / 2]} geometry={GEO_ARM}>
           <meshStandardMaterial color="#718096" transparent opacity={0.82} />
         </mesh>
         {/* Housing */}
-        <mesh position={[armLength, armHeight - 0.15, 0]}>
-          <cylinderGeometry args={[headRadius, headRadius * 0.8, headRadius * 0.9, 12]} />
+        <mesh position={[armLength, armHeight - 0.15, 0]} geometry={GEO_HEAD}>
           <meshStandardMaterial color="#1a202c" transparent opacity={0.82} />
         </mesh>
         {/* Bulb */}
-        <mesh position={[armLength, armHeight - 0.35, 0]}>
-          <sphereGeometry args={[headRadius * 0.68, 14, 10]} />
+        <mesh position={[armLength, armHeight - 0.35, 0]} geometry={GEO_BULB}>
           <meshStandardMaterial ref={bulbRef} color={lightColor} emissive={new THREE.Color(0xffe080)} emissiveIntensity={0.8} transparent opacity={0.85} roughness={0.05} />
         </mesh>
       </group>
@@ -237,32 +234,26 @@ function StreetLampPlacedBase({
       }}
     >
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
-        <mesh receiveShadow position={[0, 0.07, 0]}>
-          <cylinderGeometry args={[poleRadius * 2.8, poleRadius * 3.2, 0.14, 12]} />
+        <mesh receiveShadow position={[0, 0.07, 0]} geometry={GEO_BASE}>
           <meshStandardMaterial color="#4a5568" roughness={0.6} metalness={0.5} />
         </mesh>
-        <mesh castShadow position={[0, poleHeight * 0.28, 0]}>
-          <cylinderGeometry args={[poleRadius * 0.85, poleRadius * 1.3, poleHeight * 0.55, 10]} />
+        <mesh castShadow position={[0, poleHeight * 0.28, 0]} geometry={GEO_POLE_LO}>
           <meshStandardMaterial color="#4a5568" roughness={0.5} metalness={0.6} />
         </mesh>
-        <mesh castShadow position={[0, poleHeight * 0.72, 0]}>
-          <cylinderGeometry args={[poleRadius * 0.55, poleRadius * 0.88, poleHeight * 0.44, 10]} />
+        <mesh castShadow position={[0, poleHeight * 0.72, 0]} geometry={GEO_POLE_HI}>
           <meshStandardMaterial color="#718096" roughness={0.4} metalness={0.7} />
         </mesh>
         {/* Arm */}
-        <mesh castShadow position={[armLength / 2, armHeight, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[poleRadius * 0.5, poleRadius * 0.5, armLength, 8]} />
+        <mesh castShadow position={[armLength / 2, armHeight, 0]} rotation={[0, 0, Math.PI / 2]} geometry={GEO_ARM}>
           <meshStandardMaterial color="#718096" roughness={0.4} metalness={0.7} />
         </mesh>
         {/* Housing shell */}
-        <mesh castShadow position={[armLength, armHeight - 0.15, 0]}>
-          <cylinderGeometry args={[headRadius, headRadius * 0.8, headRadius * 0.9, 12]} />
+        <mesh castShadow position={[armLength, armHeight - 0.15, 0]} geometry={GEO_HEAD}>
           <meshStandardMaterial color="#1a202c" roughness={0.5} metalness={0.8} />
         </mesh>
 
         {/* ── Animated bulb ── */}
-        <mesh position={[armLength, armHeight - 0.35, 0]}>
-          <sphereGeometry args={[headRadius * 0.68, 14, 10]} />
+        <mesh position={[armLength, armHeight - 0.35, 0]} geometry={GEO_BULB}>
           <meshStandardMaterial
             ref={bulbMatRef}
             color={accentColor}
@@ -276,8 +267,7 @@ function StreetLampPlacedBase({
         </mesh>
 
         {/* ── Animated reflector disc ── */}
-        <mesh position={[armLength, armHeight - 0.52, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[headRadius * 0.72, 12]} />
+        <mesh position={[armLength, armHeight - 0.52, 0]} rotation={[Math.PI / 2, 0, 0]} geometry={GEO_REFL}>
           <meshStandardMaterial
             ref={reflMatRef}
             color="#c0a020"

@@ -26,7 +26,7 @@ export function EnergyStorageBody({ emissiveColor, emissiveIntensity, opacity = 
       </mesh>
       {/* Positive terminal nub */}
       <mesh castShadow position={[0, 4.85, 0]}>
-        <cylinderGeometry args={[0.35, 0.35, 0.3, 12]} />
+        <cylinderGeometry args={[0.35, 0.35, 0.3, 8]} />
         <meshStandardMaterial color="#94a3b8" emissive={new THREE.Color(emissiveColor ?? 0x000000)} emissiveIntensity={(emissiveIntensity ?? 0) * 0.4} {...matProps} />
       </mesh>
       {/* Accent band 1 */}
@@ -77,7 +77,7 @@ function EnergyStorageGLTFPreview({ placementPosRef, inputRef, placementRotYRef 
           <meshStandardMaterial ref={mat1} color="#64748b" emissive={new THREE.Color(0xaa44ff)} emissiveIntensity={0.5} transparent opacity={0.82} roughness={0.35} metalness={0.6} />
         </mesh>
         <mesh castShadow position={[0, 4.85, 0]}>
-          <cylinderGeometry args={[0.35, 0.35, 0.3, 12]} />
+          <cylinderGeometry args={[0.35, 0.35, 0.3, 8]} />
           <meshStandardMaterial ref={mat2} color="#94a3b8" emissive={new THREE.Color(0xaa44ff)} emissiveIntensity={0.3} transparent opacity={0.82} roughness={0.35} metalness={0.6} />
         </mesh>
         <mesh position={[0, 1.5, 0]}>

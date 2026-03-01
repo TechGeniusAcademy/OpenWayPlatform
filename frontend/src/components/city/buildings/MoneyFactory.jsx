@@ -24,17 +24,20 @@ const CHIMNEY_POS = [
 ];
 const PUFF_N = 10; // 5 puffs per chimney
 const _dummy = new THREE.Object3D();
+// Shared smoke geometry and material — all factory instances reuse these
+const SMOKE_GEO = new THREE.SphereGeometry(0.22, 5, 4);
+const SMOKE_MAT = new THREE.MeshStandardMaterial({
+  color: '#9ca3af', transparent: true, opacity: 0.38,
+  roughness: 1, metalness: 0, depthWrite: false,
+});
 
 // Lightweight instanced smoke — no Sparkles, throttled every 3 frames
 function SmokeParticles() {
   const ref    = useRef();
   const frame  = useRef(0);
   const ts     = useRef(Array.from({ length: PUFF_N }, (_, i) => i / PUFF_N));
-  const geoRef = useMemo(() => new THREE.SphereGeometry(0.22, 5, 4), []);
-  const matRef = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#9ca3af', transparent: true, opacity: 0.38,
-    roughness: 1, metalness: 0, depthWrite: false,
-  }), []);
+  const geoRef = SMOKE_GEO;
+  const matRef = SMOKE_MAT;
 
   useFrame((_, delta) => {
     if (!ref.current) return;

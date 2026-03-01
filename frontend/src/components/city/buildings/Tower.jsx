@@ -11,6 +11,15 @@ import { Html } from '@react-three/drei';
 import { FaHeart } from 'react-icons/fa';
 import { getTowerLevelConfig } from '../../items/wallSystem.js';
 
+// ─── Shared archer geometries — created once, reused by every tower ───────────
+const GEO_ARC_BODY  = new THREE.CylinderGeometry(0.14, 0.18, 0.7,  6);
+const GEO_ARC_HEAD  = new THREE.SphereGeometry  (0.16, 7, 6);
+const GEO_ARC_HELM  = new THREE.CylinderGeometry(0.12, 0.17, 0.12, 6);
+const GEO_ARC_ARM   = new THREE.CylinderGeometry(0.05, 0.05, 0.45, 5);
+const GEO_ARC_BOW   = new THREE.TorusGeometry   (0.22, 0.03, 5, 12, Math.PI * 1.3);
+const GEO_ARC_ARROW = new THREE.CylinderGeometry(0.02, 0.02, 0.5,  4);
+const GEO_SEL_RING  = new THREE.CircleGeometry  (2.2, 12);
+
 // ── Archer ────────────────────────────────────────────────────────────────────
 function Archer({ color = '#7c3aed', platformY }) {
   const groupRef  = useRef();   // whole archer – Y rotation scan
@@ -66,40 +75,33 @@ function Archer({ color = '#7c3aed', platformY }) {
   return (
     <group ref={groupRef} position={[0, platformY, 0]}>
       {/* Body */}
-      <mesh castShadow position={[0, 0.55, 0]}>
-        <cylinderGeometry args={[0.14, 0.18, 0.7, 8]} />
+      <mesh castShadow position={[0, 0.55, 0]} geometry={GEO_ARC_BODY}>
         <meshStandardMaterial color={tunic} roughness={0.8} />
       </mesh>
       {/* Head */}
-      <mesh castShadow position={[0, 1.05, 0]}>
-        <sphereGeometry args={[0.16, 8, 8]} />
+      <mesh castShadow position={[0, 1.05, 0]} geometry={GEO_ARC_HEAD}>
         <meshStandardMaterial color={skin} roughness={0.8} />
       </mesh>
       {/* Helmet */}
-      <mesh castShadow position={[0, 1.17, 0]}>
-        <cylinderGeometry args={[0.12, 0.17, 0.12, 8]} />
+      <mesh castShadow position={[0, 1.17, 0]} geometry={GEO_ARC_HELM}>
         <meshStandardMaterial color={bow} roughness={0.5} metalness={0.3} />
       </mesh>
       {/* Left arm (bow arm — forward) */}
-      <mesh castShadow position={[0.2, 0.78, 0.1]} rotation={[-0.25, 0, 0.25]}>
-        <cylinderGeometry args={[0.05, 0.05, 0.45, 6]} />
+      <mesh castShadow position={[0.2, 0.78, 0.1]} rotation={[-0.25, 0, 0.25]} geometry={GEO_ARC_ARM}>
         <meshStandardMaterial color={skin} roughness={0.8} />
       </mesh>
       {/* Right arm (draw arm — animated) */}
       <group ref={bowArmRef} position={[-0.2, 0.78, 0]}>
-        <mesh castShadow rotation={[0, 0, -0.25]}>
-          <cylinderGeometry args={[0.05, 0.05, 0.45, 6]} />
+        <mesh castShadow rotation={[0, 0, -0.25]} geometry={GEO_ARC_ARM}>
           <meshStandardMaterial color={skin} roughness={0.8} />
         </mesh>
       </group>
       {/* Bow (arc near left hand) */}
-      <mesh castShadow position={[0.26, 0.78, 0.3]}>
-        <torusGeometry args={[0.22, 0.03, 6, 18, Math.PI * 1.3]} />
+      <mesh castShadow position={[0.26, 0.78, 0.3]} geometry={GEO_ARC_BOW}>
         <meshStandardMaterial color={bow} emissive={new THREE.Color(bow)} emissiveIntensity={0.25} roughness={0.6} />
       </mesh>
       {/* Arrow shaft */}
-      <mesh ref={arrowRef} castShadow position={[0.2, 0.78, 0.18]} rotation={[Math.PI / 2, 0, 0]} visible={false}>
-        <cylinderGeometry args={[0.02, 0.02, 0.5, 5]} />
+      <mesh ref={arrowRef} castShadow position={[0.2, 0.78, 0.18]} rotation={[Math.PI / 2, 0, 0]} visible={false} geometry={GEO_ARC_ARROW}>
         <meshStandardMaterial color="#b45309" roughness={0.7} />
       </mesh>
     </group>
@@ -117,13 +119,13 @@ function TowerBody({ cfg }) {
     <group>
       {/* Foundation */}
       <mesh receiveShadow position={[0, 0.2, 0]}>
-        <cylinderGeometry args={[baseR + 0.4, baseR + 0.6, 0.4, 10]} />
+        <cylinderGeometry args={[baseR + 0.4, baseR + 0.6, 0.4, 7]} />
         <meshStandardMaterial color="#1e293b" roughness={0.9} />
       </mesh>
 
       {/* Main tower body */}
       <mesh castShadow receiveShadow position={[0, bodyH / 2, 0]}>
-        <cylinderGeometry args={[baseR, baseR + 0.25, bodyH, 10]} />
+        <cylinderGeometry args={[baseR, baseR + 0.25, bodyH, 8]} />
         <meshStandardMaterial color={color} roughness={0.8} metalness={level >= 3 ? 0.2 : 0.05} />
       </mesh>
 
@@ -137,7 +139,7 @@ function TowerBody({ cfg }) {
 
       {/* Platform floor */}
       <mesh castShadow position={[0, bodyH + platTk / 2, 0]}>
-        <cylinderGeometry args={[baseR + 0.5, baseR + 0.3, platTk, 10]} />
+        <cylinderGeometry args={[baseR + 0.5, baseR + 0.3, platTk, 7]} />
         <meshStandardMaterial color={color} roughness={0.75} />
       </mesh>
 
@@ -156,7 +158,7 @@ function TowerBody({ cfg }) {
       {/* Accent glow ring for level 3+ */}
       {level >= 3 && (
         <mesh position={[0, bodyH * 0.7, 0]}>
-          <torusGeometry args={[baseR + 0.08, 0.07, 6, 32]} />
+          <torusGeometry args={[baseR + 0.08, 0.07, 6, 16]} />
           <meshStandardMaterial color={accentColor} emissive={new THREE.Color(accentColor)} emissiveIntensity={0.5} metalness={0.8} roughness={0.1} />
         </mesh>
       )}
@@ -209,8 +211,7 @@ export function TowerPlaced({ wallData, position, rotation = 0, level = 1, curre
     >
       <TowerBody cfg={cfg} />
       {isSelected && (
-        <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[2.2, 16]} />
+        <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={GEO_SEL_RING}>
           <meshBasicMaterial color="#60a5fa" transparent opacity={0.2} />
         </mesh>
       )}
