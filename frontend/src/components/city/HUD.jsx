@@ -7,7 +7,6 @@ import {
   FaShieldAlt, FaChessRook,
   FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark, FaHome,
   FaHardHat, FaArrowUp, FaBuilding, FaMedal,
-  FaChevronRight, FaChevronLeft,
 } from 'react-icons/fa';
 import { MdArrowBack } from 'react-icons/md';
 import { GiBattery100, GiMining, GiFireBowl, GiWhirlwind } from 'react-icons/gi';
@@ -56,18 +55,16 @@ function InfoRow({ label, value, unit = '', color = '#e2e8f0', icon: Icon, iconC
 }
 
 function CityInfoPanel({ energyTotals, storageTotals, points, userPoints, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, itemsCount, dronesCount, timeString }) {
-  const [collapsed, setCollapsed] = useState(false);
-
   const hasProd    = energyTotals  && Object.keys(energyTotals).length  > 0;
   const hasStorage = storageTotals && Object.keys(storageTotals).length > 0;
 
-  const buildersOk = (freeBuilders ?? 0) > 0;
+  const buildersOk   = (freeBuilders ?? 0) > 0;
   const busyBuilders = (totalBuilders ?? 0) - (freeBuilders ?? 0);
 
   return (
     <div style={{
-      position: 'fixed', right: 12, top: 12,
-      width: collapsed ? 36 : 210,
+      position: 'fixed', right: 12, top: '50%', transform: 'translateY(-50%)',
+      width: 210,
       background: 'rgba(8,15,28,0.84)',
       border: '1px solid rgba(255,255,255,0.09)',
       borderRadius: 14,
@@ -75,28 +72,9 @@ function CityInfoPanel({ energyTotals, storageTotals, points, userPoints, coinBa
       boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
       zIndex: 900,
       overflow: 'hidden',
-      transition: 'width 0.22s ease',
       pointerEvents: 'all',
     }}>
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(v => !v)}
-        style={{
-          position: 'absolute', top: 8, right: 8,
-          width: 20, height: 20, borderRadius: 6,
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          color: '#475569', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 10, zIndex: 1,
-          flexShrink: 0,
-        }}
-      >
-        {collapsed ? <FaChevronLeft /> : <FaChevronRight />}
-      </button>
-
-      {!collapsed && (
-        <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* ── Экономика ── */}
           <div>
@@ -181,7 +159,7 @@ function CityInfoPanel({ energyTotals, storageTotals, points, userPoints, coinBa
           </div>
 
         </div>
-      )}
+
     </div>
   );
 }
