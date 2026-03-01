@@ -9,13 +9,13 @@
 //   Level 2 → 12 топлива/ч  (×1.5)
 //   Level 3 → 20 топлива/ч  (×2.5)
 
-import { registerProducer, registerStorage } from '../systems/energy.js';
+import { registerProducer, registerStorage, registerEnergyZone } from '../systems/energy.js';
 
 export const COAL_GENERATOR_CONFIG = {
   /** Visible work-area zone shown when the building is selected */
   workArea: {
-    width:   16,
-    depth:   16,
+    width:   80,
+    depth:   80,
     color:   '#f97316',
     opacity: 0.14,
     label:   'Зона генерации',
@@ -25,6 +25,10 @@ export const COAL_GENERATOR_CONFIG = {
   /** Internal coal (ore) buffer capacity */
   bufferCapacity: 50,
 };
+
+// ─── Energy supply zone ──────────────────────────────────────────────────
+// Buildings within 80×80 world units receive power from this generator.
+registerEnergyZone('coal-generator', { width: 80, depth: 80 });
 
 // ─── Energy production ────────────────────────────────────────────────────────
 // The generator always produces fuel as long as it's placed (ore consumption
