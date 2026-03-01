@@ -9,7 +9,7 @@ import {
   FaHardHat, FaArrowUp, FaBuilding, FaMedal,
 } from 'react-icons/fa';
 import { MdArrowBack } from 'react-icons/md';
-import { GiMining, GiFireBowl, GiWhirlwind } from 'react-icons/gi';
+import { GiBattery100, GiMining, GiFireBowl, GiWhirlwind } from 'react-icons/gi';
 
 // ─── City Info Panel (right side) ───────────────────────────────────────────
 const PROD_ICONS = {
