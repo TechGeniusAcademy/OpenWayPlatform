@@ -355,7 +355,7 @@ function ExtractorGLTFPlaced({
   const lvlConf = getLevelConfig('extractor', level);
   const scale   = 1 + (lvlConf?.scaleBonus ?? 0);
 
-  const { scene: drillScene } = useGLTF('/models/drill.glb');
+  const { scene: drillScene } = useGLTF('/models/Drill.glb');
   const drillCloneRef = useRef(null);
   if (!drillCloneRef.current) drillCloneRef.current = drillScene.clone(true);
 
@@ -399,7 +399,7 @@ function ExtractorGLTFPlaced({
 
 // ─── Public exports ───────────────────────────────────────────────────────────
 
-useGLTF.preload('/models/drill.glb');
+useGLTF.preload('/models/Drill.glb');
 
 export function ExtractorPreview({ placementPosRef, inputRef, placementRotYRef }) {
   return (
