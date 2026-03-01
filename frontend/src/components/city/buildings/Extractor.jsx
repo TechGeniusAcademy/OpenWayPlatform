@@ -380,19 +380,8 @@ function ExtractorGLTFPlaced({
         />
       </group>
 
-      {/* Floating ore type + rate badge (shows capability warning if ore ≠ level) */}
-      <OreBadge level={level} badgeHeight={EXTRACTOR_CONFIG.badgeHeight} oreType={oreType} />
-
       {/* Upgrade in progress badge */}
       <UpgradeProgressBadge upgradeInfo={upgradeInfo} badgeHeight={EXTRACTOR_CONFIG.badgeHeight} />
-
-      {/* Ore storage amount badge */}
-      <StorageBadge
-        itemType="extractor"
-        badgeHeight={EXTRACTOR_CONFIG.badgeHeight + 2.5}
-        currentAmounts={currentAmounts}
-        level={level}
-      />
 
       <LevelBadge level={level} height={EXTRACTOR_CONFIG.badgeHeight + 5} />
       <LevelRing  level={level} radius={3} />

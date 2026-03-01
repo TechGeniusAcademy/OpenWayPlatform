@@ -13,7 +13,6 @@ import { ExtractorPreview, ExtractorPlaced } from './buildings/Extractor.jsx';
 import { BuilderHousePreview, BuilderHousePlaced, BuilderAtWork, BuilderRunner, UpgradeBadgeInline } from './buildings/BuilderHouse.jsx';
 import { ConveyorTargetPulse } from './ConveyorTargetPulse.jsx';
 import { ConstructionSite } from './ConstructionSite.jsx';
-import { calcConveyorRates } from '../systems/connectionRates.js';
 import { WallSegment, WallPlacementPreview, SnapIndicator } from './buildings/Wall.jsx';
 import { TowerPlaced, TowerPreview } from './buildings/Tower.jsx';
 import { OtherPlayerCity } from './OtherPlayerCity.jsx';
@@ -131,7 +130,6 @@ function SceneInner({
   totalBuilders,
   freeBuilders,
   onBuildingRightClick,
-  onDroneRightClick,
   // Wall / Tower
   placedWalls,
   placedTowers,
@@ -171,11 +169,6 @@ function SceneInner({
     const to   = placedItems.find(i => i.id === conn.toId);
     return (from && inSelfRange(from.position)) || (to && inSelfRange(to.position));
   }
-
-  const droneRates = useMemo(
-    () => calcConveyorRates(placedItems, drones, buildingLevels ?? {}),
-    [placedItems, drones, buildingLevels],
-  );
 
   return (
     <>
@@ -365,17 +358,7 @@ function SceneInner({
         conveyors={drones}
       />
 
-      {/* Drones — culled by endpoint proximity */}
-      {drones.filter(connInSelfRange).map(drone => (
-        <Drone
-          key={drone.id}
-          fromId={drone.fromId}
-          toId={drone.toId}
-          placedItems={placedItems}
-          effectiveRate={droneRates.get(drone.id) ?? 0}
-          onRightClick={(x, y) => onDroneRightClick?.(drone.id, x, y)}
-        />
-      ))}
+      {/* Drones are invisible — managed via building right-click modal */}
 
 
       {/* ── Wall & Tower system ─────────────────────────────────────────── */}

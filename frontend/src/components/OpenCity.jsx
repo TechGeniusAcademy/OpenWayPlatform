@@ -524,10 +524,6 @@ export default function OpenCity({ onBack }) {
     rightClickRef.current = { itemId, itemType, x, y };
   }, []);
 
-  const handleDroneRightClick = useCallback((droneId, x, y) => {
-    rightClickRef.current = { itemId: droneId, itemType: 'drone', x, y };
-  }, []);
-
   const handleCableRightClick = useCallback((cableId, x, y) => {
     rightClickRef.current = { itemId: cableId, itemType: 'cable', x, y };
   }, []);
@@ -677,9 +673,7 @@ export default function OpenCity({ onBack }) {
   const handleSell = useCallback(() => {
     if (!contextMenu) return;
     const { itemId: id, itemType } = contextMenu;
-    if (itemType === 'drone') {
-      setDrones(prev => prev.filter(c => c.id !== id));
-    } else if (itemType === 'cable') {
+    if (itemType === 'cable') {
       setEnergyCables(prev => prev.filter(c => c.id !== id));
     } else if (itemType === 'wall') {
       setPlacedWalls(prev => { const u = prev.filter(w => w.id !== id); placedWallsRef.current = u; return u; });
@@ -693,6 +687,18 @@ export default function OpenCity({ onBack }) {
     }
     setContextMenu(null);
   }, [contextMenu]);
+
+  // ─── Add a drone route from the building modal ──────────────────────────────
+  const handleAddDroneRoute = useCallback((fromId) => {
+    setDroneMode(true);
+    setDroneFromId(fromId);
+    setContextMenu(null);
+  }, []);
+
+  // ─── Delete a drone route from the building modal ───────────────────────────
+  const handleDeleteDrone = useCallback((droneId) => {
+    setDrones(prev => prev.filter(d => d.id !== droneId));
+  }, []);
 
   const handleMove = useCallback(() => {
     if (!contextMenu) return;
@@ -1020,7 +1026,6 @@ export default function OpenCity({ onBack }) {
             totalBuilders={countTotalBuilders(placedItems, buildingLevels)}
             freeBuilders={countFreeBuilders(placedItems, buildingLevels, constructingBuildings, upgradingBuildings)}
             onBuildingRightClick={handleBuildingRightClick}
-            onDroneRightClick={handleDroneRightClick}
             placedWalls={placedWalls}
             placedTowers={placedTowers}
             wallMode={wallMode}
@@ -1114,6 +1119,8 @@ export default function OpenCity({ onBack }) {
               onMove={handleMove}
               onUpgrade={handleUpgrade}
               onClose={() => setContextMenu(null)}
+              onAddDroneRoute={handleAddDroneRoute}
+              onDeleteDrone={handleDeleteDrone}
               upgradeInfo={upgradingBuildings[String(itemId)] ?? null}
               coinUpgradeNext={coinUpgradeNext}
             />

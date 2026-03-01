@@ -293,32 +293,6 @@ function StreetLampPlacedBase({
         />
       )}
 
-      {/* Power-consumption badge — always visible */}
-      <Html
-        position={[0, badgeHeight, 0]}
-        center
-        distanceFactor={35}
-        zIndexRange={[10, 11]}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div style={{
-          background: 'rgba(0,0,0,0.72)',
-          border: '1px solid rgba(255,255,255,0.13)',
-          borderRadius: 8,
-          padding: '2px 9px',
-          fontSize: 12,
-          fontFamily: 'monospace',
-          fontWeight: 700,
-          color: '#fde047',
-          whiteSpace: 'nowrap',
-          userSelect: 'none',
-        }}>
-          <FaBolt style={{ marginRight: 4, verticalAlign: 'middle', fontSize: 10 }} /> {powerRequired} кВт
-        </div>
-      </Html>
-
-      {/* No-power warning */}
-      {isPowered === false && <NoPowerBadge badgeHeight={badgeHeight + 1.5} />}
       <LevelBadge level={level} height={badgeHeight + 2} />
       <LevelRing level={level} radius={3} />
     </group>

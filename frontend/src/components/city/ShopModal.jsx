@@ -192,7 +192,7 @@ function InfoTip({ lines }) {
 
 // ── Main shop modal ───────────────────────────────────────────────────────────
 export function ShopModal({
-  onClose, onBuy, onDrone,
+  onClose, onBuy,
   onWallMode, onTowerMode,
   userPoints = 0, coinBalance = 0,
   freeBuilders = 0, totalBuilders = 0,
@@ -361,9 +361,21 @@ export function ShopModal({
           {/* ── Logistics ── */}
           {activeTab === 'logistics' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <ShopCard Icon={FaLink} iconColor="#06b6d4" name="Маршрут дрона"
-                desc="Дрон перетаскивает ресурсы между двумя зданиями" cost={droneCost}
-                onPlace={() => { onDrone(); onClose(); }} btnLabel="Назначить" />
+              <div style={{
+                  border: '1px solid rgba(6,182,212,0.25)',
+                  borderRadius: 10,
+                  padding: '14px 12px',
+                  background: 'rgba(6,182,212,0.04)',
+                  display: 'flex', flexDirection: 'column', gap: 6,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#22d3ee' }}>
+                  <FaLink style={{ fontSize: 14 }} />
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>Маршруты дронов</span>
+                </div>
+                <p style={{ fontSize: 10, color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                  Нажмите ПКМ на здание (например, фабрику монет) и используйте кнопку «Добавить маршрут» в информационном окне.
+                </p>
+              </div>
               <div style={{
                   border: '1px solid rgba(250,204,21,0.25)',
                   borderRadius: 10,

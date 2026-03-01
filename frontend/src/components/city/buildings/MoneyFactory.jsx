@@ -218,12 +218,10 @@ function MoneyFactoryGLTFPlaced({ position, rotation, isSelected, onSelect, onCo
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
         <MoneyFactoryBody accentOverride={accent} emissiveColor={accent} emissiveIntensity={glow} />
       </group>
-      <EnergyBadge itemType="money-factory" badgeHeight={MONEY_FACTORY_CONFIG.badgeHeight} level={level} />
       <LevelBadge level={level} height={MONEY_FACTORY_CONFIG.badgeHeight + 2} />
       <LevelRing level={level} radius={5} />
       {isConveyorSource && <ConveyorSourceRing />}
       {isCableSource && <CableSourceRing />}
-      {isPowered === false && <NoPowerBadge badgeHeight={MONEY_FACTORY_CONFIG.badgeHeight} />}
       {isSelected && (
         <WorkAreaOverlay
           width={workArea.width}

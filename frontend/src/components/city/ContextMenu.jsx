@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getLevelConfig, getNextLevelConfig, checkUpgrade } from '../systems/upgrades.js';
+import { canBeSource } from '../systems/conveyor.js';
 import {
   FaSun, FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark,
   FaHardHat, FaLink, FaBolt, FaCodeBranch, FaHome, FaMedal,
   FaStar, FaArrowUp, FaArrowsAlt, FaTrash, FaTimes, FaCog,
   FaExclamationTriangle, FaHammer, FaShieldAlt, FaChessRook, FaCoins,
-  FaRobot, FaLongArrowAltRight,
+  FaRobot, FaLongArrowAltRight, FaPlus,
 } from 'react-icons/fa';
 import { MdCallMerge } from 'react-icons/md';
 import { GiMining } from 'react-icons/gi';
@@ -107,6 +108,8 @@ function Btn({ children, color = '#4ade80', disabled, onClick }) {
  *   drones          – full drones array [{id, fromId, toId}]
  *   placedItems     – full placedItems array [{id, type, ...}]
  *   onSell / onMove / onUpgrade / onClose – callbacks
+ *   onAddDroneRoute – (fromId) => void — starts drone mode from this building
+ *   onDeleteDrone   – (droneId) => void — removes a drone route
  *   upgradeInfo     – { startReal, durationMs } | null
  *   coinUpgradeNext – { name, level, coinCost, canAfford, description } | null
  *   x, y            – kept for backward compat but ignored (modal is centered)
@@ -124,6 +127,8 @@ export function ContextMenu({
   onMove,
   onUpgrade,
   onClose,
+  onAddDroneRoute,
+  onDeleteDrone,
   upgradeInfo = null,
   coinUpgradeNext = null,
   // eslint-disable-next-line no-unused-vars
@@ -368,7 +373,7 @@ export function ContextMenu({
         {/* ── Upgrade in progress ── */}
         {upgradeProgress !== null && (
           <div style={{ padding: '10px 18px', borderBottom: '1px solid rgba(251,191,36,0.2)' }}>
-            <div style={{ fontSize: 10, color: '#fbbf24', letterSpacing: 1, marginBottom: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 14, color: '#fbbf24', letterSpacing: 1, marginBottom: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
               <FaCog style={{ animation: 'spin 2s linear infinite' }} />
               УЛУЧШЕНИЕ В ПРОЦЕССЕ — {Math.round(upgradeProgress * 100)}% · {upgradeSecLeft}с
             </div>
@@ -383,11 +388,29 @@ export function ContextMenu({
         )}
 
         {/* ── Drone routes ── */}
-        {relatedDrones.length > 0 && (
+        {(relatedDrones.length > 0 || canBeSource(itemType)) && (
           <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(99,102,241,0.18)' }}>
-            <div style={{ fontSize: 10, color: '#475569', letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>
-              МАРШРУТЫ ДРОНОВ ({relatedDrones.length})
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: '#475569', letterSpacing: 1, fontWeight: 700 }}>
+                МАРШРУТЫ ДРОНОВ{relatedDrones.length > 0 ? ` (${relatedDrones.length})` : ''}
+              </div>
+              {canBeSource(itemType) && onAddDroneRoute && (
+                <button
+                  onClick={() => { onAddDroneRoute(itemId); onClose(); }}
+                  style={{
+                    background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.4)',
+                    borderRadius: 6, padding: '3px 10px',
+                    color: '#818cf8', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'monospace',
+                  }}
+                >
+                  <FaPlus style={{ fontSize: 9 }} /> Добавить маршрут
+                </button>
+              )}
             </div>
+            {relatedDrones.length === 0 && (
+              <div style={{ fontSize: 10, color: '#334155', fontStyle: 'italic' }}>Нет активных маршрутов</div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {relatedDrones.map(drone => (
                 <div
@@ -399,13 +422,27 @@ export function ContextMenu({
                   }}
                 >
                   <FaRobot style={{ color: '#818cf8', flexShrink: 0 }} />
-                  <span style={{ color: drone.fromId === itemId ? '#f1f5f9' : '#94a3b8', fontWeight: drone.fromId === itemId ? 700 : 400 }}>
+                  <span style={{ color: drone.fromId === itemId ? '#f1f5f9' : '#94a3b8', fontWeight: drone.fromId === itemId ? 700 : 400, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {getBuildingLabel(drone.fromId)}
                   </span>
                   <FaLongArrowAltRight style={{ color: '#334155', flexShrink: 0 }} />
-                  <span style={{ color: drone.toId === itemId ? '#f1f5f9' : '#94a3b8', fontWeight: drone.toId === itemId ? 700 : 400 }}>
+                  <span style={{ color: drone.toId === itemId ? '#f1f5f9' : '#94a3b8', fontWeight: drone.toId === itemId ? 700 : 400, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {getBuildingLabel(drone.toId)}
                   </span>
+                  {onDeleteDrone && (
+                    <button
+                      onClick={() => onDeleteDrone(drone.id)}
+                      style={{
+                        background: 'transparent', border: 'none',
+                        color: '#475569', cursor: 'pointer', padding: '2px 4px',
+                        flexShrink: 0, display: 'flex', alignItems: 'center',
+                        borderRadius: 4, fontSize: 12,
+                      }}
+                      title="Удалить маршрут"
+                    >
+                      <FaTimes />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
