@@ -69,3 +69,82 @@ export function isColliding(pos, type, placed) {
   }
   return false;
 }
+
+/**
+ * Returns true if the world point (px, pz) is inside any placed building's AABB.
+ * Buildings whose IDs are in `excludeIds` are skipped (source/dest buildings).
+ *
+ * @param {number}              px
+ * @param {number}              pz
+ * @param {Array}               placed
+ * @param {Set<number>}         excludeIds
+ */
+export function isPointInsideBuilding(px, pz, placed, excludeIds) {
+  if (!placed?.length) return false;
+  for (const item of placed) {
+    if (excludeIds?.has(item.id)) continue;
+    const fp = ITEM_FOOTPRINTS[item.type];
+    if (!fp) continue;
+    const dx = Math.abs(px - item.position[0]);
+    const dz = Math.abs(pz - item.position[2]);
+    if (dx < fp.hw && dz < fp.hd) return true;
+  }
+  return false;
+}
+
+/**
+ * Returns true if the line segment from (ax,az) to (bx,bz) passes through
+ * any placed building's AABB (slab method).  Buildings in `excludeIds` are skipped.
+ *
+ * @param {number}      ax
+ * @param {number}      az
+ * @param {number}      bx
+ * @param {number}      bz
+ * @param {Array}       placed
+ * @param {Set<number>} excludeIds
+ */
+export function isSegmentIntersectsBuilding(ax, az, bx, bz, placed, excludeIds) {
+  if (!placed?.length) return false;
+  const dx = bx - ax;
+  const dz = bz - az;
+
+  for (const item of placed) {
+    if (excludeIds?.has(item.id)) continue;
+    const fp = ITEM_FOOTPRINTS[item.type];
+    if (!fp) continue;
+
+    const cx = item.position[0];
+    const cz = item.position[2];
+    const { hw, hd } = fp;
+
+    // Slab method: find t-interval where the ray is inside the X slab
+    let tMin = 0, tMax = 1;
+
+    if (Math.abs(dx) < 1e-9) {
+      // Segment is vertical in X — must be within slab
+      if (ax < cx - hw || ax > cx + hw) continue;
+    } else {
+      let t0 = (cx - hw - ax) / dx;
+      let t1 = (cx + hw - ax) / dx;
+      if (t0 > t1) { const tmp = t0; t0 = t1; t1 = tmp; }
+      tMin = Math.max(tMin, t0);
+      tMax = Math.min(tMax, t1);
+      if (tMin > tMax) continue;
+    }
+
+    if (Math.abs(dz) < 1e-9) {
+      // Segment is vertical in Z — must be within slab
+      if (az < cz - hd || az > cz + hd) continue;
+    } else {
+      let t0 = (cz - hd - az) / dz;
+      let t1 = (cz + hd - az) / dz;
+      if (t0 > t1) { const tmp = t0; t0 = t1; t1 = tmp; }
+      tMin = Math.max(tMin, t0);
+      tMax = Math.min(tMax, t1);
+      if (tMin > tMax) continue;
+    }
+
+    return true;
+  }
+  return false;
+}

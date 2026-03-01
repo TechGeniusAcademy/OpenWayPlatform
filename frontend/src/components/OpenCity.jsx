@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import styles from './OpenCity.module.css';
-import { isColliding }             from './items/collision.js';
+import { isColliding, isPointInsideBuilding, isSegmentIntersectsBuilding } from './items/collision.js';
 import './items/conveyorRules.js';   // side-effect: registers all transfer rules
 import './items/energyCableRules.js'; // side-effect: registers cable rules
 import './items/townHall.js';         // side-effect: registers town-hall storage
@@ -394,16 +394,24 @@ export default function OpenCity({ onBack }) {
       const to   = placedItemsRef.current.find(i => i.id === itemId);
       conveyorBuildingHitRef.current = true; // назначение выбрано — земля не должна записать точку
       if (from && to && canConnect(from.type, to.type)) {
-        const dupSrc = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
+        const dupSrc  = conveyorsRef.current.find(c => c.fromId === fromId && c.toId === itemId);
         const inCount = conveyorsRef.current.filter(c => c.toId === itemId).length;
         if (!dupSrc && inCount < getConveyorInLimit(to.type)) {
-          setConveyors(prev => [...prev, {
-            id: Date.now(),
-            fromId,
-            toId: itemId,
-            waypoints: [...conveyorWaypointsRef.current],
-          }]);
-          conveyorWaypointsRef.current = []; // сбрасываем маршрут после создания
+          // Проверяем последний сегмент: от последнего waypoint (или источника) до здания-назначения
+          const wps       = conveyorWaypointsRef.current;
+          const lastPt    = wps.length > 0 ? wps[wps.length - 1] : { x: from.position[0], z: from.position[2] };
+          const toCenter  = { x: to.position[0], z: to.position[2] };
+          const exclude   = new Set([fromId, itemId]);
+          const lastBlocked = isSegmentIntersectsBuilding(lastPt.x, lastPt.z, toCenter.x, toCenter.z, placedItemsRef.current, exclude);
+          if (!lastBlocked) {
+            setConveyors(prev => [...prev, {
+              id: Date.now(),
+              fromId,
+              toId: itemId,
+              waypoints: [...conveyorWaypointsRef.current],
+            }]);
+          }
+          conveyorWaypointsRef.current = []; // сбрасываем маршрут в любом случае
         }
       }
       setConveyorFromId(null);
@@ -447,6 +455,28 @@ export default function OpenCity({ onBack }) {
     if (conveyorBuildingHitRef.current) { conveyorBuildingHitRef.current = false; return; }
     const SNAP = 1;
     const snapped = { x: Math.round(x / SNAP) * SNAP, z: Math.round(z / SNAP) * SNAP };
+
+    // ── Проверка коллизий конвейера со зданиями ─────────────────────────────
+    const placed   = placedItemsRef.current;
+    const srcId    = conveyorFromIdRef.current;
+    const srcItem  = placed.find(i => i.id === srcId);
+    // Источник исключаем из проверки — конвейер должен выходить из него
+    const exclude  = new Set([srcId]);
+
+    // 1. Сама точка не должна быть внутри здания
+    if (isPointInsideBuilding(snapped.x, snapped.z, placed, exclude)) return;
+
+    // 2. Сегмент от предыдущей точки (или центра источника) до новой точки
+    //    не должен проходить сквозь здание
+    const prevWps = conveyorWaypointsRef.current;
+    const prev = prevWps.length > 0
+      ? prevWps[prevWps.length - 1]
+      : srcItem
+        ? { x: srcItem.position[0], z: srcItem.position[2] }
+        : null;
+    if (prev && isSegmentIntersectsBuilding(prev.x, prev.z, snapped.x, snapped.z, placed, exclude)) return;
+    // ────────────────────────────────────────────────────────────────────────
+
     conveyorWaypointsRef.current = [...conveyorWaypointsRef.current, snapped];
   }, []);
 

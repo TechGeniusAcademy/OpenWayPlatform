@@ -9,6 +9,7 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getConveyorOutPort } from '../systems/conveyor.js';
+import { isPointInsideBuilding, isSegmentIntersectsBuilding } from '../items/collision.js';
 
 // Шаг привязки к сетке (в мировых единицах)
 export const CONVEYOR_SNAP = 1;
@@ -23,10 +24,13 @@ export function snapConveyorPoint(x, z) {
 const PREVIEW_Y = 0.55; // чуть выше поверхности ленты
 
 // ─── Материалы и геометрии (создаются один раз) ───────────────────────────────
-const _dotMat  = new THREE.MeshBasicMaterial({ color: '#f97316', transparent: true, opacity: 0.75, depthTest: false });
-const _dotGeo  = new THREE.SphereGeometry(0.22, 6, 4);
-const _snapMat = new THREE.MeshBasicMaterial({ color: '#fbbf24', transparent: true, opacity: 0.95, depthTest: false });
-const _snapGeo = new THREE.SphereGeometry(0.30, 6, 4);
+const _dotMat     = new THREE.MeshBasicMaterial({ color: '#f97316', transparent: true, opacity: 0.75, depthTest: false });
+const _dotGeo     = new THREE.SphereGeometry(0.22, 6, 4);
+const _snapMatOk  = new THREE.MeshBasicMaterial({ color: '#fbbf24', transparent: true, opacity: 0.95, depthTest: false });
+const _snapMatErr = new THREE.MeshBasicMaterial({ color: '#ef4444', transparent: true, opacity: 0.95, depthTest: false });
+const _snapGeo    = new THREE.SphereGeometry(0.30, 6, 4);
+const _lineMatOk  = new THREE.LineBasicMaterial({ color: '#f97316', transparent: true, opacity: 0.9,  depthTest: false });
+const _lineMatErr = new THREE.LineBasicMaterial({ color: '#ef4444', transparent: true, opacity: 0.9,  depthTest: false });
 
 // ─── Маркеры точек-ориентиров (обновляются каждые 3 кадра) ───────────────────
 function WaypointDots({ waypointsRef }) {
@@ -49,8 +53,8 @@ function WaypointDots({ waypointsRef }) {
   return <group ref={groupRef} />;
 }
 
-// ─── Индикатор привязки курсора ───────────────────────────────────────────────
-function SnapCursor({ cursorRef }) {
+// ─── Индикатор привязки курсора (краснеет если точка заблокирована) ──────────
+function SnapCursor({ cursorRef, placedItems, waypointsRef, sourceId }) {
   const meshRef  = useRef();
   const frameRef = useRef(0);
 
@@ -62,9 +66,23 @@ function SnapCursor({ cursorRef }) {
     const { x, z } = snapConveyorPoint(cursorRef.current.x, cursorRef.current.z);
     mesh.position.set(x, PREVIEW_Y, z);
     mesh.visible = true;
+
+    // Проверяем — точка или последний сегмент заблокированы зданием?
+    const src     = placedItems?.find(i => i.id === sourceId);
+    const exclude = new Set(sourceId != null ? [sourceId] : []);
+    const wps     = waypointsRef?.current ?? [];
+    const prev    = wps.length > 0
+      ? wps[wps.length - 1]
+      : src ? { x: src.position[0], z: src.position[2] } : null;
+
+    const blocked =
+      isPointInsideBuilding(x, z, placedItems, exclude) ||
+      (prev != null && isSegmentIntersectsBuilding(prev.x, prev.z, x, z, placedItems, exclude));
+
+    mesh.material = blocked ? _snapMatErr : _snapMatOk;
   });
 
-  return <mesh ref={meshRef} geometry={_snapGeo} material={_snapMat} visible={false} />;
+  return <mesh ref={meshRef} geometry={_snapGeo} material={_snapMatOk} visible={false} />;
 }
 
 // ─── Основной компонент превью ────────────────────────────────────────────────
@@ -103,16 +121,26 @@ export function ConveyorPathPreview({ sourceId, placedItems, waypointsRef, curso
       ...waypointsRef.current.map(w => new THREE.Vector3(w.x, PREVIEW_Y, w.z)),
     ];
 
+    // Курсорная точка + проверка блокировки для цвета линии
+    let lineBlocked = false;
     if (cursorRef?.current) {
       const { x, z } = snapConveyorPoint(cursorRef.current.x, cursorRef.current.z);
       pts.push(new THREE.Vector3(x, PREVIEW_Y, z));
+
+      const exclude = new Set(sourceId != null ? [sourceId] : []);
+      const wps     = waypointsRef.current;
+      const prev    = wps.length > 0
+        ? wps[wps.length - 1]
+        : { x: source.position[0], z: source.position[2] };
+      lineBlocked =
+        isPointInsideBuilding(x, z, placedItems, exclude) ||
+        isSegmentIntersectsBuilding(prev.x, prev.z, x, z, placedItems, exclude);
     }
 
     // Нужно минимум 2 точки, иначе Three.js не рисует линию
-    if (pts.length < 2) {
-      // Скрываем — повторяем последнюю точку чтобы длина = 0
-      pts.push(pts[0].clone());
-    }
+    if (pts.length < 2) pts.push(pts[0].clone());
+
+    if (lineRef.current) lineRef.current.material = lineBlocked ? _lineMatErr : _lineMatOk;
 
     geo.setFromPoints(pts);
     geo.computeBoundingSphere(); // без этого фрустум-куллинг скрывает линию!
@@ -132,7 +160,12 @@ export function ConveyorPathPreview({ sourceId, placedItems, waypointsRef, curso
       <WaypointDots waypointsRef={waypointsRef} />
 
       {/* Привязанная позиция курсора */}
-      <SnapCursor cursorRef={cursorRef} />
+      <SnapCursor
+        cursorRef={cursorRef}
+        placedItems={placedItems}
+        waypointsRef={waypointsRef}
+        sourceId={sourceId}
+      />
     </group>
   );
 }
