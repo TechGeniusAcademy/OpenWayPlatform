@@ -375,29 +375,56 @@ function pickOre(rng) {
   return ORE_DEFS[ORE_CUM.findIndex(w => r < w)] ?? ORE_DEFS[0];
 }
 
+// Shared hitbox geo for ore deposits (fixed size — reused across all instances)
+const ORE_HIT_GEO = new THREE.CylinderGeometry(2.2, 2.2, 1.6, 8);
+
 function OreDeposit({ x, z, rng }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
-  const { ore, baseRy, oreRocks, oreVeins } = useMemo(() => {
+  const { ore, baseRy, rocksGeo, veinsGeo } = useMemo(() => {
     const o      = pickOre(rng);
     const bRy    = rng() * Math.PI * 2;
     const count  = 3 + Math.floor(rng() * 3);
     const vCount = 2 + Math.floor(rng() * 3);
-    return {
-      ore:    o,
-      baseRy: bRy,
-      oreRocks: Array.from({ length: count }, () => ({
-        ox: (rng() - 0.5) * 3.0, oz: (rng() - 0.5) * 3.0,
-        s:  0.5 + rng() * 0.8,
-        geo: rng() > 0.5 ? GEO.rockBig : GEO.rock,
-        rx: rng() * 0.5, ry: rng() * Math.PI, rz: rng() * 0.4,
-      })),
-      oreVeins: Array.from({ length: vCount }, () => ({
-        ox: (rng() - 0.5) * 2.4, oz: (rng() - 0.5) * 2.4,
-        s:  0.4 + rng() * 0.45, oy: 0.55 + rng() * 0.4,
-        rx: rng() * Math.PI, ry: rng() * Math.PI, rz: rng() * Math.PI,
-      })),
-    };
+    // Build merged rock geo → 1 draw call
+    const rockGeos = Array.from({ length: count }, () => {
+      const ox = (rng() - 0.5) * 3.0, oz = (rng() - 0.5) * 3.0;
+      const s  = 0.5 + rng() * 0.8;
+      const src = rng() > 0.5 ? GEO.rockBig : GEO.rock;
+      const rx = rng() * 0.5, ry = rng() * Math.PI, rz = rng() * 0.4;
+      const g = src.clone();
+      const tmp = new THREE.Object3D();
+      tmp.position.set(ox, s * 0.35, oz);
+      tmp.rotation.set(rx, ry, rz);
+      tmp.scale.set(s, s * 0.65, s);
+      tmp.updateMatrix();
+      g.applyMatrix4(tmp.matrix);
+      return g;
+    });
+    const rGeo = mergeGeos(rockGeos);
+    rockGeos.forEach(g => g.dispose());
+    // Build merged vein geo → 1 draw call
+    const veinGeos = Array.from({ length: vCount }, () => {
+      const ox = (rng() - 0.5) * 2.4, oz = (rng() - 0.5) * 2.4;
+      const s  = 0.4 + rng() * 0.45, oy = 0.55 + rng() * 0.4;
+      const rx = rng() * Math.PI, ry = rng() * Math.PI, rz2 = rng() * Math.PI;
+      const g = GEO.oreVein.clone();
+      const tmp = new THREE.Object3D();
+      tmp.position.set(ox, oy, oz);
+      tmp.rotation.set(rx, ry, rz2);
+      tmp.scale.setScalar(s);
+      tmp.updateMatrix();
+      g.applyMatrix4(tmp.matrix);
+      return g;
+    });
+    const vGeo = mergeGeos(veinGeos);
+    veinGeos.forEach(g => g.dispose());
+    return { ore: o, baseRy: bRy, rocksGeo: rGeo, veinsGeo: vGeo };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Dispose merged geos on unmount
+  useEffect(() => {
+    return () => { rocksGeo?.dispose(); veinsGeo?.dispose(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Register this ore deposit so the extractor can snap to it
@@ -408,29 +435,16 @@ function OreDeposit({ x, z, rng }) {
 
   return (
     <group position={[x, 0, z]} rotation={[0, baseRy, 0]}>
-      {oreRocks.map((r, i) => (
-        <mesh key={`r${i}`}
-          geometry={r.geo} material={ore.rockMat}
-          position={[r.ox, r.s * 0.35, r.oz]}
-          rotation={[r.rx, r.ry, r.rz]}
-          scale={[r.s, r.s * 0.65, r.s]}
-        />
-      ))}
-      {oreVeins.map((v, i) => (
-        <mesh key={`v${i}`}
-          geometry={GEO.oreVein} material={ore.veinMat}
-          position={[v.ox, v.oy, v.oz]}
-          rotation={[v.rx, v.ry, v.rz]}
-          scale={[v.s, v.s, v.s]}
-        />
-      ))}
-      {/* Hitbox */}
-      <mesh position={[0, 0.7, 0]} material={HITBOX_MAT}
+      {/* Merged rocks → 1 draw call */}
+      {rocksGeo && <mesh geometry={rocksGeo} material={ore.rockMat} />}
+      {/* Merged veins → 1 draw call */}
+      {veinsGeo && <mesh geometry={veinsGeo} material={ore.veinMat} />}
+      {/* Hitbox — shared fixed-size geometry */}
+      <mesh position={[0, 0.7, 0]} geometry={ORE_HIT_GEO} material={HITBOX_MAT}
         onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
       >
-        <cylinderGeometry args={[2.2, 2.2, 1.6, 8]} />
+        {open && <InfoPopup height={2.8} icon={ore.icon} title={`Залежь: ${ore.name}`} subtitle="Нажмите для добычи руды" color={ore.color} onClose={close} />}
       </mesh>
-      {open && <InfoPopup height={2.8} icon={ore.icon} title={`Залежь: ${ore.name}`} subtitle="Нажмите для добычи руды" color={ore.color} onClose={close} />}
     </group>
   );
 }
