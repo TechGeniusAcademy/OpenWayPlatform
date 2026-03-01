@@ -40,6 +40,11 @@ export default function OpenCity({ onBack }) {
   const [displayPos,  setDisplayPos]  = useState({ x: 0, z: 0 });
   const [displayZoom, setDisplayZoom] = useState(50);
   const [shopOpen,    setShopOpen]    = useState(false);
+  const [debugOpen,   setDebugOpen]   = useState(false);
+  const [fps,         setFps]         = useState(0);
+  const [rendererStats, setRendererStats] = useState({});
+  const fpsRef          = useRef(0);
+  const rendererStatsRef = useRef({});
 
   // ─── Day / night time tracking ────────────────────────────────────────────
   // Derived from wall-clock so all players share the same game time.
@@ -809,6 +814,7 @@ export default function OpenCity({ onBack }) {
         clearSelection();
         setSelectedPlacedId(null);
       }
+      if (e.code === 'F3') { setDebugOpen(v => !v); e.preventDefault(); return; }
       e.preventDefault?.();
     };
     const up = (e) => { keysRef.current[e.code] = false; };
@@ -1033,7 +1039,9 @@ export default function OpenCity({ onBack }) {
       setDisplayPos({ x: camTargetRef.current.x, z: camTargetRef.current.z });
       setDisplayZoom(camStateRef.current.zoom);
       setSelectedCount(selectedRef.current.size);
-    }, 1000);
+      setFps(fpsRef.current);
+      setRendererStats({ ...rendererStatsRef.current });
+    }, 100);
     return () => clearInterval(id);
   }, []);
 
@@ -1069,6 +1077,8 @@ export default function OpenCity({ onBack }) {
             energyCables={energyCables}
             cableFromId={cableFromId}
             onCableBuildingClick={handleCableBuildingClick}
+            fpsRef={fpsRef}
+            rendererStatsRef={rendererStatsRef}
             poweredIds={poweredIds}
             storedAmounts={storedAmounts}
             pointsAmounts={pointsAmounts}
@@ -1106,6 +1116,13 @@ export default function OpenCity({ onBack }) {
           timeString={timeString}
           energyTotals={energyTotals}
           storageTotals={storageTotals}
+          fps={fps}
+          debugOpen={debugOpen}
+          onToggleDebug={() => setDebugOpen(v => !v)}
+          rendererStats={rendererStats}
+          itemsCount={placedItems.length}
+          conveyorsCount={conveyors.length}
+          cablesCount={energyCables.length}
           conveyorMode={conveyorMode}
           conveyorFromId={conveyorFromId}
           cableMode={cableMode}

@@ -28,7 +28,8 @@ function DayPeriodIcon({ hour }) {
   return <FaMoon style={{ verticalAlign: 'middle', color: '#818cf8' }} />;
 }
 
-export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, conveyorMode, conveyorFromId, cableMode, cableFromId, wallMode, wallFromPoint, towerMode, points }) {
+export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, conveyorMode, conveyorFromId, cableMode, cableFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, conveyorsCount, cablesCount }) {
+  const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
   return (
     <>
       <div className={styles.coords}>
@@ -140,6 +141,61 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
       <button className={styles.backBtn} onClick={onBack}>
         <MdArrowBack style={{ verticalAlign: 'middle', marginRight: 4 }} /> Назад
       </button>
+
+      {/* FPS badge + Debug toggle — anchored below the back button */}
+      <div className={styles.fpsRow}>
+        <span className={styles.fpsBadge} style={{ color: fpsColor }}>
+          {fps} FPS
+        </span>
+        <button
+          className={styles.debugBtn + (debugOpen ? ' ' + styles.debugBtnActive : '')}
+          onClick={onToggleDebug}
+          title="Открыть/закрыть панель отладки [F3]"
+        >
+          F3
+        </button>
+      </div>
+
+      {debugOpen && (
+        <div className={styles.debugPanel}>
+          <div className={styles.debugTitle}>⚙ Debug — производительность</div>
+          <div className={styles.debugGrid}>
+            <span className={styles.debugKey}>FPS</span>
+            <span className={styles.debugVal} style={{ color: fpsColor }}>{fps}</span>
+
+            <span className={styles.debugKey}>Draw calls</span>
+            <span className={styles.debugVal}>{rendererStats.calls ?? '—'}</span>
+
+            <span className={styles.debugKey}>Треугольники</span>
+            <span className={styles.debugVal}>{(rendererStats.triangles ?? 0).toLocaleString()}</span>
+
+            <span className={styles.debugKey}>Геометрий (GPU)</span>
+            <span className={styles.debugVal}>{rendererStats.geometries ?? '—'}</span>
+
+            <span className={styles.debugKey}>Текстур (GPU)</span>
+            <span className={styles.debugVal}>{rendererStats.textures ?? '—'}</span>
+
+            <span className={styles.debugKey}>Шейдеров</span>
+            <span className={styles.debugVal}>{rendererStats.programs ?? '—'}</span>
+
+            <span className={styles.debugKey}>──────────</span>
+            <span className={styles.debugVal}></span>
+
+            <span className={styles.debugKey}>Зданий</span>
+            <span className={styles.debugVal}>{itemsCount ?? 0}</span>
+
+            <span className={styles.debugKey}>Конвейеров</span>
+            <span className={styles.debugVal}>{conveyorsCount ?? 0}</span>
+
+            <span className={styles.debugKey}>Кабелей</span>
+            <span className={styles.debugVal}>{cablesCount ?? 0}</span>
+
+            <span className={styles.debugKey}>Зум камеры</span>
+            <span className={styles.debugVal}>{zoom.toFixed(1)}</span>
+          </div>
+          <div className={styles.debugHint}>[F3] или кнопка — закрыть</div>
+        </div>
+      )}
     </>
   );
 }

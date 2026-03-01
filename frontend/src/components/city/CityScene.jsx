@@ -1,5 +1,5 @@
 import { useMemo, memo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { DynamicEnvironment } from './DynamicEnvironment.jsx';
 import { World } from './WorldChunks.jsx';
 import { RTSCamera } from './RTSCamera.jsx';
@@ -46,6 +46,30 @@ function WallCursorRing({ cursorRef, hasStart }) {
       <meshBasicMaterial color="#4ade80" transparent opacity={0.7} side={THREE.DoubleSide} />
     </mesh>
   );
+}
+
+// ─── FPS + renderer stats sampler (inside Canvas, writes to refs every 0.5 s) ──
+function FpsMonitor({ fpsRef, rendererStatsRef }) {
+  const { gl } = useThree();
+  const countRef = useRef(0);
+  const t0Ref    = useRef(performance.now());
+  useFrame(() => {
+    countRef.current++;
+    const now     = performance.now();
+    const elapsed = now - t0Ref.current;
+    if (elapsed < 500) return;
+    if (fpsRef)          fpsRef.current = Math.round(countRef.current * 1000 / elapsed);
+    if (rendererStatsRef) rendererStatsRef.current = {
+      calls:      gl.info.render.calls,
+      triangles:  gl.info.render.triangles,
+      geometries: gl.info.memory.geometries,
+      textures:   gl.info.memory.textures,
+      programs:   gl.info.programs?.length ?? 0,
+    };
+    countRef.current = 0;
+    t0Ref.current    = now;
+  });
+  return null;
 }
 
 // Pulsing amber ring shown on a building while it's being upgraded
@@ -128,6 +152,9 @@ function SceneInner({
   conveyorCursorRef,
   onConveyorGroundClick,
   otherPlayers,
+  // Performance
+  fpsRef,
+  rendererStatsRef,
 }) {
   const conveyorRates = useMemo(
     () => calcConveyorRates(placedItems, conveyors, buildingLevels ?? {}),
@@ -140,6 +167,8 @@ function SceneInner({
 
   return (
     <>
+      {/* FPS + renderer sampler — zero visual output */}
+      <FpsMonitor fpsRef={fpsRef} rendererStatsRef={rendererStatsRef} />
       {/* Global PointLight pool — only MAX 5 real lights, assigned to nearest lamps */}
       <LampLightPool />
       <DynamicEnvironment gameTimeRef={gameTimeRef} />
