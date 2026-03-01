@@ -1,12 +1,113 @@
+import { useState, useEffect } from 'react';
 import { ENERGY_TYPES } from '../systems/energy.js';
 import styles from '../OpenCity.module.css';
 import {
   FaStore, FaTrophy, FaWrench, FaLink,
   FaSun, FaCoins, FaBolt, FaMoon, FaCloudSun,
   FaShieldAlt, FaChessRook,
+  FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark, FaHome,
 } from 'react-icons/fa';
 import { MdArrowBack } from 'react-icons/md';
 import { GiBattery100, GiMining, GiFireBowl, GiWhirlwind } from 'react-icons/gi';
+
+// ─── Building Hotbar ─────────────────────────────────────────────────────────
+const HOTBAR_ITEMS = [
+  { key: '1', type: 'solar-panel',    Icon: FaSun,         color: '#f59e0b', name: 'Солнечная панель' },
+  { key: '2', type: 'energy-storage', Icon: FaBatteryFull, color: '#22d3ee', name: 'Хранилище энергии' },
+  { key: '3', type: 'street-lamp',    Icon: FaLightbulb,   color: '#fde68a', name: 'Фонарный столб' },
+  { key: '4', type: 'money-factory',  Icon: FaIndustry,    color: '#818cf8', name: 'Денежная фабрика' },
+  { key: '5', type: 'town-hall',      Icon: FaLandmark,    color: '#a78bfa', name: 'Ратуша' },
+  { key: '6', type: 'extractor',      Icon: GiMining,      color: '#f97316', name: 'Добытчик руды' },
+  { key: '7', type: 'builder-house',  Icon: FaHome,        color: '#fb923c', name: 'Дом строителя' },
+];
+
+function BuildingHotbar({ onStartPlacing, placingItem }) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      const digit = parseInt(e.key, 10);
+      if (digit >= 1 && digit <= HOTBAR_ITEMS.length) {
+        onStartPlacing(HOTBAR_ITEMS[digit - 1].type);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onStartPlacing]);
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+      display: 'flex', gap: 6,
+      background: 'rgba(8,15,28,0.82)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: 16, padding: '8px 10px',
+      backdropFilter: 'blur(12px)',
+      zIndex: 1000,
+      boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+      pointerEvents: 'all',
+      userSelect: 'none',
+    }}>
+      {HOTBAR_ITEMS.map((item, idx) => {
+        const active = placingItem === item.type;
+        const hov    = hoveredIdx === idx;
+        return (
+          <div key={item.type} style={{ position: 'relative' }}>
+            {/* Tooltip */}
+            {hov && (
+              <div style={{
+                position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(8,15,28,0.95)',
+                border: `1px solid ${item.color}55`,
+                borderRadius: 8, padding: '5px 10px',
+                color: item.color, fontSize: 11, fontWeight: 700,
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                zIndex: 1001,
+              }}>
+                {item.name}
+              </div>
+            )}
+            {/* Slot */}
+            <div
+              onClick={() => onStartPlacing(item.type)}
+              onMouseEnter={() => setHoveredIdx(idx)}
+              onMouseLeave={() => setHoveredIdx(null)}
+              style={{
+                width: 52, height: 52,
+                borderRadius: 12,
+                background: active ? `${item.color}22` : hov ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.04)',
+                border: `1.5px solid ${active ? item.color : hov ? item.color + '88' : 'rgba(255,255,255,0.12)'}`,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.15s ease',
+                transform: hov || active ? 'translateY(-2px)' : 'none',
+                boxShadow: active ? `0 0 14px ${item.color}66` : 'none',
+                position: 'relative',
+              }}
+            >
+              <item.Icon style={{
+                color: active || hov ? item.color : '#94a3b8',
+                fontSize: 22,
+                transition: 'color 0.15s',
+              }} />
+              {/* Key badge */}
+              <span style={{
+                position: 'absolute', top: 3, left: 5,
+                fontSize: 9, fontWeight: 700, lineHeight: 1,
+                color: active ? item.color : '#475569',
+              }}>
+                {item.key}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const ENERGY_ICONS = {
   solar: FaSun,
@@ -28,7 +129,7 @@ function DayPeriodIcon({ hour }) {
   return <FaMoon style={{ verticalAlign: 'middle', color: '#818cf8' }} />;
 }
 
-export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount }) {
+export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, onStartPlacing }) {
   const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
 
   // thresholds: [goodMax, warnMax]  — above warnMax = critical
@@ -158,6 +259,10 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
       <button className={styles.backBtn} onClick={onBack}>
         <MdArrowBack style={{ verticalAlign: 'middle', marginRight: 4 }} /> Назад
       </button>
+
+      {onStartPlacing && (
+        <BuildingHotbar onStartPlacing={onStartPlacing} placingItem={placingItem} />
+      )}
 
       {/* FPS badge + Debug toggle — anchored below the back button */}
       <div className={styles.fpsRow}>

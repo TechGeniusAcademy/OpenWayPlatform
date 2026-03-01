@@ -1090,6 +1090,7 @@ export default function OpenCity({ onBack }) {
           wallMode={wallMode}
           wallFromPoint={wallFromPoint}
           towerMode={towerMode}
+          onStartPlacing={startPlacing}
           points={Object.values(pointsAmounts).reduce((s, v) => s + v, 0)}
         />
         {shopOpen && (
