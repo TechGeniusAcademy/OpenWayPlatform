@@ -25,7 +25,6 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF }  from '@react-three/drei';
 import * as THREE   from 'three';
 import { getTransferRule } from '../systems/conveyor.js';
-import { ConnectionLabel } from './ConnectionLabel.jsx';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DRONE_SCALE  = 0.75;     // world-unit scale of the GLB
@@ -140,12 +139,6 @@ function DroneInner({ from, to, rule, effectiveRate }) {
     phaseRef.current = (t + dt * cycleSpeed) % 1;
   });
 
-  const midPos = [
-    (fromBase.x + toBase.x) * 0.5,
-    Math.max(fromBase.y, toBase.y) + HOVER_Y + FLY_HEIGHT * 0.45 + 2,
-    (fromBase.z + toBase.z) * 0.5,
-  ];
-
   const ruleColor = rule?.color ?? '#38bdf8';
 
   return (
@@ -167,14 +160,6 @@ function DroneInner({ from, to, rule, effectiveRate }) {
         />
       </mesh>
 
-      {/* Connection label */}
-      <ConnectionLabel
-        midPos={midPos}
-        icon={rule?.icon ?? '🚁'}
-        rate={effectiveRate}
-        unit={rule?.unit ?? '/ч'}
-        color={ruleColor}
-      />
     </group>
   );
 }
