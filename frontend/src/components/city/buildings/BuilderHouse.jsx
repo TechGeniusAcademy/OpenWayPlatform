@@ -157,7 +157,7 @@ export function BuilderAtWork({ position }) {
       2.5 + Math.sin(t * 2.2) * 0.18,
       position[2] + Math.sin(angle) * orbitR,
     );
-    groupRef.current.rotation.y = angle + Math.PI;
+    groupRef.current.rotation.y = angle + Math.PI + DRONE_YAW_FIX;
   });
 
   return (
@@ -169,9 +169,10 @@ export function BuilderAtWork({ position }) {
 
 // ─── Builder runner — flies from dock, works at target, returns, lands ───────
 
-const LIFT_MS  = 1000;  // lift off platform
-const LAND_MS  = 1000;  // descend back onto platform
-const FLIGHT_Y = 3.5;
+const LIFT_MS       = 1000;  // lift off platform
+const LAND_MS       = 1000;  // descend back onto platform
+const FLIGHT_Y      = 3.5;
+const DRONE_YAW_FIX = Math.PI / 6; // model mesh faces 30° left — compensate
 
 export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000, workDurationMs = 10000, dockIndex = 0 }) {
   const dock = DOCK_POSITIONS[dockIndex % DOCK_POSITIONS.length];
@@ -205,7 +206,7 @@ export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000, wo
         FLIGHT_Y,
         sz + (toPos[2] - sz) * p,
       );
-      g.rotation.y = Math.atan2(toPos[0] - sx, toPos[2] - sz);
+      g.rotation.y = Math.atan2(toPos[0] - sx, toPos[2] - sz) + DRONE_YAW_FIX;
       if (p >= 1) { phaseRef.current = 'working'; phaseStartRef.current = now; }
 
     } else if (phaseRef.current === 'working') {
@@ -217,7 +218,7 @@ export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000, wo
         FLIGHT_Y - 1.0 + Math.sin(now * 0.0022) * 0.18,
         toPos[2] + Math.sin(angle) * orbitR,
       );
-      g.rotation.y = angle + Math.PI;
+      g.rotation.y = angle + Math.PI + DRONE_YAW_FIX;
       if (elapsed >= workDurationMs) { phaseRef.current = 'returning'; phaseStartRef.current = now; }
 
     } else if (phaseRef.current === 'returning') {
@@ -227,7 +228,7 @@ export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000, wo
         FLIGHT_Y,
         toPos[2] + (sz - toPos[2]) * p,
       );
-      g.rotation.y = Math.atan2(sx - toPos[0], sz - toPos[2]);
+      g.rotation.y = Math.atan2(sx - toPos[0], sz - toPos[2]) + DRONE_YAW_FIX;
       if (p >= 1) { phaseRef.current = 'landing'; phaseStartRef.current = now; }
 
     } else if (phaseRef.current === 'landing') {
