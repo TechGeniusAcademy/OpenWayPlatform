@@ -167,32 +167,30 @@ export function BuilderAtWork({ position }) {
   );
 }
 
-// ─── Builder runner — flies from dock, travels, hovers, returns, lands ──────
+// ─── Builder runner — flies from dock, works at target, returns, lands ───────
 
-const LIFT_MS   = 1000;  // lift off platform
-const HOVER_MS  = 600;   // hover at destination before returning
-const LAND_MS   = 1000;  // descend back onto platform
-const FLIGHT_Y  = 3.5;
+const LIFT_MS  = 1000;  // lift off platform
+const LAND_MS  = 1000;  // descend back onto platform
+const FLIGHT_Y = 3.5;
 
-export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000, dockIndex = 0 }) {
+export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000, workDurationMs = 10000, dockIndex = 0 }) {
   const dock = DOCK_POSITIONS[dockIndex % DOCK_POSITIONS.length];
-  // absolute world start (on platform)
   const sx = fromPos[0] + dock[0];
   const sy = dock[1];
   const sz = fromPos[2] + dock[2];
 
-  const groupRef       = useRef();
+  const groupRef        = useRef();
   const [done, setDone] = useState(false);
-  const phaseRef       = useRef('liftoff');  // liftoff|going|hovering|returning|landing
-  const phaseStartRef  = useRef(startReal);
+  const phaseRef        = useRef('liftoff');  // liftoff|going|working|returning|landing
+  const phaseStartRef   = useRef(startReal);
   const { scene } = useGLTF('/models/worker drone.glb');
   const cloneRef = useRef(null);
   if (!cloneRef.current) cloneRef.current = scene.clone(true);
 
   useFrame(() => {
     if (done || !groupRef.current) return;
-    const now  = Date.now();
-    const g    = groupRef.current;
+    const now     = Date.now();
+    const g       = groupRef.current;
     const elapsed = now - phaseStartRef.current;
 
     if (phaseRef.current === 'liftoff') {
@@ -208,11 +206,19 @@ export function BuilderRunner({ fromPos, toPos, startReal, durationMs = 3000, do
         sz + (toPos[2] - sz) * p,
       );
       g.rotation.y = Math.atan2(toPos[0] - sx, toPos[2] - sz);
-      if (p >= 1) { phaseRef.current = 'hovering'; phaseStartRef.current = now; }
+      if (p >= 1) { phaseRef.current = 'working'; phaseStartRef.current = now; }
 
-    } else if (phaseRef.current === 'hovering') {
-      g.position.set(toPos[0], FLIGHT_Y + Math.sin(now * 0.006) * 0.1, toPos[2]);
-      if (elapsed >= HOVER_MS) { phaseRef.current = 'returning'; phaseStartRef.current = now; }
+    } else if (phaseRef.current === 'working') {
+      // Orbit the build target until work is done, just like BuilderAtWork
+      const orbitR = 1.4;
+      const angle  = now * 0.0009;
+      g.position.set(
+        toPos[0] + Math.cos(angle) * orbitR,
+        FLIGHT_Y - 1.0 + Math.sin(now * 0.0022) * 0.18,
+        toPos[2] + Math.sin(angle) * orbitR,
+      );
+      g.rotation.y = angle + Math.PI;
+      if (elapsed >= workDurationMs) { phaseRef.current = 'returning'; phaseStartRef.current = now; }
 
     } else if (phaseRef.current === 'returning') {
       const p = Math.min(1, elapsed / durationMs);

@@ -643,12 +643,13 @@ export default function OpenCity({ onBack }) {
     // Spawn the runner drone
     if (housePos) {
       setMovingBuilders(prev => [...prev, {
-        id:         `runner_upg_${itemId}_${Date.now()}`,
-        itemId:     String(itemId),
-        fromPos:    housePos,
-        toPos:      [toP[0], toP[1] ?? 0, toP[2]],
-        startReal:  Date.now(),
-        durationMs: flightMs,
+        id:            `runner_upg_${itemId}_${Date.now()}`,
+        itemId:        String(itemId),
+        fromPos:       housePos,
+        toPos:         [toP[0], toP[1] ?? 0, toP[2]],
+        startReal:     Date.now(),
+        durationMs:    flightMs,
+        workDurationMs: durationMs,
       }]);
     }
     setContextMenu(null);
@@ -923,7 +924,7 @@ export default function OpenCity({ onBack }) {
                   setConstructingBuildings({ ...nb });
                   // Spawn a moving builder runner from nearest builder house (drone arrives then work begins)
                   if (housePos) {
-                    setMovingBuilders(prev => [...prev, { id: `runner_${newId}`, itemId: String(newId), fromPos: housePos, toPos: [pos.x, pos.y, pos.z], startReal: Date.now(), durationMs: cFlightMs }]);
+                    setMovingBuilders(prev => [...prev, { id: `runner_${newId}`, itemId: String(newId), fromPos: housePos, toPos: [pos.x, pos.y, pos.z], startReal: Date.now(), durationMs: cFlightMs, workDurationMs: dur }]);
                   }
                 }
               }

@@ -319,6 +319,7 @@ function SceneInner({
         if (!item) return null;
         if (!inSelfRange(item.position)) return null;
         const sz = BUILDING_HALF_SIZE[item.type] ?? { hw: 3.0, hh: 3.5 };
+        const hasRunner = (movingBuilders ?? []).some(r => r.itemId === bid);
         return (
           <group key={`cs_${bid}`}>
             <ConstructionSite
@@ -327,7 +328,7 @@ function SceneInner({
               halfW={sz.hw}
               halfH={sz.hh}
             />
-            {Date.now() >= (constructInfo.startReal ?? 0) && <BuilderAtWork position={item.position} />}
+            {!hasRunner && Date.now() >= (constructInfo.startReal ?? 0) && <BuilderAtWork position={item.position} />}
           </group>
         );
       })}
@@ -344,9 +345,10 @@ function SceneInner({
         const badgePos = [px, py + sz.hh * 2 + 1.8, pz];
         const ringR  = sz.hw * 1.1;
         const droneArrived = Date.now() >= (upgradeInfo.startReal ?? 0);
+        const hasRunner    = (movingBuilders ?? []).some(r => r.itemId === bid);
         return (
           <group key={`uw_${bid}`}>
-            {droneArrived && <BuilderAtWork position={item.position} />}
+            {droneArrived && !hasRunner && <BuilderAtWork position={item.position} />}
             {droneArrived && <UpgradeRing position={item.position} radius={ringR} />}
             <UpgradeBadgeInline upgradeInfo={upgradeInfo} position={badgePos} />
           </group>
@@ -355,7 +357,7 @@ function SceneInner({
 
       {/* Running builder figures */}
       {(movingBuilders ?? []).map(r => (
-        <BuilderRunner key={r.id} fromPos={r.fromPos} toPos={r.toPos} startReal={r.startReal} durationMs={r.durationMs} />
+        <BuilderRunner key={r.id} fromPos={r.fromPos} toPos={r.toPos} startReal={r.startReal} durationMs={r.durationMs} workDurationMs={r.workDurationMs} />
       ))}
 
       {/* Drone route target pulse hints */}
