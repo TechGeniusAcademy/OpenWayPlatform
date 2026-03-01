@@ -23,8 +23,8 @@ const GEO = {
 
 const MAT = {
   rock:       new THREE.MeshStandardMaterial({ color: '#6b6b6b', roughness: 0.95, metalness: 0.05 }),
-  coal:       new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9,  metalness: 0.1  }),
-  coalVein:   new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.6,  metalness: 0.25, emissive: new THREE.Color('#0a0a0a') }),
+  coal:       new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9,  metalness: 0.1, emissive: new THREE.Color('#2a1200'), emissiveIntensity: 1.0  }),
+  coalVein:   new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.6,  metalness: 0.25, emissive: new THREE.Color('#cc3300'), emissiveIntensity: 0.7 }),
   iron:       new THREE.MeshStandardMaterial({ color: '#5a3a2a', roughness: 0.85, metalness: 0.15 }),
   ironVein:   new THREE.MeshStandardMaterial({ color: '#c0581a', roughness: 0.5,  metalness: 0.4,  emissive: new THREE.Color('#3a1800') }),
   silver:     new THREE.MeshStandardMaterial({ color: '#7a7a80', roughness: 0.5,  metalness: 0.7  }),
@@ -149,6 +149,25 @@ function pickOre(rng) {
 // Shared hitbox geo for ore deposits (fixed size — reused across all instances)
 const ORE_HIT_GEO = new THREE.CylinderGeometry(2.2, 2.2, 1.6, 8);
 
+// Shared ember glow mesh (pure emissive orange sphere) for coal deposits
+const COAL_GLOW_GEO = new THREE.SphereGeometry(0.45, 7, 5);
+const COAL_GLOW_MAT = new THREE.MeshBasicMaterial({
+  color: '#ff5500', transparent: true, opacity: 0.55, depthWrite: false,
+});
+
+function CoalGlow() {
+  const ref   = useRef();
+  const t0    = useRef(Math.random() * Math.PI * 2);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t   = clock.getElapsedTime() + t0.current;
+    const s   = 0.7 + Math.sin(t * 1.8) * 0.25;
+    ref.current.scale.setScalar(s);
+    ref.current.material.opacity = 0.35 + Math.sin(t * 2.3) * 0.18;
+  });
+  return <mesh ref={ref} geometry={COAL_GLOW_GEO} material={COAL_GLOW_MAT} position={[0, 1.4, 0]} />;
+}
+
 function OreDeposit({ x, z, rng }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
@@ -210,6 +229,8 @@ function OreDeposit({ x, z, rng }) {
       {rocksGeo && <mesh geometry={rocksGeo} material={ore.rockMat} />}
       {/* Merged veins → 1 draw call */}
       {veinsGeo && <mesh geometry={veinsGeo} material={ore.veinMat} />}
+      {/* Coal-specific nighttime glow */}
+      {ore.name === 'Уголь' && <CoalGlow />}
       {/* Hitbox — shared fixed-size geometry */}
       <mesh position={[0, 0.7, 0]} geometry={ORE_HIT_GEO} material={HITBOX_MAT}
         onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
