@@ -1,4 +1,4 @@
-import { useMemo, memo, useRef } from 'react';
+import { useMemo, memo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { DynamicEnvironment } from './DynamicEnvironment.jsx';
 import { World } from './WorldChunks.jsx';
@@ -105,6 +105,10 @@ const BUILDING_HALF_SIZE = {
   'builder-house':  { hw: 3.5, hh: 4.0 },
 };
 
+// ─── View-distance culling radii ─────────────────────────────────────────────
+const SELF_RENDER_R  = 350; // own objects hidden >350 world-units from camera ground-target
+const OTHER_RENDER_R = 320; // other-player cities skip render when this far away
+
 function SceneInner({
   camTargetRef,
   camStateRef,
@@ -156,6 +160,30 @@ function SceneInner({
   fpsRef,
   rendererStatsRef,
 }) {
+  // ── Camera-centered visibility tracking ──────────────────────────────────
+  // useFrame writes to a ref every frame; React state only updates when the
+  // camera ground-target moves >8 world units, keeping re-renders minimal.
+  const [camCenter, setCamCenter] = useState({ x: 0, z: 0 });
+  const _lastCam = useRef({ x: -99999, z: -99999 });
+  useFrame(() => {
+    const { x, z } = camTargetRef.current;
+    if (Math.abs(x - _lastCam.current.x) + Math.abs(z - _lastCam.current.z) > 8) {
+      _lastCam.current = { x, z };
+      setCamCenter({ x, z });
+    }
+  });
+  const camX = camCenter.x, camZ = camCenter.z;
+  // True if a world [x,y,z] position array is within render radius of camera
+  function inSelfRange(pos) {
+    return Math.hypot((pos[0] ?? 0) - camX, (pos[2] ?? 0) - camZ) < SELF_RENDER_R;
+  }
+  // True if at least one endpoint of a belt/cable is within range
+  function connInSelfRange(conn) {
+    const from = placedItems.find(i => i.id === conn.fromId);
+    const to   = placedItems.find(i => i.id === conn.toId);
+    return (from && inSelfRange(from.position)) || (to && inSelfRange(to.position));
+  }
+
   const conveyorRates = useMemo(
     () => calcConveyorRates(placedItems, conveyors, buildingLevels ?? {}),
     [placedItems, conveyors, buildingLevels],
@@ -209,8 +237,8 @@ function SceneInner({
         <BuilderHousePreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
       )}
 
-      {/* Placed buildings */}
-      {placedItems.map(item =>
+      {/* Placed buildings — culled to SELF_RENDER_R around camera target */}
+      {placedItems.filter(item => inSelfRange(item.position)).map(item =>
         item.type === 'solar-panel' ? (
           <SolarPanelPlaced
             key={item.id}
@@ -348,6 +376,7 @@ function SceneInner({
       {Object.entries(constructingBuildings ?? {}).map(([bid, constructInfo]) => {
         const item = placedItems.find(i => String(i.id) === bid);
         if (!item) return null;
+        if (!inSelfRange(item.position)) return null;
         const sz = BUILDING_HALF_SIZE[item.type] ?? { hw: 3.0, hh: 3.5 };
         return (
           <group key={`cs_${bid}`}>
@@ -366,6 +395,7 @@ function SceneInner({
       {Object.entries(upgradingBuildings ?? {}).map(([bid, upgradeInfo]) => {
         const item = placedItems.find(i => String(i.id) === bid);
         if (!item) return null;
+        if (!inSelfRange(item.position)) return null;
         const sz     = BUILDING_HALF_SIZE[item.type] ?? { hw: 3.0, hh: 3.5 };
         const px     = item.position[0] ?? 0;
         const py     = item.position[1] ?? 0;
@@ -400,8 +430,8 @@ function SceneInner({
         conveyors={conveyors}
       />
 
-      {/* Conveyor belts */}
-      {conveyors.map(conv => (
+      {/* Conveyor belts — culled by endpoint proximity */}
+      {conveyors.filter(connInSelfRange).map(conv => (
         <ConveyorBelt
           key={conv.id}
           fromId={conv.fromId}
@@ -413,8 +443,8 @@ function SceneInner({
         />
       ))}
 
-      {/* Energy cables */}
-      {(energyCables ?? []).map(cable => (
+      {/* Energy cables — culled by endpoint proximity */}
+      {(energyCables ?? []).filter(connInSelfRange).map(cable => (
         <EnergyCable
           key={cable.id}
           fromId={cable.fromId}
@@ -427,8 +457,12 @@ function SceneInner({
 
       {/* ── Wall & Tower system ─────────────────────────────────────────── */}
 
-      {/* Placed wall segments */}
-      {(placedWalls ?? []).map(wall => (
+      {/* Placed wall segments — culled if both endpoints out of range */}
+      {(placedWalls ?? []).filter(wall =>
+        !wall.from || !wall.to ||
+        inSelfRange([wall.from.x, 0, wall.from.z]) ||
+        inSelfRange([wall.to.x,   0, wall.to.z])
+      ).map(wall => (
         <WallSegment
           key={wall.id}
           wallData={wall}
@@ -437,8 +471,8 @@ function SceneInner({
         />
       ))}
 
-      {/* Placed towers */}
-      {(placedTowers ?? []).map(tower => (
+      {/* Placed towers — culled by position */}
+      {(placedTowers ?? []).filter(tower => inSelfRange(tower.position)).map(tower => (
         <TowerPlaced
           key={tower.id}
           position={tower.position}
@@ -524,6 +558,7 @@ function SceneInner({
           key={player.userId}
           player={player}
           gameTimeRef={gameTimeRef}
+          camCenter={camCenter}
         />
       ))}
     </>

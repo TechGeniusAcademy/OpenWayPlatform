@@ -85,8 +85,11 @@ function PlayerLabel({ cx, cz, height, username }) {
   );
 }
 
+// ── View-distance cull — skip render if camera is far from this territory ─────
+const OTHER_RENDER_R = 320;
+
 // ── OtherPlayerCity ───────────────────────────────────────────────────────────
-function OtherPlayerCityInner({ player, gameTimeRef }) {
+function OtherPlayerCityInner({ player, gameTimeRef, camCenter }) {
   const { username, placedItems = [], placedWalls = [], placedTowers = [], buildingLevels = {},
           conveyors = [], energyCables = [], storedAmounts = {}, pointsAmounts = {} } = player;
 
@@ -135,6 +138,9 @@ function OtherPlayerCityInner({ player, gameTimeRef }) {
 
     return { cx: centerX, cz: centerZ, radius: r, labelHeight: lh };
   }, [placedItems, placedWalls, placedTowers]);
+
+  // ── Distance cull: skip all rendering if camera is far from this territory ──
+  if (camCenter && Math.hypot(cx - camCenter.x, cz - camCenter.z) > OTHER_RENDER_R) return null;
 
   return (
     <group>
