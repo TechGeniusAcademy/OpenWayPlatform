@@ -9,35 +9,19 @@ import { registerOreDeposit, unregisterOreDeposit } from '../systems/oreRegistry
 // NOTE: created at module scope — reused across all instances for performance.
 
 const GEO = {
-  trunk:      new THREE.CylinderGeometry(0.18, 0.28, 2.2, 7),
-  trunkTall:  new THREE.CylinderGeometry(0.14, 0.24, 3.2, 7),
-  trunkShort: new THREE.CylinderGeometry(0.16, 0.24, 1.4, 6),
-  crown:      new THREE.SphereGeometry(1.4, 8, 7),
-  crownWide:  new THREE.SphereGeometry(2.0, 8, 6),
-  crownSmall: new THREE.SphereGeometry(0.9, 7, 6),
-  cone:       new THREE.ConeGeometry(1.3, 3.2, 8),
-  coneTop:    new THREE.ConeGeometry(0.85, 2.2, 8),
-  rock:       new THREE.IcosahedronGeometry(0.7, 0),
-  rockBig:    new THREE.IcosahedronGeometry(1.1, 0),
-  rockSmall:  new THREE.IcosahedronGeometry(0.42, 0),
-  oreNode:    new THREE.IcosahedronGeometry(0.5, 0),
-  oreVein:    new THREE.OctahedronGeometry(0.28, 0),
-  lake:       new THREE.CircleGeometry(5.5, 20),
-  lakeSm:     new THREE.CircleGeometry(3.2, 16),
-  // Shared reed geometries — 3 size buckets instead of per-reed inline allocation
-  reedSm:     new THREE.CylinderGeometry(0.04, 0.07, 0.6,  4),
-  reedMd:     new THREE.CylinderGeometry(0.04, 0.07, 0.9,  4),
-  reedLg:     new THREE.CylinderGeometry(0.04, 0.07, 1.15, 4),
+  rock:    new THREE.IcosahedronGeometry(0.7,  0),
+  rockBig: new THREE.IcosahedronGeometry(1.1,  0),
+  rockSmall: new THREE.IcosahedronGeometry(0.42, 0),
+  oreVein: new THREE.OctahedronGeometry(0.28,  0),
+  // Shared reed geometries — 3 size buckets
+  reedSm:  new THREE.CylinderGeometry(0.04, 0.07, 0.6,  4),
+  reedMd:  new THREE.CylinderGeometry(0.04, 0.07, 0.9,  4),
+  reedLg:  new THREE.CylinderGeometry(0.04, 0.07, 1.15, 4),
 };
 
 // ─── Shared materials ─────────────────────────────────────────────────────────
 
 const MAT = {
-  trunk:      new THREE.MeshStandardMaterial({ color: '#5c3d1e', roughness: 0.9,  metalness: 0 }),
-  // foliage: all leaf types merged into one geo per chunk (saves 3 extra bags × 49 chunks)
-  foliage:    new THREE.MeshStandardMaterial({ color: '#2a5a2a', roughness: 0.85, metalness: 0 }),
-  // rock: gray + brown merged into one geo per chunk
-  rock:       new THREE.MeshStandardMaterial({ color: '#6b6b6b', roughness: 0.95, metalness: 0.05 }),
   coal:       new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9,  metalness: 0.1  }),
   coalVein:   new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.6,  metalness: 0.25, emissive: new THREE.Color('#0a0a0a') }),
   iron:       new THREE.MeshStandardMaterial({ color: '#5a3a2a', roughness: 0.85, metalness: 0.15 }),
@@ -69,15 +53,9 @@ function chunkSeed(cx, cz) {
   return ((cx * 73856093) ^ (cz * 19349663)) >>> 0;
 }
 
-// ─── Shared hitbox geometries ─────────────────────────────────────────────────
+// ─── Shared hitbox material ───────────────────────────────────────────────────
 
-const HITBOX_MAT  = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
-const HIT_GEO = {
-  pine:  new THREE.CylinderGeometry(1.4, 1.4, 7,   6),
-  round: new THREE.CylinderGeometry(1.8, 1.8, 5,   6),
-  bushy: new THREE.CylinderGeometry(1.6, 1.6, 3.5, 6),
-  rock:  new THREE.CylinderGeometry(1.8, 1.8, 1.5, 6),
-};
+const HITBOX_MAT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
 
 // ─── Geometry merge (no external deps) ───────────────────────────────────────
 
@@ -105,29 +83,6 @@ function mergeGeos(geos) {
   out.setAttribute('normal',   new THREE.BufferAttribute(norBuf, 3));
   if (idxArr) out.setIndex(idxArr);
   return out;
-}
-
-// Reusable objects for wGeo (avoids allocation in hot useMemo loops)
-const _wPObj = new THREE.Object3D();
-const _wCObj = new THREE.Object3D();
-const _wMat4 = new THREE.Matrix4();
-
-// Return a transformed clone of template geometry.
-// Parent: positioned at (px, 0, pz), rotated by pry Y, scaled uniformly psc.
-// Child:  positioned at (lx, ly, lz), scaled by (lsx, lsy, lsz), rotated by lrx/lry/lrz.
-function wGeo(tmpl, px, pz, pry, psc, lx, ly, lz, lsx = 1, lsy = 1, lsz = 1, lrx = 0, lry = 0, lrz = 0) {
-  const g = tmpl.clone();
-  _wPObj.position.set(px, 0, pz);
-  _wPObj.rotation.set(0, pry, 0);
-  _wPObj.scale.setScalar(psc);
-  _wPObj.updateMatrix();
-  _wCObj.position.set(lx, ly, lz);
-  _wCObj.scale.set(lsx, lsy, lsz);
-  _wCObj.rotation.set(lrx, lry, lrz);
-  _wCObj.updateMatrix();
-  _wMat4.multiplyMatrices(_wPObj.matrix, _wCObj.matrix);
-  g.applyMatrix4(_wMat4);
-  return g;
 }
 
 // ─── Shared info popup (rendered inside canvas via Html) ─────────────────────
@@ -171,189 +126,6 @@ function InfoPopup({ height, icon, title, subtitle, color, onClose }) {
         </div>
       </div>
     </Html>
-  );
-}
-
-// ─── Pine tree ────────────────────────────────────────────────────────────────
-
-function PineTree({ x, z, rng }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const { scale, ry, leafMat } = useMemo(() => ({
-    scale:   0.8 + rng() * 0.7,
-    ry:      rng() * Math.PI * 2,
-    leafMat: rng() > 0.5 ? MAT.leafDark : MAT.leafGreen,
-  }), []); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <group position={[x, 0, z]} rotation={[0, ry, 0]} scale={[scale, scale, scale]}>
-      <mesh geometry={GEO.trunkTall} material={MAT.trunk}  position={[0, 1.6, 0]} />
-      <mesh geometry={GEO.cone}      material={leafMat}    position={[0, 4.6, 0]} />
-      <mesh geometry={GEO.coneTop}   material={leafMat}    position={[0, 6.2, 0]} scale={[0.78, 0.88, 0.78]} />
-      {/* Hitbox */}
-      <mesh position={[0, 3.5, 0]} material={HITBOX_MAT}
-        onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
-      >
-        <cylinderGeometry args={[1.4, 1.4, 7, 8]} />
-      </mesh>
-      {open && <InfoPopup height={8.5} icon="🌲" title="Сосна" subtitle="Источник древесины" color="#4ade80" onClose={close} />}
-    </group>
-  );
-}
-
-// ─── Round-crown tree ─────────────────────────────────────────────────────────
-
-function RoundTree({ x, z, rng }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const { scale, ry, leafMat, crownGeo } = useMemo(() => {
-    const mats = [MAT.leafGreen, MAT.leafLight, MAT.leafAutumn];
-    return {
-      scale:    0.75 + rng() * 0.8,
-      ry:       rng() * Math.PI * 2,
-      leafMat:  mats[Math.floor(rng() * mats.length)],
-      crownGeo: rng() > 0.45 ? GEO.crownWide : GEO.crown,
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <group position={[x, 0, z]} rotation={[0, ry, 0]} scale={[scale, scale, scale]}>
-      <mesh geometry={GEO.trunk}   material={MAT.trunk}  position={[0, 1.1, 0]} />
-      <mesh geometry={crownGeo}    material={leafMat}    position={[0, 3.4, 0]} />
-      {/* Hitbox */}
-      <mesh position={[0, 2.5, 0]} material={HITBOX_MAT}
-        onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
-      >
-        <cylinderGeometry args={[1.8, 1.8, 5, 8]} />
-      </mesh>
-      {open && <InfoPopup height={6.5} icon="🌳" title="Дерево" subtitle="Источник древесины" color="#86efac" onClose={close} />}
-    </group>
-  );
-}
-
-// ─── Bushy multi-sphere tree ──────────────────────────────────────────────────
-
-/* eslint-disable react/no-array-index-key */
-const BUSH_OFFSETS = [[0,2.2,0,1.0],[0.9,1.9,0.5,0.8],[-0.8,1.8,-0.4,0.75],[0.3,2.7,-0.7,0.65]];
-
-function BushyTree({ x, z, rng }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const { scale, ry, bushMats } = useMemo(() => ({
-    scale:    0.7 + rng() * 0.5,
-    ry:       rng() * Math.PI * 2,
-    bushMats: BUSH_OFFSETS.map(() => ({
-      geo: rng() > 0.5 ? GEO.crown : GEO.crownSmall,
-      mat: rng() > 0.4 ? MAT.leafGreen : MAT.leafDark,
-    })),
-  }), []); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <group position={[x, 0, z]} rotation={[0, ry, 0]} scale={[scale, scale, scale]}>
-      <mesh geometry={GEO.trunkShort} material={MAT.trunk} position={[0, 0.7, 0]} />
-      {BUSH_OFFSETS.map(([ox, oy, oz, s], i) => (
-        <mesh key={i}
-          geometry={bushMats[i].geo}
-          material={bushMats[i].mat}
-          position={[ox, oy, oz]}
-          scale={[s, s, s]}
-        />
-      ))}
-      {/* Hitbox */}
-      <mesh position={[0, 1.5, 0]} material={HITBOX_MAT}
-        onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
-      >
-        <cylinderGeometry args={[1.6, 1.6, 3.5, 8]} />
-      </mesh>
-      {open && <InfoPopup height={4.5} icon="🌿" title="Кустарник" subtitle="Источник древесины" color="#bbf7d0" onClose={close} />}
-    </group>
-  );
-}
-
-// ─── Rock cluster ─────────────────────────────────────────────────────────────
-
-function RockCluster({ x, z, rng }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const { mat, rocks } = useMemo(() => {
-    const m = rng() > 0.55 ? MAT.rockBrown : MAT.rockGray;
-    const count = 2 + Math.floor(rng() * 3);
-    return {
-      mat: m,
-      rocks: Array.from({ length: count }, () => ({
-        ox: (rng() - 0.5) * 2.4, oz: (rng() - 0.5) * 2.4,
-        s:  0.5 + rng() * 0.9,
-        ry: rng() * Math.PI,     rx: rng() * 0.5,
-        geo: rng() > 0.5 ? GEO.rockBig : GEO.rock,
-        rz: rng() * 0.4,
-      })),
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <group position={[x, 0, z]}>
-      {rocks.map((r, i) => (
-        <mesh key={i}
-          geometry={r.geo} material={mat}
-          position={[r.ox, r.s * 0.4, r.oz]}
-          rotation={[r.rx, r.ry, r.rz]}
-          scale={[r.s, r.s * 0.7, r.s]}
-        />
-      ))}
-      {/* Hitbox */}
-      <mesh position={[0, 0.6, 0]} material={HITBOX_MAT}
-        onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
-      >
-        <cylinderGeometry args={[1.8, 1.8, 1.5, 8]} />
-      </mesh>
-      {open && <InfoPopup height={2.8} icon="🪨" title="Каменная россыпь" subtitle="Источник камня" color="#d1d5db" onClose={close} />}
-    </group>
-  );
-}
-
-// ─── Hitbox-only interactive stubs (visual geometry is chunk-merged) ─────────
-
-function PineHitbox({ x, z, sc }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  return (
-    <mesh position={[x, 3.5 * sc, z]} geometry={HIT_GEO.pine} material={HITBOX_MAT}
-      onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
-    >
-      {open && <InfoPopup height={5.5} icon="🌲" title="Сосна" subtitle="Источник древесины" color="#4ade80" onClose={close} />}
-    </mesh>
-  );
-}
-
-function RoundHitbox({ x, z, sc }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  return (
-    <mesh position={[x, 2.5 * sc, z]} geometry={HIT_GEO.round} material={HITBOX_MAT}
-      onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
-    >
-      {open && <InfoPopup height={4.5} icon="🌳" title="Дерево" subtitle="Источник древесины" color="#86efac" onClose={close} />}
-    </mesh>
-  );
-}
-
-function BushyHitbox({ x, z, sc }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  return (
-    <mesh position={[x, 1.5 * sc, z]} geometry={HIT_GEO.bushy} material={HITBOX_MAT}
-      onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
-    >
-      {open && <InfoPopup height={3.5} icon="🌿" title="Кустарник" subtitle="Источник древесины" color="#bbf7d0" onClose={close} />}
-    </mesh>
-  );
-}
-
-function RockHitbox({ x, z }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  return (
-    <mesh position={[x, 0.6, z]} geometry={HIT_GEO.rock} material={HITBOX_MAT}
-      onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
-    >
-      {open && <InfoPopup height={2.8} icon="🪨" title="Каменная россыпь" subtitle="Источник камня" color="#d1d5db" onClose={close} />}
-    </mesh>
   );
 }
 
@@ -581,7 +353,7 @@ function WaterBody({ x, z, rng }) {
         <primitive object={MAT.waterSurf} attach="material" />
       </mesh>
       {/* Shore rocks — merged into 1 draw call */}
-      {rocksGeo && <mesh geometry={rocksGeo} material={MAT.rockGray} />}
+      {rocksGeo && <mesh geometry={rocksGeo} material={MAT.rock} />}
       {/* Reeds — merged into 1 draw call */}
       {reedsGeo && <mesh geometry={reedsGeo} material={MAT.reed} />}
       {/* Hitbox */}
@@ -650,7 +422,7 @@ function RiverSegment({ x, z, rng }) {
         <primitive object={MAT.waterSurf} attach="material" />
       </mesh>
       {/* Bank rocks — merged into 1 draw call */}
-      {rocksGeo && <mesh geometry={rocksGeo} material={MAT.rockGray} />}
+      {rocksGeo && <mesh geometry={rocksGeo} material={MAT.rock} />}
       {/* Hitbox */}
       <mesh position={[0, 0.3, 0]} material={HITBOX_MAT}
         onPointerDown={e => { if (e.button === 0) { e.stopPropagation(); openInfo(setOpen); } }}
@@ -684,25 +456,12 @@ const MAX_GROUND_INSTANCES = (RENDER_DIST * 2 + 1) ** 2; // 49 at RENDER_DIST=3
 // Grid-cell size used to prevent spawn overlaps
 const CELL = 6;
 
-// Rock: no parent transform, full world-space clone from individual Object3D
-const _wRObj = new THREE.Object3D();
-function wRock(tmpl, wx, wy, wz, sx, sy, sz, rx, ry, rz) {
-  const g = tmpl.clone();
-  _wRObj.position.set(wx, wy, wz);
-  _wRObj.scale.set(sx, sy, sz);
-  _wRObj.rotation.set(rx, ry, rz);
-  _wRObj.updateMatrix();
-  g.applyMatrix4(_wRObj.matrix);
-  return g;
-}
-
 function Chunk({ cx, cz }) {
   const ox = cx * CHUNK_SIZE;
   const oz = cz * CHUNK_SIZE;
 
-  // ── Spawn placement + merged visual geometry (both computed once per cx/cz) ──
-  const { spawns, merged } = useMemo(() => {
-    // ── Step 1: same main-rng spawn placement as before (unchanged) ──
+  // ── Spawn placement (computed once per cx/cz) ──────────────────────────────
+  const spawns = useMemo(() => {
     const rng   = mkRng(chunkSeed(cx, cz));
     const cells = new Set();
     const mark  = (wx, wz) => {
@@ -729,121 +488,15 @@ function Chunk({ cx, cz }) {
       if (mark(wx, wz)) items.push({ type: 'ore', x: wx, z: wz });
     }
 
-    const rockCount = Math.floor(rng() * 3);
-    for (let i = 0; i < rockCount; i++) {
-      const wx = ox + rand(); const wz = oz + rand();
-      // main rng not used for rock visual details — keeps rng sequence identical
-      if (mark(wx, wz)) items.push({ type: 'rock', x: wx, z: wz });
-    }
-
-    const treeCount = Math.floor(rng() * 3);
-    for (let i = 0; i < treeCount; i++) {
-      const wx = ox + rand(); const wz = oz + rand();
-      if (!mark(wx, wz)) continue;
-      const tr   = rng();
-      const kind = tr < 0.38 ? 'pine' : tr < 0.68 ? 'round' : 'bushy';
-      items.push({ type: kind, x: wx, z: wz });
-    }
-
-    // ── Step 2: per-item visual params — exact same rng calls as original components ──
-    const enriched = items.map((sp, i) => {
-      const srng = mkRng(chunkSeed(cx * 1000 + i, cz * 1000 + i));
-      if (sp.type === 'pine') {
-        const sc      = 0.8 + srng() * 0.7;
-        const ry      = srng() * Math.PI * 2;
-        const leafKey = srng() > 0.5 ? 'leafDark' : 'leafGreen';
-        return { ...sp, sc, ry, leafKey };
-      }
-      if (sp.type === 'round') {
-        const sc       = 0.75 + srng() * 0.8;
-        const ry       = srng() * Math.PI * 2;
-        const lkeys    = ['leafGreen', 'leafLight', 'leafAutumn'];
-        const leafKey  = lkeys[Math.floor(srng() * lkeys.length)];
-        const crownGeo = srng() > 0.45 ? GEO.crownWide : GEO.crown;
-        return { ...sp, sc, ry, leafKey, crownGeo };
-      }
-      if (sp.type === 'bushy') {
-        const sc       = 0.7  + srng() * 0.5;
-        const ry       = srng() * Math.PI * 2;
-        const bushData = BUSH_OFFSETS.map(() => ({
-          geo:     srng() > 0.5 ? GEO.crown : GEO.crownSmall,
-          leafKey: srng() > 0.4 ? 'leafGreen' : 'leafDark',
-        }));
-        return { ...sp, sc, ry, bushData };
-      }
-      if (sp.type === 'rock') {
-        // Exact RockCluster useMemo order: mat → count → per-rock(ox,oz,s,ry,rx,geo,rz)
-        const matKey = srng() > 0.55 ? 'rockBrown' : 'rockGray';
-        const count  = 2 + Math.floor(srng() * 3);
-        const rocks  = Array.from({ length: count }, () => ({
-          ox:  (srng() - 0.5) * 2.4,
-          oz:  (srng() - 0.5) * 2.4,
-          s:   0.5 + srng() * 0.9,
-          ry:  srng() * Math.PI,
-          rx:  srng() * 0.5,
-          geo: srng() > 0.5 ? GEO.rockBig : GEO.rock,
-          rz:  srng() * 0.4,
-        }));
-        return { ...sp, matKey, rocks };
-      }
-      return sp;
-    });
-
-    // ── Step 3: build merged geometry — 3 bags total instead of 7 ─────────────
-    // All leaf types → 'foliage', rockGray + rockBrown → 'rock'
-    const bags = { trunk: [], foliage: [], rock: [] };
-
-    for (const sp of enriched) {
-      if (sp.type === 'pine') {
-        bags.trunk.push(wGeo(GEO.trunkTall, sp.x, sp.z, sp.ry, sp.sc, 0, 1.6, 0));
-        bags.foliage.push(wGeo(GEO.cone,    sp.x, sp.z, sp.ry, sp.sc, 0, 4.6, 0));
-        bags.foliage.push(wGeo(GEO.coneTop, sp.x, sp.z, sp.ry, sp.sc, 0, 6.2, 0, 0.78, 0.88, 0.78));
-      } else if (sp.type === 'round') {
-        bags.trunk.push(wGeo(GEO.trunk,     sp.x, sp.z, sp.ry, sp.sc, 0, 1.1, 0));
-        bags.foliage.push(wGeo(sp.crownGeo, sp.x, sp.z, sp.ry, sp.sc, 0, 3.4, 0));
-      } else if (sp.type === 'bushy') {
-        bags.trunk.push(wGeo(GEO.trunkShort, sp.x, sp.z, sp.ry, sp.sc, 0, 0.7, 0));
-        BUSH_OFFSETS.forEach(([bx, by, bz, bs], bi) => {
-          const { geo } = sp.bushData[bi];
-          bags.foliage.push(wGeo(geo, sp.x, sp.z, sp.ry, sp.sc, bx, by, bz, bs, bs, bs));
-        });
-      } else if (sp.type === 'rock') {
-        for (const r of sp.rocks) {
-          bags.rock.push(wRock(r.geo, sp.x + r.ox, r.s * 0.4, sp.z + r.oz, r.s, r.s * 0.7, r.s, r.rx, r.ry, r.rz));
-        }
-      }
-    }
-
-    const m = {};
-    for (const [k, geos] of Object.entries(bags)) m[k] = mergeGeos(geos);
-
-    return { spawns: enriched, merged: m };
+    return items;
   }, [cx, cz]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Dispose merged geos when chunk unmounts or re-computes
-  const mergedRef = useRef(null);
-  useEffect(() => {
-    const prev = mergedRef.current;
-    if (prev && prev !== merged) Object.values(prev).forEach(g => g?.dispose?.());
-    mergedRef.current = merged;
-    return () => { Object.values(merged).forEach(g => g?.dispose?.()); };
-  }, [merged]);
 
   return (
     <group>
-      {/* Merged static visuals: 3 draw calls max per chunk (trunk / foliage / rock) */}}
-      {merged.trunk   && <mesh castShadow receiveShadow geometry={merged.trunk}   material={MAT.trunk}   />}
-      {merged.foliage && <mesh castShadow               geometry={merged.foliage} material={MAT.foliage} />}
-      {merged.rock    && <mesh castShadow               geometry={merged.rock}    material={MAT.rock}    />}
-
-      {/* Interactive hitboxes — 1 transparent mesh per tree/rock */}
+      {/* Interactive spawns: ores, water, rivers */}
       {spawns.map((sp, i) => {
         const rng = mkRng(chunkSeed(cx * 1000 + i, cz * 1000 + i));
         switch (sp.type) {
-          case 'pine':  return <PineHitbox  key={i} x={sp.x} z={sp.z} sc={sp.sc ?? 1} />;
-          case 'round': return <RoundHitbox key={i} x={sp.x} z={sp.z} sc={sp.sc ?? 1} />;
-          case 'bushy': return <BushyHitbox key={i} x={sp.x} z={sp.z} sc={sp.sc ?? 1} />;
-          case 'rock':  return <RockHitbox  key={i} x={sp.x} z={sp.z} />;
           case 'ore':   return <OreDeposit   key={i} x={sp.x} z={sp.z} rng={rng} />;
           case 'lake':  return <WaterBody    key={i} x={sp.x} z={sp.z} rng={rng} />;
           case 'river': return <RiverSegment key={i} x={sp.x} z={sp.z} rng={rng} />;
