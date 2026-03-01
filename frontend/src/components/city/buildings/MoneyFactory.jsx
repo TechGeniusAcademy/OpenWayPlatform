@@ -79,10 +79,7 @@ function FactoryGLB({ emissiveColor, emissiveIntensity, accentOverride }) {
       if (!obj.isMesh || !obj.material) return;
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
       mats.forEach((mat) => {
-        mat.color.set('#2d3a4a');
-        mat.roughness = 0.72;
-        mat.metalness = 0.28;
-        // Height clipping plane
+        // Preserve original GLB color/roughness/metalness
         mat.clippingPlanes = [HEIGHT_CLIP_PLANE];
         mat.clipShadows = true;
         if (mat.emissive) {
