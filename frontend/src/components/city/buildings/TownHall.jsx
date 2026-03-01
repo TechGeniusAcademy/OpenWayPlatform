@@ -1,7 +1,7 @@
 import { useRef, useContext } from 'react';
 import { FaTrophy } from 'react-icons/fa';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CityContext } from '../CityContext.js';
 import { usePlacementTracker, StorageBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, LevelPlinth, memo, buildingPropsEqual } from '../SharedUI.jsx';
@@ -180,6 +180,10 @@ function TownHallGLTFPlaced({
   const accent  = lvlConf.accentColor;
   const glow    = lvlConf.glowIntensity ?? 0;
 
+  const { scene: rocketScene } = useGLTF('/models/Space rocket.glb');
+  const rocketCloneRef = useRef(null);
+  if (!rocketCloneRef.current) rocketCloneRef.current = rocketScene.clone(true);
+
   return (
     <group
       position={[position[0], 0, position[2]]}
@@ -197,7 +201,7 @@ function TownHallGLTFPlaced({
       }}
     >
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
-        <TownHallBody accentOverride={accent} emissiveColor={accent} emissiveIntensity={glow} />
+        <primitive object={rocketCloneRef.current} />
       </group>
       {isSelected && (
         <WorkAreaOverlay
@@ -214,6 +218,8 @@ function TownHallGLTFPlaced({
     </group>
   );
 }
+
+useGLTF.preload('/models/Space rocket.glb');
 
 export const TownHallPreview = TownHallGLTFPreview;
 export const TownHallPlaced  = memo(TownHallGLTFPlaced, buildingPropsEqual);

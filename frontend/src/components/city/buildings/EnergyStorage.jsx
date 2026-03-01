@@ -1,5 +1,6 @@
 import { useRef, useContext } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CityContext, ENERGY_STORAGE_Y, ENERGY_STORAGE_TILT_X, ENERGY_STORAGE_TILT_Z } from '../CityContext.js';
 import { usePlacementTracker, StorageBadge, WorkAreaOverlay, NoPowerBadge, LevelBadge, LevelRing, LevelPlinth, memo, buildingPropsEqual } from '../SharedUI.jsx';
@@ -100,6 +101,11 @@ function EnergyStorageGLTFPlaced({ position, rotation, isSelected, onSelect, onC
   const scale   = 1 + (lvlConf.scaleBonus ?? 0);
   const accent  = lvlConf.accentColor;
   const glow    = lvlConf.glowIntensity ?? 0;
+
+  const { scene: storageScene } = useGLTF('/models/Storage Unit.glb');
+  const storageCloneRef = useRef(null);
+  if (!storageCloneRef.current) storageCloneRef.current = storageScene.clone(true);
+
   return (
     <group
       position={[position[0], 0, position[2]]}
@@ -117,7 +123,7 @@ function EnergyStorageGLTFPlaced({ position, rotation, isSelected, onSelect, onC
       }}
     >
       <group rotation={[0, rotation || 0, 0]} scale={[scale, scale, scale]}>
-        <EnergyStorageBody accentOverride={accent} emissiveColor={accent} emissiveIntensity={glow} />
+        <primitive object={storageCloneRef.current} />
       </group>
       <StorageBadge itemType="energy-storage" badgeHeight={ENERGY_STORAGE_CONFIG.badgeHeight} currentAmounts={currentAmounts} level={level} />
       <LevelPlinth level={level} size={4} />
@@ -137,6 +143,8 @@ function EnergyStorageGLTFPlaced({ position, rotation, isSelected, onSelect, onC
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
+
+useGLTF.preload('/models/Storage Unit.glb');
 
 export function EnergyStoragePreview({ placementPosRef, inputRef, placementRotYRef }) {
   return <EnergyStorageGLTFPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />;
