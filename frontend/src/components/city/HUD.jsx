@@ -321,7 +321,7 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
 
       {energyTotals && Object.keys(energyTotals).length > 0 && (
         <div className={styles.energyPanel}>
-          {Object.entries(energyTotals).map(([type, val]) => {
+          {Object.entries(energyTotals).filter(([type]) => type !== 'coins').map(([type, val]) => {
             const meta = ENERGY_TYPES[type];
             return (
               <div key={type} className={styles.energyRow} style={{ color: meta?.color ?? '#fff' }}>
@@ -331,16 +331,6 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
               </div>
             );
           })}
-        </div>
-      )}
-
-      {points > 0 && (
-        <div className={styles.energyPanel} style={{ marginTop: 6, borderColor: 'rgba(245,158,11,0.6)', background: 'rgba(120,60,0,0.72)' }}>
-          <div className={styles.energyRow} style={{ color: '#fbbf24' }}>
-            <span><FaTrophy style={{ verticalAlign: 'middle' }} /></span>
-            <span>Очки города</span>
-            <strong>{points}</strong>
-          </div>
         </div>
       )}
 
