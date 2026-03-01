@@ -171,7 +171,21 @@ function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }
   const { groupRef, blockedRef } = usePlacementTracker(placementPosRef, inputRef, placementRotYRef);
   const { scene: factoryPreviewScene } = useGLTF('/models/Factory.glb');
   const previewCloneRef = useRef(null);
-  if (!previewCloneRef.current) previewCloneRef.current = factoryPreviewScene.clone(true);
+  if (!previewCloneRef.current) {
+    const clone = factoryPreviewScene.clone(true);
+    // clone(true) shares materials — clone them explicitly to stay independent of placed factory
+    clone.traverse((obj) => {
+      if (!obj.isMesh) return;
+      if (Array.isArray(obj.material)) {
+        obj.material = obj.material.map((m) => { const mc = m.clone(); mc.clippingPlanes = []; return mc; });
+      } else if (obj.material) {
+        const mc = obj.material.clone();
+        mc.clippingPlanes = [];
+        obj.material = mc;
+      }
+    });
+    previewCloneRef.current = clone;
+  }
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
@@ -180,17 +194,24 @@ function MoneyFactoryGLTFPreview({ placementPosRef, inputRef, placementRotYRef }
     if (previewCloneRef.current) {
       previewCloneRef.current.traverse((obj) => {
         if (!obj.isMesh || !obj.material) return;
-        const mat = obj.material;
-        if (mat.emissive) mat.emissive.copy(_previewCol);
-        mat.emissiveIntensity = pulse * 0.5 + 0.3;
-        mat.opacity = 0.82;
-        mat.transparent = true;
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach((mat) => {
+          if (mat.emissive) mat.emissive.copy(_previewCol);
+          mat.emissiveIntensity = pulse * 0.5 + 0.3;
+          mat.opacity = 0.82;
+          mat.transparent = true;
+        });
       });
     }
   });
   return (
     <group ref={groupRef}>
-      <primitive object={previewCloneRef.current} />
+      <primitive
+        object={previewCloneRef.current}
+        scale={[0.0101, 0.0101, 0.0101]}
+        position={[-0.59, MONEY_FACTORY_Y, 1.10]}
+        rotation={[MONEY_FACTORY_TILT_X, 0, MONEY_FACTORY_TILT_Z]}
+      />
     </group>
   );
 }
