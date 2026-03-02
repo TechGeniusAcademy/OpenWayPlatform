@@ -1,4 +1,4 @@
-import { useMemo, memo, useRef, useState } from 'react';
+import { useMemo, memo, useRef, useState, useEffect, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { DynamicEnvironment } from './DynamicEnvironment.jsx';
 import { World } from './WorldChunks.jsx';
@@ -14,6 +14,7 @@ import { BuilderHousePreview, BuilderHousePlaced, BuilderAtWork, BuilderRunner, 
 import { CoalGeneratorPreview, CoalGeneratorPlaced } from './buildings/CoalGenerator.jsx';
 import { HangarPreview, HangarPlaced } from './buildings/Hangar.jsx';
 import { FighterUnit } from './buildings/FighterUnit.jsx';
+import { Missile, Explosion } from './buildings/FighterAttack.jsx';
 import { ConveyorTargetPulse } from './ConveyorTargetPulse.jsx';
 import { ConstructionSite } from './ConstructionSite.jsx';
 import { calcConveyorRates } from '../systems/connectionRates.js';
@@ -22,6 +23,69 @@ import { TowerPlaced, TowerPreview } from './buildings/Tower.jsx';
 import { OtherPlayerCity } from './OtherPlayerCity.jsx';
 import { LampLightPool } from './LampLightPool.jsx';
 import * as THREE from 'three';
+
+// ─── Fighter target marker — pulsing cyan rings + crosshair at RMB click point ──
+function FighterTargetMarker({ position }) {
+  const ring1Ref  = useRef();
+  const ring2Ref  = useRef();
+  const cross1Ref = useRef();
+  const cross2Ref = useRef();
+  const spawnRef  = useRef(null);
+
+  useFrame(({ clock }) => {
+    const now = clock.getElapsedTime();
+    if (spawnRef.current === null) spawnRef.current = now;
+    const age  = now - spawnRef.current;
+    const LIFE = 2.2;
+    const fade = Math.max(0, 1 - age / LIFE);
+    const show = fade > 0;
+    const pulse = 1 + Math.sin(now * 9) * 0.14;
+
+    if (ring1Ref.current) {
+      ring1Ref.current.visible = show;
+      ring1Ref.current.scale.setScalar(pulse);
+      ring1Ref.current.material.opacity = 0.85 * fade;
+    }
+    if (ring2Ref.current) {
+      ring2Ref.current.visible = show;
+      ring2Ref.current.scale.setScalar(2.0 - pulse * 0.45);
+      ring2Ref.current.material.opacity = 0.35 * fade;
+    }
+    if (cross1Ref.current) {
+      cross1Ref.current.visible = show;
+      cross1Ref.current.material.opacity = 0.6 * fade;
+    }
+    if (cross2Ref.current) {
+      cross2Ref.current.visible = show;
+      cross2Ref.current.material.opacity = 0.6 * fade;
+    }
+  });
+
+  return (
+    <group position={[position[0], 0.1, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Inner pulsing ring */}
+      <mesh ref={ring1Ref}>
+        <ringGeometry args={[0.7, 1.15, 32]} />
+        <meshBasicMaterial color="#22d3ee" transparent opacity={0.85} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {/* Outer counter-pulsing ring */}
+      <mesh ref={ring2Ref}>
+        <ringGeometry args={[1.55, 2.1, 32]} />
+        <meshBasicMaterial color="#22d3ee" transparent opacity={0.35} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {/* Crosshair — vertical bar */}
+      <mesh ref={cross1Ref}>
+        <planeGeometry args={[0.18, 2.6]} />
+        <meshBasicMaterial color="#22d3ee" transparent opacity={0.6} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {/* Crosshair — horizontal bar */}
+      <mesh ref={cross2Ref} rotation={[0, 0, Math.PI / 2]}>
+        <planeGeometry args={[0.18, 2.6]} />
+        <meshBasicMaterial color="#22d3ee" transparent opacity={0.6} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
 
 // Ref-driven cursor ring: shows where the next wall point will snap (green = start, amber = end)
 function WallCursorRing({ cursorRef, hasStart }) {
@@ -158,6 +222,42 @@ function SceneInner({
   fpsRef,
   rendererStatsRef,
 }) {
+  // ── Enemy building positions for fighter targeting ──────────────────────────────
+  const enemyBuildings = useMemo(() => {
+    if (!otherPlayers || otherPlayers.length === 0) return [];
+    const list = [];
+    for (const player of otherPlayers) {
+      for (const item of (player.placedItems ?? [])) {
+        if (item.position) {
+          list.push({ id: `${player.userId}_${item.id}`, position: item.position });
+        }
+      }
+    }
+    return list;
+  }, [otherPlayers]);
+
+  // ── Active missiles and explosions ───────────────────────────────────────
+  const [missiles,   setMissiles]   = useState([]);
+  const [explosions, setExplosions] = useState([]);
+
+  const handleFireMissile = useCallback((from, to) => {
+    const id = Date.now() + Math.random();
+    setMissiles(prev => [...prev, { id, from, to }]);
+  }, []);
+
+  const handleMissileImpact = useCallback((missileId, impactPos) => {
+    setMissiles(prev => prev.filter(m => m.id !== missileId));
+    setExplosions(prev => [...prev, { id: Date.now() + Math.random(), position: impactPos }]);
+  }, []);
+
+  const handleExplosionDone = useCallback((explosionId) => {
+    setExplosions(prev => prev.filter(e => e.id !== explosionId));
+  }, []);
+
+  // ── Fighter target marker state ────────────────────────────────────────────
+  const [fighterTargetMarker, setFighterTargetMarker] = useState(null);
+  useEffect(() => { if (!selectedFighterId) setFighterTargetMarker(null); }, [selectedFighterId]);
+
   // ── Camera-centered visibility tracking ──────────────────────────────────
   // useFrame writes to a ref every frame; React state only updates when the
   // camera ground-target moves >8 world units, keeping re-renders minimal.
@@ -422,8 +522,37 @@ function SceneInner({
           isSelected={selectedFighterId === f.id}
           onSelect={() => onFighterSelect?.(f.id)}
           onUpdatePos={onFighterUpdatePos}
+          enemyBuildings={enemyBuildings}
+          onFireMissile={handleFireMissile}
         />
       ))}
+
+      {/* Active missiles */}
+      {missiles.map(m => (
+        <Missile
+          key={m.id}
+          from={m.from}
+          to={m.to}
+          onImpact={() => handleMissileImpact(m.id, m.to)}
+        />
+      ))}
+
+      {/* Active explosions */}
+      {explosions.map(ex => (
+        <Explosion
+          key={ex.id}
+          position={ex.position}
+          onDone={() => handleExplosionDone(ex.id)}
+        />
+      ))}
+
+      {/* Fighter target marker */}
+      {fighterTargetMarker && (
+        <FighterTargetMarker
+          key={`${fighterTargetMarker[0].toFixed(1)}_${fighterTargetMarker[2].toFixed(1)}`}
+          position={fighterTargetMarker}
+        />
+      )}
 
       {/* Transparent ground plane for fighter RMB targeting */}
       {selectedFighterId && (
@@ -433,7 +562,9 @@ function SceneInner({
           onPointerDown={(e) => {
             if (e.button === 2) {
               e.stopPropagation();
-              onGroundFighterTarget?.(e.point.x, e.point.z);
+              const x = e.point.x, z = e.point.z;
+              setFighterTargetMarker([x, 0, z]);
+              onGroundFighterTarget?.(x, z);
             } else if (e.button === 0) {
               e.stopPropagation();
               // Deselect fighter if clicking empty ground
