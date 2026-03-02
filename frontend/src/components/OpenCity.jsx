@@ -50,7 +50,7 @@ export default function OpenCity({ onBack }) {
   // ─── Day / night time tracking ────────────────────────────────────────────
   // Derived from wall-clock so all players share the same game time.
   // DEV: set to a number (0–24) to freeze the clock; null = live cycle.
-  const DEV_FREEZE_TIME = null; // ← null = живое время; число (0-24) = заморозка
+  const DEV_FREEZE_TIME = 12; // ← null = живое время; число (0-24) = заморозка
   const GAME_DAY_MS = 24 * REAL_MS_PER_GAME_HOUR;
   const getSharedGameTime = () =>
     DEV_FREEZE_TIME !== null
@@ -567,33 +567,35 @@ export default function OpenCity({ onBack }) {
   }, []);
 
   const handleOrderFighter = useCallback((hangarId, hangarPos, hangarLevel) => {
-    const coinBal = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
     const cost = HANGAR_CONFIG.fighterCoinCost;
-    if (coinBal < cost) return;
+
+    // Check coin balance
+    const totalCoins = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
+    if (totalCoins < cost) { alert(`Нужно ${cost} монет для заказа истребителя! (у вас ${Math.floor(totalCoins)})`); return; }
+
+    // Check slot limit
+    const maxSlots = HANGAR_CONFIG.maxFightersPerLevel[Math.min(hangarLevel, 3) - 1] ?? 1;
+    const existing = placedFightersRef.current.filter(f => f.hangarId === hangarId).length;
+    if (existing >= maxSlots) { alert('Все слоты ангара заняты!'); return; }
 
     // Deduct coins
-    let remaining = cost;
-    const next = { ...storedAmountsRef.current };
-    for (const sid of Object.keys(next)) {
-      if (remaining <= 0) break;
-      const c = next[sid]?.coins ?? 0;
-      if (c > 0) {
-        const take = Math.min(c, remaining);
-        next[sid] = { ...next[sid], coins: c - take };
-        remaining -= take;
+    if (cost > 0) {
+      let remaining = cost;
+      const next = { ...storedAmountsRef.current };
+      for (const sid of Object.keys(next)) {
+        if (remaining <= 0) break;
+        const c = next[sid]?.coins ?? 0;
+        if (c > 0) { const take = Math.min(c, remaining); next[sid] = { ...next[sid], coins: c - take }; remaining -= take; }
       }
+      storedAmountsRef.current = next;
+      setStoredAmounts({ ...next });
     }
-    storedAmountsRef.current = next;
-    setStoredAmounts({ ...next });
 
     // Spawn fighter on platform next to hangar
-    const maxSlots  = HANGAR_CONFIG.maxFightersPerLevel[Math.min(hangarLevel, 3) - 1] ?? 1;
-    const existing  = placedFightersRef.current.filter(f => f.hangarId === hangarId).length;
-    const slotIndex = existing; // 0-based slot index on platform
+    const slotIndex = existing;
     const platformX = (hangarPos[0] ?? 0) + HANGAR_CONFIG.platformOffsetX;
-    // Spread fighters along the Z axis of the platform
-    const offsetZ = (slotIndex - (maxSlots - 1) / 2) * 5;
-    const spawnPos = [platformX, 0, (hangarPos[2] ?? 0) + offsetZ];
+    const offsetZ   = (slotIndex - (maxSlots - 1) / 2) * 5;
+    const spawnPos  = [platformX, 0, (hangarPos[2] ?? 0) + offsetZ];
 
     const newFighter = {
       id:       Date.now(),
@@ -602,7 +604,11 @@ export default function OpenCity({ onBack }) {
       target:   null,
       state:    'idle',
     };
-    setPlacedFighters(prev => [...prev, newFighter]);
+    setPlacedFighters(prev => {
+      const next = [...prev, newFighter];
+      placedFightersRef.current = next;
+      return next;
+    });
   }, []); // eslint-disable-line
 
   // ─── Placement tracking ───────────────────────────────────────────────────
@@ -1044,7 +1050,10 @@ export default function OpenCity({ onBack }) {
         if (placedHitRef.current) {
           placedHitRef.current = false;
         } else if (!wallModeRef.current && !towerModeRef.current) {
-          setSelectedPlacedId(null);
+          // Only deselect when clicking the actual WebGL canvas — not DOM UI overlays/buttons
+          if (e.target && e.target.tagName === 'CANVAS') {
+            setSelectedPlacedId(null);
+          }
         }
       }
       if (e.button === 1 || e.button === 2) {
@@ -1204,7 +1213,6 @@ export default function OpenCity({ onBack }) {
           userPoints={userPoints}
           allEnergyTotals={allEnergyTotals}
           storedCurrentTotals={storedCurrentTotals}
-          storageTotals={storageTotals}
           points={Object.values(pointsAmounts).reduce((s, v) => s + v, 0)}
         />
         {shopOpen && (
@@ -1330,7 +1338,7 @@ export default function OpenCity({ onBack }) {
                       Военный ангар
                     </div>
                     <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>
-                      Уровень {hangarLevel} · Слотов: {myFighters.length}/{maxF}
+                      Уровень {hangarLevel} · Слотов: {myFighters.length}/{maxF} · 🪙 {Math.floor(coinBal)} монет
                     </div>
                   </div>
                   <button
@@ -1376,19 +1384,21 @@ export default function OpenCity({ onBack }) {
                         </div>
                         {!f && (
                           <button
-                            disabled={!canOrder}
-                            onClick={() => canOrder && handleOrderFighter(hangarId, hangar.position, hangarLevel)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOrderFighter(hangarId, hangar.position, hangarLevel);
+                            }}
                             style={{
                               padding: '6px 14px',
-                              background: canOrder ? 'rgba(99,102,241,0.25)' : 'rgba(71,85,105,0.3)',
-                              border: `1px solid ${canOrder ? 'rgba(99,102,241,0.5)' : 'rgba(71,85,105,0.3)'}`,
-                              borderRadius: 8, cursor: canOrder ? 'pointer' : 'not-allowed',
-                              color: canOrder ? '#c7d2fe' : '#475569',
+                              background: 'rgba(99,102,241,0.25)',
+                              border: '1px solid rgba(99,102,241,0.5)',
+                              borderRadius: 8, cursor: 'pointer',
+                              color: '#c7d2fe',
                               fontSize: 11, fontWeight: 700,
                               display: 'flex', alignItems: 'center', gap: 6,
                             }}
                           >
-                            🪙 {HANGAR_CONFIG.fighterCoinCost} монет
+                            ✈ Заказать
                           </button>
                         )}
                       </div>

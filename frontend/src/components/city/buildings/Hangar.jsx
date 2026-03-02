@@ -13,7 +13,7 @@ import { getLevelConfig } from '../../systems/upgrades.js';
 const HANGAR_URL   = '/models/Military Tent.glb';
 useGLTF.preload(HANGAR_URL);
 
-const SCALE = 3;
+const SCALE = 1.5;
 
 // ─── GLB wrapper (placed) ────────────────────────────────────────────────────
 
@@ -163,6 +163,9 @@ function HangarGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
     }
   });
 
+  // Platform ghost — always 1 slot in preview (level unknown)
+  const platformW = 6 + 1 * 5;
+
   return (
     <group ref={groupRef}>
       <primitive
@@ -170,6 +173,14 @@ function HangarGLTFPreview({ placementPosRef, inputRef, placementRotYRef }) {
         scale={[SCALE, SCALE, SCALE]}
         position={[0, previewCloneRef.current?.y ?? 0, 0]}
       />
+      {/* Platform footprint overlay */}
+      <mesh
+        position={[HANGAR_CONFIG.platformOffsetX, 0.06, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <planeGeometry args={[platformW, 14]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.25} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
     </group>
   );
 }
@@ -209,12 +220,24 @@ function HangarGLTFPlaced({
       <LevelPlinth level={level} size={7} />
 
       {isSelected && (
-        <WorkAreaOverlay
-          width={workArea.width}
-          depth={workArea.depth}
-          color={workArea.color}
-          opacity={workArea.opacity}
-        />
+        <>
+          {/* Main hangar zone */}
+          <WorkAreaOverlay
+            width={workArea.width}
+            depth={workArea.depth}
+            color={workArea.color}
+            opacity={workArea.opacity}
+          />
+          {/* Platform zone — centred on the tarmac */}
+          <group position={[HANGAR_CONFIG.platformOffsetX, 0, 0]}>
+            <WorkAreaOverlay
+              width={6 + maxSlots * 5 + 4}
+              depth={14}
+              color="#fbbf24"
+              opacity={0.10}
+            />
+          </group>
+        </>
       )}
     </group>
   );

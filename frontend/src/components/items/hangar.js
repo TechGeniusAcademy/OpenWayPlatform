@@ -20,10 +20,10 @@ export const HANGAR_CONFIG = {
   },
   /** Height of floating badges above ground (world units) */
   badgeHeight: 9,
-  /** Cost per fighter in in-game coins */
+  /** Cost per fighter in in-game coins (0 = free) */
   fighterCoinCost: 200,
-  /** Platform offset from hangar center (world units along +X) */
-  platformOffsetX: 14,
+  /** Platform offset from hangar center (world units along -X, i.e. to the left) */
+  platformOffsetX: -14,
   /** Slots on the platform (per level) */
   maxFightersPerLevel: [1, 2, 3],
 };
