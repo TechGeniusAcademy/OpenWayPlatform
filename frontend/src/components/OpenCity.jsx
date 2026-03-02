@@ -17,6 +17,7 @@ import { canConnect, canBeSource, getTransferRule, getConveyorOutLimit, getConve
 import { calcConveyorRates } from './systems/connectionRates.js';
 import { getLevelConfig, getNextLevelConfig } from './systems/upgrades.js';
 import { useCitySync }             from './systems/citySync.js';
+import { initHp, initFighterHp, applyDamage, repairCost, findNearestDamageable, MISSILE_DAMAGE } from './systems/hpSystem.js';
 import { REAL_MS_PER_GAME_HOUR, formatGameTime } from './systems/dayNight.js';
 import { calcEnergyTotals, calcStorageTotals, calcPoweredItems, getStorages, getEnergyZone, getProductions } from './systems/energy.js';
 import { CityContext }             from './city/CityContext.js';
@@ -127,6 +128,16 @@ export default function OpenCity({ onBack }) {
   const selectedFighterIdRef = useRef(null);
   useEffect(() => { selectedFighterIdRef.current = selectedFighterId; }, [selectedFighterId]);
 
+  // ─── Object HP — declared BEFORE useCitySync so it can be persisted ─────────
+  const objectHpRef = useRef({});   // { [id]: { current, max } } for buildings + fighters
+  const [objectHp, setObjectHp] = useState({});
+  useEffect(() => { objectHpRef.current = objectHp; }, [objectHp]);
+
+  // ─── Enemy building HP — persisted so destroyed buildings survive page reload ─
+  const enemyBuildingHpRef = useRef({});
+  const [enemyBuildingHp, setEnemyBuildingHp] = useState({});
+  useEffect(() => { enemyBuildingHpRef.current = enemyBuildingHp; }, [enemyBuildingHp]);
+
   // ─── Stored amounts + points — declared BEFORE useCitySync so they can be persisted ─
   const storedAmountsRef = useRef({});
   const [storedAmounts, setStoredAmounts] = useState({});
@@ -189,6 +200,10 @@ export default function OpenCity({ onBack }) {
     setPlacedTowers,
     placedFightersRef,
     setPlacedFighters,
+    objectHpRef,
+    setObjectHp,
+    enemyBuildingHpRef,
+    setEnemyBuildingHp,
   });
   const [offlineToast, setOfflineToast] = useState(false);
   useEffect(() => {
@@ -560,12 +575,46 @@ export default function OpenCity({ onBack }) {
   const handleGroundFighterTarget = useCallback((x, z) => {
     const fid = selectedFighterIdRef.current;
     if (!fid) return;
-    const TARGET_FLY_Y = 0; // y-coordinate for the target (fighter will auto-lift in useFrame)
+    const TARGET_FLY_Y = 0;
     setPlacedFighters(prev => prev.map(f =>
       f.id === fid
-        ? { ...f, target: [x, TARGET_FLY_Y, z], state: 'flying' }
+        // Clear attackTarget when giving a movement order
+        ? { ...f, target: [x, TARGET_FLY_Y, z], state: 'flying', attackTarget: null }
         : f
     ));
+  }, []);
+
+  const handleSetAttackTarget = useCallback((fighterId, targetId, targetPos) => {
+    setPlacedFighters(prev => {
+      const next = prev.map(f =>
+        f.id === fighterId
+          ? { ...f, attackTarget: { id: targetId, position: targetPos } }
+          : f
+      );
+      placedFightersRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const handleEnemyHpChange = useCallback((compositeId, current, max) => {
+    setEnemyBuildingHp(prev => {
+      const next = { ...prev, [compositeId]: { current, max } };
+      enemyBuildingHpRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const handleEnemyBuildingDestroyed = useCallback((compositeId) => {
+    // Clear attackTarget on any fighter that was targeting this building
+    setPlacedFighters(prev => {
+      const changed = prev.some(f => f.attackTarget?.id === compositeId);
+      if (!changed) return prev;
+      const next = prev.map(f =>
+        f.attackTarget?.id === compositeId ? { ...f, attackTarget: null } : f
+      );
+      placedFightersRef.current = next;
+      return next;
+    });
   }, []);
 
   const handleOrderFighter = useCallback((hangarId, hangarPos, hangarLevel) => {
@@ -599,18 +648,92 @@ export default function OpenCity({ onBack }) {
     const offsetZ   = (slotIndex - (maxSlots - 1) / 2) * 5;
     const spawnPos  = [platformX, 0, (hangarPos[2] ?? 0) + offsetZ];
 
+    const newFighterId = Date.now();
     const newFighter = {
-      id:       Date.now(),
+      id:       newFighterId,
       hangarId,
       position: spawnPos,
       target:   null,
       state:    'idle',
     };
+    // Give fighter initial HP
+    const fighterHpEntry = initFighterHp();
+    setObjectHp(prev => {
+      const next = { ...prev, [newFighterId]: fighterHpEntry };
+      objectHpRef.current = next;
+      return next;
+    });
     setPlacedFighters(prev => {
       const next = [...prev, newFighter];
       placedFightersRef.current = next;
       return next;
     });
+  }, []); // eslint-disable-line
+
+  // ─── HP / Damage handlers ─────────────────────────────────────────────────
+  const handleBuildingDamage = useCallback((impactPos) => {
+    const hit = findNearestDamageable(
+      impactPos,
+      placedItemsRef.current,
+      placedFightersRef.current,
+      14,
+    );
+    if (!hit) return;
+    setObjectHp(prev => {
+      const current = prev[hit.id];
+      // If no HP entry yet, initialise from item type
+      let hpObj = current;
+      if (!hpObj) {
+        if (hit.type === 'fighter') {
+          hpObj = initFighterHp();
+        } else {
+          const item = placedItemsRef.current.find(i => i.id === hit.id);
+          hpObj = initHp(item?.type ?? 'unknown');
+        }
+      }
+      const updated = applyDamage(hpObj, MISSILE_DAMAGE);
+      const next = { ...prev, [hit.id]: updated };
+      objectHpRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const handleRepairObject = useCallback(async (itemId, itemType) => {
+    const hpObj = objectHpRef.current[itemId];
+    if (!hpObj) return;
+    const cost = repairCost(hpObj);
+    if (cost <= 0) return;
+    if (userPointsRef.current < cost) {
+      alert(`Нужно ${cost} баллов для восстановления! (у вас ${Math.floor(userPointsRef.current)})`);
+      return;
+    }
+    // Deduct points via backend
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/points/spend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ amount: cost, reason: `city_repair_${itemType ?? 'object'}` }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setUserPoints(data.newBalance);
+      userPointsRef.current = data.newBalance;
+    } catch {
+      return;
+    }
+    // Restore full HP
+    setObjectHp(prev => {
+      const entry = prev[itemId];
+      if (!entry) return prev;
+      const next = { ...prev, [itemId]: { ...entry, current: entry.max } };
+      objectHpRef.current = next;
+      return next;
+    });
+    setContextMenu(null);
   }, []); // eslint-disable-line
 
   // ─── Placement tracking ───────────────────────────────────────────────────
@@ -1181,6 +1304,12 @@ export default function OpenCity({ onBack }) {
             onFighterSelect={handleFighterSelect}
             onFighterUpdatePos={handleFighterUpdatePos}
             onGroundFighterTarget={handleGroundFighterTarget}
+            onSetAttackTarget={handleSetAttackTarget}
+            onEnemyBuildingDestroyed={handleEnemyBuildingDestroyed}
+            enemyBuildingHp={enemyBuildingHp}
+            onEnemyHpChange={handleEnemyHpChange}
+            objectHp={objectHp}
+            onBuildingDamage={handleBuildingDamage}
           />
         </Canvas>
 
@@ -1276,6 +1405,8 @@ export default function OpenCity({ onBack }) {
               onDeleteDrone={handleDeleteDrone}
               upgradeInfo={upgradingBuildings[String(itemId)] ?? null}
               coinUpgradeNext={coinUpgradeNext}
+              hp={objectHp[itemId] ?? null}
+              onRepair={handleRepairObject}
             />
           );
         })()}

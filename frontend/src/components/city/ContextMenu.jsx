@@ -135,6 +135,8 @@ export function ContextMenu({
   onDeleteDrone,
   upgradeInfo = null,
   coinUpgradeNext = null,
+  hp = null,          // { current, max } from objectHp
+  onRepair,           // (itemId, itemType) => void
   // eslint-disable-next-line no-unused-vars
   x, y,
 }) {
@@ -177,7 +179,13 @@ export function ContextMenu({
   const currentCfg   = getLevelConfig(itemType, itemLevel);
   const nextCfg      = nextLevel ?? (coinUpgradeNext ? getLevelConfig(itemType, itemLevel + 1) : null);
 
-  // ── Drones ─────────────────────────────────────────────────────────────────
+  // ── HP / Repair state ──────────────────────────────────────────────────────
+  const hpPct      = hp && hp.max > 0 ? Math.max(0, Math.min(1, hp.current / hp.max)) : null;
+  const isDamaged  = hpPct !== null && hpPct < 1;
+  const isDestroyed = hpPct !== null && hpPct <= 0;
+  const repairHp   = hp ? hp.max - hp.current : 0;
+  const repairPts  = Math.ceil(repairHp * 0.5); // 1 point per 2 HP (matches hpSystem.REPAIR_COST_PER_HP)
+  const hpBarColor = !hpPct ? '#e03030' : hpPct > 0.6 ? '#22dd44' : hpPct > 0.3 ? '#f5c400' : '#e03030';
   const relatedDrones = drones.filter(d => d.fromId === itemId || d.toId === itemId);
   function getBuildingLabel(id) {
     const item = placedItems.find(i => i.id === id);
@@ -391,6 +399,44 @@ export function ContextMenu({
           </div>
         )}
 
+        {/* ── HP bar section (shown when damaged) ── */}
+        {isDamaged && (
+          <div style={{
+            padding: '10px 18px',
+            borderBottom: '1px solid rgba(99,102,241,0.18)',
+          }}>
+            <div style={{
+              fontSize: 10, color: '#475569', letterSpacing: 1,
+              marginBottom: 6, fontWeight: 700,
+            }}>
+              {isDestroyed ? '⚠ РАЗРУШЕНО' : 'ПРОЧНОСТЬ'}
+            </div>
+            {/* Track */}
+            <div style={{
+              height: 8, background: 'rgba(255,255,255,0.08)',
+              borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)',
+            }}>
+              <div style={{
+                width: `${Math.round(hpPct * 100)}%`,
+                height: '100%',
+                background: hpBarColor,
+                borderRadius: 3,
+                boxShadow: `0 0 6px ${hpBarColor}88`,
+                transition: 'width 0.15s ease',
+              }} />
+            </div>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between',
+              marginTop: 4, fontSize: 10, color: '#64748b',
+            }}>
+              <span>{Math.round(hp.current)}/{hp.max} HP</span>
+              <span style={{ color: isDestroyed ? '#f87171' : '#94a3b8' }}>
+                {isDestroyed ? 'Нет функций' : `−${Math.round(repairHp)} HP`}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* ── Drone routes ── */}
         {(relatedDrones.length > 0 || canBeSource(itemType)) && (
           <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(99,102,241,0.18)' }}>
@@ -454,8 +500,8 @@ export function ContextMenu({
         )}
 
         {/* ── Action buttons ── */}
-        <div style={{ padding: '12px 18px', display: 'flex', gap: 8 }}>
-          {!LINK_TYPES.has(itemType) && (
+        <div style={{ padding: '12px 18px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {!LINK_TYPES.has(itemType) && !isDestroyed && (
             <Btn color="#60a5fa" onClick={onMove}>
               <FaArrowsAlt /> Переместить
             </Btn>
@@ -463,14 +509,22 @@ export function ContextMenu({
           <Btn color="#f87171" onClick={onSell}>
             <FaTrash /> Удалить
           </Btn>
-          {nextLevel && upgradeProgress === null && !coinUpgradeNext && (
+          {nextLevel && upgradeProgress === null && !coinUpgradeNext && !isDestroyed && (
             <Btn color="#4ade80" disabled={!canDoUpgrade} onClick={canDoUpgrade ? onUpgrade : undefined}>
               <FaArrowUp /> Улучшить
             </Btn>
           )}
-          {coinUpgradeNext && upgradeProgress === null && (
+          {coinUpgradeNext && upgradeProgress === null && !isDestroyed && (
             <Btn color="#fbbf24" disabled={!coinUpgradeNext.canAfford} onClick={coinUpgradeNext.canAfford ? onUpgrade : undefined}>
               <FaCoins /> Улучшить
+            </Btn>
+          )}
+          {isDamaged && onRepair && (
+            <Btn
+              color={isDestroyed ? '#f43f5e' : '#fb923c'}
+              onClick={() => onRepair(itemId, itemType)}
+            >
+              <FaHammer /> {isDestroyed ? `Восстановить (${repairPts} ⭐)` : `Починить (${repairPts} ⭐)`}
             </Btn>
           )}
         </div>

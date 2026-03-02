@@ -27,7 +27,6 @@ const IDLE_BOB_AMP     = 0.5;  // world units
 const IDLE_HOVER_Y     = 1.8;  // height above ground when on platform
 const ARRIVAL_DIST     = 1.5;  // snap-to-target distance
 
-const ATTACK_RANGE     = 45;   // world-units to nearest enemy building before firing
 const ATTACK_COOLDOWN  = 3.5;  // seconds between shots per fighter
 
 // ─── GLB wrapper ──────────────────────────────────────────────────────────────
@@ -241,7 +240,7 @@ function Afterburner({ flying }) {
 const _v   = new THREE.Vector3();
 const _dir = new THREE.Vector3();
 
-export function FighterUnit({ fighter, isSelected, onSelect, onUpdatePos, enemyBuildings, onFireMissile }) {
+export function FighterUnit({ fighter, isSelected, onSelect, onUpdatePos, onFireMissile }) {
   const groupRef = useRef();
   const posRef   = useRef(new THREE.Vector3(
     fighter.position[0], fighter.position[1] ?? IDLE_HOVER_Y, fighter.position[2],
@@ -250,7 +249,9 @@ export function FighterUnit({ fighter, isSelected, onSelect, onUpdatePos, enemyB
   const tRef           = useRef(0); // bob timer
   const lastFireRef    = useRef(0); // timestamp of last missile launch
 
-  const flying = fighter.state === 'flying' && !!fighter.target;
+  const flying       = fighter.state === 'flying' && !!fighter.target;
+  // attackTarget: { id, position } set when player RMBs an enemy building
+  const attackTarget = fighter.attackTarget ?? null;
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
@@ -290,24 +291,18 @@ export function FighterUnit({ fighter, isSelected, onSelect, onUpdatePos, enemyB
     groupRef.current.position.copy(posRef.current);
     groupRef.current.rotation.y = yawRef.current;
 
-    // ── Attack: fire at nearest enemy building within range ──
-    if (enemyBuildings && enemyBuildings.length > 0 && onFireMissile) {
+    // ── Attack: fire only when an explicit attackTarget is assigned (set via RMB) ──
+    if (attackTarget && onFireMissile) {
       const now = performance.now() / 1000;
       if (now - lastFireRef.current >= ATTACK_COOLDOWN) {
-        let nearest = null;
-        let nearestDist = Infinity;
-        for (const bld of enemyBuildings) {
-          const dx = bld.position[0] - posRef.current.x;
-          const dz = bld.position[2] - posRef.current.z;
-          const d2 = dx * dx + dz * dz;
-          if (d2 < nearestDist) { nearestDist = d2; nearest = bld; }
-        }
-        if (nearest && nearestDist < ATTACK_RANGE * ATTACK_RANGE) {
-          lastFireRef.current = now;
-          const fromPos = [posRef.current.x, posRef.current.y, posRef.current.z];
-          const toPos   = [nearest.position[0], (nearest.position[1] ?? 0) + 2, nearest.position[2]];
-          onFireMissile(fromPos, toPos);
-        }
+        lastFireRef.current = now;
+        const fromPos = [posRef.current.x, posRef.current.y, posRef.current.z];
+        const toPos   = [
+          attackTarget.position[0],
+          (attackTarget.position[1] ?? 0) + 2,
+          attackTarget.position[2],
+        ];
+        onFireMissile(fromPos, toPos);
       }
     }
   });

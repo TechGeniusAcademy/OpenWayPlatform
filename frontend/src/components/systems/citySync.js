@@ -42,7 +42,7 @@ function apiFetch(path, options = {}) {
  *   setConveyors?:  (conveyors: Array) => void,
  * }} opts
  */
-export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conveyorsRef, setConveyors, energyCablesRef, setEnergyCables, storedAmountsRef, setStoredAmounts, pointsAmountsRef, setPointsAmounts, buildingLevelsRef, setBuildingLevels, placedWallsRef, setPlacedWalls, placedTowersRef, setPlacedTowers, placedFightersRef, setPlacedFighters }) {
+export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conveyorsRef, setConveyors, energyCablesRef, setEnergyCables, storedAmountsRef, setStoredAmounts, pointsAmountsRef, setPointsAmounts, buildingLevelsRef, setBuildingLevels, placedWallsRef, setPlacedWalls, placedTowersRef, setPlacedTowers, placedFightersRef, setPlacedFighters, objectHpRef, setObjectHp, enemyBuildingHpRef, setEnemyBuildingHp }) {
   const [loading,      setLoading]      = useState(true);
   const [offlineHours, setOfflineHours] = useState(0);
   const [suggestedSpawn, setSuggestedSpawn] = useState(null);
@@ -61,6 +61,8 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conve
       placedWalls:    placedWallsRef?.current   ?? [],
       placedTowers:   placedTowersRef?.current  ?? [],
       placedFighters: placedFightersRef?.current ?? [],
+      buildingHp:        objectHpRef?.current        ?? {},
+      enemyBuildingHp:   enemyBuildingHpRef?.current ?? {},
     });
     apiFetch('/world', { method: 'PUT', body }).catch(err =>
       console.warn('[citySync] auto-save failed:', err),
@@ -116,9 +118,19 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conve
         }
         // Restore placed fighters (always reset to idle so mid-flight state isn't stuck)
         if (Array.isArray(data.placedFighters) && setPlacedFighters) {
-          const safe = data.placedFighters.map(f => ({ ...f, state: 'idle', target: null }));
+          const safe = data.placedFighters.map(f => ({ ...f, state: 'idle', target: null, attackTarget: null }));
           if (placedFightersRef) placedFightersRef.current = safe;
           setPlacedFighters(safe);
+        }
+        // Restore object HP (buildings + fighters)
+        if (data.buildingHp && typeof data.buildingHp === 'object' && setObjectHp) {
+          if (objectHpRef) objectHpRef.current = data.buildingHp;
+          setObjectHp(data.buildingHp);
+        }
+        // Restore enemy building HP (persisted destruction state)
+        if (data.enemyBuildingHp && typeof data.enemyBuildingHp === 'object' && setEnemyBuildingHp) {
+          if (enemyBuildingHpRef) enemyBuildingHpRef.current = data.enemyBuildingHp;
+          setEnemyBuildingHp(data.enemyBuildingHp);
         }
         setOfflineHours(data.offlineHours ?? 0);
         if (data.suggestedSpawn) setSuggestedSpawn(data.suggestedSpawn);

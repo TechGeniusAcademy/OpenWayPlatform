@@ -15,6 +15,9 @@ import { CoalGeneratorPreview, CoalGeneratorPlaced } from './buildings/CoalGener
 import { HangarPreview, HangarPlaced } from './buildings/Hangar.jsx';
 import { FighterUnit } from './buildings/FighterUnit.jsx';
 import { Missile, Explosion } from './buildings/FighterAttack.jsx';
+import { Rubble } from './buildings/Rubble.jsx';
+import { HpBar } from './HpBar.jsx';
+import { isDestroyed } from '../systems/hpSystem.js';
 import { ConveyorTargetPulse } from './ConveyorTargetPulse.jsx';
 import { ConstructionSite } from './ConstructionSite.jsx';
 import { calcConveyorRates } from '../systems/connectionRates.js';
@@ -82,6 +85,59 @@ function FighterTargetMarker({ position }) {
       <mesh ref={cross2Ref} rotation={[0, 0, Math.PI / 2]}>
         <planeGeometry args={[0.18, 2.6]} />
         <meshBasicMaterial color="#22d3ee" transparent opacity={0.6} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+// ─── Attack target indicator — permanent pulsing red crosshair on locked enemy building ───
+function AttackTargetIndicator({ position }) {
+  const ring1Ref  = useRef();
+  const ring2Ref  = useRef();
+  const cross1Ref = useRef();
+  const cross2Ref = useRef();
+  const angleRef  = useRef(0);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const pulse = 1 + Math.sin(t * 6) * 0.12;
+    const spin  = t * 1.2;
+    if (ring1Ref.current) {
+      ring1Ref.current.scale.setScalar(pulse);
+      ring1Ref.current.material.opacity = 0.75 + Math.sin(t * 6) * 0.2;
+      ring1Ref.current.rotation.z = spin;
+    }
+    if (ring2Ref.current) {
+      ring2Ref.current.scale.setScalar(1.6 - pulse * 0.3);
+      ring2Ref.current.material.opacity = 0.35;
+      ring2Ref.current.rotation.z = -spin * 0.6;
+    }
+    if (cross1Ref.current) cross1Ref.current.material.opacity = 0.7 + Math.sin(t * 8) * 0.25;
+    if (cross2Ref.current) cross2Ref.current.material.opacity = 0.7 + Math.sin(t * 8 + 1) * 0.25;
+  });
+
+  const y = (position[1] ?? 0) + 0.15;
+  return (
+    <group position={[position[0], y, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Inner spinning dashed ring */}
+      <mesh ref={ring1Ref}>
+        <ringGeometry args={[1.0, 1.55, 16]} />
+        <meshBasicMaterial color="#ef4444" transparent opacity={0.85} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {/* Outer counter-spin ring */}
+      <mesh ref={ring2Ref}>
+        <ringGeometry args={[2.1, 2.8, 12]} />
+        <meshBasicMaterial color="#fca5a5" transparent opacity={0.35} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {/* Crosshair V */}
+      <mesh ref={cross1Ref}>
+        <planeGeometry args={[0.22, 3.5]} />
+        <meshBasicMaterial color="#ef4444" transparent opacity={0.75} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      {/* Crosshair H */}
+      <mesh ref={cross2Ref} rotation={[0, 0, Math.PI / 2]}>
+        <planeGeometry args={[0.22, 3.5]} />
+        <meshBasicMaterial color="#ef4444" transparent opacity={0.75} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -218,23 +274,40 @@ function SceneInner({
   onFighterSelect,
   onFighterUpdatePos,
   onGroundFighterTarget,
+  // HP / damage
+  objectHp = {},
+  onBuildingDamage,
+  onSetAttackTarget,
+  onEnemyBuildingDestroyed,
+  // Enemy building HP — controlled from OpenCity so it can be persisted
+  enemyBuildingHp = {},
+  onEnemyHpChange,
   // Performance
   fpsRef,
   rendererStatsRef,
 }) {
-  // ── Enemy building positions for fighter targeting ──────────────────────────────
+  // ── Enemy building list (id = compositeId, includes type for HP init) ───────────
   const enemyBuildings = useMemo(() => {
     if (!otherPlayers || otherPlayers.length === 0) return [];
     const list = [];
     for (const player of otherPlayers) {
       for (const item of (player.placedItems ?? [])) {
         if (item.position) {
-          list.push({ id: `${player.userId}_${item.id}`, position: item.position });
+          list.push({
+            id:   `${player.userId}_${item.id}`,
+            position: item.position,
+            type: item.type,
+          });
         }
       }
     }
     return list;
   }, [otherPlayers]);
+
+  // ── Enemy building HP — controlled from OpenCity (persisted to DB) ─────────
+  // enemyBuildingHp is passed as a prop; keep a ref for stale-free reads in callbacks
+  const enemyBuildingHpRef = useRef(enemyBuildingHp);
+  useEffect(() => { enemyBuildingHpRef.current = enemyBuildingHp; }, [enemyBuildingHp]);
 
   // ── Active missiles and explosions ───────────────────────────────────────
   const [missiles,   setMissiles]   = useState([]);
@@ -248,11 +321,51 @@ function SceneInner({
   const handleMissileImpact = useCallback((missileId, impactPos) => {
     setMissiles(prev => prev.filter(m => m.id !== missileId));
     setExplosions(prev => [...prev, { id: Date.now() + Math.random(), position: impactPos }]);
-  }, []);
+    // Notify OpenCity to deduct HP from nearest OWN building/fighter
+    onBuildingDamage?.(impactPos);
+    // Deduct HP from nearest ENEMY building (client-side display)
+    const ENEMY_HIT_R = 12;
+    let nearestEnemy = null;
+    let nearestDist  = ENEMY_HIT_R * ENEMY_HIT_R;
+    for (const b of enemyBuildings) {
+      const dx = b.position[0] - impactPos[0];
+      const dz = b.position[2] - impactPos[2];
+      const d2 = dx * dx + dz * dz;
+      if (d2 < nearestDist) { nearestDist = d2; nearestEnemy = b; }
+    }
+    if (nearestEnemy) {
+      const MAX_HP_BY_TYPE = {
+        'town-hall': 800, 'money-factory': 400, 'energy-storage': 350,
+        'solar-panel': 200, 'street-lamp': 120, 'extractor': 300,
+        'builder-house': 250, 'coal-generator': 500, 'hangar': 600,
+      };
+      const existing = enemyBuildingHpRef.current[nearestEnemy.id];
+      const max     = existing?.max ?? (MAX_HP_BY_TYPE[nearestEnemy.type] ?? 300);
+      const current = Math.max(0, (existing?.current ?? max) - 120);
+      // Notify OpenCity — it updates state, persists to DB, clears attack target on destroy
+      onEnemyHpChange?.(nearestEnemy.id, current, max);
+      if (current === 0) onEnemyBuildingDestroyed?.(nearestEnemy.id);
+    }
+  }, [onBuildingDamage, enemyBuildings, onEnemyHpChange, onEnemyBuildingDestroyed]);
 
   const handleExplosionDone = useCallback((explosionId) => {
     setExplosions(prev => prev.filter(e => e.id !== explosionId));
   }, []);
+
+  // ── Enemy building right-click — set fighter attack target ──────────────────
+  // Use refs so the callback never gets stale even when building components
+  // are memo'd and skip re-renders (buildingPropsEqual ignores onRightClick).
+  const selectedFighterIdRef = useRef(selectedFighterId);
+  useEffect(() => { selectedFighterIdRef.current = selectedFighterId; }, [selectedFighterId]);
+  const onSetAttackTargetRef = useRef(onSetAttackTarget);
+  useEffect(() => { onSetAttackTargetRef.current = onSetAttackTarget; }, [onSetAttackTarget]);
+
+  const handleEnemyBuildingRightClick = useCallback((compositeId, position, type) => {
+    const fid = selectedFighterIdRef.current;
+    if (!fid) return; // no fighter selected
+    onSetAttackTargetRef.current?.(fid, compositeId, position);
+  }, []); // stable — reads live values via refs
+
 
   // ── Fighter target marker state ────────────────────────────────────────────
   const [fighterTargetMarker, setFighterTargetMarker] = useState(null);
@@ -332,7 +445,27 @@ function SceneInner({
       )}
 
       {/* Placed buildings — culled to SELF_RENDER_R around camera target */}
-      {placedItems.filter(item => inSelfRange(item.position)).map(item =>
+      {placedItems.filter(item => inSelfRange(item.position)).map(item => {
+        const hp = objectHp?.[item.id];
+        // Destroyed buildings show rubble instead
+        if (isDestroyed(hp)) {
+          return (
+            <group key={item.id}>
+              <Rubble position={item.position} buildingType={item.type} />
+              <HpBar position={item.position} current={0} max={hp?.max ?? 100} yOffset={2} />
+            </group>
+          );
+        }
+        const hpBar = hp && hp.current < hp.max ? (
+          <HpBar
+            key={`hp_${item.id}`}
+            position={item.position}
+            current={hp.current}
+            max={hp.max}
+            yOffset={4.5}
+          />
+        ) : null;
+        const building =
         item.type === 'solar-panel' ? (
           <SolarPanelPlaced
             key={item.id}
@@ -451,8 +584,14 @@ function SceneInner({
             onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
             level={buildingLevels?.[String(item.id)] ?? 1}
           />
-        ) : null
-      )}
+        ) : null;
+        return building ? (
+          <group key={item.id}>
+            {building}
+            {hpBar}
+          </group>
+        ) : null;
+      })}
 
       {/* Construction sites — scaffolding + progress + builder figure */}
       {Object.entries(constructingBuildings ?? {}).map(([bid, constructInfo]) => {
@@ -522,7 +661,6 @@ function SceneInner({
           isSelected={selectedFighterId === f.id}
           onSelect={() => onFighterSelect?.(f.id)}
           onUpdatePos={onFighterUpdatePos}
-          enemyBuildings={enemyBuildings}
           onFireMissile={handleFireMissile}
         />
       ))}
@@ -553,6 +691,11 @@ function SceneInner({
           position={fighterTargetMarker}
         />
       )}
+
+      {/* Attack target indicators — red crosshair on enemy buildings being attacked */}
+      {(placedFighters ?? []).filter(f => f.attackTarget).map(f => (
+        <AttackTargetIndicator key={`atk_${f.id}`} position={f.attackTarget.position} />
+      ))}
 
       {/* Transparent ground plane for fighter RMB targeting */}
       {selectedFighterId && (
@@ -650,8 +793,27 @@ function SceneInner({
           player={player}
           gameTimeRef={gameTimeRef}
           camCenter={camCenter}
+          onBuildingRightClick={handleEnemyBuildingRightClick}
+          destroyedIds={new Set(Object.entries(enemyBuildingHp).filter(([,v]) => v.current <= 0).map(([k]) => k))}
         />
       ))}
+
+      {/* HP bars above damaged enemy buildings */}
+      {enemyBuildings.filter(b => {
+        const hp = enemyBuildingHp[b.id];
+        return hp && hp.current < hp.max;
+      }).map(b => {
+        const hp = enemyBuildingHp[b.id];
+        return (
+          <HpBar
+            key={`ehp_${b.id}`}
+            position={b.position}
+            current={hp.current}
+            max={hp.max}
+            yOffset={5}
+          />
+        );
+      })}
     </>
   );
 }

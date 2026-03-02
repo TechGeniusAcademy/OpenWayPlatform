@@ -11,6 +11,7 @@
 
 import { memo, useMemo, useRef } from 'react';
 import { FaUser } from 'react-icons/fa';
+import { Rubble } from './buildings/Rubble.jsx';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -88,7 +89,7 @@ function PlayerLabel({ cx, cz, height, username }) {
 const OTHER_RENDER_R = 320;
 
 // ── OtherPlayerCity ───────────────────────────────────────────────────────────
-function OtherPlayerCityInner({ player, gameTimeRef, camCenter }) {
+function OtherPlayerCityInner({ player, gameTimeRef, camCenter, onBuildingRightClick, destroyedIds }) {
   const { username, placedItems = [], placedWalls = [], placedTowers = [], buildingLevels = {},
           conveyors = [], energyCables = [], storedAmounts = {}, pointsAmounts = {} } = player;
 
@@ -148,40 +149,61 @@ function OtherPlayerCityInner({ player, gameTimeRef, camCenter }) {
       <TerritoryRing   cx={cx} cz={cz} radius={radius} />
       <PlayerLabel     cx={cx} cz={cz} height={labelHeight} username={username} />
 
-      {/* ── Buildings — same Placed components, no interaction handlers ── */}
+      {/* ── Buildings — same Placed components, RMB forwards to parent ── */}
       {placedItems.map(item => {
-        const level = buildingLevels[String(item.id)] ?? 1;
-        const key   = `other_${player.userId}_${item.id}`;
-        const pos   = item.position;
-        const rot   = item.rotation;
+        const level       = buildingLevels[String(item.id)] ?? 1;
+        const key         = `other_${player.userId}_${item.id}`;
+        const pos         = item.position;
+        const rot         = item.rotation;
+        const compositeId = `${player.userId}_${item.id}`;
+        // Destroyed buildings show rubble instead
+        if (destroyedIds && destroyedIds.has(compositeId)) {
+          return <Rubble key={compositeId} position={pos} buildingType={item.type} />;
+        }
+        // Pass onRightClick directly to each building so their own onPointerDown
+        // (which calls stopPropagation) invokes it — avoids broken event-bubbling.
+        // The building also sets rightClickHitRef=true, preventing camera drag.
+        const attackRMB = onBuildingRightClick
+          ? () => onBuildingRightClick(compositeId, pos, item.type)
+          : undefined;
 
-        if (item.type === 'solar-panel') return (
-          <SolarPanelPlaced key={key} position={pos} rotation={rot} level={level} isPowered />
+        let building = null;
+        if (item.type === 'solar-panel') building = (
+          <SolarPanelPlaced key={key} position={pos} rotation={rot} level={level} isPowered
+            onRightClick={attackRMB} />
         );
-        if (item.type === 'money-factory') return (
-          <MoneyFactoryPlaced key={key} position={pos} rotation={rot} level={level} isPowered />
+        else if (item.type === 'money-factory') building = (
+          <MoneyFactoryPlaced key={key} position={pos} rotation={rot} level={level} isPowered
+            onRightClick={attackRMB} />
         );
-        if (item.type === 'energy-storage') return (
+        else if (item.type === 'energy-storage') building = (
           <EnergyStoragePlaced key={key} position={pos} rotation={rot} level={level}
-            isPowered currentAmounts={storedAmounts[String(item.id)] ?? {}} />
+            isPowered currentAmounts={storedAmounts[String(item.id)] ?? {}}
+            onRightClick={attackRMB} />
         );
-        if (item.type === 'town-hall') return (
+        else if (item.type === 'town-hall') building = (
           <TownHallPlaced key={key} position={pos} rotation={rot} level={level}
             currentAmounts={storedAmounts[String(item.id)] ?? {}}
-            points={pointsAmounts[String(item.id)] ?? 0} />
+            points={pointsAmounts[String(item.id)] ?? 0}
+            onRightClick={attackRMB} />
         );
-        if (item.type === 'street-lamp') return (
+        else if (item.type === 'street-lamp') building = (
           <StreetLampPlaced key={key} position={pos} rotation={rot} level={level}
-            gameTimeRef={gameTimeRef} isPowered />
+            gameTimeRef={gameTimeRef} isPowered
+            onRightClick={attackRMB} />
         );
-        if (item.type === 'extractor') return (
+        else if (item.type === 'extractor') building = (
           <ExtractorPlaced key={key} position={pos} rotation={rot} level={level}
-            oreType={item.oreType} currentAmounts={storedAmounts[String(item.id)] ?? {}} isPowered />
+            oreType={item.oreType} currentAmounts={storedAmounts[String(item.id)] ?? {}} isPowered
+            onRightClick={attackRMB} />
         );
-        if (item.type === 'builder-house') return (
-          <BuilderHousePlaced key={key} position={pos} rotation={rot} level={level} />
+        else if (item.type === 'builder-house') building = (
+          <BuilderHousePlaced key={key} position={pos} rotation={rot} level={level}
+            onRightClick={attackRMB} />
         );
-        return null;
+
+        if (!building) return null;
+        return building;
       })}
 
       {/* ── Drones ────────────────────────────────────────────────────── */}

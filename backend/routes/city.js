@@ -73,6 +73,12 @@ async function ensureTable() {
   await pool.query(`
     ALTER TABLE city_worlds ADD COLUMN IF NOT EXISTS placed_fighters JSONB NOT NULL DEFAULT '[]'
   `);
+  await pool.query(`
+    ALTER TABLE city_worlds ADD COLUMN IF NOT EXISTS building_hp JSONB NOT NULL DEFAULT '{}'
+  `);
+  await pool.query(`
+    ALTER TABLE city_worlds ADD COLUMN IF NOT EXISTS enemy_building_hp JSONB NOT NULL DEFAULT '{}'
+  `);
 }
 ensureTable().catch(console.error);
 
@@ -165,7 +171,9 @@ router.get('/world', auth, async (req, res) => {
       buildingLevels: row.building_levels ?? {},
       placedWalls:    row.placed_walls    ?? [],
       placedTowers:   row.placed_towers   ?? [],
-      placedFighters: row.placed_fighters ?? [],
+      placedFighters:  row.placed_fighters   ?? [],
+      buildingHp:      row.building_hp        ?? {},
+      enemyBuildingHp: row.enemy_building_hp  ?? {},
       suggestedSpawn,
       offlineHours: parseFloat((deltaGameHours).toFixed(2)),
     });
@@ -182,28 +190,30 @@ router.get('/world', auth, async (req, res) => {
 router.put('/world', auth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { gameTimeHours, placedItems, conveyors, energyCables, storedAmounts, pointsAmounts, buildingLevels, placedWalls, placedTowers, placedFighters } = req.body;
+    const { gameTimeHours, placedItems, conveyors, energyCables, storedAmounts, pointsAmounts, buildingLevels, placedWalls, placedTowers, placedFighters, buildingHp, enemyBuildingHp } = req.body;
 
     if (typeof gameTimeHours !== 'number' || !Array.isArray(placedItems)) {
       return res.status(400).json({ error: 'Неверный формат данных' });
     }
 
     await pool.query(
-      `INSERT INTO city_worlds (user_id, game_time_hours, last_saved_at, placed_items, conveyors, energy_cables, stored_amounts, points_amounts, building_levels, placed_walls, placed_towers, placed_fighters)
-       VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `INSERT INTO city_worlds (user_id, game_time_hours, last_saved_at, placed_items, conveyors, energy_cables, stored_amounts, points_amounts, building_levels, placed_walls, placed_towers, placed_fighters, building_hp, enemy_building_hp)
+       VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        ON CONFLICT (user_id) DO UPDATE
-         SET game_time_hours = EXCLUDED.game_time_hours,
-             last_saved_at   = NOW(),
-             placed_items    = EXCLUDED.placed_items,
-             conveyors       = EXCLUDED.conveyors,
-             energy_cables   = EXCLUDED.energy_cables,
-             stored_amounts  = EXCLUDED.stored_amounts,
-             points_amounts  = EXCLUDED.points_amounts,
-             building_levels = EXCLUDED.building_levels,
-             placed_walls    = EXCLUDED.placed_walls,
-             placed_towers   = EXCLUDED.placed_towers,
-             placed_fighters = EXCLUDED.placed_fighters,
-             updated_at      = NOW()`,
+         SET game_time_hours    = EXCLUDED.game_time_hours,
+             last_saved_at      = NOW(),
+             placed_items       = EXCLUDED.placed_items,
+             conveyors          = EXCLUDED.conveyors,
+             energy_cables      = EXCLUDED.energy_cables,
+             stored_amounts     = EXCLUDED.stored_amounts,
+             points_amounts     = EXCLUDED.points_amounts,
+             building_levels    = EXCLUDED.building_levels,
+             placed_walls       = EXCLUDED.placed_walls,
+             placed_towers      = EXCLUDED.placed_towers,
+             placed_fighters    = EXCLUDED.placed_fighters,
+             building_hp        = EXCLUDED.building_hp,
+             enemy_building_hp  = EXCLUDED.enemy_building_hp,
+             updated_at         = NOW()`,
       [
         userId,
         gameTimeHours % 24,
@@ -216,6 +226,8 @@ router.put('/world', auth, async (req, res) => {
         JSON.stringify(placedWalls ?? []),
         JSON.stringify(placedTowers ?? []),
         JSON.stringify((placedFighters ?? []).map(f => ({ ...f, state: 'idle', target: null }))),
+        JSON.stringify(buildingHp ?? {}),
+        JSON.stringify(enemyBuildingHp ?? {}),
       ],
     );
 
