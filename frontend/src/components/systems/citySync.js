@@ -42,7 +42,7 @@ function apiFetch(path, options = {}) {
  *   setConveyors?:  (conveyors: Array) => void,
  * }} opts
  */
-export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conveyorsRef, setConveyors, energyCablesRef, setEnergyCables, storedAmountsRef, setStoredAmounts, pointsAmountsRef, setPointsAmounts, buildingLevelsRef, setBuildingLevels, placedWallsRef, setPlacedWalls, placedTowersRef, setPlacedTowers }) {
+export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conveyorsRef, setConveyors, energyCablesRef, setEnergyCables, storedAmountsRef, setStoredAmounts, pointsAmountsRef, setPointsAmounts, buildingLevelsRef, setBuildingLevels, placedWallsRef, setPlacedWalls, placedTowersRef, setPlacedTowers, placedFightersRef, setPlacedFighters }) {
   const [loading,      setLoading]      = useState(true);
   const [offlineHours, setOfflineHours] = useState(0);
   const [suggestedSpawn, setSuggestedSpawn] = useState(null);
@@ -58,8 +58,9 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conve
       storedAmounts: storedAmountsRef?.current ?? {},
       pointsAmounts: pointsAmountsRef?.current ?? {},
       buildingLevels: buildingLevelsRef?.current ?? {},
-      placedWalls:   placedWallsRef?.current ?? [],
-      placedTowers:  placedTowersRef?.current ?? [],
+      placedWalls:    placedWallsRef?.current   ?? [],
+      placedTowers:   placedTowersRef?.current  ?? [],
+      placedFighters: placedFightersRef?.current ?? [],
     });
     apiFetch('/world', { method: 'PUT', body }).catch(err =>
       console.warn('[citySync] auto-save failed:', err),
@@ -112,6 +113,12 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conve
         if (Array.isArray(data.placedTowers) && setPlacedTowers) {
           if (placedTowersRef) placedTowersRef.current = data.placedTowers;
           setPlacedTowers(data.placedTowers);
+        }
+        // Restore placed fighters (always reset to idle so mid-flight state isn't stuck)
+        if (Array.isArray(data.placedFighters) && setPlacedFighters) {
+          const safe = data.placedFighters.map(f => ({ ...f, state: 'idle', target: null }));
+          if (placedFightersRef) placedFightersRef.current = safe;
+          setPlacedFighters(safe);
         }
         setOfflineHours(data.offlineHours ?? 0);
         if (data.suggestedSpawn) setSuggestedSpawn(data.suggestedSpawn);

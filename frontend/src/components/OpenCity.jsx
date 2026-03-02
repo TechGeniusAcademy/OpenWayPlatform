@@ -187,6 +187,8 @@ export default function OpenCity({ onBack }) {
     setPlacedWalls,
     placedTowersRef,
     setPlacedTowers,
+    placedFightersRef,
+    setPlacedFighters,
   });
   const [offlineToast, setOfflineToast] = useState(false);
   useEffect(() => {
