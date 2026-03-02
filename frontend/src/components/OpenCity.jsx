@@ -26,10 +26,29 @@ import { useOtherPlayers }         from './systems/useOtherPlayers.js';
 import { HUD }                     from './city/HUD.jsx';
 import { ShopModal }               from './city/ShopModal.jsx';
 import { ContextMenu }             from './city/ContextMenu.jsx';
+import { MiniMap }                 from './city/MiniMap.jsx';
+import { WaypointMarkers }         from './city/WaypointMarkers.jsx';
 
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export default function OpenCity({ onBack }) {
+  const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [tabOpen,       setTabOpen]       = useState(false);
+  const [username,      setUsername]      = useState('');
+  const [waypoints,     setWaypoints]     = useState(() => {
+    try { return JSON.parse(localStorage.getItem('mapWaypoints') ?? '[]'); } catch { return []; }
+  });
+  const addWaypoint    = (x, z, name) => setWaypoints(prev => {
+    const next = [...prev, { id: Date.now(), x, z, name }];
+    localStorage.setItem('mapWaypoints', JSON.stringify(next));
+    return next;
+  });
+  const removeWaypoint = (id) => setWaypoints(prev => {
+    const next = prev.filter(w => w.id !== id);
+    localStorage.setItem('mapWaypoints', JSON.stringify(next));
+    return next;
+  });
+
   const keysRef      = useRef({});
   const camTargetRef = useRef({ x: 0, z: 0 });
   const camStateRef  = useRef({ zoom: 50, rotY: 0 });
@@ -175,6 +194,7 @@ export default function OpenCity({ onBack }) {
         if (typeof u?.id === 'number') setUserId(u.id);
         if (typeof u?.experience === 'number') setUserXp(u.experience);
         if (typeof u?.points === 'number') { setUserPoints(u.points); userPointsRef.current = u.points; }
+        if (typeof u?.username === 'string') setUsername(u.username);
       })
       .catch(() => {});
   }, []);
@@ -1014,9 +1034,14 @@ export default function OpenCity({ onBack }) {
         setSelectedPlacedId(null);
       }
       if (e.code === 'F3') { setDebugOpen(v => !v); e.preventDefault(); return; }
+      if (e.code === 'KeyM') { setMapFullscreen(v => !v); e.preventDefault(); return; }
+      if (e.code === 'Tab') { setTabOpen(true); e.preventDefault(); return; }
       e.preventDefault?.();
     };
-    const up = (e) => { keysRef.current[e.code] = false; };
+    const up = (e) => {
+      keysRef.current[e.code] = false;
+      if (e.code === 'Tab') setTabOpen(false);
+    };
     window.addEventListener('keydown', down, { passive: false });
     window.addEventListener('keyup',   up);
     return () => {
@@ -1311,7 +1336,73 @@ export default function OpenCity({ onBack }) {
             objectHp={objectHp}
             onBuildingDamage={handleBuildingDamage}
           />
+          <WaypointMarkers waypoints={waypoints} />
         </Canvas>
+
+        <MiniMap
+          placedItems={placedItems}
+          otherPlayers={otherPlayers}
+          placedFighters={placedFighters}
+          enemyBuildingHp={enemyBuildingHp}
+          camTargetRef={camTargetRef}
+          camStateRef={camStateRef}
+          onJump={(x, z) => { camTargetRef.current = { x, z }; }}
+          waypoints={waypoints}
+          onAddWaypoint={addWaypoint}
+          onRemoveWaypoint={removeWaypoint}
+          fullscreen={mapFullscreen}
+          onToggleFullscreen={() => setMapFullscreen(v => !v)}
+          ownUsername={username}
+        />
+
+        {/* ── Tab overlay: online players ── */}
+        {tabOpen && (
+          <div style={{
+            position: 'fixed', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 400,
+            background: 'rgba(10,20,35,0.92)',
+            border: '1.5px solid rgba(148,163,184,0.25)',
+            borderRadius: 12,
+            boxShadow: '0 0 60px rgba(0,0,0,0.9)',
+            backdropFilter: 'blur(8px)',
+            minWidth: 320, maxWidth: 440,
+            padding: '18px 24px',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: 14 }}>
+              ИГРОКИ ОНЛАЙН — {otherPlayers.length + 1}
+            </div>
+            {/* Own row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0',
+                          borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#22d3ee',
+                             boxShadow: '0 0 6px #22d3ee', flexShrink: 0 }} />
+              <span style={{ color: '#22d3ee', fontSize: 15, fontWeight: 700, flex: 1 }}>
+                {username || 'Вы'}
+              </span>
+              <span style={{ fontSize: 11, color: '#64748b' }}>Вы</span>
+            </div>
+            {otherPlayers.map((p, i) => (
+              <div key={p.userId} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0',
+                borderBottom: i < otherPlayers.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+              }}>
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#ef4444',
+                               boxShadow: '0 0 6px #ef4444', flexShrink: 0 }} />
+                <span style={{ color: '#f8a3a3', fontSize: 14, fontWeight: 500, flex: 1 }}>
+                  {p.username ?? `#${p.userId}`}
+                </span>
+                <span style={{ fontSize: 11, color: '#64748b' }}>
+                  {(p.placedItems ?? []).length} зд.
+                </span>
+              </div>
+            ))}
+            <div style={{ marginTop: 12, fontSize: 10, color: '#374151', textAlign: 'center' }}>
+              Отпустите Tab чтобы закрыть
+            </div>
+          </div>
+        )}
 
         <HUD
           pos={displayPos}
