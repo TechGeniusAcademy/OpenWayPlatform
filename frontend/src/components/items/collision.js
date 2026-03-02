@@ -46,6 +46,10 @@ export const ITEM_FOOTPRINTS = {
     hw: 5,
     hd: 5,
   },
+  'hangar': {
+    hw: 8,
+    hd: 8,
+  },
 };
 
 // ─── Collision check ──────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import {
   FaSun, FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark,
   FaHardHat, FaLink, FaBolt, FaHome, FaMedal,
   FaCoins, FaTimes, FaStore, FaHammer, FaInfoCircle, FaShieldAlt, FaChessRook,
+  FaFighterJet,
 } from 'react-icons/fa';
 import { GiMining, GiFireBowl } from 'react-icons/gi';
 import styles from '../OpenCity.module.css';
@@ -14,6 +15,7 @@ const TABS = [
   { id: 'production', label: 'Производство', Icon: FaIndustry,   color: '#6366f1' },
   { id: 'logistics',  label: 'Логистика',    Icon: FaLink,       color: '#06b6d4' },
   { id: 'builders',   label: 'Строители',    Icon: FaHardHat,    color: '#f97316' },
+  { id: 'military',   label: 'Военные',      Icon: FaFighterJet, color: '#8b5cf6' },
   { id: 'defence',    label: 'Защита',       Icon: FaShieldAlt,  color: '#ef4444' },
 ];
 
@@ -396,6 +398,36 @@ export function ShopModal({
                 <p style={{ fontSize: 10, color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
                   Здания внутри рабочей зоны Солнечной панели заряжаются
                   автоматически. Кабели не нужны.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Military ── */}
+          {activeTab === 'military' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <ShopCard
+                Icon={FaFighterJet} iconColor="#8b5cf6"
+                name="Военный ангар"
+                desc="Размещайте истребители на тарм-платформе рядом с ангаром. ЛКМ для управления. Ур.1 → 1 истребитель"
+                {...P('hangar')}
+                disabled={itemDisabled('hangar')} disabledReason={itemDisabled('hangar')}
+                onPlace={() => { onBuy('hangar'); onClose(); }}
+              />
+              <div style={{
+                border: '1px solid rgba(139,92,246,0.25)',
+                borderRadius: 10, padding: '14px 12px',
+                background: 'rgba(139,92,246,0.04)',
+                display: 'flex', flexDirection: 'column', gap: 6,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#a78bfa' }}>
+                  <FaFighterJet style={{ fontSize: 14 }} />
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>Управление истребителями</span>
+                </div>
+                <p style={{ fontSize: 10, color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                  ЛКМ на ангар → заказать самолёт за 200 монет.
+                  ЛКМ на истребитель → выделить (голубое кольцо).
+                  ПКМ на землю → задать точку полёта.
                 </p>
               </div>
             </div>

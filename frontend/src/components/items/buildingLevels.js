@@ -303,4 +303,32 @@ export const LEVEL_CONFIGS = {
       description: '3 строителя — максимальная производительность',
     },
   ],
+
+  // ── Military Hangar (3 levels) ───────────────────────────────────────────────
+  'hangar': [
+    {
+      level: 1, name: 'Полевой ангар',
+      pointsCost: 0,   xpRequired: 0,
+      maxFighters: 1,  scaleBonus: 0, glowIntensity: 0,
+      accentColor: '#6366f1',
+      upgradeDurationMs: 30_000,
+      description: 'Вмещает 1 истребитель',
+    },
+    {
+      level: 2, name: 'Боевая база',
+      pointsCost: 20,  xpRequired: 500,
+      maxFighters: 2,  scaleBonus: 0.06, glowIntensity: 0.15,
+      accentColor: '#8b5cf6',
+      upgradeDurationMs: 60_000,
+      description: 'Вмещает 2 истребителя',
+    },
+    {
+      level: 3, name: 'Военная крепость',
+      pointsCost: 55,  xpRequired: 2000,
+      maxFighters: 3,  scaleBonus: 0.12, glowIntensity: 0.35,
+      accentColor: '#a855f7',
+      upgradeDurationMs: 120_000,
+      description: 'Вмещает 3 истребителя',
+    },
+  ],
 };

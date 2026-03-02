@@ -6,7 +6,7 @@ import {
   FaSun, FaCoins, FaBolt, FaMoon, FaCloudSun,
   FaShieldAlt, FaChessRook,
   FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark, FaHome,
-  FaHardHat, FaArrowUp, FaBuilding, FaMedal,
+  FaHardHat, FaArrowUp, FaBuilding, FaMedal, FaFighterJet,
 } from 'react-icons/fa';
 import { MdArrowBack } from 'react-icons/md';
 import { GiBattery100, GiMining, GiFireBowl, GiWhirlwind } from 'react-icons/gi';
@@ -178,6 +178,7 @@ const HOTBAR_ITEMS = [
   { key: '6', type: 'extractor',      Icon: GiMining,      color: '#f97316', name: 'Добытчик руды' },
   { key: '7', type: 'builder-house',    Icon: FaHome,        color: '#fb923c', name: 'Дом строителя' },
   { key: '8', type: 'coal-generator',   Icon: GiFireBowl,    color: '#f97316', name: 'Угольный генератор' },
+  { key: '9', type: 'hangar',            Icon: FaFighterJet,  color: '#6366f1', name: 'Военный ангар' },
 ];
 
 function BuildingHotbar({ onStartPlacing, placingItem }) {

@@ -12,6 +12,8 @@ import { StreetLampPreview, StreetLampPlaced } from './buildings/StreetLamp.jsx'
 import { ExtractorPreview, ExtractorPlaced } from './buildings/Extractor.jsx';
 import { BuilderHousePreview, BuilderHousePlaced, BuilderAtWork, BuilderRunner, UpgradeBadgeInline } from './buildings/BuilderHouse.jsx';
 import { CoalGeneratorPreview, CoalGeneratorPlaced } from './buildings/CoalGenerator.jsx';
+import { HangarPreview, HangarPlaced } from './buildings/Hangar.jsx';
+import { FighterUnit } from './buildings/FighterUnit.jsx';
 import { ConveyorTargetPulse } from './ConveyorTargetPulse.jsx';
 import { ConstructionSite } from './ConstructionSite.jsx';
 import { calcConveyorRates } from '../systems/connectionRates.js';
@@ -101,6 +103,7 @@ const BUILDING_HALF_SIZE = {
   'merger':         { hw: 2.0, hh: 2.0 },
   'builder-house':  { hw: 3.5, hh: 4.0 },
   'coal-generator': { hw: 5.0, hh: 5.0 },
+  'hangar':          { hw: 8.0, hh: 6.0 },
 };
 
 // ─── View-distance culling radii ─────────────────────────────────────────────
@@ -145,6 +148,12 @@ function SceneInner({
   onWallRightClick,
   onTowerRightClick,
   otherPlayers,
+  // Fighters
+  placedFighters,
+  selectedFighterId,
+  onFighterSelect,
+  onFighterUpdatePos,
+  onGroundFighterTarget,
   // Performance
   fpsRef,
   rendererStatsRef,
@@ -217,6 +226,9 @@ function SceneInner({
       )}
       {placingItem === 'coal-generator' && (
         <CoalGeneratorPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      )}
+      {placingItem === 'hangar' && (
+        <HangarPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
       )}
 
       {/* Placed buildings — culled to SELF_RENDER_R around camera target */}
@@ -329,6 +341,16 @@ function SceneInner({
             currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
             level={buildingLevels?.[String(item.id)] ?? 1}
           />
+        ) : item.type === 'hangar' ? (
+          <HangarPlaced
+            key={item.id}
+            position={item.position}
+            rotation={item.rotation}
+            isSelected={selectedPlacedId === item.id}
+            onSelect={() => setSelectedPlacedId(item.id)}
+            onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
+            level={buildingLevels?.[String(item.id)] ?? 1}
+          />
         ) : null
       )}
 
@@ -391,6 +413,38 @@ function SceneInner({
         <Drone key={drone.id} fromId={drone.fromId} toId={drone.toId}
           placedItems={placedItems} effectiveRate={droneRates.get(drone.id) ?? 0} />
       ))}
+
+      {/* Fighter jets */}
+      {(placedFighters ?? []).filter(f => inSelfRange(f.position)).map(f => (
+        <FighterUnit
+          key={f.id}
+          fighter={f}
+          isSelected={selectedFighterId === f.id}
+          onSelect={() => onFighterSelect?.(f.id)}
+          onUpdatePos={onFighterUpdatePos}
+        />
+      ))}
+
+      {/* Transparent ground plane for fighter RMB targeting */}
+      {selectedFighterId && (
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, 0.03, 0]}
+          onPointerDown={(e) => {
+            if (e.button === 2) {
+              e.stopPropagation();
+              onGroundFighterTarget?.(e.point.x, e.point.z);
+            } else if (e.button === 0) {
+              e.stopPropagation();
+              // Deselect fighter if clicking empty ground
+              onFighterSelect?.(null);
+            }
+          }}
+        >
+          <planeGeometry args={[2000, 2000]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
 
 
       {/* ── Wall & Tower system ─────────────────────────────────────────── */}

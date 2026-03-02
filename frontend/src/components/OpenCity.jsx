@@ -7,6 +7,8 @@ import './items/solarPanel.js';      // side-effect: registers solar-panel energ
 import './items/townHall.js';         // side-effect: registers town-hall storage
 import './items/extractor.js';        // side-effect: registers extractor storage
 import './items/coalGenerator.js';    // side-effect: registers coal-generator storage + production
+import './items/hangar.js';           // side-effect: registers hangar config
+import { HANGAR_CONFIG } from './items/hangar.js';
 import { findNearestOreDeposit, canMineOre } from './systems/oreRegistry.js';
 import { countFreeBuilders, countTotalBuilders, countPlacedType, findIdleBuilderHousePos } from './systems/builderSystem.js';
 import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, CONSTRUCTION_DURATION_MS, BUILDER_HOUSE_EXTRA_COST_COINS } from './items/shopPrices.js';
@@ -115,6 +117,15 @@ export default function OpenCity({ onBack }) {
   useEffect(() => { towerModeRef.current = towerMode; }, [towerMode]);
   // Live cursor pos updated by CityScene ground plane via ref — no React re-render per frame
   const wallCursorRef = useRef(null);
+
+  // ─── Fighter / Hangar state ────────────────────────────────────────────────
+  const [placedFighters,    setPlacedFighters]    = useState([]);
+  // { id, hangarId, position:[x,y,z], target:[x,y,z]|null, state:'idle'|'flying' }
+  const placedFightersRef = useRef([]);
+  useEffect(() => { placedFightersRef.current = placedFighters; }, [placedFighters]);
+  const [selectedFighterId, setSelectedFighterId] = useState(null);
+  const selectedFighterIdRef = useRef(null);
+  useEffect(() => { selectedFighterIdRef.current = selectedFighterId; }, [selectedFighterId]);
 
   // ─── Stored amounts + points — declared BEFORE useCitySync so they can be persisted ─
   const storedAmountsRef = useRef({});
@@ -527,6 +538,71 @@ export default function OpenCity({ onBack }) {
     const newTower = { id: Date.now(), position: [snapped.x, 0, snapped.z], rotation: 0, level: 1 };
     setPlacedTowers(p => { const n = [...p, newTower]; placedTowersRef.current = n; return n; });
     setTowerMode(false); towerModeRef.current = false;
+  }, []); // eslint-disable-line
+
+  // ─── Fighter control handlers ─────────────────────────────────────────────
+  const handleFighterSelect = useCallback((id) => {
+    setSelectedFighterId(prev => (prev === id ? null : id));
+    // Deselect any placed building when a fighter is selected
+    if (id != null) setSelectedPlacedId(null);
+  }, []); // eslint-disable-line
+
+  const handleFighterUpdatePos = useCallback((id, newPos, newState, newTarget) => {
+    setPlacedFighters(prev => prev.map(f =>
+      f.id === id
+        ? { ...f, position: newPos, state: newState ?? f.state, target: newTarget !== undefined ? newTarget : f.target }
+        : f
+    ));
+  }, []);
+
+  const handleGroundFighterTarget = useCallback((x, z) => {
+    const fid = selectedFighterIdRef.current;
+    if (!fid) return;
+    const TARGET_FLY_Y = 0; // y-coordinate for the target (fighter will auto-lift in useFrame)
+    setPlacedFighters(prev => prev.map(f =>
+      f.id === fid
+        ? { ...f, target: [x, TARGET_FLY_Y, z], state: 'flying' }
+        : f
+    ));
+  }, []);
+
+  const handleOrderFighter = useCallback((hangarId, hangarPos, hangarLevel) => {
+    const coinBal = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
+    const cost = HANGAR_CONFIG.fighterCoinCost;
+    if (coinBal < cost) return;
+
+    // Deduct coins
+    let remaining = cost;
+    const next = { ...storedAmountsRef.current };
+    for (const sid of Object.keys(next)) {
+      if (remaining <= 0) break;
+      const c = next[sid]?.coins ?? 0;
+      if (c > 0) {
+        const take = Math.min(c, remaining);
+        next[sid] = { ...next[sid], coins: c - take };
+        remaining -= take;
+      }
+    }
+    storedAmountsRef.current = next;
+    setStoredAmounts({ ...next });
+
+    // Spawn fighter on platform next to hangar
+    const maxSlots  = HANGAR_CONFIG.maxFightersPerLevel[Math.min(hangarLevel, 3) - 1] ?? 1;
+    const existing  = placedFightersRef.current.filter(f => f.hangarId === hangarId).length;
+    const slotIndex = existing; // 0-based slot index on platform
+    const platformX = (hangarPos[0] ?? 0) + HANGAR_CONFIG.platformOffsetX;
+    // Spread fighters along the Z axis of the platform
+    const offsetZ = (slotIndex - (maxSlots - 1) / 2) * 5;
+    const spawnPos = [platformX, 0, (hangarPos[2] ?? 0) + offsetZ];
+
+    const newFighter = {
+      id:       Date.now(),
+      hangarId,
+      position: spawnPos,
+      target:   null,
+      state:    'idle',
+    };
+    setPlacedFighters(prev => [...prev, newFighter]);
   }, []); // eslint-disable-line
 
   // ─── Placement tracking ───────────────────────────────────────────────────
@@ -1089,6 +1165,11 @@ export default function OpenCity({ onBack }) {
             onWallRightClick={handleWallRightClick}
             onTowerRightClick={handleTowerRightClick}
             otherPlayers={otherPlayers}
+            placedFighters={placedFighters}
+            selectedFighterId={selectedFighterId}
+            onFighterSelect={handleFighterSelect}
+            onFighterUpdatePos={handleFighterUpdatePos}
+            onGroundFighterTarget={handleGroundFighterTarget}
           />
         </Canvas>
 
@@ -1195,6 +1276,139 @@ export default function OpenCity({ onBack }) {
             <span>Загрузка мира…</span>
           </div>
         )}
+
+        {/* ── Hangar Modal (LMB click on hangar) ─────────────────────────── */}
+        {selectedPlacedId && (() => {
+          const hangar = placedItems.find(i => i.id === selectedPlacedId);
+          if (!hangar || hangar.type !== 'hangar') return null;
+          const hangarId    = hangar.id;
+          const hangarLevel = buildingLevels[String(hangarId)] ?? 1;
+          const maxF        = HANGAR_CONFIG.maxFightersPerLevel[Math.min(hangarLevel, 3) - 1] ?? 1;
+          const myFighters  = placedFighters.filter(f => f.hangarId === hangarId);
+          const coinBal     = Object.values(storedAmounts).reduce((s, v) => s + (v?.coins ?? 0), 0);
+          const canOrder    = myFighters.length < maxF && coinBal >= HANGAR_CONFIG.fighterCoinCost;
+
+          return (
+            <div
+              style={{
+                position: 'fixed', inset: 0,
+                background: 'rgba(0,0,0,0.65)',
+                zIndex: 3001,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+              onMouseDown={() => setSelectedPlacedId(null)}
+            >
+              <div
+                style={{
+                  background: 'rgba(10,15,28,0.98)',
+                  border: '1px solid rgba(99,102,241,0.45)',
+                  borderRadius: 16,
+                  boxShadow: '0 12px 60px rgba(0,0,0,0.8)',
+                  width: 420,
+                  maxWidth: 'calc(100vw - 32px)',
+                  fontFamily: 'monospace',
+                  color: '#e2e8f0',
+                  overflow: 'hidden',
+                }}
+                onMouseDown={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '14px 18px',
+                  borderBottom: '1px solid rgba(99,102,241,0.3)',
+                  background: 'linear-gradient(90deg, rgba(99,102,241,0.12), transparent)',
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: 'rgba(99,102,241,0.18)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#818cf8', fontSize: 18,
+                  }}>✈</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>
+                      Военный ангар
+                    </div>
+                    <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>
+                      Уровень {hangarLevel} · Слотов: {myFighters.length}/{maxF}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedPlacedId(null)}
+                    style={{
+                      marginLeft: 'auto',
+                      background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)',
+                      borderRadius: 6, width: 28, height: 28, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#64748b', fontSize: 13,
+                    }}
+                  >✕</button>
+                </div>
+
+                {/* Fighter slots */}
+                <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {Array.from({ length: maxF }).map((_, i) => {
+                    const f = myFighters[i];
+                    return (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '10px 14px',
+                        borderRadius: 10,
+                        background: f ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${f ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                      }}>
+                        <div style={{ fontSize: 22 }}>✈</div>
+                        <div style={{ flex: 1 }}>
+                          {f ? (
+                            <>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: '#c7d2fe' }}>
+                                Истребитель #{i + 1}
+                              </div>
+                              <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>
+                                {f.state === 'flying' ? '🔵 Летит к цели' : '🟢 На платформе'}
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ fontSize: 11, color: '#475569' }}>
+                              Слот пустой
+                            </div>
+                          )}
+                        </div>
+                        {!f && (
+                          <button
+                            disabled={!canOrder}
+                            onClick={() => canOrder && handleOrderFighter(hangarId, hangar.position, hangarLevel)}
+                            style={{
+                              padding: '6px 14px',
+                              background: canOrder ? 'rgba(99,102,241,0.25)' : 'rgba(71,85,105,0.3)',
+                              border: `1px solid ${canOrder ? 'rgba(99,102,241,0.5)' : 'rgba(71,85,105,0.3)'}`,
+                              borderRadius: 8, cursor: canOrder ? 'pointer' : 'not-allowed',
+                              color: canOrder ? '#c7d2fe' : '#475569',
+                              fontSize: 11, fontWeight: 700,
+                              display: 'flex', alignItems: 'center', gap: 6,
+                            }}
+                          >
+                            🪙 {HANGAR_CONFIG.fighterCoinCost} монет
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Hint */}
+                  <div style={{
+                    marginTop: 4, padding: '8px 12px', borderRadius: 8,
+                    background: 'rgba(34,211,238,0.05)',
+                    border: '1px solid rgba(34,211,238,0.15)',
+                    fontSize: 10, color: '#94a3b8', lineHeight: 1.6,
+                  }}>
+                    💡 ЛКМ на истребителя — выделить · ПКМ на землю — задать цель полёта
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {offlineToast && (
           <div className={styles.offlineToast}>

@@ -16,6 +16,7 @@ export const ITEM_POINT_COST = {
   'merger':          40,
   'builder-house':    0,  // first one free; others cost coins (see below)
   'coal-generator': 300,
+  'hangar':          600,
 };
 
 /** In-game coin cost for the 2nd and 3rd builder house. */
@@ -33,6 +34,7 @@ export const CONSTRUCTION_DURATION_MS = {
   'town-hall':       45_000,
   'extractor':       15_000,
   'coal-generator':  20_000,
+  'hangar':          30_000,
   'splitter':         8_000,
   'merger':           8_000,
 };

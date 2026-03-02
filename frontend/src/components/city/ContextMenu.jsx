@@ -6,7 +6,7 @@ import {
   FaHardHat, FaLink, FaBolt, FaCodeBranch, FaHome, FaMedal,
   FaStar, FaArrowUp, FaArrowsAlt, FaTrash, FaTimes, FaCog,
   FaExclamationTriangle, FaHammer, FaShieldAlt, FaChessRook, FaCoins,
-  FaRobot, FaLongArrowAltRight, FaPlus,
+  FaRobot, FaLongArrowAltRight, FaPlus, FaFighterJet,
 } from 'react-icons/fa';
 import { MdCallMerge } from 'react-icons/md';
 import { GiMining, GiFireBowl } from 'react-icons/gi';
@@ -24,6 +24,7 @@ const BUILDING_LABELS = {
   'cable':          'Энергокабель',
   'extractor':      'Добытчик руды',
   'coal-generator': 'Угольный генератор',
+  'hangar':          'Военный ангар',
   'builder-house':  'Дом строителя',
   'wall':           'Стена',
   'tower':          'Башня',
@@ -42,6 +43,7 @@ const BUILDING_ICONS = {
   'cable':          FaBolt,
   'extractor':      GiMining,
   'coal-generator': GiFireBowl,
+  'hangar':          FaFighterJet,
   'builder-house':  FaHome,
   'wall':           FaShieldAlt,
   'tower':          FaChessRook,
