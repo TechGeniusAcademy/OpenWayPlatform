@@ -255,8 +255,8 @@ export default function FloatingChat() {
 
             {/* Private chats */}
             {privateChats.map(chat => {
-              const name      = chat.chat_name || chat.other_user_name || "Пользователь";
-              const avatarSrc = chat.other_user_avatar ? `${BASE_URL}${chat.other_user_avatar}` : null;
+              const name      = chat.name || chat.other_user?.full_name || chat.other_user?.username || "Пользователь";
+              const avatarSrc = chat.other_user?.avatar_url ? `${BASE_URL}${chat.other_user.avatar_url}` : null;
               const unread    = unreadMap[chat.id] || 0;
               const isActive  = selectedChat?.id === chat.id;
               const isOnline  = chat.other_user_id && onlineSet.has(Number(chat.other_user_id));

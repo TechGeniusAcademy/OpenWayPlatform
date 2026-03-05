@@ -312,6 +312,111 @@
 .emptyState p { font-size: 0.87rem; margin: 0; }
 
 /* ── TEST TAKING ── */
+
+/* Body-level class added when test is active — extra security */
+.testActivePage {
+  position: relative;
+}
+
+/* ─── Blur overlay (tab switched) ─────────────────────────────────────── */
+.blurOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.blurOverlayCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 40px 48px;
+  text-align: center;
+  max-width: 400px;
+}
+.blurOverlayIcon {
+  font-size: 3rem;
+  color: #f59e0b;
+  margin-bottom: 16px;
+}
+.blurOverlayCard h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--text-color);
+}
+.blurOverlayCard p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ─── Content hidden overlay (DevTools / PrintScreen) ─────────────────── */
+.hiddenOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9995;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--bg-main, #0f0f14);
+  opacity: 1;
+  transition: opacity 3s ease;
+}
+.hiddenOverlayFadeOut {
+  opacity: 0;
+  pointer-events: none;
+}
+.hiddenOverlayIcon {
+  font-size: 4rem;
+  color: #ef4444;
+}
+.hiddenOverlay p {
+  font-size: 1rem;
+  color: var(--text-color);
+  margin: 0;
+}
+.hiddenOverlaySub {
+  font-size: 0.85rem !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ─── Violation badge (top-right corner) ──────────────────────────────── */
+.violationBadge {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9991;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 30px;
+  color: #f59e0b;
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+.violationBadgeDanger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  animation: violationPulse 1.2s ease infinite;
+}
+@keyframes violationPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50%       { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}
+
 .testTaking {
   max-width: 860px;
   margin: 0 auto;

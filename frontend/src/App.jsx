@@ -14,7 +14,7 @@ import MiniPlayer from "./components/MiniPlayer";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "./pages/student/navbar/Navbar";
-import SearchResults from "./pages/student/navbar/SearchResults";
+import SearchResults from "./pages/student/navbar/SearchResults.jsx";
 import { useLocation } from "react-router-dom";
 
 const ProtectedRoute = ({ children, requiredRole }) => {

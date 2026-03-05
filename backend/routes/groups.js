@@ -1,5 +1,6 @@
 import express from 'express';
 import Group from '../models/Group.js';
+import pool from '../config/database.js';
 import { authenticate, requireAdmin, requireTeacherOrAdmin, requireTesterOrTeacherOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -144,6 +145,28 @@ router.get('/students/available', requireTeacherOrAdmin, async (req, res) => {
   }
 });
 
+// Назначить старосту группы (учителя и админы)
+router.put('/:id/leader', requireTeacherOrAdmin, async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    const { userId } = req.body;
+
+    if (!userId) {
+      // Снять старосту
+      const group = await Group.clearLeader(groupId);
+      if (!group) return res.status(404).json({ error: 'Группа не найдена' });
+      return res.json({ message: 'Статус старосты снят', group });
+    }
+
+    const group = await Group.setLeader(groupId, parseInt(userId));
+    if (!group) return res.status(404).json({ error: 'Группа не найдена или студент не в группе' });
+    res.json({ message: 'Староста назначен', group });
+  } catch (error) {
+    console.error('Ошибка назначения старосты:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Удалить студента из группы (учителя и админы)
 router.delete('/:groupId/students/:studentId', requireTeacherOrAdmin, async (req, res) => {
   try {
@@ -156,6 +179,92 @@ router.delete('/:groupId/students/:studentId', requireTeacherOrAdmin, async (req
     res.json({ message: 'Студент успешно удален из группы' });
   } catch (error) {
     console.error('Ошибка удаления студента:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// ── Данные посещаемости для старосты (только свой группы) ──
+router.get('/:id/starosta/attendance', async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    if (req.user.role === 'student' && (!req.user.is_group_leader || req.user.group_id !== groupId)) {
+      return res.status(403).json({ error: 'Только для старосты группы' });
+    }
+
+    const studentsRes = await pool.query(`
+      SELECT u.id, u.username, u.full_name, u.avatar_url,
+        COALESCE(COUNT(a.id), 0)                                                          AS total_marked,
+        COALESCE(COUNT(CASE WHEN a.status = 'present' THEN 1 END), 0)                    AS present_count,
+        COALESCE(COUNT(CASE WHEN a.status = 'absent'  THEN 1 END), 0)                    AS absent_count,
+        COALESCE(COUNT(CASE WHEN a.status = 'late'    THEN 1 END), 0)                    AS late_count
+      FROM users u
+      LEFT JOIN attendance a        ON a.student_id = u.id
+      LEFT JOIN schedule_lessons sl ON a.lesson_id  = sl.id AND sl.group_id = $1
+      WHERE u.group_id = $1 AND u.role = 'student'
+      GROUP BY u.id, u.username, u.full_name, u.avatar_url
+      ORDER BY absent_count DESC, u.full_name
+    `, [groupId]);
+
+    const lessonsRes = await pool.query(`
+      SELECT sl.id, sl.title, sl.lesson_time, a.lesson_date,
+        COUNT(CASE WHEN a.status = 'present' THEN 1 END) AS present_count,
+        COUNT(CASE WHEN a.status = 'absent'  THEN 1 END) AS absent_count,
+        COUNT(CASE WHEN a.status = 'late'    THEN 1 END) AS late_count
+      FROM attendance a
+      JOIN schedule_lessons sl ON a.lesson_id = sl.id
+      WHERE sl.group_id = $1
+      GROUP BY sl.id, sl.title, sl.lesson_time, a.lesson_date
+      ORDER BY a.lesson_date DESC, sl.lesson_time DESC
+      LIMIT 20
+    `, [groupId]);
+
+    res.json({ students: studentsRes.rows, lessons: lessonsRes.rows });
+  } catch (error) {
+    console.error('Ошибка посещаемости для старосты:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// ── Домашние задания для старосты (кто сдал, кто нет) ──
+router.get('/:id/starosta/homeworks', async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    if (req.user.role === 'student' && (!req.user.is_group_leader || req.user.group_id !== groupId)) {
+      return res.status(403).json({ error: 'Только для старосты группы' });
+    }
+
+    const hwRes = await pool.query(`
+      SELECT
+        h.id, h.title, h.description, h.deadline, h.status,
+        (SELECT COUNT(*) FROM users WHERE group_id = $1 AND role = 'student') AS total_students,
+        COUNT(DISTINCT hs.student_id)                                          AS submitted_count,
+        COUNT(DISTINCT CASE WHEN hs.status = 'approved' THEN hs.student_id END) AS approved_count
+      FROM homeworks h
+      JOIN homework_assignments ha ON ha.homework_id = h.id AND ha.group_id = $1
+      LEFT JOIN homework_submissions hs ON hs.homework_id = h.id
+      GROUP BY h.id, h.title, h.description, h.deadline, h.status
+      ORDER BY h.deadline ASC NULLS LAST, h.created_at DESC
+      LIMIT 20
+    `, [groupId]);
+
+    // Для каждого ДЗ — кто именно не сдал
+    const studentRes = await pool.query(`
+      SELECT
+        u.id, u.username, u.full_name, u.avatar_url,
+        COUNT(DISTINCT h.id)   AS total_hw,
+        COUNT(DISTINCT hs.homework_id) AS submitted_count
+      FROM users u
+      JOIN homework_assignments ha ON ha.group_id = $1
+      JOIN homeworks h ON h.id = ha.homework_id
+      LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = u.id
+      WHERE u.group_id = $1 AND u.role = 'student'
+      GROUP BY u.id, u.username, u.full_name, u.avatar_url
+      ORDER BY submitted_count ASC, u.full_name
+    `, [groupId]);
+
+    res.json({ homeworks: hwRes.rows, students: studentRes.rows });
+  } catch (error) {
+    console.error('Ошибка ДЗ для старосты:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });

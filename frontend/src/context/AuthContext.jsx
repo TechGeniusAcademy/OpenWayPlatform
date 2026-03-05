@@ -42,7 +42,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
+      // Получаем полный профиль (с avatar_url, avatar_frame, etc.)
+      await checkAuth();
       return { success: true, user: response.data.user };
     } catch (error) {
       return {

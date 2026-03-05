@@ -23,10 +23,13 @@ class Group {
       const result = await pool.query(`
         SELECT 
           g.*,
-          COUNT(u.id) as student_count
+          COUNT(u.id) as student_count,
+          ul.username as leader_username,
+          ul.full_name as leader_full_name
         FROM groups g
         LEFT JOIN users u ON u.group_id = g.id AND u.role = 'student'
-        GROUP BY g.id
+        LEFT JOIN users ul ON ul.id = g.leader_id
+        GROUP BY g.id, ul.username, ul.full_name
         ORDER BY g.created_at DESC
       `);
       return result.rows;
@@ -71,6 +74,7 @@ class Group {
           profile_banner,
           username_style,
           points,
+          is_group_leader,
           created_at 
          FROM users 
          WHERE group_id = $1 AND role = 'student'
@@ -173,6 +177,36 @@ class Group {
     } catch (error) {
       throw error;
     }
+  }
+
+  // Назначить старосту группы
+  static async setLeader(groupId, userId) {
+    await pool.query(
+      `UPDATE users SET is_group_leader = FALSE WHERE group_id = $1 AND is_group_leader = TRUE`,
+      [groupId]
+    );
+    await pool.query(
+      `UPDATE users SET is_group_leader = TRUE WHERE id = $1 AND group_id = $2`,
+      [userId, groupId]
+    );
+    const result = await pool.query(
+      `UPDATE groups SET leader_id = $1 WHERE id = $2 RETURNING *`,
+      [userId, groupId]
+    );
+    return result.rows[0];
+  }
+
+  // Снять старосту с группы
+  static async clearLeader(groupId) {
+    await pool.query(
+      `UPDATE users SET is_group_leader = FALSE WHERE group_id = $1 AND is_group_leader = TRUE`,
+      [groupId]
+    );
+    const result = await pool.query(
+      `UPDATE groups SET leader_id = NULL WHERE id = $1 RETURNING *`,
+      [groupId]
+    );
+    return result.rows[0];
   }
 
   // Получить студентов без группы

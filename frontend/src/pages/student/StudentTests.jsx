@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import {
   FaFileAlt, FaChartBar, FaClipboardList, FaCheckCircle, FaTimes,
-  FaTrophy, FaExclamationTriangle, FaBan, FaHistory,
+  FaTrophy, FaExclamationTriangle, FaBan, FaHistory, FaShieldAlt,
 } from 'react-icons/fa';
 import {
   AiOutlineClockCircle, AiOutlineLoading3Quarters, AiOutlineBook,
@@ -12,11 +12,15 @@ import {
 import { MdOutlineQuiz, MdLockClock } from 'react-icons/md';
 import { HiOutlineStatusOnline } from 'react-icons/hi';
 import styles from './StudentTests.module.css';
+import { useAntiCheat } from '../../hooks/useAntiCheat';
+import WatermarkLayer from '../../components/protection/WatermarkLayer';
+import AntiPhotoOverlay from '../../components/protection/AntiPhotoOverlay';
 
 // Unique ID for this browser tab (session-scoped)
 const TAB_ID = Math.random().toString(36).slice(2);
 const LOCK_PREFIX = 'test_lock_';
 const BC_CHANNEL = 'student_tests_channel';
+const TAB_SWITCH_LIMIT = 5; // synced with useAntiCheat
 
 function StudentTests() {
   const { user } = useAuth();
@@ -36,6 +40,20 @@ function StudentTests() {
   const [blockedTestId, setBlockedTestId] = useState(null);
   const channelRef = useRef(null);
   const activeTestRef = useRef(null);
+
+  // Anti-cheat system — активируется только во время прохождения теста
+  const handleForceSubmit = useCallback(() => {
+    if (activeTestRef.current && attempt) {
+      // Auto-complete the test due to violations
+      confirmComplete();
+    }
+  }, [attempt]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { blurred, contentHidden, contentFadingOut, violationCount } = useAntiCheat({
+    enabled: !!(activeTest && attempt),
+    attemptId: attempt?.id ?? null,
+    onForceSubmit: handleForceSubmit,
+  });
 
   // Keep ref in sync for use inside event listeners
   useEffect(() => { activeTestRef.current = activeTest; }, [activeTest]);
@@ -309,7 +327,42 @@ function StudentTests() {
     const hasAnswer = currentAnswer && (currentQuestion.question_type !== 'coding' || currentAnswer.code);
 
     return (
-      <div className={styles.page}>
+      <div className={`${styles.page} ${styles.testActivePage}`}>
+        {/* ── Anti-cheat overlays ── */}
+        <AntiPhotoOverlay />
+        <WatermarkLayer
+          userId={user?.id}
+          username={user?.username || user?.full_name || 'unknown'}
+          testId={activeTest.id}
+        />
+
+        {/* ── Blur overlay when tab is hidden ── */}
+        {blurred && (
+          <div className={styles.blurOverlay}>
+            <div className={styles.blurOverlayCard}>
+              <FaShieldAlt className={styles.blurOverlayIcon} />
+              <h3>Вернитесь на страницу теста</h3>
+              <p>Переключение вкладок зафиксировано</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Hidden content overlay (DevTools / PrintScreen) ── */}
+        {(contentHidden || contentFadingOut) && (
+          <div className={`${styles.hiddenOverlay}${contentFadingOut ? ` ${styles.hiddenOverlayFadeOut}` : ''}`}>
+            <FaShieldAlt className={styles.hiddenOverlayIcon} />
+            <p>Содержимое скрыто по соображениям безопасности</p>
+            {contentHidden && !contentFadingOut && <p className={styles.hiddenOverlaySub}>Страница будет перезагружена</p>}
+          </div>
+        )}
+
+        {/* ── Violation counter badge ── */}
+        {violationCount > 0 && (
+          <div className={`${styles.violationBadge} ${violationCount >= 3 ? styles.violationBadgeDanger : ''}`}>
+            <FaExclamationTriangle />
+            <span>Нарушений: {violationCount}{violationCount >= TAB_SWITCH_LIMIT - 1 ? ' ⚠ автозавершение близко' : ''}</span>
+          </div>
+        )}
         {showConfirmModal && (
           <div className={styles.modalOverlay} onClick={() => setShowConfirmModal(false)}>
             <div className={styles.modal} onClick={(e) => e.stopPropagation()}>

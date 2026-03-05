@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import styles from "./Navbar.module.css";
 import { FaSun, FaMoon, FaSearch, FaTimes, FaUser, FaEnvelope, FaInbox, FaCog, FaSignOutAlt, FaBell } from "react-icons/fa";
 import { AiOutlineRocket } from "react-icons/ai";
@@ -13,6 +13,13 @@ import api from "../../../utils/api";
 function Navbar() {
   const [query, setQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  // Live search dropdown
+  const [liveResults, setLiveResults] = useState(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchWrapRef = useRef(null);
+  const debounceRef = useRef(null);
+
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const [menuOpen, setMenuOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
@@ -44,6 +51,9 @@ function Navbar() {
       }
       if (bellRef.current && !bellRef.current.contains(e.target)) {
         setBellOpen(false);
+      }
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target)) {
+        setShowDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -135,6 +145,8 @@ function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (query.trim() !== "") {
+      setShowDropdown(false);
+      setLiveResults(null);
       navigate(`/search?query=${encodeURIComponent(query.trim())}`);
       setQuery("");
       inputRef.current?.blur();
@@ -143,8 +155,66 @@ function Navbar() {
 
   const clearSearch = () => {
     setQuery("");
+    setLiveResults(null);
+    setShowDropdown(false);
     inputRef.current?.focus();
   };
+
+  // Debounced live search
+  const runLiveSearch = useCallback(async (q) => {
+    if (!q || q.length < 2) { setLiveResults(null); setShowDropdown(false); return; }
+    setLiveLoading(true);
+    try {
+      const res = await api.get(`/search?q=${encodeURIComponent(q)}`);
+      setLiveResults(res.data.results || {});
+      setShowDropdown(true);
+    } catch (_) {
+      setLiveResults(null);
+    } finally {
+      setLiveLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    if (!query.trim()) { setLiveResults(null); setShowDropdown(false); return; }
+    debounceRef.current = setTimeout(() => runLiveSearch(query.trim()), 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [query, runLiveSearch]);
+
+  const handleDropdownItemClick = (link) => {
+    setShowDropdown(false);
+    setQuery("");
+    setLiveResults(null);
+    navigate(link);
+  };
+
+  // Flatten live results for dropdown preview (max 8 items total)
+  const SECTION_ORDER = ['pages', 'courses', 'articles', 'tests', 'homeworks', 'updates', 'users'];
+  const SECTION_LABELS = {
+    pages: 'Страница', courses: 'Курс', articles: 'База знаний',
+    tests: 'Тест', homeworks: 'ДЗ', updates: 'Новость', users: 'Пользователь',
+  };
+  const getLiveLink = (section, item) => {
+    switch (section) {
+      case 'courses':   return `/student/course/${item.id}`;
+      case 'articles':  return `/student/knowledge-base?article=${item.id}`;
+      case 'tests':     return `/student/tests`;
+      case 'homeworks': return `/student/homeworks`;
+      case 'updates':   return `/student/updates`;
+      case 'users':     return `/student/profile/${item.id}`;
+      case 'pages':     return item.link;
+      default:          return '#';
+    }
+  };
+  const flatLiveItems = liveResults
+    ? SECTION_ORDER.flatMap(sec =>
+        (liveResults[sec] || []).slice(0, 2).map(item => ({ sec, item }))
+      ).slice(0, 8)
+    : [];
+  const liveTotal = liveResults
+    ? Object.values(liveResults).reduce((s, a) => s + (a?.length || 0), 0)
+    : 0;
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -163,34 +233,75 @@ function Navbar() {
       <div className={styles.Brand} />
 
       {/* Поиск */}
-      <form
-        className={`${styles.SearchForm} ${searchFocused ? styles.SearchFormFocused : ""}`}
-        onSubmit={handleSearch}
-      >
-        <span className={styles.SearchIcon}>
-          <FaSearch />
-        </span>
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder={t("searchthesite")}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => setSearchFocused(false)}
-          className={styles.SearchInput}
-        />
-        {query && (
-          <button
-            type="button"
-            className={styles.ClearButton}
-            onClick={clearSearch}
-            tabIndex={-1}
-          >
-            <FaTimes />
-          </button>
+      <div className={styles.SearchWrap} ref={searchWrapRef}>
+        <form
+          className={`${styles.SearchForm} ${searchFocused ? styles.SearchFormFocused : ""}`}
+          onSubmit={handleSearch}
+        >
+          <span className={styles.SearchIcon}>
+            {liveLoading ? <span className={styles.SearchSpinner} /> : <FaSearch />}
+          </span>
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={t("searchthesite")}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => { setSearchFocused(true); if (liveResults) setShowDropdown(true); }}
+            onBlur={() => setSearchFocused(false)}
+            className={styles.SearchInput}
+            autoComplete="off"
+          />
+          {query && (
+            <button
+              type="button"
+              className={styles.ClearButton}
+              onClick={clearSearch}
+              tabIndex={-1}
+            >
+              <FaTimes />
+            </button>
+          )}
+        </form>
+
+        {/* Live dropdown */}
+        {showDropdown && query.length >= 2 && (
+          <div className={styles.SearchDropdown}>
+            {liveLoading && flatLiveItems.length === 0 && (
+              <div className={styles.SDropLoading}>Поиск...</div>
+            )}
+            {!liveLoading && liveTotal === 0 && (
+              <div className={styles.SDropEmpty}>Ничего не найдено</div>
+            )}
+            {flatLiveItems.map(({ sec, item }) => (
+              <button
+                key={`${sec}-${item.id || item.link}`}
+                className={styles.SDropItem}
+                onMouseDown={() => handleDropdownItemClick(getLiveLink(sec, item))}
+              >
+                <span className={styles.SDropBadge}>{SECTION_LABELS[sec]}</span>
+                <span className={styles.SDropTitle}>{item.title || item.full_name || item.username}</span>
+              </button>
+            ))}
+            {liveTotal > flatLiveItems.length && (
+              <button
+                className={styles.SDropShowAll}
+                onMouseDown={() => handleDropdownItemClick(`/search?query=${encodeURIComponent(query.trim())}`)}
+              >
+                Показать все результаты ({liveTotal}) →
+              </button>
+            )}
+            {liveTotal > 0 && liveTotal <= flatLiveItems.length && (
+              <button
+                className={styles.SDropShowAll}
+                onMouseDown={() => handleDropdownItemClick(`/search?query=${encodeURIComponent(query.trim())}`)}
+              >
+                Открыть полную страницу поиска →
+              </button>
+            )}
+          </div>
         )}
-      </form>
+      </div>
 
       {/* ── Active boost pills ── */}
       {activeBoosts.length > 0 && (

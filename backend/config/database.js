@@ -1248,6 +1248,468 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_course_enrollments_course ON course_enrollments(course_id);
     `);
 
+    // ─── Группы: лидер (Староста) ───────────────────────────────────────────
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'is_group_leader'
+        ) THEN
+          ALTER TABLE users ADD COLUMN is_group_leader BOOLEAN NOT NULL DEFAULT FALSE;
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'groups' AND column_name = 'leader_id'
+        ) THEN
+          ALTER TABLE groups ADD COLUMN leader_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
+    `);
+
+    // ─── Категории вопросов для игр ─────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_categories (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_game_categories_name ON game_categories(name);
+    `);
+
+    // Добавить category_id и difficulty в game_questions если их нет
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'game_questions' AND column_name = 'category_id'
+        ) THEN
+          ALTER TABLE game_questions ADD COLUMN category_id INTEGER REFERENCES game_categories(id) ON DELETE SET NULL;
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'game_questions' AND column_name = 'difficulty'
+        ) THEN
+          ALTER TABLE game_questions ADD COLUMN difficulty VARCHAR(20) DEFAULT 'medium';
+        END IF;
+      END $$;
+    `);
+
+    // Вставляем категории по умолчанию
+    await pool.query(`
+      INSERT INTO game_categories (name, description) VALUES
+        ('История', 'Вопросы по истории Казахстана и мира'),
+        ('География', 'Вопросы по географии'),
+        ('Математика', 'Математические задачи и вопросы'),
+        ('Литература', 'Вопросы по литературе'),
+        ('Наука', 'Вопросы по естественным наукам')
+      ON CONFLICT (name) DO NOTHING;
+    `);
+
+    // ─── Квиз-битвы ─────────────────────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS quiz_battles (
+        id SERIAL PRIMARY KEY,
+        creator_id INTEGER NOT NULL REFERENCES users(id),
+        category_id INTEGER REFERENCES game_categories(id) ON DELETE SET NULL,
+        room_code VARCHAR(10) UNIQUE NOT NULL,
+        status VARCHAR(20) CHECK (status IN ('waiting', 'in_progress', 'finished')) DEFAULT 'waiting',
+        current_question_id INTEGER,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        finished_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS quiz_battle_players (
+        id SERIAL PRIMARY KEY,
+        battle_id INTEGER NOT NULL REFERENCES quiz_battles(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        score INTEGER DEFAULT 0,
+        joined_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(battle_id, user_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS quiz_battle_answers (
+        id SERIAL PRIMARY KEY,
+        battle_id INTEGER NOT NULL REFERENCES quiz_battles(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        question_id INTEGER NOT NULL,
+        answer VARCHAR(500),
+        is_correct BOOLEAN DEFAULT FALSE,
+        time_spent INTEGER,
+        answered_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_quiz_battles_room_code ON quiz_battles(room_code);
+      CREATE INDEX IF NOT EXISTS idx_quiz_battles_status ON quiz_battles(status);
+      CREATE INDEX IF NOT EXISTS idx_quiz_battle_players_battle ON quiz_battle_players(battle_id);
+      CREATE INDEX IF NOT EXISTS idx_quiz_battle_answers_battle ON quiz_battle_answers(battle_id);
+    `);
+
+    // Добавить last_quiz_battle_date в users если нет
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'last_quiz_battle_date'
+        ) THEN
+          ALTER TABLE users ADD COLUMN last_quiz_battle_date TIMESTAMP;
+        END IF;
+      END $$;
+
+      CREATE INDEX IF NOT EXISTS idx_users_last_quiz_battle ON users(last_quiz_battle_date);
+    `);
+
+    // ─── Рулетка ────────────────────────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS roulette_games (
+        id SERIAL PRIMARY KEY,
+        game_number INTEGER NOT NULL,
+        winning_number INTEGER NOT NULL CHECK (winning_number >= 0 AND winning_number <= 36),
+        winning_color VARCHAR(10) NOT NULL CHECK (winning_color IN ('red', 'black', 'green')),
+        total_bets INTEGER DEFAULT 0,
+        total_payout INTEGER DEFAULT 0,
+        status VARCHAR(20) DEFAULT 'waiting' CHECK (status IN ('waiting', 'betting', 'spinning', 'finished')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        finished_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS roulette_bets (
+        id SERIAL PRIMARY KEY,
+        game_id INTEGER REFERENCES roulette_games(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        bet_type VARCHAR(20) NOT NULL CHECK (bet_type IN ('number','red','black','odd','even','low','high','dozen1','dozen2','dozen3','column1','column2','column3')),
+        bet_value INTEGER,
+        bet_amount INTEGER NOT NULL CHECK (bet_amount >= 10 AND bet_amount <= 1000),
+        payout_multiplier DECIMAL(10,2) NOT NULL,
+        payout_amount INTEGER DEFAULT 0,
+        won BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS roulette_history (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        total_games INTEGER DEFAULT 0,
+        total_bets INTEGER DEFAULT 0,
+        total_wagered INTEGER DEFAULT 0,
+        total_won INTEGER DEFAULT 0,
+        biggest_win INTEGER DEFAULT 0,
+        favorite_bet_type VARCHAR(20),
+        last_played TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_roulette_games_status ON roulette_games(status);
+      CREATE INDEX IF NOT EXISTS idx_roulette_games_created ON roulette_games(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_roulette_bets_game ON roulette_bets(game_id);
+      CREATE INDEX IF NOT EXISTS idx_roulette_bets_user ON roulette_bets(user_id);
+      CREATE INDEX IF NOT EXISTS idx_roulette_history_user ON roulette_history(user_id);
+    `);
+
+    // ─── Расписание ─────────────────────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS schedule_lessons (
+        id SERIAL PRIMARY KEY,
+        group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        lesson_date DATE,
+        lesson_time TIME NOT NULL,
+        duration_minutes INTEGER DEFAULT 60,
+        is_recurring BOOLEAN DEFAULT FALSE,
+        recurring_days INTEGER[] DEFAULT '{}',
+        recurring_start_date DATE,
+        recurring_end_date DATE,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS attendance (
+        id SERIAL PRIMARY KEY,
+        lesson_id INTEGER REFERENCES schedule_lessons(id) ON DELETE CASCADE,
+        student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        lesson_date DATE NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'unknown',
+        reason TEXT,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(lesson_id, student_id, lesson_date)
+      );
+
+      CREATE TABLE IF NOT EXISTS lesson_notes (
+        id SERIAL PRIMARY KEY,
+        lesson_id INTEGER REFERENCES schedule_lessons(id) ON DELETE CASCADE,
+        student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        lesson_date DATE NOT NULL,
+        note TEXT NOT NULL,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS lesson_rewards (
+        id SERIAL PRIMARY KEY,
+        lesson_id INTEGER REFERENCES schedule_lessons(id) ON DELETE CASCADE,
+        student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        lesson_date DATE NOT NULL,
+        points_amount INTEGER DEFAULT 0,
+        experience_amount INTEGER DEFAULT 0,
+        reason TEXT,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_schedule_lessons_group ON schedule_lessons(group_id);
+      CREATE INDEX IF NOT EXISTS idx_schedule_lessons_date ON schedule_lessons(lesson_date);
+      CREATE INDEX IF NOT EXISTS idx_attendance_lesson ON attendance(lesson_id);
+      CREATE INDEX IF NOT EXISTS idx_attendance_student ON attendance(student_id);
+      CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(lesson_date);
+      CREATE INDEX IF NOT EXISTS idx_lesson_notes_student ON lesson_notes(student_id);
+      CREATE INDEX IF NOT EXISTS idx_lesson_notes_date ON lesson_notes(lesson_date);
+    `);
+
+    // ─── FlexChan (Flex-игра) ────────────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS flexchan_levels (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        initial_code TEXT NOT NULL,
+        solution JSONB NOT NULL DEFAULT '[]',
+        items JSONB NOT NULL DEFAULT '[]',
+        targets JSONB NOT NULL DEFAULT '[]',
+        hint TEXT,
+        points INTEGER DEFAULT 10,
+        experience_reward INT DEFAULT 0,
+        level_order INTEGER NOT NULL,
+        difficulty VARCHAR(20) DEFAULT 'medium' CHECK (difficulty IN ('easy','medium','hard','expert')),
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS flexchan_progress (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        level_id INTEGER NOT NULL REFERENCES flexchan_levels(id) ON DELETE CASCADE,
+        completed BOOLEAN DEFAULT false,
+        attempts INTEGER DEFAULT 0,
+        completed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, level_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_flexchan_levels_order ON flexchan_levels(level_order);
+      CREATE INDEX IF NOT EXISTS idx_flexchan_levels_active ON flexchan_levels(is_active);
+      CREATE INDEX IF NOT EXISTS idx_flexchan_progress_user ON flexchan_progress(user_id);
+      CREATE INDEX IF NOT EXISTS idx_flexchan_progress_level ON flexchan_progress(level_id);
+    `);
+
+    // ─── Kaetram (MMORPG) ────────────────────────────────────────────────────
+    await pool.query(`
+      CREATE OR REPLACE FUNCTION update_kaetram_updated_at()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS kaetram_players (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        email VARCHAR(255),
+        x INTEGER DEFAULT 0,
+        y INTEGER DEFAULT 0,
+        user_agent VARCHAR(255),
+        rank INTEGER DEFAULT 0,
+        poison_type INTEGER DEFAULT 0,
+        poison_remaining INTEGER DEFAULT 0,
+        effects JSONB DEFAULT '{}',
+        hit_points INTEGER DEFAULT 100,
+        mana INTEGER DEFAULT 20,
+        orientation INTEGER DEFAULT 0,
+        ban BIGINT DEFAULT 0,
+        jail BIGINT DEFAULT 0,
+        mute BIGINT DEFAULT 0,
+        last_warp BIGINT DEFAULT 0,
+        map_version INTEGER DEFAULT 0,
+        regions_loaded INTEGER[] DEFAULT ARRAY[]::INTEGER[],
+        friends TEXT[] DEFAULT ARRAY[]::TEXT[],
+        last_server_id INTEGER DEFAULT -1,
+        last_address VARCHAR(45),
+        last_global_chat BIGINT DEFAULT 0,
+        guild VARCHAR(255),
+        pet VARCHAR(255),
+        reset_token VARCHAR(255),
+        reset_token_expiration BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        openway_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_equipment (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL REFERENCES kaetram_players(username) ON DELETE CASCADE,
+        data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_inventory (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL REFERENCES kaetram_players(username) ON DELETE CASCADE,
+        data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_bank (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL REFERENCES kaetram_players(username) ON DELETE CASCADE,
+        data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_quests (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL REFERENCES kaetram_players(username) ON DELETE CASCADE,
+        data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_achievements (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL REFERENCES kaetram_players(username) ON DELETE CASCADE,
+        data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_skills (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL REFERENCES kaetram_players(username) ON DELETE CASCADE,
+        data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_statistics (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL REFERENCES kaetram_players(username) ON DELETE CASCADE,
+        data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_abilities (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(32) UNIQUE NOT NULL REFERENCES kaetram_players(username) ON DELETE CASCADE,
+        data JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_guilds (
+        id SERIAL PRIMARY KEY,
+        identifier VARCHAR(255) UNIQUE NOT NULL,
+        owner VARCHAR(32) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        creation_date BIGINT NOT NULL,
+        members JSONB DEFAULT '[]',
+        decorations JSONB DEFAULT '{}',
+        data JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS kaetram_ipbans (
+        id SERIAL PRIMARY KEY,
+        ip VARCHAR(45) UNIQUE NOT NULL,
+        reason TEXT,
+        banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP,
+        banned_by VARCHAR(32)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_kaetram_players_username ON kaetram_players(username);
+      CREATE INDEX IF NOT EXISTS idx_kaetram_players_email ON kaetram_players(email);
+      CREATE INDEX IF NOT EXISTS idx_kaetram_players_openway_user ON kaetram_players(openway_user_id);
+      CREATE INDEX IF NOT EXISTS idx_kaetram_guilds_identifier ON kaetram_guilds(identifier);
+      CREATE INDEX IF NOT EXISTS idx_kaetram_ipbans_ip ON kaetram_ipbans(ip);
+    `);
+
+    // ─── Фильмы ──────────────────────────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS movies (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        video_url TEXT NOT NULL,
+        cover_url TEXT,
+        year INTEGER,
+        genre VARCHAR(100),
+        duration INTEGER,
+        is_active BOOLEAN DEFAULT true,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_movies_is_active ON movies(is_active);
+      CREATE INDEX IF NOT EXISTS idx_movies_genre ON movies(genre);
+      CREATE INDEX IF NOT EXISTS idx_movies_created_at ON movies(created_at DESC);
+    `);
+
+    // ─── Открытый Город (City World) ─────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS city_worlds (
+        id               SERIAL PRIMARY KEY,
+        user_id          INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        game_time_hours  DOUBLE PRECISION NOT NULL DEFAULT 8.0,
+        last_saved_at    TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+        placed_items     JSONB           NOT NULL DEFAULT '[]',
+        created_at       TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+        updated_at       TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_city_worlds_user ON city_worlds(user_id);
+    `);
+
+    // Таблица пользовательских сессий
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        jti         VARCHAR(64) UNIQUE NOT NULL,
+        ip_address  VARCHAR(45),
+        user_agent  TEXT,
+        created_at  TIMESTAMP DEFAULT NOW(),
+        last_used_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_sessions_jti    ON user_sessions(jti);
+    `);
+
+    // Нарушения при прохождении тестов (anti-cheat log)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS test_violations (
+        id          SERIAL PRIMARY KEY,
+        attempt_id  INTEGER NOT NULL REFERENCES test_attempts(id) ON DELETE CASCADE,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type        VARCHAR(60) NOT NULL,
+        detail      TEXT,
+        count       INTEGER DEFAULT 1,
+        user_agent  TEXT,
+        ip_address  VARCHAR(45),
+        created_at  TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_violations_attempt ON test_violations(attempt_id);
+      CREATE INDEX IF NOT EXISTS idx_violations_user    ON test_violations(user_id);
+    `);
+
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {
     console.error('❌ Ошибка инициализации базы данных:', error);

@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   FiUsers, FiEdit2, FiTrash2, FiPlus, FiUserPlus,
   FiX, FiCheck, FiAlertCircle, FiSearch, FiUserMinus,
-  FiClock, FiUser, FiCheckSquare, FiSquare,
+  FiClock, FiUser, FiCheckSquare, FiSquare, FiStar, FiMinusCircle,
 } from "react-icons/fi";
 import { HiUserGroup } from "react-icons/hi";
+import { GiStarMedal } from "react-icons/gi";
 import api from "../utils/api";
 import styles from "./GroupsManagement.module.css";
 
@@ -62,6 +63,8 @@ function GroupsManagement() {
   const [editModal, setEditModal] = useState(null); // null | "create" | group
   const [form,      setForm]      = useState({ name: "", description: "" });
   const [formErr,   setFormErr]   = useState("");
+
+  const [leaderSaving, setLeaderSaving] = useState(false);
 
   /* ── Manage students modal ── */
   const [manageGroup, setManageGroup]         = useState(null);   // full group obj with .students
@@ -230,6 +233,23 @@ function GroupsManagement() {
     setSelected(all ? selected.filter(id => !ids.includes(id)) : [...new Set([...selected, ...ids])]);
   };
 
+  /* ── set / clear group leader ── */
+  const handleSetLeader = async (student) => {
+    const isLeader = student.is_group_leader;
+    const action = isLeader ? 'снять статус старосты' : `назначить ${student.full_name || student.username} старостой`;
+    if (!window.confirm(`Вы уверены, что хотите ${action}?`)) return;
+    setLeaderSaving(true);
+    try {
+      await api.put(`/groups/${manageGroup.id}/leader`, isLeader ? {} : { userId: student.id });
+      notify('success', isLeader ? 'Статус старосты снят' : `${student.full_name || student.username} назначен(а) старостой`);
+      await refreshManage();
+    } catch (err) {
+      notify('error', err.response?.data?.error || 'Ошибка назначения старосты');
+    } finally {
+      setLeaderSaving(false);
+    }
+  };
+
   /* ── filtered lists inside manage modal ── */
   const filteredIn = useMemo(() => {
     if (!manageGroup?.students) return [];
@@ -376,6 +396,14 @@ function GroupsManagement() {
                 {g.description || <span className={styles.cardDescEmpty}>Нет описания</span>}
               </p>
 
+              {/* Leader badge */}
+              {g.leader_id && (
+                <div className={styles.cardLeader}>
+                  <GiStarMedal style={{ color: '#f59e0b', flexShrink: 0 }} />
+                  <span>Староста: <strong>{g.leader_full_name || g.leader_username || `#${g.leader_id}`}</strong></span>
+                </div>
+              )}
+
               <div className={styles.cardFoot}>
                 <div className={styles.cardCount}>
                   <FiUsers />
@@ -478,14 +506,27 @@ function GroupsManagement() {
                         {manageGroup.students?.length === 0 ? "Группа пуста" : "Не найдено"}
                       </div>
                     ) : filteredIn.map(s => (
-                      <div key={s.id} className={styles.studentRow}>
+                      <div key={s.id} className={`${styles.studentRow} ${s.is_group_leader ? styles.studentRowLeader : ""}`}>
                         <div className={styles.studentAvatar}>
                           {(s.full_name || s.username || "?")[0].toUpperCase()}
                         </div>
                         <div className={styles.studentInfo}>
-                          <span className={styles.studentName}>{s.full_name || s.username}</span>
+                          <span className={styles.studentName}>
+                            {s.full_name || s.username}
+                            {s.is_group_leader && (
+                              <span className={styles.leaderBadge}><GiStarMedal /> Староста</span>
+                            )}
+                          </span>
                           <span className={styles.studentEmail}>{s.email}</span>
                         </div>
+                        <button
+                          className={`${styles.iconBtn} ${s.is_group_leader ? styles.iconBtnLeaderActive : styles.iconBtnLeader}`}
+                          onClick={() => handleSetLeader(s)}
+                          disabled={leaderSaving}
+                          title={s.is_group_leader ? "Снять статус старосты" : "Назначить старостой"}
+                        >
+                          {s.is_group_leader ? <FiMinusCircle /> : <FiStar />}
+                        </button>
                         <button
                           className={`${styles.iconBtn} ${styles.iconBtnDel}`}
                           onClick={() => askRemove(manageGroup.id, s)}

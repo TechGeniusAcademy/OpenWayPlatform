@@ -21,11 +21,15 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Декодируем имя файла из latin1 → utf8 (multer читает заголовки как latin1)
+const decodeFilename = (name) => Buffer.from(name, 'latin1').toString('utf8');
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
+    file.originalname = decodeFilename(file.originalname);
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + '-' + file.originalname);
   }

@@ -506,6 +506,13 @@ function StudentProfile() {
             </div>
             <div className={styles["hero-fullname"]}>{user?.full_name || user?.email}</div>
 
+            {/* Starosta badge */}
+            {user?.is_group_leader && (
+              <div className={styles["starosta-hero-badge"]}>
+                <FaCrown /> Староста группы
+              </div>
+            )}
+
             {/* XP bar inside hero */}
             <div className={styles["hero-xp-row"]}>
               <span className={styles["hero-level-chip"]}>

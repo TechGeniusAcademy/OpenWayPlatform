@@ -36,8 +36,7 @@
    SEARCH
 =========================== */
 .SearchForm {
-    flex: 1;
-    max-width: 480px;
+    width: 100%;
     position: relative;
     display: flex;
     align-items: center;
@@ -110,8 +109,113 @@
 }
 
 /* ===========================
-   CONTROLS
+   SEARCH WRAP + DROPDOWN
 =========================== */
+.SearchWrap {
+    flex: 1;
+    max-width: 480px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Spinner inside search icon */
+.SearchSpinner {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--border-color);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: sdspin 0.7s linear infinite;
+}
+@keyframes sdspin { to { transform: rotate(360deg); } }
+
+/* Live dropdown */
+.SearchDropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+    overflow: hidden;
+    z-index: 1200;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.SDropLoading,
+.SDropEmpty {
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text-secondary, #6b7280);
+    text-align: center;
+}
+
+.SDropItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s;
+}
+.SDropItem:last-of-type {
+    border-bottom: none;
+}
+.SDropItem:hover {
+    background: rgba(99,102,241,0.07);
+}
+
+.SDropBadge {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(99,102,241,0.12);
+    color: #6366f1;
+    white-space: nowrap;
+}
+
+.SDropTitle {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.SDropShowAll {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(99,102,241,0.05);
+    border: none;
+    border-top: 1px solid var(--border-color);
+    color: #6366f1;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.12s;
+}
+.SDropShowAll:hover {
+    background: rgba(99,102,241,0.12);
+}
+
+/* ===========================
+   CONTROLS
+===========================*/
 .Control {
     display: flex;
     align-items: center;

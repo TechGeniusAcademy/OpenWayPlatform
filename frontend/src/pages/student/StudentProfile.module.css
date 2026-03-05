@@ -1067,3 +1067,20 @@
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .achiev-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ─── Starosta hero badge ─── */
+.starosta-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1.5px solid #f59e0b;
+  margin-top: 6px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+  width: fit-content;
+}

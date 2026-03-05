@@ -4,7 +4,7 @@ import { useNotifications } from "../context/NotificationContext";
 import { BASE_URL } from "../utils/api";
 import styles from "./StudentLayout.module.css";
 import "../styles/UsernameStyles.css";
-import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart, AiOutlineBell, AiOutlineCode, AiOutlineCalendar } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineBook, AiOutlineUser, AiOutlineMessage, AiOutlineLogout, AiOutlineShoppingCart, AiOutlineBell, AiOutlineCode, AiOutlineCalendar, AiOutlineCrown } from "react-icons/ai";
 import { LuBookCopy, LuPencilLine, LuHouse } from "react-icons/lu";
 import { RxKeyboard } from "react-icons/rx";
 import { HiUserGroup, HiMenu, HiX } from "react-icons/hi";
@@ -116,9 +116,24 @@ function StudentLayout({ children }) {
                 <span className={styles["menu-icon"]}>
                   <HiUserGroup />
                 </span>
-                <span className={styles["menu-text"]}>Моя группа</span>
+                <span className={styles["menu-text"]}>
+                  Моя группа
+                  {user?.is_group_leader && (
+                    <span className={styles["starosta-dot"]} title="Вы — Староста" />
+                  )}
+                </span>
               </NavLink>
             </li>
+            {user?.is_group_leader && (
+              <li>
+                <NavLink to="/student/starosta" onClick={closeSidebar}>
+                  <span className={styles["menu-icon"]} style={{ color: '#d97706' }}>
+                    <AiOutlineCrown />
+                  </span>
+                  <span className={styles["menu-text"]}>Панель старосты</span>
+                </NavLink>
+              </li>
+            )}
             <li>
               <NavLink to="/student/schedule" onClick={closeSidebar}>
                 <span className={styles["menu-icon"]}>

@@ -1,0 +1,27 @@
+/* AntiPhotoOverlay — все слои с pointer-events:none */
+
+/*
+ * Слои полос (управляются JS через setInterval):
+ *   layer15Ref — 15Hz, BAR_A=4px
+ *   layer20Ref — 20Hz, BAR_B=6px
+ * backgroundImage задаётся динамически.
+ */
+.stripLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 9996;
+  pointer-events: none;
+  user-select: none;
+  background-image: none; /* начальное значение; заменяется в useEffect */
+}
+
+/* Canvas: сканлайн + diagonal noise */
+.canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9997;
+  pointer-events: none;
+  user-select: none;
+}

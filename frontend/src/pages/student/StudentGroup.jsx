@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api, { BASE_URL } from '../../utils/api';
 import { getFrameStyle } from '../../utils/frameUtils';
 import '../../styles/UsernameStyles.css';
@@ -24,6 +25,7 @@ import { FaMedal, FaUsers, FaRegGem } from 'react-icons/fa';
 
 function StudentGroup() {
   const { user, updateUser, checkAuth } = useAuth();
+  const navigate = useNavigate();
   const [groupInfo, setGroupInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cosmetics, setCosmetics] = useState({ frames: [], banners: [] });
@@ -192,11 +194,23 @@ function StudentGroup() {
   const sortedStudents = groupInfo?.students
     ? [...groupInfo.students].sort((a, b) => (b.points || 0) - (a.points || 0))
     : [];
-  const topStudent = sortedStudents[0];
+  // Use the designated group leader; fall back to top-points student if none assigned
+  const leaderStudent = sortedStudents.find(s => s.is_group_leader) || sortedStudents[0] || null;
   const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
 
   return (
     <div className={styles['group-page']}>
+
+      {/* ── STAROSTA BANNER ── */}
+      {user?.is_group_leader && (
+        <div className={styles['starosta-banner']}>
+          <AiOutlineCrown className={styles['starosta-banner-icon']} />
+          <div>
+            <span className={styles['starosta-banner-title']}>Вы являетесь старостой группы</span>
+            <span className={styles['starosta-banner-sub']}>У вас есть расширенные права и привилегии</span>
+          </div>
+        </div>
+      )}
 
       {/* ── PAGE HEADER ── */}
       <div className={styles['page-header']}>
@@ -268,46 +282,93 @@ function StudentGroup() {
           </div>
 
           {/* Leader card */}
-          {topStudent && (
+          {leaderStudent && (
             <div className={styles['card']}>
               <div className={styles['card-header']}>
                 <span className={styles['card-header-icon']}><AiOutlineCrown /></span>
-                Лидер группы
+                Староста группы
               </div>
               <div
                 className={styles['leader-card']}
-                onClick={() => openStudentProfile(topStudent)}
+                onClick={() => openStudentProfile(leaderStudent)}
               >
                 <div className={styles['leader-avatar-wrap']}>
                   <div className={styles['leader-avatar']}>
-                    {topStudent.avatar_url ? (
-                      <img src={`${BASE_URL}${topStudent.avatar_url}`} alt={topStudent.username} />
+                    {leaderStudent.avatar_url ? (
+                      <img src={`${BASE_URL}${leaderStudent.avatar_url}`} alt={leaderStudent.username} />
                     ) : (
-                      (topStudent.full_name || topStudent.username).charAt(0).toUpperCase()
+                      (leaderStudent.full_name || leaderStudent.username).charAt(0).toUpperCase()
                     )}
                   </div>
-                  {getFrameImage(topStudent.avatar_frame) && (
+                  {getFrameImage(leaderStudent.avatar_frame) && (
                     <img
-                      src={getFrameImage(topStudent.avatar_frame)}
+                      src={getFrameImage(leaderStudent.avatar_frame)}
                       alt="Frame"
                       className={styles['leader-frame']}
-                      style={getFrameStyle(getFrameItem(topStudent.avatar_frame), 'group_leader')}
+                      style={getFrameStyle(getFrameItem(leaderStudent.avatar_frame), 'group_leader')}
                     />
                   )}
-                  <span className={styles['leader-crown']}><FaMedal /></span>
+                  <span className={styles['leader-crown']}><AiOutlineCrown /></span>
                 </div>
                 <div className={styles['leader-info']}>
-                  <span className={`styled-username ${topStudent.username_style || 'username-none'} ${styles['leader-name']}`}>
-                    {topStudent.full_name || topStudent.username}
+                  <span className={`styled-username ${leaderStudent.username_style || 'username-none'} ${styles['leader-name']}`}>
+                    {leaderStudent.full_name || leaderStudent.username}
                   </span>
+                  {leaderStudent.is_group_leader ? (
+                    <span className={styles['leader-role-badge']}><AiOutlineCrown /> Официальный Староста</span>
+                  ) : (
+                    <span className={styles['leader-role-badge-alt']}>Топ по баллам</span>
+                  )}
                   <span className={styles['leader-pts']}>
-                    <AiOutlineWallet /> {(topStudent.points || 0).toLocaleString()} баллов
+                    <AiOutlineWallet /> {(leaderStudent.points || 0).toLocaleString()} баллов
                   </span>
                   <span className={styles['leader-lvl']}>
-                    <AiOutlineStar /> Уровень {topStudent.level || 1}
+                    <AiOutlineStar /> Уровень {leaderStudent.level || 1}
                   </span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Starosta privileges — only visible to the starosta */}
+          {user?.is_group_leader && (
+            <div className={`${styles['card']} ${styles['card--starosta']}`}>
+              <div className={styles['card-header']}>
+                <span className={styles['card-header-icon']}><AiOutlineCrown /></span>
+                Привилегии старосты
+              </div>
+              <ul className={styles['priv-list']}>
+                <li className={styles['priv-item']} onClick={() => navigate('/student/starosta?tab=contacts')} style={{ cursor: 'pointer' }}>
+                  <AiOutlineCheckCircle className={styles['priv-icon']} />
+                  <div>
+                    <span className={styles['priv-title']}>Список участников</span>
+                    <span className={styles['priv-desc']}>Видите контакты всех участников группы</span>
+                  </div>
+                  <AiOutlineSend className={styles['priv-arrow']} />
+                </li>
+                <li className={styles['priv-item']} onClick={() => navigate('/student/starosta?tab=stats')} style={{ cursor: 'pointer' }}>
+                  <AiOutlineLineChart className={styles['priv-icon']} />
+                  <div>
+                    <span className={styles['priv-title']}>Статистика группы</span>
+                    <span className={styles['priv-desc']}>Расширенный доступ к успеваемости группы</span>
+                  </div>
+                  <AiOutlineSend className={styles['priv-arrow']} />
+                </li>
+                <li className={styles['priv-item']} onClick={() => navigate('/student/starosta?tab=schedule')} style={{ cursor: 'pointer' }}>
+                  <AiOutlineCalendar className={styles['priv-icon']} />
+                  <div>
+                    <span className={styles['priv-title']}>Приоритет в расписании</span>
+                    <span className={styles['priv-desc']}>Первый доступ при распределении времени</span>
+                  </div>
+                  <AiOutlineSend className={styles['priv-arrow']} />
+                </li>
+              </ul>
+              <button
+                className={styles['btn-starosta-panel']}
+                onClick={() => navigate('/student/starosta')}
+              >
+                <AiOutlineCrown /> Открыть панель старосты
+              </button>
             </div>
           )}
         </div>
@@ -370,8 +431,14 @@ function StudentGroup() {
                         <span className={`styled-username ${student.username_style || 'username-none'} ${styles['student-name']}`}>
                           {student.full_name || student.username}
                           {isMe && <span className={styles['me-badge']}>Вы</span>}
+                          {student.is_group_leader && (
+                            <span className={styles['starosta-badge']}><AiOutlineCrown /> Староста</span>
+                          )}
                         </span>
-                        <span className={styles['student-email']}>{student.email}</span>
+                        <span className={styles['student-email']}>
+                          {/* Starosta can see all emails; others see only their own */}
+                          {(user?.is_group_leader || student.id === user?.id) ? student.email : '••••••••'}
+                        </span>
                       </div>
                       <div className={styles['student-pts']}>
                         <span className={styles['pts-val']}>{(student.points || 0).toLocaleString()}</span>

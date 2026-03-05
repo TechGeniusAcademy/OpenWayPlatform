@@ -314,6 +314,86 @@ router.post('/attempt/:attemptId/complete', async (req, res) => {
   }
 });
 
+// Логировать нарушение анти-чит (front-end anti-cheat events)
+router.post('/attempt/:attemptId/violation', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    const { type, detail, count, ua } = req.body;
+
+    // Verify the attempt belongs to the requesting user
+    const attempt = await TestAttempt.getDetails(attemptId);
+    if (!attempt || attempt.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Доступ запрещён' });
+    }
+
+    const ip = (
+      req.headers['x-forwarded-for']?.split(',')[0] ||
+      req.socket.remoteAddress ||
+      ''
+    ).slice(0, 45);
+
+    const pool = (await import('../config/database.js')).default;
+    await pool.query(
+      `INSERT INTO test_violations (attempt_id, user_id, type, detail, count, user_agent, ip_address)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        attemptId,
+        req.user.id,
+        (type || 'unknown').slice(0, 60),
+        (detail || '').slice(0, 500),
+        count || 1,
+        (ua || '').slice(0, 300),
+        ip,
+      ]
+    );
+
+    res.json({ logged: true });
+  } catch (error) {
+    console.error('Ошибка логирования нарушения:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Логировать нарушение анти-чит (front-end anti-cheat events)
+router.post('/attempt/:attemptId/violation', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    const { type, detail, count, ua } = req.body;
+
+    // Verify the attempt belongs to the requesting user
+    const attempt = await TestAttempt.getDetails(attemptId);
+    if (!attempt || attempt.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Доступ запрещён' });
+    }
+
+    const ip = (
+      req.headers['x-forwarded-for']?.split(',')[0] ||
+      req.socket.remoteAddress ||
+      ''
+    ).slice(0, 45);
+
+    const db = (await import('../config/database.js')).default;
+    await db.query(
+      `INSERT INTO test_violations (attempt_id, user_id, type, detail, count, user_agent, ip_address)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        attemptId,
+        req.user.id,
+        (type   || 'unknown').slice(0, 60),
+        (detail || '').slice(0, 500),
+        count  || 1,
+        (ua    || '').slice(0, 300),
+        ip,
+      ]
+    );
+
+    res.json({ logged: true });
+  } catch (error) {
+    console.error('Ошибка логирования нарушения:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 // Получить детали попытки
 router.get('/attempt/:attemptId', async (req, res) => {
   try {

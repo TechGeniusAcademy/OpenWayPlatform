@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import pool from '../config/database.js';
 
 // Middleware для проверки JWT токена
 export const authenticate = async (req, res, next) => {
@@ -11,6 +12,24 @@ export const authenticate = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Если токен содержит jti — проверяем что сессия не отозвана
+    if (decoded.jti) {
+      const { rows } = await pool.query(
+        'SELECT id FROM user_sessions WHERE jti = $1',
+        [decoded.jti]
+      );
+      if (rows.length === 0) {
+        return res.status(401).json({ error: 'Сессия завершена' });
+      }
+      // Обновляем last_used_at (fire-and-forget)
+      pool.query(
+        'UPDATE user_sessions SET last_used_at = NOW() WHERE jti = $1',
+        [decoded.jti]
+      ).catch(() => {});
+      req.jti = decoded.jti;
+    }
+
     const user = await User.findById(decoded.userId);
     
     if (!user) {

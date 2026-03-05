@@ -256,7 +256,7 @@ function Chat() {
     id: msg.id,
     message: msg.content,
     sentTime: msg.created_at,
-    sender: msg.sender_name,
+    sender: msg.sender_full_name || msg.sender_username || msg.sender_name || "",
     senderId: msg.sender_id,
     isOwn: msg.sender_id === user.id,
     messageType: msg.message_type || "text",
@@ -611,7 +611,7 @@ function Chat() {
                                 <span className={styles.fileSize}>{(msg.fileSize / 1024).toFixed(1)} KB</span>
                               </div>
                               <a
-                                href={`${BASE_URL}/api/chat/files/${msg.filePath}`}
+                                href={`${BASE_URL}${msg.filePath}`}
                                 download={msg.fileName}
                                 className={styles.fileDownload}
                                 onClick={e => e.stopPropagation()}
@@ -622,7 +622,7 @@ function Chat() {
                           )}
                           {msg.messageType === "image" && (
                             <img
-                              src={`${BASE_URL}/api/chat/files/${msg.filePath}`}
+                              src={`${BASE_URL}${msg.filePath}`}
                               alt={msg.fileName}
                               className={styles.imgMsg}
                             />

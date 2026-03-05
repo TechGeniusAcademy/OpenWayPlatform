@@ -1,12 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api, { BASE_URL } from "../../utils/api";
 import styles from "./StudentSettings.module.css";
 import {
   FaUser, FaEnvelope, FaLock, FaCamera, FaCheck,
   FaExclamationCircle, FaEye, FaEyeSlash, FaSave,
+  FaDesktop, FaMobileAlt, FaTabletAlt, FaTrash, FaSignOutAlt,
 } from "react-icons/fa";
-import { MdVerified } from "react-icons/md";
+import { MdVerified, MdDevices } from "react-icons/md";
+import { AiOutlineGlobal } from "react-icons/ai";
 
 function StudentSettings() {
   const { user, updateUser } = useAuth();
@@ -326,7 +328,172 @@ function StudentSettings() {
           </form>
         </div>
 
+        {/* ══ SESSIONS CARD ══ */}
+        <SessionsCard />
+
       </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   СЕССИИ
+════════════════════════════════ */
+function parseDevice(ua) {
+  if (!ua) return { icon: <FaDesktop />, label: 'Неизвестное устройство', browser: '' };
+  const mob = /android|iphone|ipad|ipod|mobile/i.test(ua);
+  const tab = /ipad|tablet/i.test(ua);
+  let icon = tab ? <FaTabletAlt /> : mob ? <FaMobileAlt /> : <FaDesktop />;
+  let browser = '';
+  if (/edg\//i.test(ua))        browser = 'Edge';
+  else if (/chrome/i.test(ua)) browser = 'Chrome';
+  else if (/safari/i.test(ua)) browser = 'Safari';
+  else if (/firefox/i.test(ua)) browser = 'Firefox';
+  else if (/opera|opr/i.test(ua)) browser = 'Opera';
+  let os = '';
+  if (/windows/i.test(ua))      os = 'Windows';
+  else if (/mac os/i.test(ua))  os = 'macOS';
+  else if (/android/i.test(ua)) os = 'Android';
+  else if (/ios|iphone|ipad/i.test(ua)) os = 'iOS';
+  else if (/linux/i.test(ua))   os = 'Linux';
+  const label = [browser, os].filter(Boolean).join(' · ') || 'Неизвестный браузер';
+  return { icon, label };
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins < 1)    return 'Только что';
+  if (mins < 60)   return `${mins} мин. назад`;
+  if (hours < 24)  return `${hours} ч. назад`;
+  return `${days} дн. назад`;
+}
+
+function SessionsCard() {
+  const [sessions, setSessions]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [revoking, setRevoking]   = useState(null); // id or 'all'
+  const [msg, setMsg]             = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get('/auth/sessions');
+      setSessions(data.sessions || []);
+    } catch {
+      setMsg({ type: 'error', text: 'Не удалось загрузить сессии' });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const revoke = async (id) => {
+    setRevoking(id);
+    setMsg(null);
+    try {
+      await api.delete(`/auth/sessions/${id}`);
+      setSessions(s => s.filter(x => x.id !== id));
+      setMsg({ type: 'success', text: 'Сессия завершена' });
+    } catch {
+      setMsg({ type: 'error', text: 'Не удалось завершить сессию' });
+    } finally {
+      setRevoking(null);
+    }
+  };
+
+  const revokeAll = async () => {
+    setRevoking('all');
+    setMsg(null);
+    try {
+      await api.delete('/auth/sessions');
+      // Оставляем только текущую
+      setSessions(s => s.filter(x => x.is_current));
+      setMsg({ type: 'success', text: 'Все другие сессии завершены' });
+    } catch {
+      setMsg({ type: 'error', text: 'Ошибка при завершении сессий' });
+    } finally {
+      setRevoking(null);
+    }
+  };
+
+  const otherCount = sessions.filter(s => !s.is_current).length;
+
+  return (
+    <div className={`${styles.card} ${styles.cardFull}`}>
+      <div className={styles.cardHeader}>
+        <MdDevices className={styles.cardIcon} />
+        <span className={styles.cardTitle}>Активные сессии</span>
+        {otherCount > 0 && (
+          <button
+            className={styles.revokeAllBtn}
+            onClick={revokeAll}
+            disabled={revoking === 'all'}
+            title="Завершить все другие сессии"
+          >
+            <FaSignOutAlt />
+            {revoking === 'all' ? 'Завершение...' : `Выйти изде (${otherCount})`}
+          </button>
+        )}
+      </div>
+
+      <p className={styles.sessionsHint}>
+        Ниже перечислены все устройства, с которых вы входили в аккаунт. Если видите незнакомое — завершите сессию и смените пароль.
+      </p>
+
+      {loading ? (
+        <div className={styles.sessionsLoading}>
+          <div className={styles.spinner} />
+          <span>Загрузка...</span>
+        </div>
+      ) : sessions.length === 0 ? (
+        <p className={styles.sessionsEmpty}>Нет активных сессий</p>
+      ) : (
+        <div className={styles.sessionsList}>
+          {sessions.map(s => {
+            const { icon, label } = parseDevice(s.user_agent);
+            return (
+              <div key={s.id} className={`${styles.sessionItem} ${s.is_current ? styles.sessionCurrent : ''}`}>
+                <div className={styles.sessionIcon}>{icon}</div>
+                <div className={styles.sessionInfo}>
+                  <div className={styles.sessionDevice}>
+                    {label}
+                    {s.is_current && <span className={styles.currentBadge}>Текущая</span>}
+                  </div>
+                  <div className={styles.sessionMeta}>
+                    {s.ip_address && (
+                      <span className={styles.sessionMetaItem}>
+                        <AiOutlineGlobal /> {s.ip_address}
+                      </span>
+                    )}
+                    <span className={styles.sessionMetaItem}>
+                      Вошёл: {new Date(s.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                    <span className={styles.sessionMetaItem}>
+                      Активность: {timeAgo(s.last_used_at)}
+                    </span>
+                  </div>
+                </div>
+                {!s.is_current && (
+                  <button
+                    className={styles.sessionRevokeBtn}
+                    onClick={() => revoke(s.id)}
+                    disabled={revoking === s.id}
+                    title="Завершить сессию"
+                  >
+                    {revoking === s.id ? '...' : <FaTrash />}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <StatusMessage msg={msg} />
     </div>
   );
 }
