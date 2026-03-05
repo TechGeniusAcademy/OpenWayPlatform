@@ -1694,21 +1694,25 @@ export const initDatabase = async () => {
     `);
 
     // Нарушения при прохождении тестов (anti-cheat log)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS test_violations (
-        id          SERIAL PRIMARY KEY,
-        attempt_id  INTEGER NOT NULL REFERENCES test_attempts(id) ON DELETE CASCADE,
-        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        type        VARCHAR(60) NOT NULL,
-        detail      TEXT,
-        count       INTEGER DEFAULT 1,
-        user_agent  TEXT,
-        ip_address  VARCHAR(45),
-        created_at  TIMESTAMP DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS idx_violations_attempt ON test_violations(attempt_id);
-      CREATE INDEX IF NOT EXISTS idx_violations_user    ON test_violations(user_id);
-    `);
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS test_violations (
+          id          SERIAL PRIMARY KEY,
+          attempt_id  INTEGER NOT NULL,
+          user_id     INTEGER NOT NULL,
+          type        VARCHAR(60) NOT NULL,
+          detail      TEXT,
+          count       INTEGER DEFAULT 1,
+          user_agent  TEXT,
+          ip_address  VARCHAR(45),
+          created_at  TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_violations_attempt ON test_violations(attempt_id);
+        CREATE INDEX IF NOT EXISTS idx_violations_user    ON test_violations(user_id);
+      `);
+    } catch (e) {
+      console.warn('⚠️ test_violations: не удалось создать таблицу (проверьте права):', e.message);
+    }
 
     console.log('✅ База данных полностью инициализирована');
   } catch (error) {
