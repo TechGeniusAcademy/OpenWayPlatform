@@ -1511,15 +1511,19 @@ export const initDatabase = async () => {
     `);
 
     // ─── Kaetram (MMORPG) ────────────────────────────────────────────────────
-    await pool.query(`
-      CREATE OR REPLACE FUNCTION update_kaetram_updated_at()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        NEW.updated_at = CURRENT_TIMESTAMP;
-        RETURN NEW;
-      END;
-      $$ LANGUAGE plpgsql;
-    `);
+    try {
+      await pool.query(`
+        CREATE OR REPLACE FUNCTION update_kaetram_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          NEW.updated_at = CURRENT_TIMESTAMP;
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+    } catch (e) {
+      console.warn('⚠️ update_kaetram_updated_at: нет прав на замену функции (уже существует):', e.message);
+    }
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS kaetram_players (
