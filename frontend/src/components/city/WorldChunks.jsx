@@ -4,6 +4,7 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { CHUNK_SIZE, RENDER_DIST } from './CityContext.js';
 import { registerOreDeposit, unregisterOreDeposit } from '../systems/oreRegistry.js';
+import { registerWaterBody, unregisterWaterBody } from '../systems/waterRegistry.js';
 
 // ─── Shared geometries (created once, reused) ─────────────────────────────────
 // NOTE: created at module scope — reused across all instances for performance.
@@ -34,10 +35,9 @@ const MAT = {
   diamond:    new THREE.MeshStandardMaterial({ color: '#4a5a6a', roughness: 0.5,  metalness: 0.2  }),
   diamondVein:new THREE.MeshStandardMaterial({ color: '#80d8ff', roughness: 0.05, metalness: 0.9,  emissive: new THREE.Color('#003060'), transparent: true, opacity: 0.92 }),
   // roughness 0.55 + metalness 0.05 → no mirror specular, no harsh glinting
-  waterSurf:  new THREE.MeshStandardMaterial({ color: '#1a6a9a', roughness: 0.55, metalness: 0.05, transparent: true, opacity: 0.82 }),
-  waterShore: new THREE.MeshStandardMaterial({ color: '#144060', roughness: 0.6,  metalness: 0.0,  transparent: true, opacity: 0.45 }),
-  shore:      new THREE.MeshStandardMaterial({ color: '#8a7a5a', roughness: 0.97, metalness: 0 }),
-  reed:       new THREE.MeshStandardMaterial({ color: '#5a7a3a', roughness: 0.9,  metalness: 0 }),
+  waterShore: new THREE.MeshStandardMaterial({ color: '#0d3a54', roughness: 0.7,  metalness: 0.0,  transparent: true, opacity: 0.38 }),
+  shore:      new THREE.MeshStandardMaterial({ color: '#7a6e55', roughness: 0.97, metalness: 0 }),
+  reed:       new THREE.MeshStandardMaterial({ color: '#8a7a4a', roughness: 0.92, metalness: 0 }),
 };
 
 // ─── Deterministic RNG ────────────────────────────────────────────────────────
@@ -292,7 +292,124 @@ function buildRiverGeo(rng, len, wid) {
     bankGeo:  new THREE.ShapeGeometry(new THREE.Shape([...bankLeft, ...bankRight]), 2),
   };
 }
+// ─── Animated water surface ────────────────────────────────────────────────────
 
+// GLSL vertex — sinusoidal ripple displacement по X,Z
+const WATER_VERT = /* glsl */`
+  uniform float uTime;
+  uniform float uSpeed;
+  varying vec2  vUv;
+  varying float vFresnel;
+
+  void main() {
+    vUv = uv;
+    vec3 pos = position;
+    // Two overlapping sine waves for natural ripples
+    float wave1 = sin(pos.x * 0.7 + uTime * uSpeed)       * 0.012;
+    float wave2 = sin(pos.y * 0.9 + uTime * uSpeed * 0.6) * 0.009;
+    pos.z += wave1 + wave2;
+
+    vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+    // Approximate Fresnel: more transparent at steep view angles
+    vec3 N = normalize(normalMatrix * normal);
+    vec3 V = normalize(-mvPos.xyz);
+    vFresnel = 1.0 - abs(dot(N, V));
+
+    gl_Position = projectionMatrix * mvPos;
+  }
+`;
+
+// GLSL fragment — dual UV-scroll + foam edge + Fresnel tint
+const WATER_FRAG = /* glsl */`
+  uniform float uTime;
+  uniform vec3  uColorDeep;
+  uniform vec3  uColorShallow;
+  uniform vec3  uFoamColor;
+  varying vec2  vUv;
+  varying float vFresnel;
+
+  // Cheap hash-based noise for foam
+  float hash(vec2 p) {
+    p = fract(p * vec2(127.1, 311.7));
+    p += dot(p, p + 19.19);
+    return fract(p.x * p.y);
+  }
+  float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f*f*(3.0-2.0*f);
+    return mix(mix(hash(i), hash(i+vec2(1,0)), f.x),
+               mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y);
+  }
+
+  void main() {
+    // Wave 1: scroll diagonally
+    vec2 uv1 = vUv * 3.5 + vec2(uTime * 0.022, uTime * 0.015);
+    // Wave 2: scroll in opposite direction at different scale — creates cross-hatch ripple
+    vec2 uv2 = vUv * 2.8 + vec2(-uTime * 0.015, uTime * 0.025);
+
+    float n1 = noise(uv1);
+    float n2 = noise(uv2);
+    float ripple = (n1 + n2) * 0.5;
+
+    // Foam near edge (vUv near 0/1) — ShapeGeometry UVs span [0,1]
+    float edge = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+    float foam  = smoothstep(0.0, 0.08, edge);        // 0 at edge, 1 inside
+    float foamN = noise(vUv * 8.0 + uTime * 0.04);  // noisy foam line
+    float foamM = (1.0 - foam) * step(0.45, foamN);  // foam band
+
+    // Depth gradient + wave ripple
+    vec3 col = mix(uColorShallow, uColorDeep, ripple * 0.6 + 0.4);
+    // Fresnel: subtle highlight at grazing angle
+    col += vec3(vFresnel * vFresnel) * 0.06;
+    // Foam overlay
+    col = mix(col, uFoamColor, foamM * 0.65);
+
+    float alpha = mix(0.72, 0.91, ripple) - foamM * 0.1;
+    gl_FragColor = vec4(col, alpha);
+  }
+`;
+
+// Module-level shader uniforms updated each frame via ref
+const WATER_UNIFORMS_PROTO = {
+  uTime:         { value: 0 },
+  uSpeed:        { value: 1.0 },
+  uColorDeep:    { value: new THREE.Color('#0d4a72') },
+  uColorShallow: { value: new THREE.Color('#2d9ecf') },
+  uFoamColor:    { value: new THREE.Color('#cce8f4') },
+};
+
+// WaterSurface: animated flat plane for lakes/rivers
+function WaterSurface({ geo, speed = 1.0, rotation, position }) {
+  const matRef = useRef();
+
+  // Each instance needs its own uniforms object (not shared)
+  const uniforms = useMemo(() => ({
+    uTime:         { value: 0 },
+    uSpeed:        { value: speed },
+    uColorDeep:    { value: new THREE.Color('#0d4a72') },
+    uColorShallow: { value: new THREE.Color('#2d9ecf') },
+    uFoamColor:    { value: new THREE.Color('#cce8f4') },
+  }), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useFrame(({ clock }) => {
+    if (matRef.current) matRef.current.uniforms.uTime.value = clock.getElapsedTime();
+  });
+
+  return (
+    <mesh rotation={rotation} position={position}>
+      <primitive object={geo} />
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={WATER_VERT}
+        fragmentShader={WATER_FRAG}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
 // ─── Water body (lake / pond) ─────────────────────────────────────────────────
 
 function WaterBody({ x, z, rng }) {
@@ -303,8 +420,8 @@ function WaterBody({ x, z, rng }) {
     const il     = rng() > 0.35;
     const r      = il ? 5.0 : 3.0;
     const rySeed = rng() * Math.PI;
-    const wGeo   = buildLakeGeo(rng, r * 0.92);
-    const sGeo   = buildLakeGeo(rng, r * 1.10);
+    const wGeo   = buildLakeGeo(rng, r * 1.05);
+    const sGeo   = null;
     const bGeo   = buildLakeGeo(rng, r * 1.30);
     const rockCount = 2 + Math.floor(rng() * 4);
     const rks = Array.from({ length: rockCount }, () => {
@@ -350,11 +467,17 @@ function WaterBody({ x, z, rng }) {
   useEffect(() => {
     return () => {
       waterGeo.dispose();
-      shoreGeo.dispose();
+      shoreGeo?.dispose();
       bankGeo.dispose();
       rocksGeo?.dispose();
       reedsGeo?.dispose();
     };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Register water position for pump placement detection
+  useEffect(() => {
+    registerWaterBody(x, z, radius);
+    return () => unregisterWaterBody(x, z);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -364,16 +487,8 @@ function WaterBody({ x, z, rng }) {
         <primitive object={bankGeo} />
         <primitive object={MAT.shore} attach="material" />
       </mesh>
-      {/* Dark shore */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-        <primitive object={shoreGeo} />
-        <primitive object={MAT.waterShore} attach="material" />
-      </mesh>
-      {/* Water surface */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-        <primitive object={waterGeo} />
-        <primitive object={MAT.waterSurf} attach="material" />
-      </mesh>
+      {/* Animated water surface */}
+      <WaterSurface geo={waterGeo} speed={0.28} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} />
       {/* Shore rocks — merged into 1 draw call */}
       {rocksGeo && <mesh geometry={rocksGeo} material={MAT.rock} />}
       {/* Reeds — merged into 1 draw call */}
@@ -438,11 +553,8 @@ function RiverSegment({ x, z, rng }) {
         <primitive object={bankGeo} />
         <primitive object={MAT.shore} attach="material" />
       </mesh>
-      {/* Curved water */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-        <primitive object={waterGeo} />
-        <primitive object={MAT.waterSurf} attach="material" />
-      </mesh>
+      {/* Animated river water — higher speed for flowing effect */}
+      <WaterSurface geo={waterGeo} speed={0.6} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} />
       {/* Bank rocks — merged into 1 draw call */}
       {rocksGeo && <mesh geometry={rocksGeo} material={MAT.rock} />}
       {/* Hitbox */}
@@ -459,19 +571,99 @@ function RiverSegment({ x, z, rng }) {
 // ─── Ground materials ─────────────────────────────────────────────────────────
 
 const GROUND_MATS = [
-  new THREE.MeshStandardMaterial({ color: '#1e2e18', roughness: 0.95, metalness: 0 }),
-  new THREE.MeshStandardMaterial({ color: '#1a2a14', roughness: 0.95, metalness: 0 }),
-  new THREE.MeshStandardMaterial({ color: '#222e1c', roughness: 0.92, metalness: 0 }),
-  new THREE.MeshStandardMaterial({ color: '#243020', roughness: 0.92, metalness: 0 }),
+  new THREE.MeshStandardMaterial({ color: '#5c5248', roughness: 0.97, metalness: 0.04 }),
+  new THREE.MeshStandardMaterial({ color: '#544d43', roughness: 0.97, metalness: 0.04 }),
+  new THREE.MeshStandardMaterial({ color: '#615a4f', roughness: 0.95, metalness: 0.05 }),
+  new THREE.MeshStandardMaterial({ color: '#4e4840', roughness: 0.96, metalness: 0.04 }),
 ];
-// Single shared material for instancedMesh ground (ignoring per-chunk tint)
-const GROUND_MAT = GROUND_MATS[0];
+// White base — setColorAt provides the actual per-chunk color
+const GROUND_MAT = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.97, metalness: 0.04 });
+
+// 12-variant stone palette — deterministically chosen per chunk
+const GROUND_COLORS = [
+  new THREE.Color('#5c5248'), // тёплый серо-коричневый
+  new THREE.Color('#544d43'), // тёмно-коричневый
+  new THREE.Color('#615a4f'), // средний камень
+  new THREE.Color('#4e4840'), // тёмный сланец
+  new THREE.Color('#695550'), // красноватый песчаник
+  new THREE.Color('#505560'), // холодный серый гранит
+  new THREE.Color('#6a6055'), // светлый известняк
+  new THREE.Color('#3e3c38'), // тёмный базальт
+  new THREE.Color('#7a6e5e'), // песчано-жёлтый доломит
+  new THREE.Color('#585250'), // вулканическая порода
+  new THREE.Color('#4a5048'), // зеленоватый сланец
+  new THREE.Color('#6e5e52'), // ржаво-коричневый
+];
+const _COL = new THREE.Color(); // reused to avoid GC
 const PLANE_GEO = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
 // Pre-allocated rotation to apply to instancedMesh — planes lie flat
 const _GROUND_ROT = new THREE.Euler(-Math.PI / 2, 0, 0);
 const _GROUND_DUMMY = new THREE.Object3D();
 _GROUND_DUMMY.rotation.copy(_GROUND_ROT);
 const MAX_GROUND_INSTANCES = (RENDER_DIST * 2 + 1) ** 2; // 49 at RENDER_DIST=3
+
+// ─── Shared detail geometry templates ───────────────────────────────────────
+
+const SLAB_TEMPLATES = [
+  new THREE.BoxGeometry(1.6, 0.07, 1.1),
+  new THREE.BoxGeometry(1.0, 0.05, 0.75),
+  new THREE.BoxGeometry(2.2, 0.08, 0.85),
+  new THREE.BoxGeometry(0.65, 0.06, 0.65),
+];
+const MAT_SLAB   = new THREE.MeshStandardMaterial({ color: '#47423d', roughness: 0.98, metalness: 0.02 });
+const MAT_PEBBLE = new THREE.MeshStandardMaterial({ color: '#7c7068', roughness: 0.95, metalness: 0.03 });
+
+// Scattered flat stone slabs + pebble clusters — breaks up the uniform plane
+function GroundDetail({ cx, cz }) {
+  const ox = cx * CHUNK_SIZE;
+  const oz = cz * CHUNK_SIZE;
+
+  const { slabGeo, pebbleGeo } = useMemo(() => {
+    const rng  = mkRng(chunkSeed(cx * 8191, cz * 6271));
+    const half = (CHUNK_SIZE / 2) * 0.90;
+    const rand = () => (rng() - 0.5) * 2 * half;
+
+    // Flat rock slabs
+    const slabGeos = Array.from({ length: 10 + Math.floor(rng() * 8) }, () => {
+      const g = SLAB_TEMPLATES[Math.floor(rng() * SLAB_TEMPLATES.length)].clone();
+      const tmp = new THREE.Object3D();
+      tmp.position.set(ox + rand(), 0.036, oz + rand());
+      tmp.rotation.set((rng() - 0.5) * 0.20, rng() * Math.PI, (rng() - 0.5) * 0.20);
+      const s = 0.55 + rng() * 1.0;
+      tmp.scale.set(s, 1, s);
+      tmp.updateMatrix();
+      g.applyMatrix4(tmp.matrix);
+      return g;
+    });
+    const sGeo = mergeGeos(slabGeos);
+    slabGeos.forEach(g => g.dispose());
+
+    // Pebbles (flattened icosahedra)
+    const pebbleGeos = Array.from({ length: 10 + Math.floor(rng() * 10) }, () => {
+      const g = GEO.rockSmall.clone();
+      const tmp = new THREE.Object3D();
+      tmp.position.set(ox + rand(), 0.02, oz + rand());
+      tmp.scale.set(0.10 + rng() * 0.14, 0.04 + rng() * 0.06, 0.10 + rng() * 0.14);
+      tmp.rotation.y = rng() * Math.PI;
+      tmp.updateMatrix();
+      g.applyMatrix4(tmp.matrix);
+      return g;
+    });
+    const pGeo = mergeGeos(pebbleGeos);
+    pebbleGeos.forEach(g => g.dispose());
+
+    return { slabGeo: sGeo, pebbleGeo: pGeo };
+  }, [cx, cz]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => { slabGeo?.dispose(); pebbleGeo?.dispose(); }, [slabGeo, pebbleGeo]);
+
+  return (
+    <group>
+      {slabGeo   && <mesh geometry={slabGeo}   material={MAT_SLAB}   receiveShadow />}
+      {pebbleGeo && <mesh geometry={pebbleGeo} material={MAT_PEBBLE} receiveShadow />}
+    </group>
+  );
+}
 
 // ─── Chunk ────────────────────────────────────────────────────────────────────
 
@@ -515,6 +707,8 @@ function Chunk({ cx, cz }) {
 
   return (
     <group>
+      {/* Scattered flat stone slabs + pebbles — breaks up the flat ground */}
+      <GroundDetail cx={cx} cz={cz} />
       {/* Interactive spawns: ores, water, rivers */}
       {spawns.map((sp, i) => {
         const rng = mkRng(chunkSeed(cx * 1000 + i, cz * 1000 + i));
@@ -551,10 +745,16 @@ export function World({ camTargetRef }) {
       const [cx, cz] = key.split(',').map(Number);
       _GROUND_DUMMY.position.set(cx * CHUNK_SIZE, 0, cz * CHUNK_SIZE);
       _GROUND_DUMMY.updateMatrix();
-      mesh.setMatrixAt(i++, _GROUND_DUMMY.matrix);
+      mesh.setMatrixAt(i, _GROUND_DUMMY.matrix);
+      // Per-chunk deterministic color
+      const s = chunkSeed(cx, cz);
+      _COL.copy(GROUND_COLORS[s % GROUND_COLORS.length]);
+      mesh.setColorAt(i, _COL);
+      i++;
     }
     mesh.count = i;
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }, [chunks]);
 
   useFrame(() => {

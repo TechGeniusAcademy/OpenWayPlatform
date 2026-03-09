@@ -2,78 +2,108 @@
 // AABB (axis-aligned bounding box) half-extents in world units.
 // hw = half-width along X,  hd = half-depth along Z.
 //
-// Tune these values to match the actual visible base of each model.
-// They are independent from the workArea sizes in the item config files.
+// Every building type must appear here.  Buildings without an entry are
+// invisible to the collision system and can be stacked freely.
+// These represent the physical model footprint used for path-routing helpers.
 
 export const ITEM_FOOTPRINTS = {
-  'solar-panel': {
-    hw: 4,    // ← half of the model's width
-    hd: 4,    // ← half of the model's depth
-  },
-  'money-factory': {
-    hw: 7,
-    hd: 7,
-  },
-  'energy-storage': {
-    hw: 5,
-    hd: 5,
-  },
-  'town-hall': {
-    hw: 5,
-    hd: 5,
-  },
-  'street-lamp': {
-    hw: 1.5,
-    hd: 1.5,
-  },
-  'splitter': {
-    hw: 1.5,
-    hd: 1.5,
-  },
-  'merger': {
-    hw: 1.5,
-    hd: 1.5,
-  },
-  'extractor': {
-    hw: 2.5,
-    hd: 2.5,
-  },
-  'builder-house': {
-    hw: 3.5,
-    hd: 3.5,
-  },
-  'coal-generator': {
-    hw: 5,
-    hd: 5,
-  },
-  'hangar': {
-    hw: 8,
-    hd: 8,
-  },
+  // ── Production / extraction ─────────────────────────────────────────────────
+  'extractor':       { hw: 2.5, hd: 2.5 },
+  'pump':            { hw: 2.5, hd: 2.5 },
+  'pump-factory':    { hw: 4,   hd: 4   },
+  'lab-factory':     { hw: 3,   hd: 6   },
+  'money-factory':   { hw: 7,   hd: 7   },
+  // ── Energy ──────────────────────────────────────────────────────────────────
+  'solar-panel':     { hw: 1,   hd: 1   },
+  'coal-generator':  { hw: 5,   hd: 5   },
+  'steam-generator': { hw: 5,   hd: 5   },
+  'energy-storage':  { hw: 5,   hd: 5   },
+  // ── City buildings ───────────────────────────────────────────────────────────
+  'town-hall':       { hw: 5,   hd: 5   },
+  'builder-house':   { hw: 3.5, hd: 3.5 },
+  'hangar':          { hw: 8,   hd: 8   },
+  // ── Small structures & decorations ───────────────────────────────────────────
+  'street-lamp':     { hw: 1.5, hd: 1.5 },
+  'splitter':        { hw: 1.5, hd: 1.5 },
+  'merger':          { hw: 1.5, hd: 1.5 },
+  'wall':            { hw: 0.8, hd: 0.8 },
 };
+
+// ─── Energy-generator exclusion zones ────────────────────────────────────────
+// Energy-generating buildings (those with a zone-based power radius) also
+// enforce a larger keep-clear radius beyond their physical footprint.
+// • No other building may be placed inside this zone.
+// • An energy generator may not be placed so that its own exclusion zone
+//   overlaps with any existing building's effective zone.
+//
+// These values are used INSTEAD OF the physical footprint in isColliding().
+// The path-routing helpers (isPointInsideBuilding / isSegmentIntersectsBuilding)
+// continue to use the smaller physical footprints.
+
+export const ENERGY_EXCLUSION_ZONES = {
+  'solar-panel':     { hw: 10, hd: 10 },  // energy zone 100×100; keep-clear 20×20
+  'coal-generator':  { hw: 12, hd: 12 },  // energy zone  80×80;  keep-clear 24×24
+  'steam-generator': { hw: 12, hd: 12 },  // energy zone  90×90;  keep-clear 24×24
+};
+
+// ─── Helper: pick the right zone for collision purposes ──────────────────────
+// Energy generators use their exclusion zone; all others use the footprint.
+function effectiveZone(type) {
+  return ENERGY_EXCLUSION_ZONES[type] ?? ITEM_FOOTPRINTS[type] ?? null;
+}
+
+// ─── 2D OBB overlap via Separating Axis Theorem ─────────────────────────────
+// Returns true when two oriented rectangles overlap.
+// Each rect: center (cx,cz), half-extents (hw,hd), rotation rotY (radians, Y-up).
+function obbOverlap(ax, az, ahw, ahd, aRot, bx, bz, bhw, bhd, bRot) {
+  const dx = bx - ax;
+  const dz = bz - az;
+
+  const caA = Math.cos(aRot), saA = Math.sin(aRot);  // A local axes
+  const caB = Math.cos(bRot), saB = Math.sin(bRot);  // B local axes
+
+  // 4 candidate separating axes: A's X, A's Z, B's X, B's Z
+  const axes = [
+    [ caA,  saA],
+    [-saA,  caA],
+    [ caB,  saB],
+    [-saB,  caB],
+  ];
+
+  for (const [nx, nz] of axes) {
+    const dist = Math.abs(dx * nx + dz * nz);
+    const rA = ahw * Math.abs( caA * nx + saA * nz) + ahd * Math.abs(-saA * nx + caA * nz);
+    const rB = bhw * Math.abs( caB * nx + saB * nz) + bhd * Math.abs(-saB * nx + caB * nz);
+    if (dist >= rA + rB) return false;  // gap found → no overlap
+  }
+  return true;  // no separating axis → overlap
+}
 
 // ─── Collision check ──────────────────────────────────────────────────────────
 
 /**
- * Returns true if placing `type` at `pos` would overlap any already-placed item.
+ * Returns true if placing `type` at `pos` (rotated by `rotY` radians) would
+ * cause its zone to overlap the zone of any already-placed item.
  *
- * @param {{ x: number, z: number }} pos       – candidate world position
- * @param {string|null}              type      – item type being placed
- * @param {Array<{type:string, position:[number,number,number]}>} placed
+ * Uses OBB SAT so non-square footprints properly account for rotation.
+ *
+ * @param {{ x: number, z: number }} pos    – candidate world position
+ * @param {string|null}              type   – item type being placed
+ * @param {Array}                    placed – already placed items
+ * @param {number}                   rotY   – Y-rotation of the new item (radians)
  */
-export function isColliding(pos, type, placed) {
-  const a = ITEM_FOOTPRINTS[type];
+export function isColliding(pos, type, placed, rotY = 0) {
+  const a = effectiveZone(type);
   if (!a || !placed?.length) return false;
 
   for (const item of placed) {
-    const b = ITEM_FOOTPRINTS[item.type];
+    const b = effectiveZone(item.type);
     if (!b) continue;
 
-    const dx = Math.abs(pos.x - item.position[0]);
-    const dz = Math.abs(pos.z - item.position[2]);
-
-    // Separating-axis test: overlap when BOTH diffs are smaller than combined extents
-    if (dx < a.hw + b.hw && dz < a.hd + b.hd) return true;
+    if (obbOverlap(
+      pos.x,          pos.z,          a.hw, a.hd, rotY,
+      item.position[0], item.position[2], b.hw, b.hd, item.rotation ?? 0,
+    )) return true;
   }
   return false;
 }

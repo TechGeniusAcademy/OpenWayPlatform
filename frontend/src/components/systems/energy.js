@@ -36,6 +36,8 @@ export const ENERGY_TYPES = {
   fuel:  { id: 'fuel',  icon: '🔥', label: 'Топливная', color: '#fb923c', unit: 'л'   },
   coins: { id: 'coins', icon: '🪙', label: 'Монеты',    color: '#fbbf24', unit: 'монет' },
   ore:   { id: 'ore',   icon: '⛏️', label: 'Руда',      color: '#a8874a', unit: 'ед.' },
+  water: { id: 'water', icon: '💧', label: 'Вода',      color: '#38bdf8', unit: 'л.'  },
+  steam: { id: 'steam', icon: '☁️', label: 'Пар',       color: '#a78bfa', unit: 'ед.' },
 };
 
 // ─── Internal registry ────────────────────────────────────────────────────────

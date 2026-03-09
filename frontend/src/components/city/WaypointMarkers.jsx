@@ -1,12 +1,38 @@
 // ─── WaypointMarkers.jsx ──────────────────────────────────────────────────────
-// Renders floating HTML labels for each waypoint in the 3D world.
-// Placed inside the R3F <Canvas>. Uses <Html> from @react-three/drei.
+// Renders floating HTML labels + 3D poles for each waypoint in the scene.
+// Also projects waypoint world positions to screen coords each frame, writing
+// results into screenPosRef so WaypointEdgeArrows can show off-screen indicators.
 
+import { useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 
-const POLE_HEIGHT = 18; // world-units above ground
+const POLE_HEIGHT = 18;
+const _v3 = new THREE.Vector3();
 
-export function WaypointMarkers({ waypoints = [] }) {
+export function WaypointMarkers({ waypoints = [], screenPosRef }) {
+  const { camera, gl } = useThree();
+
+  useFrame(() => {
+    if (!screenPosRef) return;
+    const W = gl.domElement.clientWidth;
+    const H = gl.domElement.clientHeight;
+    const result = {};
+    for (const wp of waypoints) {
+      _v3.set(wp.x, 0, wp.z);
+      _v3.project(camera);
+      // Behind camera: z > 1 → flip direction so arrow points correctly
+      const behind = _v3.z > 1;
+      let sx = ((_v3.x + 1) / 2) * W;
+      let sy = ((-_v3.y + 1) / 2) * H;
+      if (behind) { sx = W - sx; sy = H - sy; }
+      const onScreen = !behind && _v3.x > -1 && _v3.x < 1 && _v3.y > -1 && _v3.y < 1;
+      result[wp.id] = { id: wp.id, sx, sy, onScreen, name: wp.name, wx: wp.x, wz: wp.z };
+    }
+    screenPosRef.current = result;
+  });
+
   return (
     <>
       {waypoints.map((wp) => (

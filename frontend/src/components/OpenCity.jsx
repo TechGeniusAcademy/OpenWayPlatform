@@ -7,6 +7,8 @@ import './items/solarPanel.js';      // side-effect: registers solar-panel energ
 import './items/townHall.js';         // side-effect: registers town-hall storage
 import './items/extractor.js';        // side-effect: registers extractor storage
 import './items/coalGenerator.js';    // side-effect: registers coal-generator storage + production
+import './items/steamGenerator.js';   // side-effect: registers steam-generator storage + production
+import './items/labFactory.js';       // side-effect: registers lab-factory ore input storage
 import './items/hangar.js';           // side-effect: registers hangar config
 import { HANGAR_CONFIG } from './items/hangar.js';
 import { findNearestOreDeposit, canMineOre } from './systems/oreRegistry.js';
@@ -27,7 +29,9 @@ import { HUD }                     from './city/HUD.jsx';
 import { ShopModal }               from './city/ShopModal.jsx';
 import { ContextMenu }             from './city/ContextMenu.jsx';
 import { MiniMap }                 from './city/MiniMap.jsx';
+import { DronePanel, FIGHTER_UPGRADE_COSTS, DRONE_ROUTE_UPGRADE_COSTS } from './city/DronePanel.jsx';
 import { WaypointMarkers }         from './city/WaypointMarkers.jsx';
+import { WaypointEdgeArrows }      from './city/WaypointEdgeArrows.jsx';
 
 // ─── Main export ─────────────────────────────────────────────────────────────
 
@@ -48,6 +52,9 @@ export default function OpenCity({ onBack }) {
     localStorage.setItem('mapWaypoints', JSON.stringify(next));
     return next;
   });
+  // Shared ref: WaypointMarkers writes screen positions here each frame;
+  // WaypointEdgeArrows reads it to show off-screen direction indicators.
+  const waypointScreenPosRef = useRef({});
 
   const keysRef      = useRef({});
   const camTargetRef = useRef({ x: 0, z: 0 });
@@ -60,7 +67,14 @@ export default function OpenCity({ onBack }) {
   });
   const [displayPos,  setDisplayPos]  = useState({ x: 0, z: 0 });
   const [displayZoom, setDisplayZoom] = useState(50);
-  const [shopOpen,    setShopOpen]    = useState(false);
+  const [shopOpen,        setShopOpen]        = useState(false);
+  const [dronePanelOpen,  setDronePanelOpen]  = useState(false);
+  const [ingots,          setIngots]          = useState({ iron: 0, silver: 0, copper: 0 });
+  const ingotsRef         = useRef({ iron: 0, silver: 0, copper: 0 });
+  const [upgradingDrones, setUpgradingDrones] = useState({});
+  const upgradingDronesRef = useRef({});
+  const [droneRouteLevels, setDroneRouteLevels] = useState({});
+  const droneRouteLevelsRef = useRef({});
   const [debugOpen,   setDebugOpen]   = useState(false);
   const [fps,         setFps]         = useState(0);
   const [rendererStats, setRendererStats] = useState({});
@@ -110,6 +124,10 @@ export default function OpenCity({ onBack }) {
   const droneFromIdRef = useRef(null);
   useEffect(() => { droneModeRef.current   = droneMode;   }, [droneMode]);
   useEffect(() => { droneFromIdRef.current = droneFromId; }, [droneFromId]);
+  // ─── Lines mode (L key) — shows drone paths + dims world ──────────────────────
+  const [linesMode, setLinesMode] = useState(false);
+  const linesModeRef = useRef(false);
+  useEffect(() => { linesModeRef.current = linesMode; }, [linesMode]);
   // ─── Energy cable state — declared BEFORE useCitySync ─────────────────────────
   const [energyCables,      setEnergyCables]      = useState([]);
   const energyCablesRef     = useRef([]);
@@ -214,6 +232,10 @@ export default function OpenCity({ onBack }) {
     setPointsAmounts,
     buildingLevelsRef,
     setBuildingLevels,
+    droneRouteLevelsRef,
+    setDroneRouteLevels,
+    ingotsRef,
+    setIngots,
     placedWallsRef,
     setPlacedWalls,
     placedTowersRef,
@@ -288,6 +310,20 @@ export default function OpenCity({ onBack }) {
     return t;
   }, [storedAmounts]);
 
+  // Per-ore-type mining rate (ед./ч) summed across all active extractors
+  const oreRates = useMemo(() => {
+    const rates = {};
+    for (const item of placedItems) {
+      if (item.type !== 'extractor' || !item.oreType) continue;
+      const lvl  = buildingLevels[String(item.id)] ?? 1;
+      if (!canMineOre(lvl, item.oreType)) continue;
+      const conf = getLevelConfig('extractor', lvl);
+      const rate = 3 * (conf?.rateMultiplier ?? 1.0);
+      rates[item.oreType] = (rates[item.oreType] ?? 0) + rate;
+    }
+    return rates;
+  }, [placedItems, buildingLevels]);
+
   // ─── Storage totals ───────────────────────────────────────────────────────
   const [storageTotals, setStorageTotals] = useState({});
   useEffect(() => {
@@ -322,7 +358,12 @@ export default function OpenCity({ onBack }) {
       );
 
       // Compute effective per-connection rates (handles multi-source / multi-target)
-      const convRates = calcConveyorRates(placedItemsRef.current, conveyorsRef.current, buildingLevelsRef.current);
+      const convRates = calcConveyorRates(
+        placedItemsRef.current,
+        conveyorsRef.current,
+        buildingLevelsRef.current,
+        droneRouteLevelsRef.current,
+      );
 
       // ─── Extractor mining: fill internal ore buffer ─────────────────────────────
       for (const item of placedItemsRef.current) {
@@ -334,6 +375,57 @@ export default function OpenCity({ onBack }) {
         const bufCap   = 30 * (conf?.capacityMultiplier ?? 1.0);
         if (!next[key]) next[key] = {};
         next[key].ore = Math.min((next[key].ore ?? 0) + mining * deltaGameHours, bufCap);
+      }
+
+      // ─── Pump extraction: fill internal water buffer ──────────────────────────
+      for (const item of placedItemsRef.current) {
+        if (item.type !== 'pump') continue;
+        const key  = String(item.id);
+        const lvl  = buildingLevelsRef.current[key] ?? 1;
+        const conf = getLevelConfig('pump', lvl);
+        const rate = 20 * (conf?.rateMultiplier ?? 1.0); // л/ч (matches base drone carry rate)
+        const cap  = 50; // internal buffer capacity (л)
+        if (!next[key]) next[key] = {};
+        next[key].water = Math.min((next[key].water ?? 0) + rate * deltaGameHours, cap);
+      }
+
+      // ─── Coal Generator: consume ore → gate zone-based fuel production ────────────────
+      // 4 ore/hr × mult consumed to produce 8 fuel/hr × mult
+      // (ratio 1 ore → 2 fuel; coal-gen L1 needs 4 ore/hr, extractor L1 delivers 3 → 75% ok)
+      const activeCoalGens = new Set();
+      for (const item of placedItemsRef.current) {
+        if (item.type !== 'coal-generator') continue;
+        const key  = String(item.id);
+        const lvl  = buildingLevelsRef.current[key] ?? 1;
+        const conf = getLevelConfig('coal-generator', lvl);
+        const mult = conf?.rateMultiplier ?? 1.0;
+        // consume 4×mult ore/hr → the zone loop will produce 8×mult fuel/hr
+        const oreNeeded = 4 * mult * deltaGameHours;
+        if (!next[key]) next[key] = {};
+        const oreAvail = next[key].ore ?? 0;
+        if (oreAvail >= oreNeeded) {
+          next[key].ore = oreAvail - oreNeeded;
+          activeCoalGens.add(item.id);
+        }
+        // if not enough ore: coal-gen stays inactive this tick (zone won't fire)
+      }
+
+      // ─── Steam Generator: consume ore+water → produce steam ─────────────────
+      for (const item of placedItemsRef.current) {
+        if (item.type !== 'steam-generator') continue;
+        const key   = String(item.id);
+        const lvl   = buildingLevelsRef.current[key] ?? 1;
+        const conf  = getLevelConfig('steam-generator', lvl);
+        const mult  = conf?.rateMultiplier ?? 1.0;
+        const oreNeeded   = 2 * mult * deltaGameHours;
+        const waterNeeded = 1 * mult * deltaGameHours;
+        if (!next[key]) next[key] = {};
+        const oreAvail   = next[key].ore   ?? 0;
+        const waterAvail = next[key].water ?? 0;
+        if (oreAvail < oreNeeded || waterAvail < waterNeeded) continue;
+        next[key].ore   = oreAvail   - oreNeeded;
+        next[key].water = waterAvail - waterNeeded;
+        next[key].steam = Math.min((next[key].steam ?? 0) + mult * deltaGameHours, 50);
       }
 
       for (const conv of conveyorsRef.current) {
@@ -381,6 +473,8 @@ export default function OpenCity({ onBack }) {
         if (!prods.length) continue;
         const zone = getEnergyZone(producer.type);
         if (!zone) continue;
+        // Coal-gen only produces when it has consumed enough ore this tick
+        if (producer.type === 'coal-generator' && !activeCoalGens.has(producer.id)) continue;
         for (const prod of prods) {
           const active = !prod.activeWhen || prod.activeWhen(gameTimeRef.current);
           if (!active) continue;
@@ -675,6 +769,7 @@ export default function OpenCity({ onBack }) {
       position: spawnPos,
       target:   null,
       state:    'idle',
+      level:    1,
     };
     // Give fighter initial HP
     const fighterHpEntry = initFighterHp();
@@ -688,6 +783,183 @@ export default function OpenCity({ onBack }) {
       placedFightersRef.current = next;
       return next;
     });
+  }, []); // eslint-disable-line
+
+  // ─── Fighter upgrade handler ──────────────────────────────────────────────
+  const handleUpgradeFighter = useCallback((fighterId) => {
+    const fighter = placedFightersRef.current.find(f => f.id === fighterId);
+    if (!fighter) return;
+    const currentLevel = fighter.level ?? 1;
+    const cost = FIGHTER_UPGRADE_COSTS[currentLevel];
+    if (!cost) return; // already max level
+
+    // Check concurrent limit
+    const activeCount = Object.keys(upgradingDronesRef.current).length;
+    if (activeCount >= 5) { alert('Достигнут лимит одновременных улучшений (5)!'); return; }
+    if (upgradingDronesRef.current[fighterId]) return; // already upgrading
+
+    // Check coins
+    const totalCoins = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
+    if (totalCoins < cost.coins) { alert(`Нужно ${cost.coins} монет для улучшения!`); return; }
+    // Check ingots
+    if ((ingotsRef.current.iron ?? 0) < (cost.iron ?? 0)) { alert(`Нужно ${cost.iron} железных слитков!`); return; }
+    if ((ingotsRef.current.silver ?? 0) < (cost.silver ?? 0)) { alert(`Нужно ${cost.silver} серебряных слитков!`); return; }
+
+    // Deduct coins
+    if (cost.coins > 0) {
+      let remaining = cost.coins;
+      const next = { ...storedAmountsRef.current };
+      for (const sid of Object.keys(next)) {
+        if (remaining <= 0) break;
+        const c = next[sid]?.coins ?? 0;
+        if (c > 0) { const take = Math.min(c, remaining); next[sid] = { ...next[sid], coins: c - take }; remaining -= take; }
+      }
+      storedAmountsRef.current = next;
+      setStoredAmounts({ ...next });
+    }
+    // Deduct ingots
+    setIngots(prev => {
+      const next = {
+        ...prev,
+        iron:   (prev.iron   ?? 0) - (cost.iron   ?? 0),
+        silver: (prev.silver ?? 0) - (cost.silver ?? 0),
+        copper: (prev.copper ?? 0) - (cost.copper ?? 0),
+      };
+      ingotsRef.current = next;
+      return next;
+    });
+
+    const UPGRADE_DURATION_MS = 30_000;
+    const entry = { startMs: Date.now(), durationMs: UPGRADE_DURATION_MS, targetLevel: currentLevel + 1 };
+    upgradingDronesRef.current = { ...upgradingDronesRef.current, [fighterId]: entry };
+    setUpgradingDrones({ ...upgradingDronesRef.current });
+  }, []); // eslint-disable-line
+
+  // ─── Lab factory recipe setter ────────────────────────────────────────────
+  const handleSetLabRecipe = useCallback((itemId, recipe) => {
+    setPlacedItems(prev => {
+      const next = prev.map(i => i.id === itemId ? { ...i, labRecipe: recipe } : i);
+      placedItemsRef.current = next;
+      return next;
+    });
+  }, []); // eslint-disable-line
+
+  // ─── Drone route upgrade handler ──────────────────────────────────────────
+  const handleUpgradeDroneRoute = useCallback((droneId) => {
+    const currentLevel = droneRouteLevelsRef.current[droneId] ?? 1;
+    const cost = DRONE_ROUTE_UPGRADE_COSTS[currentLevel];
+    if (!cost) return;
+
+    const activeCount = Object.keys(upgradingDronesRef.current).length;
+    if (activeCount >= 5) { alert('Достигнут лимит одновременных улучшений (5)!'); return; }
+    if (upgradingDronesRef.current[droneId]) return;
+
+    const totalCoins = Object.values(storedAmountsRef.current).reduce((s, v) => s + (v?.coins ?? 0), 0);
+    if (totalCoins < cost.coins) { alert(`Нужно ${cost.coins} монет для улучшения!`); return; }
+    if ((ingotsRef.current.iron ?? 0) < (cost.iron ?? 0)) { alert(`Нужно ${cost.iron} железных слитков!`); return; }
+    if ((ingotsRef.current.silver ?? 0) < (cost.silver ?? 0)) { alert(`Нужно ${cost.silver} серебряных слитков!`); return; }
+
+    if (cost.coins > 0) {
+      let remaining = cost.coins;
+      const next = { ...storedAmountsRef.current };
+      for (const sid of Object.keys(next)) {
+        if (remaining <= 0) break;
+        const c = next[sid]?.coins ?? 0;
+        if (c > 0) { const take = Math.min(c, remaining); next[sid] = { ...next[sid], coins: c - take }; remaining -= take; }
+      }
+      storedAmountsRef.current = next;
+      setStoredAmounts({ ...next });
+    }
+    setIngots(prev => {
+      const next = {
+        ...prev,
+        iron:   (prev.iron   ?? 0) - (cost.iron   ?? 0),
+        silver: (prev.silver ?? 0) - (cost.silver ?? 0),
+      };
+      ingotsRef.current = next;
+      return next;
+    });
+
+    const entry = { startMs: Date.now(), durationMs: 30_000, targetLevel: currentLevel + 1, kind: 'route' };
+    upgradingDronesRef.current = { ...upgradingDronesRef.current, [droneId]: entry };
+    setUpgradingDrones({ ...upgradingDronesRef.current });
+  }, []); // eslint-disable-line
+
+  // ─── Upgrade completion interval ─────────────────────────────────────────
+  useEffect(() => {
+    const id = setInterval(() => {
+      const upgrading = upgradingDronesRef.current;
+      const now = Date.now();
+      const completed = Object.entries(upgrading).filter(([, v]) => now >= v.startMs + v.durationMs);
+      if (!completed.length) return;
+      const nextUpgrading = { ...upgrading };
+      for (const [fid, v] of completed) {
+        const numId = Number(fid);
+        delete nextUpgrading[numId];
+        if (v.kind === 'route') {
+          setDroneRouteLevels(prev => {
+            const next = { ...prev, [numId]: v.targetLevel };
+            droneRouteLevelsRef.current = next;
+            return next;
+          });
+        } else {
+          setPlacedFighters(prev => {
+            const next = prev.map(f => f.id === numId ? { ...f, level: v.targetLevel } : f);
+            placedFightersRef.current = next;
+            return next;
+          });
+        }
+      }
+      upgradingDronesRef.current = nextUpgrading;
+      setUpgradingDrones({ ...nextUpgrading });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []); // eslint-disable-line
+
+  // ─── Lab factory production interval ─────────────────────────────────────
+  // Every 10 s each lab-factory with a chosen recipe consumes ORE_PER_INGOT
+  // units of ore from its internal buffer and outputs 1 ingot of the recipe type.
+  const ORE_PER_INGOT = 5;
+  const LAB_PRODUCTION_MS = 10_000;
+  useEffect(() => {
+    const id = setInterval(() => {
+      const labs = placedItemsRef.current.filter(i => i.type === 'lab-factory' && i.labRecipe);
+      if (!labs.length) return;
+
+      const ingotsToAdd = {};
+      const oreToConsume = {}; // labId → amount to drain from its ore buffer
+
+      for (const lab of labs) {
+        const key   = String(lab.id);
+        const avail = storedAmountsRef.current[key]?.ore ?? 0;
+        const lvl   = buildingLevelsRef.current[key] ?? 1;
+        const rate  = Math.round(getLevelConfig('lab-factory', lvl)?.rateMultiplier ?? 1);
+        if (avail < ORE_PER_INGOT) continue; // not enough ore — skip this tick
+        // Produce as many ingots as ore allows, up to the level's rate cap
+        const actualRate = Math.min(rate, Math.floor(avail / ORE_PER_INGOT));
+        ingotsToAdd[lab.labRecipe] = (ingotsToAdd[lab.labRecipe] ?? 0) + actualRate;
+        oreToConsume[key] = (oreToConsume[key] ?? 0) + actualRate * ORE_PER_INGOT;
+      }
+
+      if (Object.keys(oreToConsume).length === 0) return;
+
+      // Drain ore from lab buffers
+      const nextStored = { ...storedAmountsRef.current };
+      for (const [key, amount] of Object.entries(oreToConsume)) {
+        nextStored[key] = { ...nextStored[key], ore: (nextStored[key]?.ore ?? 0) - amount };
+      }
+      storedAmountsRef.current = nextStored;
+      setStoredAmounts({ ...nextStored });
+
+      // Credit ingots
+      setIngots(prev => {
+        const next = { ...prev };
+        for (const [k, v] of Object.entries(ingotsToAdd)) next[k] = (next[k] ?? 0) + v;
+        ingotsRef.current = next;
+        return next;
+      });
+    }, LAB_PRODUCTION_MS);
+    return () => clearInterval(id);
   }, []); // eslint-disable-line
 
   // ─── HP / Damage handlers ─────────────────────────────────────────────────
@@ -1035,6 +1307,12 @@ export default function OpenCity({ onBack }) {
       }
       if (e.code === 'F3') { setDebugOpen(v => !v); e.preventDefault(); return; }
       if (e.code === 'KeyM') { setMapFullscreen(v => !v); e.preventDefault(); return; }
+      if (e.code === 'KeyL') {
+        const exiting = linesModeRef.current;
+        setLinesMode(v => !v);
+        if (exiting) setSelectedPlacedId(null);
+        e.preventDefault(); return;
+      }
       if (e.code === 'Tab') { setTabOpen(true); e.preventDefault(); return; }
       e.preventDefault?.();
     };
@@ -1073,7 +1351,7 @@ export default function OpenCity({ onBack }) {
           if (placementPosRef.current) {
             const pos  = placementPosRef.current;
             const type = placingItemRef.current;
-            if (isColliding({ x: pos.x, z: pos.z }, type, placedItemsRef.current)) return;
+            if (isColliding({ x: pos.x, z: pos.z }, type, placedItemsRef.current, placementRotYRef.current)) return;
 
             // ── Place limits ──────────────────────────────────────────────
             if (type === 'town-hall' && countPlacedType(placedItemsRef.current, 'town-hall') >= 1) {
@@ -1166,6 +1444,13 @@ export default function OpenCity({ onBack }) {
                 : { id: newId, type, position: [pos.x, pos.y, pos.z], rotation: placementRotYRef.current };
               setPlacedItems(prev => [...prev, newItem]);
 
+              // ── Activate defense tower immediately on placement ──────────
+              if (type === 'defense-tower') {
+                const ns = { ...storedAmountsRef.current, [String(newId)]: { activatedAt: Date.now() } };
+                storedAmountsRef.current = ns;
+                setStoredAmounts({ ...ns });
+              }
+
               // ── Start construction timer (skip for moved buildings) ──────
               if (!isMove) {
                 const dur = CONSTRUCTION_DURATION_MS[type] ?? 0;
@@ -1191,8 +1476,10 @@ export default function OpenCity({ onBack }) {
           return;
         }
         lmbHeldRef.current = true;
-        // В режиме дронов левый клик не запускает панорамирование камеры
-        if (!droneModeRef.current) {
+        // Don't pan world camera when clicking inside map UI
+        const isMapInput = !!e.target?.closest?.('[data-no-world-input]');
+        // В режиме дронов и линий левый клик не запускает панорамирование камеры
+        if (!droneModeRef.current && !linesModeRef.current && !isMapInput) {
           inputRef.current.middleDrag = true;
           inputRef.current.lastMX = e.clientX;
           inputRef.current.lastMY = e.clientY;
@@ -1201,7 +1488,7 @@ export default function OpenCity({ onBack }) {
           placedHitRef.current = false;
         } else if (!wallModeRef.current && !towerModeRef.current) {
           // Only deselect when clicking the actual WebGL canvas — not DOM UI overlays/buttons
-          if (e.target && e.target.tagName === 'CANVAS') {
+          if (e.target && e.target.tagName === 'CANVAS' && !isMapInput) {
             setSelectedPlacedId(null);
           }
         }
@@ -1232,6 +1519,7 @@ export default function OpenCity({ onBack }) {
       inputRef.current.middleDrag = false;
     };
     const onWheel = (e) => {
+      if (e.target?.closest?.('[data-no-world-input]')) return;
       if (placingItemRef.current) {
         placementRotYRef.current += e.deltaY > 0 ? 0.2 : -0.2;
       } else {
@@ -1297,6 +1585,7 @@ export default function OpenCity({ onBack }) {
             setSelectedPlacedId={setSelectedPlacedId}
             gameTimeRef={gameTimeRef}
             drones={drones}
+            droneRouteLevels={droneRouteLevels}
             droneMode={droneMode}
             droneFromId={droneFromId}
             onDroneRouteBuildingClick={handleDroneRouteBuildingClick}
@@ -1306,6 +1595,7 @@ export default function OpenCity({ onBack }) {
             poweredIds={poweredIds}
             storedAmounts={storedAmounts}
             pointsAmounts={pointsAmounts}
+            ingots={ingots}
             buildingLevels={buildingLevels}
             upgradingBuildings={upgradingBuildings}
             constructingBuildings={constructingBuildings}
@@ -1335,9 +1625,16 @@ export default function OpenCity({ onBack }) {
             onEnemyHpChange={handleEnemyHpChange}
             objectHp={objectHp}
             onBuildingDamage={handleBuildingDamage}
+            linesMode={linesMode}
           />
-          <WaypointMarkers waypoints={waypoints} />
+          <WaypointMarkers waypoints={waypoints} screenPosRef={waypointScreenPosRef} />
         </Canvas>
+
+        <WaypointEdgeArrows
+          screenPosRef={waypointScreenPosRef}
+          wrapRef={canvasWrapRef}
+          onJump={(x, z) => { camTargetRef.current = { x, z }; }}
+        />
 
         <MiniMap
           placedItems={placedItems}
@@ -1404,12 +1701,30 @@ export default function OpenCity({ onBack }) {
           </div>
         )}
 
+        {linesMode && (
+          <div style={{
+            position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(2, 11, 24, 0.85)',
+            border: '1px solid rgba(56, 189, 248, 0.45)',
+            borderRadius: 8, padding: '5px 18px',
+            color: '#38bdf8', fontSize: 12, fontWeight: 700,
+            letterSpacing: '0.07em', pointerEvents: 'none', zIndex: 50,
+            userSelect: 'none', whiteSpace: 'nowrap',
+          }}>
+            МАРШРУТЫ ДРОНОВ
+            <span style={{ color: '#94a3b8', fontWeight: 400 }}>
+              &nbsp;·&nbsp; нажмите на здание для фокуса&nbsp;·&nbsp;
+            </span>
+            [L] выйти
+          </div>
+        )}
         <HUD
           pos={displayPos}
           zoom={displayZoom}
           selectedCount={selectedCount}
           onClearSelection={clearSelection}
           onShop={() => setShopOpen(true)}
+          onDrones={() => setDronePanelOpen(true)}
           onBack={onBack || (() => {})}
           placingItem={placingItem}
           timeString={timeString}
@@ -1436,7 +1751,22 @@ export default function OpenCity({ onBack }) {
           allEnergyTotals={allEnergyTotals}
           storedCurrentTotals={storedCurrentTotals}
           points={Object.values(pointsAmounts).reduce((s, v) => s + v, 0)}
+          ingots={ingots}
+          oreRates={oreRates}
         />
+        {dronePanelOpen && (
+          <DronePanel
+            drones={drones}
+            placedItems={placedItems}
+            buildingLevels={buildingLevels}
+            droneRouteLevels={droneRouteLevels}
+            ingots={ingots}
+            coinBalance={Object.values(storedAmounts).reduce((s, v) => s + (v?.coins ?? 0), 0)}
+            upgradingDrones={upgradingDrones}
+            onUpgrade={handleUpgradeDroneRoute}
+            onClose={() => setDronePanelOpen(false)}
+          />
+        )}
         {shopOpen && (
           <ShopModal
             onClose={() => setShopOpen(false)}
@@ -1498,6 +1828,12 @@ export default function OpenCity({ onBack }) {
               coinUpgradeNext={coinUpgradeNext}
               hp={objectHp[itemId] ?? null}
               onRepair={handleRepairObject}
+              labRecipe={itemType === 'lab-factory' ? (placedItems.find(i => i.id === itemId)?.labRecipe ?? null) : null}
+              onSetRecipe={(r) => { handleSetLabRecipe(itemId, r); setContextMenu(null); }}
+              labOreAmount={itemType === 'lab-factory' ? (storedAmounts[String(itemId)]?.ore ?? 0) : undefined}
+              labIngots={itemType === 'lab-factory' ? ingots : undefined}
+              orePerIngot={ORE_PER_INGOT}
+              labProductionMs={LAB_PRODUCTION_MS}
             />
           );
         })()}

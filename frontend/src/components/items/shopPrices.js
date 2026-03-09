@@ -17,6 +17,11 @@ export const ITEM_POINT_COST = {
   'builder-house':    0,  // first one free; others cost coins (see below)
   'coal-generator': 300,
   'hangar':          600,
+  'pump':            120,
+  'pump-factory':    350,
+  'steam-generator': 450,
+  'defense-tower':   600,
+  'lab-factory':      500,
 };
 
 /** In-game coin cost for the 2nd and 3rd builder house. */
@@ -37,6 +42,11 @@ export const CONSTRUCTION_DURATION_MS = {
   'hangar':          30_000,
   'splitter':         8_000,
   'merger':           8_000,
+  'pump':            10_000,
+  'pump-factory':    22_000,
+  'steam-generator': 28_000,
+  'defense-tower':   20_000,
+  'lab-factory':      30_000,
 };
 
 /** Max allowed placed count.  null = unlimited. */

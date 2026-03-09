@@ -3,17 +3,16 @@ import {
   FaSun, FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark,
   FaHardHat, FaLink, FaBolt, FaHome, FaMedal,
   FaCoins, FaTimes, FaStore, FaHammer, FaInfoCircle, FaShieldAlt, FaChessRook,
-  FaFighterJet,
+  FaFighterJet, FaTint,
 } from 'react-icons/fa';
-import { GiMining, GiFireBowl } from 'react-icons/gi';
+import { GiMining, GiFireBowl, GiSteampunkGoggles, GiShieldReflect } from 'react-icons/gi';
 import styles from '../OpenCity.module.css';
 import { ITEM_POINT_COST, ITEM_PLACE_LIMIT, BUILDER_HOUSE_EXTRA_COST_COINS } from '../items/shopPrices.js';
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
 const TABS = [
   { id: 'energy',     label: 'Энергия',      Icon: FaBolt,       color: '#f59e0b' },
-  { id: 'production', label: 'Производство', Icon: FaIndustry,   color: '#6366f1' },
-  { id: 'logistics',  label: 'Логистика',    Icon: FaLink,       color: '#06b6d4' },
+  { id: 'production', label: 'Производство', Icon: FaIndustry,   color: '#6366f1' },  { id: 'water',      label: 'Вода',         Icon: FaTint,       color: '#38bdf8' },  { id: 'logistics',  label: 'Логистика',    Icon: FaLink,       color: '#06b6d4' },
   { id: 'builders',   label: 'Строители',    Icon: FaHardHat,    color: '#f97316' },
   { id: 'military',   label: 'Военные',      Icon: FaFighterJet, color: '#8b5cf6' },
   { id: 'defence',    label: 'Защита',       Icon: FaShieldAlt,  color: '#ef4444' },
@@ -363,6 +362,62 @@ export function ShopModal({
                   disabled={itemDisabled('coal-generator')} disabledReason={itemDisabled('coal-generator')}
                   onPlace={() => { onBuy('coal-generator'); onClose(); }} />
               </div>
+              <div style={{ gridColumn: '1/-1' }}>
+                <ShopCard Icon={FaIndustry} iconColor="#a855f7" name="Лаборатория-завод"
+                  desc="Перерабатывает руду (железо / серебро / медь) в слитки. Рецепт выбирается через ПКМ." {...P('lab-factory')}
+                  disabled={itemDisabled('lab-factory')} disabledReason={itemDisabled('lab-factory')}
+                  onPlace={() => { onBuy('lab-factory'); onClose(); }} />
+              </div>
+            </div>
+          )}
+
+          {/* ── Water ── */}
+          {activeTab === 'water' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <ShopCard
+                Icon={FaTint} iconColor="#38bdf8"
+                name="Насос"
+                desc="Устанавливается прямо на водоём. Дрон забирает воду и доставляет в насосную станцию"
+                {...P('pump')}
+                disabled={itemDisabled('pump')} disabledReason={itemDisabled('pump')}
+                onPlace={() => { onBuy('pump'); onClose(); }}
+              />
+              <ShopCard
+                Icon={FaTint} iconColor="#0ea5e9"
+                name="Насосная станция"
+                desc="Принимает воду от насоса через дрона. Требует энергию. Ур.1→200 л, Ур.5→1 500 л"
+                {...P('pump-factory')}
+                disabled={itemDisabled('pump-factory')} disabledReason={itemDisabled('pump-factory')}
+                onPlace={() => { onBuy('pump-factory'); onClose(); }}
+              />              <ShopCard
+                Icon={GiSteampunkGoggles} iconColor="#a78bfa"
+                name="Паровой генератор"
+                desc="Сжигает 2 угля + 1 воду для выработки 100 кВт/ч и 1 пара в зоне 90×90"
+                {...P('steam-generator')}
+                disabled={itemDisabled('steam-generator')} disabledReason={itemDisabled('steam-generator')}
+                onPlace={() => { onBuy('steam-generator'); onClose(); }}
+              />              <div style={{
+                padding: '12px 14px', borderRadius: 12,
+                background: 'rgba(56,189,248,0.06)',
+                border: '1px solid rgba(56,189,248,0.18)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8,
+                  fontSize: 12, fontWeight: 700, color: '#7dd3fc' }}>
+                  <FaTint /> Как работает водоснабжение
+                </div>
+                {[
+                  'Постройте Насос на озере или реке — при размещении будет подсказка',
+                  'Постройте Насосную станцию рядом (требует энергию)',
+                  'ПКМ на Насос → «Добавить маршрут» → клик на Насосную станцию',
+                  'Дрон-насос летит с анимацией и переносит воду автоматически',
+                  'Управляйте скоростью: Ур.1→20 л/ч, Ур.2→40, Ур.3→120, Ур.4→200 л/ч',
+                ].map((l, i) => (
+                  <div key={i} style={{ fontSize: 11, color: '#64748b', marginBottom: 4,
+                    paddingLeft: 4, borderLeft: '2px solid rgba(56,189,248,0.3)' }}>
+                    {l}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -455,6 +510,14 @@ export function ShopModal({
                 disabledReason="Мало монет"
                 btnLabel="Разместить башню"
                 onPlace={() => { onTowerMode?.(); onClose(); }}
+              />
+              <ShopCard
+                Icon={GiShieldReflect} iconColor="#22d3ee"
+                name="Оборонительная башня"
+                desc={`Не потребляет ресурсы. Создаёт защитный купол радиусом ${32} ед. на 2 часа реального времени`}
+                {...P('defense-tower')}
+                disabled={itemDisabled('defense-tower')} disabledReason={itemDisabled('defense-tower')}
+                onPlace={() => { onBuy('defense-tower'); onClose(); }}
               />
               <div style={{
                 padding: '12px 14px', borderRadius: 12,

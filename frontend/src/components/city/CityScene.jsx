@@ -1,4 +1,4 @@
-import { useMemo, memo, useRef, useState, useEffect, useCallback } from 'react';
+import { useMemo, memo, useRef, useState, useEffect, useCallback, useContext } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { DynamicEnvironment } from './DynamicEnvironment.jsx';
 import { World } from './WorldChunks.jsx';
@@ -13,10 +13,17 @@ import { ExtractorPreview, ExtractorPlaced } from './buildings/Extractor.jsx';
 import { BuilderHousePreview, BuilderHousePlaced, BuilderAtWork, BuilderRunner, UpgradeBadgeInline } from './buildings/BuilderHouse.jsx';
 import { CoalGeneratorPreview, CoalGeneratorPlaced } from './buildings/CoalGenerator.jsx';
 import { HangarPreview, HangarPlaced } from './buildings/Hangar.jsx';
+import { PumpPreview, PumpPlaced } from './buildings/Pump.jsx';
+import { PumpFactoryPreview, PumpFactoryPlaced } from './buildings/PumpFactory.jsx';
+import { PumpDrone } from './buildings/PumpDrone.jsx';
+import { SteamGeneratorPreview, SteamGeneratorPlaced } from './buildings/SteamGenerator.jsx';
+import { DefenseTowerPreview, DefenseTowerPlaced } from './buildings/DefenseTower.jsx';
+import { LabFactoryPreview, LabFactoryPlaced } from './buildings/LabFactory.jsx';
 import { FighterUnit } from './buildings/FighterUnit.jsx';
 import { Missile, Explosion } from './buildings/FighterAttack.jsx';
 import { Rubble } from './buildings/Rubble.jsx';
 import { HpBar } from './HpBar.jsx';
+import { CityContext } from './CityContext.js';
 import { isDestroyed } from '../systems/hpSystem.js';
 import { ConveyorTargetPulse } from './ConveyorTargetPulse.jsx';
 import { ConstructionSite } from './ConstructionSite.jsx';
@@ -25,6 +32,7 @@ import { WallSegment, WallPlacementPreview, SnapIndicator } from './buildings/Wa
 import { TowerPlaced, TowerPreview } from './buildings/Tower.jsx';
 import { OtherPlayerCity } from './OtherPlayerCity.jsx';
 import { LampLightPool } from './LampLightPool.jsx';
+import { PlacementZoneOverlay, GhostZoneFollower } from './SharedUI.jsx';
 import * as THREE from 'three';
 
 // ─── Fighter target marker — pulsing cyan rings + crosshair at RMB click point ──
@@ -211,6 +219,124 @@ function UpgradeRing({ position, radius = 3.2 }) {
   );
 }
 
+// ─── Lines-mode drone path visualization ────────────────────────────────────
+// Each unique from→to building-type pair gets its own color from this palette.
+const PAIR_PALETTE = ['#fbbf24','#38bdf8','#4ade80','#f87171','#c084fc','#fb923c','#34d399','#e879f9','#06b6d4','#fcd34d'];
+const _pairColorCache = new Map();
+function getDroneLineColor(fromType, toType) {
+  const key = `${fromType}|${toType}`;
+  if (!_pairColorCache.has(key)) {
+    _pairColorCache.set(key, PAIR_PALETTE[_pairColorCache.size % PAIR_PALETTE.length]);
+  }
+  return _pairColorCache.get(key);
+}
+
+// Semi-transparent dark plane that dims the entire scene
+function WorldDimOverlay() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} renderOrder={100} raycast={() => null}>
+      <planeGeometry args={[8000, 8000]} />
+      <meshBasicMaterial color="#020b14" transparent opacity={0.55} depthTest={false} depthWrite={false} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+// Arced tube mesh between two building positions
+function DroneLine({ fromPos, toPos, color, opacity }) {
+  const geo = useMemo(() => {
+    const f = new THREE.Vector3(fromPos[0], 2, fromPos[2]);
+    const t = new THREE.Vector3(toPos[0],   2, toPos[2]);
+    const archH = 2 + Math.max(4, Math.hypot(t.x - f.x, t.z - f.z) * 0.18);
+    const mid = new THREE.Vector3((f.x + t.x) / 2, archH, (f.z + t.z) / 2);
+    return new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(f, mid, t), 24, 0.14, 5, false);
+  }, [fromPos[0], fromPos[2], toPos[0], toPos[2]]); // eslint-disable-line
+  useEffect(() => () => geo.dispose(), [geo]);
+  return (
+    <mesh geometry={geo} renderOrder={101}>
+      <meshBasicMaterial color={color} transparent opacity={opacity} depthTest={false} depthWrite={false} />
+    </mesh>
+  );
+}
+
+// Glowing sphere dot at a building endpoint
+function DroneEndpointDot({ position, color, opacity }) {
+  return (
+    <mesh position={[position[0], 2.3, position[2]]} renderOrder={101}>
+      <sphereGeometry args={[0.55, 8, 6]} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} depthTest={false} depthWrite={false} />
+    </mesh>
+  );
+}
+
+// Pulsing white ring around the currently-focused building
+function LineModeSelectedRing({ position }) {
+  const ringRef = useRef();
+  useFrame(({ clock }) => {
+    if (!ringRef.current) return;
+    const t = (Math.sin(clock.getElapsedTime() * 3) + 1) / 2;
+    ringRef.current.material.opacity = 0.35 + t * 0.5;
+    const s = 1 + t * 0.07;
+    ringRef.current.scale.set(s, 1, s);
+  });
+  return (
+    <mesh ref={ringRef} position={[position[0], 0.2, position[2]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={101}>
+      <ringGeometry args={[4.5, 5.8, 32]} />
+      <meshBasicMaterial color="#ffffff" transparent opacity={0.7} depthTest={false} depthWrite={false} />
+    </mesh>
+  );
+}
+
+// All lines + endpoint dots + transparent hit planes for building focus
+function DronePathLines({ drones, placedItems, selectedPlacedId, setSelectedPlacedId }) {
+  const { placedHitRef } = useContext(CityContext);
+  const paths = useMemo(() => drones.flatMap(drone => {
+    const from = placedItems.find(i => i.id === drone.fromId);
+    const to   = placedItems.find(i => i.id === drone.toId);
+    if (!from || !to) return [];
+    const color = getDroneLineColor(from.type, to.type);
+    const isFocused = !selectedPlacedId || drone.fromId === selectedPlacedId || drone.toId === selectedPlacedId;
+    return [{ drone, from, to, color, isFocused }];
+  }), [drones, placedItems, selectedPlacedId]);
+
+  const focusedItem = selectedPlacedId ? placedItems.find(i => i.id === selectedPlacedId) : null;
+
+  return (
+    <>
+      {/* Arced tube lines */}
+      {paths.map(({ drone, from, to, color, isFocused }) => (
+        <DroneLine key={drone.id} fromPos={from.position} toPos={to.position} color={color} opacity={isFocused ? 0.92 : 0.13} />
+      ))}
+
+      {/* Endpoint dots — one pair per drone */}
+      {paths.flatMap(({ drone, from, to, color, isFocused }) => [
+        <DroneEndpointDot key={`ef_${drone.id}`} position={from.position} color={color} opacity={isFocused ? 0.9 : 0.13} />,
+        <DroneEndpointDot key={`et_${drone.id}`} position={to.position}   color={color} opacity={isFocused ? 0.9 : 0.13} />,
+      ])}
+
+      {/* Pulsing ring on focused building */}
+      {focusedItem && <LineModeSelectedRing position={focusedItem.position} />}
+
+      {/* Transparent hit planes — intercept clicks for focus toggling */}
+      {placedItems.map(item => (
+        <mesh
+          key={`lm_hit_${item.id}`}
+          position={[item.position[0], 6, item.position[2]]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          renderOrder={102}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            if (placedHitRef) placedHitRef.current = true;
+            setSelectedPlacedId(p => p === item.id ? null : item.id);
+          }}
+        >
+          <circleGeometry args={[7, 16]} />
+          <meshBasicMaterial transparent opacity={0} depthTest={false} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
 // Approximate half-sizes per building type for scaffolding fit
 const BUILDING_HALF_SIZE = {
   'solar-panel':    { hw: 2.5, hh: 1.0 },
@@ -224,6 +350,11 @@ const BUILDING_HALF_SIZE = {
   'builder-house':  { hw: 3.5, hh: 4.0 },
   'coal-generator': { hw: 5.0, hh: 5.0 },
   'hangar':          { hw: 8.0, hh: 6.0 },
+  'pump':            { hw: 2.0, hh: 2.5 },
+  'pump-factory':    { hw: 4.0, hh: 4.5 },
+  'steam-generator': { hw: 5.0, hh: 5.5 },
+  'defense-tower':   { hw: 3.0, hh: 4.5 },
+  'lab-factory':      { hw: 4.5, hh: 5.0 },
 };
 
 // ─── View-distance culling radii ─────────────────────────────────────────────
@@ -246,9 +377,11 @@ function SceneInner({
   droneMode,
   droneFromId,
   onDroneRouteBuildingClick,
+  droneRouteLevels = {},
   poweredIds,
   storedAmounts,
   pointsAmounts,
+  ingots = {},
   buildingLevels,
   upgradingBuildings,
   constructingBuildings,
@@ -268,6 +401,7 @@ function SceneInner({
   onWallRightClick,
   onTowerRightClick,
   otherPlayers,
+  linesMode = false,
   // Fighters
   placedFighters,
   selectedFighterId,
@@ -396,8 +530,8 @@ function SceneInner({
   }
 
   const droneRates = useMemo(
-    () => calcConveyorRates(placedItems, drones, buildingLevels ?? {}),
-    [placedItems, drones, buildingLevels],
+    () => calcConveyorRates(placedItems, drones, buildingLevels ?? {}, droneRouteLevels ?? {}),
+    [placedItems, drones, buildingLevels, droneRouteLevels],
   );
 
   return (
@@ -414,6 +548,10 @@ function SceneInner({
         keysRef={keysRef}
         inputRef={inputRef}
       />
+
+      {/* Zone overlay — all occupied areas visible while placing */}
+      {placingItem && <PlacementZoneOverlay placedItems={placedItems} />}
+      {placingItem && <GhostZoneFollower placementPosRef={placementPosRef} placementRotYRef={placementRotYRef} type={placingItem} />}
 
       {/* Placement previews */}
       {placingItem === 'solar-panel' && (
@@ -442,6 +580,21 @@ function SceneInner({
       )}
       {placingItem === 'hangar' && (
         <HangarPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      )}
+      {placingItem === 'pump' && (
+        <PumpPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      )}
+      {placingItem === 'pump-factory' && (
+        <PumpFactoryPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      )}
+      {placingItem === 'steam-generator' && (
+        <SteamGeneratorPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      )}
+      {placingItem === 'defense-tower' && (
+        <DefenseTowerPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
+      )}
+      {placingItem === 'lab-factory' && (
+        <LabFactoryPreview placementPosRef={placementPosRef} inputRef={inputRef} placementRotYRef={placementRotYRef} />
       )}
 
       {/* Placed buildings — culled to SELF_RENDER_R around camera target */}
@@ -584,6 +737,71 @@ function SceneInner({
             onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
             level={buildingLevels?.[String(item.id)] ?? 1}
           />
+        ) : item.type === 'pump' ? (
+          <PumpPlaced
+            key={item.id}
+            position={item.position}
+            rotation={item.rotation}
+            isSelected={selectedPlacedId === item.id}
+            onSelect={() => setSelectedPlacedId(item.id)}
+            isConveyorSource={droneFromId === item.id}
+            onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
+            onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
+            currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
+            level={buildingLevels?.[String(item.id)] ?? 1}
+          />
+        ) : item.type === 'pump-factory' ? (
+          <PumpFactoryPlaced
+            key={item.id}
+            position={item.position}
+            rotation={item.rotation}
+            isSelected={selectedPlacedId === item.id}
+            onSelect={() => setSelectedPlacedId(item.id)}
+            isConveyorSource={droneFromId === item.id}
+            onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
+            isPowered={poweredIds ? poweredIds.has(item.id) : true}
+            onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
+            currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
+            level={buildingLevels?.[String(item.id)] ?? 1}
+          />
+        ) : item.type === 'steam-generator' ? (
+          <SteamGeneratorPlaced
+            key={item.id}
+            position={item.position}
+            rotation={item.rotation}
+            isSelected={selectedPlacedId === item.id}
+            onSelect={() => setSelectedPlacedId(item.id)}
+            isConveyorSource={droneFromId === item.id}
+            onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
+            isPowered={poweredIds ? poweredIds.has(item.id) : true}
+            onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
+            currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
+            level={buildingLevels?.[String(item.id)] ?? 1}
+          />
+        ) : item.type === 'defense-tower' ? (
+          <DefenseTowerPlaced
+            key={item.id}
+            position={item.position}
+            rotation={item.rotation}
+            isSelected={selectedPlacedId === item.id}
+            onSelect={() => setSelectedPlacedId(item.id)}
+            onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
+            currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
+          />
+        ) : item.type === 'lab-factory' ? (
+          <LabFactoryPlaced
+            key={item.id}
+            position={item.position}
+            rotation={item.rotation}
+            level={buildingLevels ? (buildingLevels[String(item.id)] ?? 1) : 1}
+            isSelected={selectedPlacedId === item.id}
+            onSelect={() => setSelectedPlacedId(item.id)}
+            onConveyorClick={() => onDroneRouteBuildingClick(item.id)}
+            onRightClick={(x, y) => onBuildingRightClick?.(item.id, item.type, x, y)}
+            recipe={item.labRecipe ?? null}
+            currentAmounts={storedAmounts ? (storedAmounts[String(item.id)] ?? {}) : {}}
+            ingots={ingots}
+          />
         ) : null;
         return building ? (
           <group key={item.id}>
@@ -648,10 +866,25 @@ function SceneInner({
       />
 
       {/* Drone animations — visual only, not interactive */}
-      {drones.filter(connInSelfRange).map(drone => (
-        <Drone key={drone.id} fromId={drone.fromId} toId={drone.toId}
-          placedItems={placedItems} effectiveRate={droneRates.get(drone.id) ?? 0} />
-      ))}
+      {drones.filter(connInSelfRange).map(drone => {
+        const from = placedItems.find(i => i.id === drone.fromId);
+        const to   = placedItems.find(i => i.id === drone.toId);
+        const isLiquid =
+          (from?.type === 'pump'         && to?.type === 'pump-factory') ||
+          (from?.type === 'pump-factory' && to?.type === 'steam-generator');
+        if (isLiquid) {
+          return (
+            <PumpDrone key={drone.id} fromId={drone.fromId} toId={drone.toId}
+              placedItems={placedItems} effectiveRate={droneRates.get(drone.id) ?? 0}
+              level={droneRouteLevels[drone.id] ?? 1} />
+          );
+        }
+        return (
+          <Drone key={drone.id} fromId={drone.fromId} toId={drone.toId}
+            placedItems={placedItems} effectiveRate={droneRates.get(drone.id) ?? 0}
+            level={droneRouteLevels[drone.id] ?? 1} />
+        );
+      })}
 
       {/* Fighter jets */}
       {(placedFighters ?? []).filter(f => inSelfRange(f.position)).map(f => (
@@ -814,6 +1047,17 @@ function SceneInner({
           />
         );
       })}
+
+      {/* Lines mode — dark overlay + arced drone paths */}
+      {linesMode && <WorldDimOverlay />}
+      {linesMode && (
+        <DronePathLines
+          drones={drones}
+          placedItems={placedItems}
+          selectedPlacedId={selectedPlacedId}
+          setSelectedPlacedId={setSelectedPlacedId}
+        />
+      )}
     </>
   );
 }

@@ -27,11 +27,12 @@ import * as THREE   from 'three';
 import { getTransferRule } from '../systems/conveyor.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DRONE_SCALE  = 1.95;     // world-unit scale of the GLB
-const FLY_HEIGHT   = 10;       // arc peak height above the ground line
-const HOVER_Y      = 3.8;      // hover height above building base
-const BOB_AMP      = 0.18;     // hover bob amplitude
-const BASE_CYCLE   = 14;       // full round-trip duration at rate=0 (seconds)
+const DRONE_SCALE   = 1.95;   // world-unit scale of the GLB
+const FLY_HEIGHT    = 10;     // arc peak height above the ground line
+const HOVER_Y       = 3.8;    // hover height above building base
+const BOB_AMP       = 0.18;   // hover bob amplitude
+const DRONE_SPEED   = 10;     // world-units per second during flight
+const MIN_CYCLE     = 6;      // minimum full cycle duration (seconds)
 
 // Phase boundaries (fraction of a full cycle 0..1)
 const PH_LOAD     = 0.12;  // 0..PH_LOAD      = loading at source
@@ -40,7 +41,27 @@ const PH_UNLOAD   = 0.58;  // PH_FLY_TO..PH_UNLOAD = unloading at dest
 const PH_FLY_BACK = 0.90;  // PH_UNLOAD..PH_FLY_BACK = flying back
                              // PH_FLY_BACK..1.0 = landing at source
 
+// Fraction of cycle spent actually flying (there + back)
+const FLY_FRACTION = (PH_FLY_TO - PH_LOAD) + (PH_FLY_BACK - PH_UNLOAD); // ~0.65
+
+/**
+ * Compute a stable pseudo-random phase offset [0..1) seeded by building ids.
+ * This ensures each drone starts at a different point in its cycle.
+ */
+function initialPhase(fromId, toId) {
+  return ((fromId * 1237 + toId * 5689) % 997) / 997;
+}
+
 // Shared geometry reuse (nothing interactive needed)
+
+// Level → glow colour + ring size
+const LEVEL_GLOW = [
+  null,
+  null,                           // 1 — no ring
+  { color: '#4ade80', r: 0.55 }, // 2 — green
+  { color: '#fbbf24', r: 0.70 }, // 3 — yellow-orange
+  { color: '#a855f7', r: 0.90 }, // 4 — purple
+];
 
 // ─── Bezier arc helper ────────────────────────────────────────────────────────
 function bezierArc(t, from, to, height) {
@@ -56,11 +77,16 @@ function bezierArc(t, from, to, height) {
 }
 
 // ─── DroneInner — all hooks live here (satisfies Rules of Hooks) ──────────────
-function DroneInner({ from, to, rule, effectiveRate }) {
+function DroneInner({ from, to, rule, effectiveRate, level = 1 }) {
   const fromBase  = new THREE.Vector3(from.position[0], from.position[1] ?? 0, from.position[2]);
   const toBase    = new THREE.Vector3(to.position[0],   to.position[1]   ?? 0, to.position[2]);
   const fromHover = fromBase.clone().setY(fromBase.y + HOVER_Y);
   const toHover   = toBase.clone().setY(toBase.y   + HOVER_Y);
+
+  // Cycle duration scaled by actual distance so farther buildings → longer trips.
+  // Two one-way flights occupy FLY_FRACTION of the cycle.
+  const dist = fromHover.distanceTo(toHover);
+  const baseCycleDuration = Math.max(MIN_CYCLE, (2 * dist / DRONE_SPEED) / FLY_FRACTION);
 
   // Load the drone GLB (cached by useGLTF)
   const { scene: droneScene } = useGLTF('/models/Little Drone.glb');
@@ -71,13 +97,16 @@ function DroneInner({ from, to, rule, effectiveRate }) {
 
   const groupRef   = useRef();
   const cargoRef   = useRef();
-  const phaseRef   = useRef(0);
+  const glowRef    = useRef();
+  // Start at a unique offset so drones on different (or same) routes don't sync up.
+  const phaseRef   = useRef(initialPhase(from.id, to.id));
   const prevPosRef = useRef(new THREE.Vector3());
 
-  // Cycle speed: scales with effectiveRate. Base=14s, min cycle=4s at high rates.
-  const cycleSpeed = effectiveRate > 0
-    ? 1 / Math.max(4, BASE_CYCLE * (1 - Math.min(effectiveRate / 40, 0.7)))
-    : 1 / BASE_CYCLE;
+  // Cycle speed: distance-scaled base, slightly boosted at high transfer rates.
+  const cycleDuration = effectiveRate > 0
+    ? Math.max(MIN_CYCLE * 0.5, baseCycleDuration * (1 - Math.min(effectiveRate / 40, 0.5)))
+    : baseCycleDuration;
+  const cycleSpeed = 1 / cycleDuration;
 
   useFrame((_, dt) => {
     const group = groupRef.current;
@@ -136,10 +165,18 @@ function DroneInner({ from, to, rule, effectiveRate }) {
       }
     }
 
+    if (glowRef.current) {
+      glowRef.current.position.copy(pos).setY(pos.y - 0.5);
+      const pulse = 0.7 + 0.3 * Math.sin(Date.now() * 0.003);
+      glowRef.current.material.opacity = pulse * 0.55;
+      glowRef.current.rotation.z += dt * 1.5;
+    }
+
     phaseRef.current = (t + dt * cycleSpeed) % 1;
   });
 
   const ruleColor = rule?.color ?? '#38bdf8';
+  const glow = LEVEL_GLOW[level] ?? null;
 
   return (
     <group>
@@ -147,6 +184,19 @@ function DroneInner({ from, to, rule, effectiveRate }) {
       <group ref={groupRef} scale={DRONE_SCALE}>
         <primitive object={cloneRef.current} />
       </group>
+
+      {/* Level glow ring — only for level 2+ */}
+      {glow && (
+        <mesh ref={glowRef} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[glow.r * 0.6, glow.r, 24]} />
+          <meshBasicMaterial
+            color={glow.color}
+            transparent
+            opacity={0.5}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
 
       {/* Cargo indicator — glowing sphere, shown while flying loaded */}
       <mesh ref={cargoRef} visible={false}>
@@ -167,7 +217,7 @@ function DroneInner({ from, to, rule, effectiveRate }) {
 // ─── Public Drone component ───────────────────────────────────────────────────
 // Null-guard wrapper: if either building is gone, render nothing.
 // DroneInner always mounts so all hooks are called unconditionally.
-export const Drone = memo(function Drone({ fromId, toId, placedItems, effectiveRate }) {
+export const Drone = memo(function Drone({ fromId, toId, placedItems, effectiveRate, level = 1 }) {
   const from = placedItems.find(i => i.id === fromId);
   const to   = placedItems.find(i => i.id === toId);
   if (!from || !to) return null;
@@ -180,7 +230,21 @@ export const Drone = memo(function Drone({ fromId, toId, placedItems, effectiveR
       to={to}
       rule={rule}
       effectiveRate={effectiveRate}
+      level={level}
     />
+  );
+}, (prev, next) => {
+  if (prev.fromId !== next.fromId || prev.toId !== next.toId) return false;
+  if (prev.effectiveRate !== next.effectiveRate) return false;
+  if (prev.level !== next.level) return false;
+  const pFrom = prev.placedItems.find(i => i.id === prev.fromId);
+  const nFrom = next.placedItems.find(i => i.id === next.fromId);
+  const pTo   = prev.placedItems.find(i => i.id === prev.toId);
+  const nTo   = next.placedItems.find(i => i.id === next.toId);
+  if (!pFrom || !pTo || !nFrom || !nTo) return pFrom === nFrom && pTo === nTo;
+  return (
+    pFrom.position === nFrom.position &&
+    pTo.position   === nTo.position
   );
 });
 

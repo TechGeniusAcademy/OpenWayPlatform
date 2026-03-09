@@ -24,7 +24,8 @@ import { FaExclamationTriangle, FaCog, FaCheck, FaCircle } from 'react-icons/fa'
 function OreBadge({ level, badgeHeight, oreType }) {
   const conf   = getLevelConfig('extractor', level);
   const accent = conf?.accentColor ?? '#a8874a';
-  const name   = conf?.oreType ?? 'Руда';
+  // Use the actual ore deposit under the extractor, not the level config's target ore
+  const name   = oreType ?? 'Руда';
   const rate   = Math.round(3 * (conf?.rateMultiplier ?? 1) * 10) / 10;
 
   const activelyMines = oreType ? canMineOre(level, oreType) : true;

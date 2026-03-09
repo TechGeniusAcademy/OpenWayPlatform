@@ -42,7 +42,7 @@ function apiFetch(path, options = {}) {
  *   setConveyors?:  (conveyors: Array) => void,
  * }} opts
  */
-export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conveyorsRef, setConveyors, energyCablesRef, setEnergyCables, storedAmountsRef, setStoredAmounts, pointsAmountsRef, setPointsAmounts, buildingLevelsRef, setBuildingLevels, placedWallsRef, setPlacedWalls, placedTowersRef, setPlacedTowers, placedFightersRef, setPlacedFighters, objectHpRef, setObjectHp, enemyBuildingHpRef, setEnemyBuildingHp }) {
+export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conveyorsRef, setConveyors, energyCablesRef, setEnergyCables, storedAmountsRef, setStoredAmounts, pointsAmountsRef, setPointsAmounts, buildingLevelsRef, setBuildingLevels, droneRouteLevelsRef, setDroneRouteLevels, ingotsRef, setIngots, placedWallsRef, setPlacedWalls, placedTowersRef, setPlacedTowers, placedFightersRef, setPlacedFighters, objectHpRef, setObjectHp, enemyBuildingHpRef, setEnemyBuildingHp }) {
   const [loading,      setLoading]      = useState(true);
   const [offlineHours, setOfflineHours] = useState(0);
   const [suggestedSpawn, setSuggestedSpawn] = useState(null);
@@ -58,6 +58,8 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conve
       storedAmounts: storedAmountsRef?.current ?? {},
       pointsAmounts: pointsAmountsRef?.current ?? {},
       buildingLevels: buildingLevelsRef?.current ?? {},
+      droneRouteLevels: droneRouteLevelsRef?.current ?? {},
+      ingots:           ingotsRef?.current ?? {},
       placedWalls:    placedWallsRef?.current   ?? [],
       placedTowers:   placedTowersRef?.current  ?? [],
       placedFighters: placedFightersRef?.current ?? [],
@@ -105,6 +107,16 @@ export function useCitySync({ gameTimeRef, placedItemsRef, setPlacedItems, conve
         if (data.buildingLevels && typeof data.buildingLevels === 'object' && setBuildingLevels) {
           if (buildingLevelsRef) buildingLevelsRef.current = data.buildingLevels;
           setBuildingLevels(data.buildingLevels);
+        }
+        // Restore drone route levels
+        if (data.droneRouteLevels && typeof data.droneRouteLevels === 'object' && setDroneRouteLevels) {
+          if (droneRouteLevelsRef) droneRouteLevelsRef.current = data.droneRouteLevels;
+          setDroneRouteLevels(data.droneRouteLevels);
+        }
+        // Restore ingots
+        if (data.ingots && typeof data.ingots === 'object' && setIngots) {
+          if (ingotsRef) ingotsRef.current = data.ingots;
+          setIngots(data.ingots);
         }
         // Restore placed walls
         if (Array.isArray(data.placedWalls) && setPlacedWalls) {

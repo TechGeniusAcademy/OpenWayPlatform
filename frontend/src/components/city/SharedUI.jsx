@@ -31,13 +31,13 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { CityContext } from './CityContext.js';
-import { isColliding } from '../items/collision.js';
+import { isColliding, ITEM_FOOTPRINTS, ENERGY_EXCLUSION_ZONES } from '../items/collision.js';
 import { getProductions, getStorages, ENERGY_TYPES } from '../systems/energy.js';
 import { getLevelConfig } from '../systems/upgrades.js';
-import { FaBolt, FaBatteryFull, FaSun, FaWind, FaFire, FaCoins } from 'react-icons/fa';
+import { FaBolt, FaBatteryFull, FaSun, FaWind, FaFire, FaCoins, FaTint } from 'react-icons/fa';
 import { GiMining } from 'react-icons/gi';
 
-const TYPE_ICON = { solar: FaSun, wind: FaWind, fuel: FaFire, coins: FaCoins, ore: GiMining };
+const TYPE_ICON = { solar: FaSun, wind: FaWind, fuel: FaFire, coins: FaCoins, ore: GiMining, water: FaTint };
 
 // ─── Model error boundary ─────────────────────────────────────────────────────
 
@@ -79,6 +79,7 @@ export function usePlacementTracker(placementPosRef, inputRef, placementRotYRef)
         { x: hitPoint.x, z: hitPoint.z },
         placingItemRef?.current,
         placedItemsRef?.current ?? [],
+        placementRotYRef.current,
       );
     }
   });
@@ -123,6 +124,149 @@ export function GlowBoxPlaced({ position, rotation }) {
       <boxGeometry args={[2, 1, 3]} />
       <meshStandardMaterial color="#0a6ebd" emissive={new THREE.Color(0x003366)} emissiveIntensity={0.3} />
     </mesh>
+  );
+}
+
+// ─── Placement zone overlay ───────────────────────────────────────────────────
+// Shown while placing a new building — flat transparent rectangles drawn for
+// every already-placed building so the player can see occupied zones up-front.
+//   • Energy generators → orange swatch  (uses the larger exclusion zone)
+//   • All other buildings → blue swatch  (uses the physical footprint)
+
+const ZoneRect = memo(function ZoneRect({ cx, cz, rotY = 0, hw, hd, isEnergy }) {
+  const borderGeo = useMemo(() => {
+    const v = new Float32Array([
+      -hw, 0, -hd,   hw, 0, -hd,
+       hw, 0, -hd,   hw, 0,  hd,
+       hw, 0,  hd,  -hw, 0,  hd,
+      -hw, 0,  hd,  -hw, 0, -hd,
+    ]);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(v, 3));
+    return g;
+  }, [hw, hd]);
+
+  const fillColor   = isEnergy ? '#ff5500' : '#2266ff';
+  const borderColor = isEnergy ? '#ff9900' : '#55aaff';
+
+  return (
+    <group position={[cx, 0.06, cz]} rotation={[0, rotY, 0]}>
+      {/* Semi-transparent fill */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[hw * 2, hd * 2]} />
+        <meshBasicMaterial
+          color={fillColor}
+          transparent
+          opacity={0.13}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {/* Solid border outline */}
+      <lineSegments>
+        <primitive object={borderGeo} attach="geometry" />
+        <lineBasicMaterial color={borderColor} transparent opacity={0.80} />
+      </lineSegments>
+    </group>
+  );
+});
+
+export function PlacementZoneOverlay({ placedItems }) {
+  if (!placedItems?.length) return null;
+  return (
+    <group>
+      {placedItems.map(item => {
+        const excZone   = ENERGY_EXCLUSION_ZONES[item.type];
+        const footprint = ITEM_FOOTPRINTS[item.type];
+        const zone      = excZone ?? footprint;
+        if (!zone) return null;
+        const [cx, , cz] = item.position;
+        return (
+          <ZoneRect
+            key={item.id}
+            cx={cx}
+            cz={cz}
+            rotY={item.rotation ?? 0}
+            hw={zone.hw}
+            hd={zone.hd}
+            isEnergy={!!excZone}
+          />
+        );
+      })}
+    </group>
+  );
+}
+
+// ─── Ghost zone — zone of the building currently being placed ──────────────────
+// Follows the cursor. Pulses red when the zone would overlap an existing one.
+
+export function GhostZoneFollower({ placementPosRef, placementRotYRef, type }) {
+  const { placedItemsRef } = useContext(CityContext);
+  const groupRef     = useRef();
+  const fillMatRef   = useRef();
+  const borderMatRef = useRef();
+  const frameRef     = useRef(0);
+
+  const excZone   = ENERGY_EXCLUSION_ZONES[type];
+  const footprint = ITEM_FOOTPRINTS[type];
+  const zone      = excZone ?? footprint;
+
+  const borderGeo = useMemo(() => {
+    if (!zone) return null;
+    const { hw, hd } = zone;
+    const v = new Float32Array([
+      -hw, 0, -hd,   hw, 0, -hd,
+       hw, 0, -hd,   hw, 0,  hd,
+       hw, 0,  hd,  -hw, 0,  hd,
+      -hw, 0,  hd,  -hw, 0, -hd,
+    ]);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(v, 3));
+    return g;
+  }, [zone?.hw, zone?.hd]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useFrame(({ clock }) => {
+    if (++frameRef.current % 2 !== 0) return;
+    const pos = placementPosRef.current;
+    if (!pos || !groupRef.current) return;
+    groupRef.current.position.set(pos.x, 0.06, pos.z);
+    groupRef.current.rotation.y = placementRotYRef?.current ?? 0;
+
+    const blocked = isColliding({ x: pos.x, z: pos.z }, type, placedItemsRef?.current ?? [], placementRotYRef?.current ?? 0);
+    const pulse   = 0.25 + Math.sin(clock.getElapsedTime() * 5) * 0.18;
+    if (fillMatRef.current) {
+      fillMatRef.current.color.setHex(blocked ? 0xff1100 : (excZone ? 0xff5500 : 0x2266ff));
+      fillMatRef.current.opacity = blocked ? 0.22 + pulse : 0.18;
+    }
+    if (borderMatRef.current) {
+      borderMatRef.current.color.setHex(blocked ? 0xff0000 : (excZone ? 0xffaa00 : 0x55ccff));
+      borderMatRef.current.opacity = blocked ? 1.0 : 0.90;
+    }
+  });
+
+  if (!zone) return null;
+  const { hw, hd } = zone;
+
+  return (
+    <group ref={groupRef}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[hw * 2, hd * 2]} />
+        <meshBasicMaterial
+          ref={fillMatRef}
+          color={excZone ? '#ff5500' : '#2266ff'}
+          transparent
+          opacity={0.18}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {borderGeo && (
+        <lineSegments>
+          <primitive object={borderGeo} attach="geometry" />
+          <lineBasicMaterial ref={borderMatRef} color={excZone ? '#ffaa00' : '#55ccff'} transparent opacity={0.90} />
+        </lineSegments>
+      )}
+    </group>
   );
 }
 

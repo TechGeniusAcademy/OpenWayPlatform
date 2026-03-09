@@ -29,6 +29,7 @@ const BUILDING_LABELS = {
   'wall':           'Стена',
   'tower':          'Башня',
   'drone':          'Маршрут дрона',
+  'lab-factory':    'Лаборатория-завод',
 };
 
 const BUILDING_ICONS = {
@@ -48,6 +49,7 @@ const BUILDING_ICONS = {
   'wall':           FaShieldAlt,
   'tower':          FaChessRook,
   'drone':          FaRobot,
+  'lab-factory':    FaIndustry,
 };
 
 // Types that cannot be "moved"
@@ -57,6 +59,314 @@ const LINK_TYPES = new Set(['conveyor', 'cable', 'wall', 'tower', 'drone']);
 const NO_UPGRADE_TYPES = new Set(['conveyor', 'cable', 'drone']);
 
 const LEVEL_COLORS = ['', '#4ade80', '#fbbf24', '#f97316', '#ef4444', '#a855f7', '#38bdf8', '#f43f5e'];
+
+// ─── Lab Factory metadata ─────────────────────────────────────────────────────
+const _LAB_RECIPES = [
+  { id: 'iron',   icon: '🔩', name: 'Железо',  full: 'Железный слиток',   color: '#94a3b8', ore: 'Железная руда'   },
+  { id: 'silver', icon: '⚪', name: 'Серебро', full: 'Серебряный слиток', color: '#e2e8f0', ore: 'Серебряная руда' },
+  { id: 'copper', icon: '🟤', name: 'Медь',    full: 'Медный слиток',     color: '#f97316', ore: 'Медная руда'     },
+];
+
+// ─── Lab Factory Dashboard Component ─────────────────────────────────────────
+function LabDashboard({ labRecipe, labOreAmount = 0, labIngots = {}, orePerIngot = 5, labProductionMs = 10_000, itemLevel = 1, onSetRecipe, onClose }) {
+  const [pulse, setPulse] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => setPulse(p => !p), 1400);
+    return () => clearInterval(id);
+  }, []);
+
+  const labCfg       = getLevelConfig('lab-factory', itemLevel);
+  const ratePerTick  = Math.round(labCfg?.rateMultiplier ?? 1);
+  const oreAvail     = Math.floor(labOreAmount ?? 0);
+  const oreFrac      = Math.min(1, oreAvail / 50);
+  const orePerCycle  = orePerIngot * ratePerTick;
+  const canProduce   = !!(labRecipe && oreAvail >= orePerIngot);
+  const ticksPerMin  = 60_000 / labProductionMs;
+  const ingotsPerMin = Math.round(ratePerTick * ticksPerMin);
+  const orePerMin    = Math.round(orePerCycle * ticksPerMin);
+  const cyclesLeft   = orePerCycle > 0 ? Math.floor(oreAvail / orePerCycle) : 0;
+  const activeRec    = _LAB_RECIPES.find(r => r.id === labRecipe) ?? null;
+  const barColor     = oreFrac > 0.55 ? '#4ade80' : oreFrac > 0.25 ? '#f59e0b' : '#ef4444';
+
+  return (
+    <div style={{ borderBottom: '1px solid rgba(99,102,241,0.18)' }}>
+
+      {/* ━━━ STATUS BANNER ━━━ */}
+      <div style={{
+        padding: '18px 18px 16px',
+        background: activeRec
+          ? `linear-gradient(135deg, ${activeRec.color}1c 0%, ${activeRec.color}06 55%, transparent 100%)`
+          : 'rgba(5,8,18,0.45)',
+        borderBottom: '1px solid rgba(99,102,241,0.10)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        {canProduce && (
+          <div style={{
+            position: 'absolute', right: -50, top: -50,
+            width: 180, height: 180, borderRadius: '50%',
+            background: `radial-gradient(circle, ${activeRec.color}20 0%, transparent 70%)`,
+            opacity: pulse ? 1 : 0.3, transition: 'opacity 1.4s ease',
+            pointerEvents: 'none',
+          }} />
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+              background: activeRec ? `${activeRec.color}1a` : 'rgba(15,23,42,0.7)',
+              border: `2px solid ${activeRec ? activeRec.color + '50' : '#0f172a'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30,
+              boxShadow: canProduce ? `0 0 22px ${activeRec.color}35` : 'none',
+              transition: 'box-shadow 1.4s ease',
+            }}>
+              {activeRec?.icon ?? '⏸'}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 8, color: '#334155', letterSpacing: 1.5, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Активный рецепт</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: activeRec?.color ?? '#0f172a', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {activeRec?.full ?? 'Рецепт не выбран'}
+              </div>
+              {activeRec && (
+                <div style={{ fontSize: 10, color: '#334155', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>⛏</span><span>{activeRec.ore}</span>
+                  <span style={{ color: '#1e293b' }}>·</span><span>Ур. {itemLevel}</span>
+                  {labCfg?.name && <><span style={{ color: '#1e293b' }}>·</span><span style={{ color: '#475569' }}>{labCfg.name}</span></>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{
+            flexShrink: 0, padding: '10px 14px', borderRadius: 14,
+            background: canProduce ? 'rgba(20,83,45,0.45)' : labRecipe ? 'rgba(127,29,29,0.45)' : 'rgba(10,15,26,0.6)',
+            border: `1px solid ${canProduce ? '#16a34a55' : labRecipe ? '#b91c1c55' : '#0f172a'}`,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 72,
+          }}>
+            <div style={{
+              width: 12, height: 12, borderRadius: '50%',
+              background: canProduce ? '#4ade80' : labRecipe ? '#f87171' : '#1e293b',
+              boxShadow: canProduce ? `0 0 ${pulse ? 14 : 5}px ${pulse ? 4 : 1}px #4ade8088` : 'none',
+              transition: 'box-shadow 1.4s ease',
+            }} />
+            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.6, color: canProduce ? '#4ade80' : labRecipe ? '#f87171' : '#334155', textAlign: 'center', lineHeight: 1.2 }}>
+              {canProduce ? 'РАБОТАЕТ' : labRecipe ? 'НЕТ\nРУДЫ' : 'ПРОСТОЙ'}
+            </div>
+          </div>
+        </div>
+
+        {activeRec && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginTop: 14 }}>
+            {[
+              { lbl: 'Слитков/тик', val: ratePerTick,    unit: 'шт',      col: activeRec.color },
+              { lbl: '/минуту',      val: ingotsPerMin,   unit: 'слитков', col: '#818cf8'       },
+              { lbl: 'Руды/цикл',   val: orePerCycle,    unit: 'ед.',     col: '#f59e0b'       },
+              { lbl: 'Циклов',       val: cyclesLeft,     unit: 'осталось', col: canProduce ? '#4ade80' : '#ef4444' },
+            ].map((m, i) => (
+              <div key={i} style={{ padding: '8px 4px', borderRadius: 8, textAlign: 'center', background: 'rgba(5,10,20,0.7)', border: '1px solid rgba(99,102,241,0.12)' }}>
+                <div style={{ fontSize: 8, color: '#1e293b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{m.lbl}</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: m.col, lineHeight: 1 }}>{m.val}</div>
+                <div style={{ fontSize: 8, color: '#1e293b', marginTop: 3 }}>{m.unit}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ━━━ PRODUCTION CHAIN ━━━ */}
+      {activeRec && (
+        <div style={{ padding: '10px 18px', borderBottom: '1px solid rgba(99,102,241,0.10)', background: 'rgba(3,6,16,0.4)' }}>
+          <div style={{ fontSize: 8, color: '#1e293b', letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>
+            Производственная цепочка
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {/* Ore node */}
+            <div style={{ flex: 1, padding: '8px 6px', borderRadius: 8, textAlign: 'center', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.22)' }}>
+              <div style={{ fontSize: 14 }}>⛏</div>
+              <div style={{ fontSize: 7, color: '#78350f', fontWeight: 700, marginTop: 2, textTransform: 'uppercase' }}>Руда</div>
+              <div style={{ fontSize: 14, color: '#f59e0b', fontWeight: 900 }}>{oreAvail}</div>
+              <div style={{ fontSize: 7, color: '#78350f' }}>/ 50 ед.</div>
+            </div>
+            {/* Arrow 1 */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, opacity: canProduce ? 1 : 0.15 }}>
+              <div style={{ fontSize: 8, color: '#334155', fontWeight: 700 }}>{orePerCycle}×</div>
+              <div style={{ width: 24, height: 2, background: canProduce ? `linear-gradient(90deg,#f59e0b,${activeRec.color})` : '#1e293b', borderRadius: 1, position: 'relative' }}>
+                <div style={{ position: 'absolute', right: -4, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: `5px solid ${canProduce ? activeRec.color : '#1e293b'}` }} />
+              </div>
+              <div style={{ fontSize: 7, color: '#1e293b' }}>{labProductionMs/1000}с</div>
+            </div>
+            {/* Lab node */}
+            <div style={{ flex: 1, padding: '8px 6px', borderRadius: 8, textAlign: 'center', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.22)', opacity: canProduce ? 1 : 0.35 }}>
+              <div style={{ fontSize: 14 }}>🔬</div>
+              <div style={{ fontSize: 7, color: '#4338ca', fontWeight: 700, marginTop: 2, textTransform: 'uppercase' }}>Завод</div>
+              <div style={{ fontSize: 14, color: '#818cf8', fontWeight: 900 }}>Ур.{itemLevel}</div>
+              <div style={{ fontSize: 7, color: '#312e81', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{labCfg?.name}</div>
+            </div>
+            {/* Arrow 2 */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, opacity: canProduce ? 1 : 0.15 }}>
+              <div style={{ fontSize: 8, color: '#334155', fontWeight: 700 }}>{ratePerTick}×</div>
+              <div style={{ width: 24, height: 2, background: canProduce ? `linear-gradient(90deg,#818cf8,${activeRec.color})` : '#1e293b', borderRadius: 1, position: 'relative' }}>
+                <div style={{ position: 'absolute', right: -4, top: '50%', transform: 'translateY(-50%)', width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: `5px solid ${canProduce ? activeRec.color : '#1e293b'}` }} />
+              </div>
+              <div style={{ fontSize: 7, color: '#1e293b' }}>выход</div>
+            </div>
+            {/* Ingot node */}
+            <div style={{ flex: 1, padding: '8px 6px', borderRadius: 8, textAlign: 'center', background: `${activeRec.color}0f`, border: `1px solid ${activeRec.color}30`, opacity: canProduce ? 1 : 0.35 }}>
+              <div style={{ fontSize: 14 }}>{activeRec.icon}</div>
+              <div style={{ fontSize: 7, color: activeRec.color + '99', fontWeight: 700, marginTop: 2, textTransform: 'uppercase' }}>Слиток</div>
+              <div style={{ fontSize: 14, color: activeRec.color, fontWeight: 900 }}>{labIngots?.[labRecipe] ?? 0}</div>
+              <div style={{ fontSize: 7, color: activeRec.color + '55' }}>накоплено</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ━━━ ORE BUFFER ━━━ */}
+      <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(99,102,241,0.10)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 9, color: '#334155', letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 3 }}>⛏ Буфер руды</div>
+            <div style={{ fontSize: 10, color: '#1e293b' }}>
+              {canProduce
+                ? `хватит на ${cyclesLeft} ${cyclesLeft===1?'цикл':cyclesLeft<5?'цикла':'циклов'} · ${orePerMin} ед./мин расход`
+                : oreAvail > 0
+                  ? `нужно ещё ${orePerIngot - oreAvail} ед. для старта`
+                  : 'бункер пуст — нужны дроны от добытчика'}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: 24, fontWeight: 900, color: barColor, lineHeight: 1 }}>{oreAvail}</span>
+            <span style={{ fontSize: 11, color: '#1e293b' }}> / 50</span>
+          </div>
+        </div>
+
+        <div style={{ position: 'relative', height: 20, borderRadius: 10, overflow: 'hidden', background: 'rgba(3,6,16,0.85)', border: '1px solid rgba(99,102,241,0.15)' }}>
+          <div style={{
+            position: 'absolute', left: 0, top: 0, bottom: 0,
+            width: `${oreFrac * 100}%`, transition: 'width 0.5s ease',
+            borderRadius: 10,
+            background: oreFrac > 0.55
+              ? 'linear-gradient(90deg, #15803d, #4ade80)'
+              : oreFrac > 0.25
+                ? 'linear-gradient(90deg, #b45309, #fbbf24)'
+                : 'linear-gradient(90deg, #991b1b, #ef4444)',
+            boxShadow: oreFrac > 0.05 ? `0 0 14px ${barColor}40` : 'none',
+          }} />
+          <div style={{ position: 'absolute', top: 3, bottom: 3, left: `${(orePerIngot/50)*100}%`, width: 2, background: 'rgba(255,255,255,0.25)', borderRadius: 1 }} />
+          {ratePerTick > 1 && (
+            <div style={{ position: 'absolute', top: 3, bottom: 3, left: `${Math.min(99, (orePerCycle/50)*100)}%`, width: 2, background: 'rgba(255,255,255,0.4)', borderRadius: 1 }} />
+          )}
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: oreFrac > 0.3 ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.12)' }}>
+            {Math.round(oreFrac * 100)}%
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 8 }}>
+          <span style={{ color: '#1e293b' }}>мин. {orePerIngot} ед.</span>
+          {ratePerTick > 1 && <span style={{ color: '#334155' }}>1 тик = {orePerCycle} ед.</span>}
+          <span style={{ color: canProduce ? '#166534' : '#7f1d1d', fontWeight: 700 }}>{canProduce ? '✓ достаточно' : '✗ мало'}</span>
+        </div>
+      </div>
+
+      {/* ━━━ INGOT INVENTORY ━━━ */}
+      <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(99,102,241,0.10)' }}>
+        <div style={{ fontSize: 9, color: '#334155', letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 10 }}>
+          Хранилище слитков
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {_LAB_RECIPES.map(r => {
+            const count    = labIngots?.[r.id] ?? 0;
+            const isActive = labRecipe === r.id;
+            return (
+              <div key={r.id} style={{
+                borderRadius: 12, overflow: 'hidden',
+                border: `1.5px solid ${isActive ? r.color + '66' : 'rgba(15,23,42,0.7)'}`,
+                background: isActive
+                  ? `linear-gradient(160deg, ${r.color}1c 0%, rgba(5,8,18,0.9) 100%)`
+                  : 'rgba(5,8,18,0.55)',
+                boxShadow: isActive && canProduce ? `0 4px 22px ${r.color}22` : 'none',
+                transition: 'all 0.3s',
+              }}>
+                <div style={{ height: 3, background: isActive ? `linear-gradient(90deg, ${r.color}77, ${r.color})` : 'rgba(15,23,42,0.5)' }} />
+                <div style={{ padding: '10px 8px 12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 26, marginBottom: 4, filter: isActive ? 'none' : 'grayscale(1) opacity(0.2)' }}>{r.icon}</div>
+                  <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: isActive ? r.color : '#0f172a' }}>{count}</div>
+                  <div style={{ fontSize: 8, color: isActive ? '#475569' : '#0f172a', marginTop: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{r.name}</div>
+                  {isActive && (
+                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '3px 8px', borderRadius: 10, background: `${r.color}15`, border: `1px solid ${r.color}30` }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: canProduce ? r.color : '#1e293b', boxShadow: canProduce ? `0 0 ${pulse?8:3}px ${r.color}` : 'none', display: 'inline-block', transition: 'box-shadow 1.4s', flexShrink: 0 }} />
+                      <span style={{ fontSize: 8, color: canProduce ? r.color : '#334155', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        {canProduce ? `+${ratePerTick}/тик · ${ingotsPerMin}/мин` : 'ожидание руды'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ━━━ RECIPE SELECTOR ━━━ */}
+      <div style={{ padding: '14px 18px 18px', background: 'rgba(3,6,16,0.4)' }}>
+        <div style={{ fontSize: 9, color: '#334155', letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 12 }}>
+          {labRecipe ? '⚙ Сменить рецепт' : '⚙ Выбрать рецепт производства'}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 8 }}>
+          {_LAB_RECIPES.map(r => {
+            const isActive = labRecipe === r.id;
+            return (
+              <button
+                key={r.id}
+                onClick={() => { onSetRecipe?.(r.id); onClose(); }}
+                style={{
+                  position: 'relative', borderRadius: 12,
+                  padding: '14px 6px 12px',
+                  background: isActive ? `${r.color}1c` : 'rgba(8,12,22,0.6)',
+                  border: `2px solid ${isActive ? r.color + '77' : 'rgba(20,30,50,0.6)'}`,
+                  cursor: 'pointer', textAlign: 'center',
+                  fontFamily: 'monospace', outline: 'none', overflow: 'hidden',
+                  boxShadow: isActive ? `0 6px 26px ${r.color}28, inset 0 1px 0 ${r.color}22` : 'none',
+                  transition: 'all 0.18s',
+                }}
+              >
+                {isActive && (
+                  <div style={{ position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: '50%', background: r.color, boxShadow: `0 0 8px ${r.color}` }} />
+                )}
+                {/* Shine stripe when active */}
+                {isActive && (
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${r.color}55, transparent)` }} />
+                )}
+                <div style={{ fontSize: 30, marginBottom: 6 }}>{r.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: isActive ? r.color : '#1e293b', marginBottom: 3 }}>{r.name}</div>
+                <div style={{ fontSize: 8, color: '#1e293b', lineHeight: 1.4 }}>{r.ore}</div>
+                {isActive && (
+                  <div style={{ marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 10, background: `${r.color}1a`, color: r.color, fontSize: 8, fontWeight: 700 }}>
+                    ✓ активен
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => { onSetRecipe?.(null); onClose(); }}
+          style={{
+            width: '100%', padding: '10px',
+            borderRadius: 9, cursor: 'pointer',
+            background: !labRecipe ? 'rgba(51,65,85,0.3)' : 'rgba(5,8,18,0.4)',
+            border: `1px solid ${!labRecipe ? '#47556955' : 'rgba(10,15,26,0.7)'}`,
+            color: !labRecipe ? '#64748b' : '#1e293b',
+            fontSize: 11, fontWeight: 600, fontFamily: 'monospace',
+            transition: 'all 0.15s',
+          }}
+        >
+          ⏸ &nbsp; Остановить производство
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ─── Stat extraction per level config ────────────────────────────────────────
 function getStatRows(type, level) {
@@ -137,6 +447,12 @@ export function ContextMenu({
   coinUpgradeNext = null,
   hp = null,          // { current, max } from objectHp
   onRepair,           // (itemId, itemType) => void
+  labRecipe = null,   // 'iron' | 'silver' | 'copper' | null
+  onSetRecipe,        // (recipe) => void
+  labOreAmount = 0,   // current ore in buffer for this lab
+  labIngots = null,   // { iron, silver, copper } ingot counts
+  orePerIngot = 5,    // ore units required per ingot
+  labProductionMs = 10_000, // production interval in ms
   // eslint-disable-next-line no-unused-vars
   x, y,
 }) {
@@ -196,7 +512,6 @@ export function ContextMenu({
   const Icon = BUILDING_ICONS[itemType] ?? FaHammer;
 
   return (
-    /* Backdrop — click outside closes modal */
     <div
       style={{
         position: 'fixed', inset: 0,
@@ -223,7 +538,6 @@ export function ContextMenu({
         }}
         onMouseDown={e => e.stopPropagation()}
       >
-        {/* ── Header ── */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '14px 18px 12px',
@@ -435,6 +749,20 @@ export function ContextMenu({
               </span>
             </div>
           </div>
+        )}
+
+        {/* ── Lab Factory — full production dashboard ── */}
+        {itemType === 'lab-factory' && (
+          <LabDashboard
+            labRecipe={labRecipe}
+            labOreAmount={labOreAmount}
+            labIngots={labIngots}
+            orePerIngot={orePerIngot}
+            labProductionMs={labProductionMs}
+            itemLevel={itemLevel}
+            onSetRecipe={onSetRecipe}
+            onClose={onClose}
+          />
         )}
 
         {/* ── Drone routes ── */}

@@ -20,15 +20,20 @@ function rateMult(item, buildingLevels) {
 
 // ─── Drone routes (was conveyors) ────────────────────────────────────────────
 
+// Drone route level → speed multiplier (mirrors ROUTE_SPEED_BONUS in DronePanel)
+const ROUTE_LEVEL_MULT = [1, 1.0, 1.3, 1.8, 2.5]; // index = level (1-based)
+
 /**
- * Returns a Map<droneRouteId, effectiveRatePerHour> already scaled by building levels.
+ * Returns a Map<droneRouteId, effectiveRatePerHour> already scaled by building levels
+ * and drone route upgrade level.
  *
  * @param {Array<{id, type}>}              placedItems
  * @param {Array<{id, fromId, toId}>}      conveyors   – drone routes array
  * @param {Object<string, number>}         buildingLevels  – map of itemId → level
+ * @param {Object<string, number>}         droneRouteLevels – map of droneId → level
  * @returns {Map<number, number>}
  */
-export function calcConveyorRates(placedItems, conveyors, buildingLevels = {}) {
+export function calcConveyorRates(placedItems, conveyors, buildingLevels = {}, droneRouteLevels = {}) {
   // Pre-compute fan-out counts per (source, resource)
   const outCount = new Map(); // `${fromId}:${resource}` → n
   for (const conv of conveyors) {
@@ -50,8 +55,10 @@ export function calcConveyorRates(placedItems, conveyors, buildingLevels = {}) {
     const rule = getTransferRule(from.type, to.type);
     if (!rule) { rates.set(conv.id, 0); continue; }
     const n = outCount.get(`${conv.fromId}:${rule.resource}`) ?? 1;
-    // Scale by source building's level multiplier
-    rates.set(conv.id, rule.ratePerHour * rateMult(from, buildingLevels) / n);
+    // Scale by source building's level multiplier and drone route upgrade level
+    const routeLevel = droneRouteLevels[String(conv.id)] ?? 1;
+    const routeMult  = ROUTE_LEVEL_MULT[routeLevel] ?? 1.0;
+    rates.set(conv.id, rule.ratePerHour * rateMult(from, buildingLevels) / n * routeMult);
   }
 
   return rates;

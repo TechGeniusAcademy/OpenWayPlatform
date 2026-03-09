@@ -54,7 +54,7 @@ registerTransferRule('money-factory', 'energy-storage', {
 // Электроэнергия поступает напрямую в хранилище.
 registerTransferRule('solar-panel', 'energy-storage', {
   resource:    'solar',
-  ratePerHour: 5,
+  ratePerHour: 10,
   color:       '#38bdf8',   // sky blue
   icon:        '⚡',
   label:       'Электричество',
@@ -110,6 +110,54 @@ registerTransferRule('coal-generator', 'energy-storage', {
 registerTransferRule('extractor', 'energy-storage', {
   resource:    'ore',
   ratePerHour: 3,     // base rate — scaled by extractor level in calcConveyorRates
+  color:       '#a8874a',
+  icon:        '⛏️',
+  label:       'Руда',
+  unit:        'ед./ч',
+});
+
+// Насос → Насосная станция
+// Вода перекачивается с насоса в насосную станцию через насос-дрон.
+registerConveyorLimits('pump',         { maxOut: 4, maxIn: 0  });
+registerConveyorLimits('pump-factory', { maxOut: 0, maxIn: 6  });
+
+registerTransferRule('pump', 'pump-factory', {
+  resource:    'water',
+  ratePerHour: 20,    // base rate — overridden by pump-drone level in calcConveyorRates
+  color:       '#38bdf8',
+  icon:        '💧',
+  label:       'Вода',
+  unit:        'л/ч',
+});
+
+// Паровой генератор: принимает уголь с добытчика + воду с насосной станции
+registerConveyorLimits('steam-generator', { maxOut: 2, maxIn: 8 });
+
+registerTransferRule('extractor', 'steam-generator', {
+  resource:    'ore',
+  ratePerHour: 2,
+  color:       '#44403c',
+  icon:        '⬛',
+  label:       'Уголь',
+  unit:        'ед./ч',
+});
+
+registerTransferRule('pump-factory', 'steam-generator', {
+  resource:    'water',
+  ratePerHour: 1,
+  color:       '#38bdf8',
+  icon:        '💧',
+  label:       'Вода',
+  unit:        'л/ч',
+});
+
+// Экстрактор → Лаборатория-завод
+// Руда доставляется дроном с добытчика в лабораторию для переработки в слитки.
+registerConveyorLimits('lab-factory', { maxOut: 0, maxIn: 6 });
+
+registerTransferRule('extractor', 'lab-factory', {
+  resource:    'ore',
+  ratePerHour: 3,
   color:       '#a8874a',
   icon:        '⛏️',
   label:       'Руда',

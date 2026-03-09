@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ENERGY_TYPES } from '../systems/energy.js';
 import styles from '../OpenCity.module.css';
 import {
-  FaStore, FaTrophy, FaWrench, FaLink,
+  FaStore, FaTrophy, FaWrench, FaLink, FaRobot,
   FaSun, FaCoins, FaBolt, FaMoon, FaCloudSun,
   FaShieldAlt, FaChessRook,
   FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark, FaHome,
@@ -54,7 +54,7 @@ function InfoRow({ label, value, unit = '', color = '#e2e8f0', icon: Icon, iconC
   );
 }
 
-function CityInfoPanel({ energyTotals, storageTotals, storedCurrentTotals, points, userPoints, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, itemsCount, dronesCount, timeString }) {
+function CityInfoPanel({ energyTotals, storageTotals, storedCurrentTotals, points, userPoints, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, itemsCount, dronesCount, timeString, ingots, oreRates }) {
   const hasProd    = energyTotals  && Object.keys(energyTotals).length  > 0;
 
   const buildersOk   = (freeBuilders ?? 0) > 0;
@@ -152,6 +152,34 @@ function CityInfoPanel({ energyTotals, storageTotals, storedCurrentTotals, point
               {(upgradingCount ?? 0) > 0 && (
                 <InfoRow label="На улучшении" value={upgradingCount} icon={FaArrowUp} iconColor="#34d399" color="#34d399" />
               )}
+            </div>
+          )}
+
+          {/* ── Добыча руды ── */}
+          {oreRates && Object.keys(oreRates).length > 0 && (
+            <div>
+              <SectionTitle icon={GiMining} color="#a8874a" title="Добыча руды / ч" />
+              {Object.entries(oreRates).map(([oreType, rate]) => (
+                <InfoRow
+                  key={oreType}
+                  label={oreType}
+                  value={rate.toFixed(1)}
+                  unit=" ед./ч"
+                  icon={GiMining}
+                  iconColor="#a8874a"
+                  color="#d4a96a"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* ── Слитки ── */}
+          {ingots && (ingots.iron > 0 || ingots.silver > 0 || ingots.copper > 0) && (
+            <div>
+              <SectionTitle icon={GiMining} color="#94a3b8" title="Слитки" />
+              {ingots.iron   > 0 && <InfoRow label="Железо"  value={ingots.iron}   unit=" шт." icon={GiMining} iconColor="#94a3b8" color="#cbd5e1" />}
+              {ingots.silver > 0 && <InfoRow label="Серебро" value={ingots.silver} unit=" шт." icon={GiMining} iconColor="#e2e8f0" color="#f1f5f9" />}
+              {ingots.copper > 0 && <InfoRow label="Медь"    value={ingots.copper} unit=" шт." icon={GiMining} iconColor="#f97316" color="#fb923c" />}
             </div>
           )}
 
@@ -289,7 +317,7 @@ function DayPeriodIcon({ hour }) {
   return <FaMoon style={{ verticalAlign: 'middle', color: '#818cf8' }} />;
 }
 
-export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, onStartPlacing, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, userPoints, allEnergyTotals, storedCurrentTotals }) {
+export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onDrones, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, onStartPlacing, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, userPoints, allEnergyTotals, storedCurrentTotals, ingots, oreRates }) {
   const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
 
   // thresholds: [goodMax, warnMax]  — above warnMax = critical
@@ -391,6 +419,11 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
           <FaStore />
         </button>
       )}
+      {!placingItem && onDrones && (
+        <button className={styles.dronesBtn} onClick={onDrones} title="Управление дронами">
+          <FaRobot />
+        </button>
+      )}
       <button className={styles.backBtn} onClick={onBack}>
         <MdArrowBack style={{ verticalAlign: 'middle', marginRight: 4 }} /> Назад
       </button>
@@ -403,6 +436,8 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onBack
         energyTotals={allEnergyTotals ?? energyTotals}
         storageTotals={storageTotals}
         storedCurrentTotals={storedCurrentTotals}
+          ingots={ingots}
+          oreRates={oreRates}
         points={points}
         userPoints={userPoints}
         coinBalance={coinBalance}
