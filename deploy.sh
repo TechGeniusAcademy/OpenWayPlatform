@@ -68,7 +68,16 @@ fi
 # 7. Сохранение PM2 конфигурации
 pm2 save
 
-# 8. Проверка статуса
+# 8. Обновление конфигурации Nginx
+echo -e "${YELLOW}🔧 Обновление конфигурации Nginx...${NC}"
+cp /var/www/openway/nginx/openway.kz-ssl.conf /etc/nginx/sites-available/openway.kz
+nginx -t && systemctl reload nginx
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Ошибка в конфигурации Nginx${NC}"
+    exit 1
+fi
+
+# 9. Проверка статуса
 echo -e "${YELLOW}📊 Статус приложения:${NC}"
 pm2 status
 
