@@ -5,7 +5,7 @@ import {
   FaFolder, FaFolderOpen, FaFolderPlus, FaTimes, FaInfoCircle,
   FaRocket, FaArrowLeft, FaFile, FaFileCode, FaFileAlt,
   FaImage, FaMusic, FaFilm, FaChevronRight, FaChevronDown,
-  FaEdit, FaCut, FaLink, FaSave,
+  FaEdit, FaCut, FaLink, FaSave, FaDownload,
 } from "react-icons/fa";
 import api from "../../utils/api";
 import styles from "./StudentHosting.module.css";
@@ -52,7 +52,7 @@ function getFileIcon(item, isOpen) {
 const EMPTY_CREATE = { name: '', description: '' };
 
 // ─── File tree node (recursive) ──────────────────────────────────────────────
-function FileTreeNode({ item, depth, expandedDirs, onContextMenu, onToggle }) {
+function FileTreeNode({ item, depth, expandedDirs, onContextMenu, onToggle, onDownload }) {
   const isDir = item.type === 'dir';
   const isExpanded = expandedDirs.has(item.path);
   return (
@@ -69,6 +69,13 @@ function FileTreeNode({ item, depth, expandedDirs, onContextMenu, onToggle }) {
         <span className={styles.treeIcon}>{getFileIcon(item, isExpanded)}</span>
         <span className={styles.treeName}>{item.name}</span>
         {!isDir && <span className={styles.treeSize}>{formatBytes(item.size)}</span>}
+        <button
+          className={styles.treeDownloadBtn}
+          title="Скачать"
+          onClick={(e) => { e.stopPropagation(); onDownload(item); }}
+        >
+          <FaDownload />
+        </button>
       </div>
       {isDir && isExpanded && (item.children || []).map(child => (
         <FileTreeNode
@@ -78,6 +85,7 @@ function FileTreeNode({ item, depth, expandedDirs, onContextMenu, onToggle }) {
           expandedDirs={expandedDirs}
           onContextMenu={onContextMenu}
           onToggle={onToggle}
+          onDownload={onDownload}
         />
       ))}
     </>
@@ -343,6 +351,44 @@ export default function StudentHosting() {
     return n;
   }
 
+  async function downloadItem(item) {
+    try {
+      const res = await api.get(
+        `/hosting/${selectedSite.id}/download?p=${encodeURIComponent(item.path)}`,
+        { responseType: 'blob' }
+      );
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = item.type === 'dir' ? item.name + '.zip' : item.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Ошибка при скачивании');
+    }
+  }
+
+  async function downloadAll() {
+    try {
+      const res = await api.get(
+        `/hosting/${selectedSite.id}/download-all`,
+        { responseType: 'blob' }
+      );
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (selectedSite.name || selectedSite.slug) + '.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Ошибка при скачивании');
+    }
+  }
+
   // ─── Render helpers ────────────────────────────────────────────────────────
   const renderCreateModal = () => (
     <div className={styles.modalOverlay} onClick={() => setShowCreate(false)}>
@@ -520,6 +566,9 @@ export default function StudentHosting() {
                   <button className={styles.toolBtn} onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                     <FaUpload /> {uploading ? 'Загрузка…' : 'Загрузить'}
                   </button>
+                  <button className={styles.toolBtn} onClick={downloadAll} title="Скачать всё как ZIP" disabled={fileTree.length === 0}>
+                    <FaDownload /> Скачать всё
+                  </button>
                 </div>
                 <input ref={fileInputRef} type="file" multiple style={{ display: 'none' }}
                   accept=".html,.htm,.css,.js,.json,.png,.jpg,.jpeg,.gif,.svg,.webp,.ico,.woff,.woff2,.ttf,.otf,.mp3,.mp4,.webm,.ogg"
@@ -546,6 +595,7 @@ export default function StudentHosting() {
                       expandedDirs={expandedDirs}
                       onContextMenu={openContextMenu}
                       onToggle={toggleDir}
+                      onDownload={downloadItem}
                     />
                   ))
                 )}
@@ -580,6 +630,9 @@ export default function StudentHosting() {
               <FaLink /> Копировать ссылку
             </li>
           )}
+          <li className={styles.contextMenuItem} onClick={() => { downloadItem(contextMenu.item); closeContextMenu(); }}>
+            <FaDownload /> Скачать
+          </li>
           {contextMenu.item.type === 'dir' && (
             <>
               <li className={styles.contextMenuDivider} />

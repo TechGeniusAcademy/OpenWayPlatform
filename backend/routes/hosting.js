@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
+import archiver from 'archiver';
 import { authenticate } from '../middleware/auth.js';
 import pool from '../config/database.js';
 
@@ -376,6 +377,60 @@ router.delete('/:id/item', authenticate, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка удаления' });
+  }
+});
+
+// ─── GET /api/hosting/:id/download?p= — download file or folder as zip ──────
+router.get('/:id/download', authenticate, async (req, res) => {
+  try {
+    const site = await getSite(req);
+    if (!site) return res.status(404).json({ error: 'Сайт не найден' });
+    const siteDir = path.join(HOSTING_ROOT, String(req.user.id), site.slug);
+    const target = resolveSafe(siteDir, req.query.p);
+    if (!target || target === siteDir) return res.status(400).json({ error: 'Недопустимый путь' });
+    const st = await fs.stat(target).catch(() => null);
+    if (!st) return res.status(404).json({ error: 'Файл не найден' });
+
+    if (st.isFile()) {
+      const filename = encodeURIComponent(path.basename(target));
+      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Length', st.size);
+      createReadStream(target).pipe(res);
+    } else {
+      const dirname = path.basename(target);
+      const zipname = encodeURIComponent(dirname + '.zip');
+      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${zipname}`);
+      res.setHeader('Content-Type', 'application/zip');
+      const archive = archiver('zip', { zlib: { level: 5 } });
+      archive.on('error', err => { console.error(err); if (!res.headersSent) res.end(); });
+      archive.pipe(res);
+      archive.directory(target, dirname);
+      archive.finalize();
+    }
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) res.status(500).json({ error: 'Ошибка скачивания' });
+  }
+});
+
+// ─── GET /api/hosting/:id/download-all — download entire site as zip ─────────
+router.get('/:id/download-all', authenticate, async (req, res) => {
+  try {
+    const site = await getSite(req);
+    if (!site) return res.status(404).json({ error: 'Сайт не найден' });
+    const siteDir = path.join(HOSTING_ROOT, String(req.user.id), site.slug);
+    const zipname = encodeURIComponent(site.slug + '.zip');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${zipname}`);
+    res.setHeader('Content-Type', 'application/zip');
+    const archive = archiver('zip', { zlib: { level: 5 } });
+    archive.on('error', err => { console.error(err); if (!res.headersSent) res.end(); });
+    archive.pipe(res);
+    archive.directory(siteDir, site.slug);
+    archive.finalize();
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) res.status(500).json({ error: 'Ошибка скачивания' });
   }
 });
 
