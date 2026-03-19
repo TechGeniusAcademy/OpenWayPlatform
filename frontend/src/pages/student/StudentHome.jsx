@@ -151,28 +151,35 @@ function StudentHome() {
   const pendingHW = homeworks.filter(h => !h.submission_status || h.submission_status === "pending");
 
   return (
-    <div className={styles["student-page"]}>
-      {/* ===== БЛОК ПРОФИЛЯ ===== */}
-      <div className={styles["student-info"]}>
+    <div className={styles.page}>
 
-        {/* --- Аватар + имя --- */}
-        <div className={styles["student-info-first"]}>
-          <div className={styles["avatar-frame-wrap"]}>
+      {/* ===== LEFT: PROFILE CARD ===== */}
+      <aside className={styles.profileCard}>
+        <div
+          className={styles.profileBanner}
+          style={
+            appliedBanner?.image_url
+              ? { backgroundImage: `url(${BASE_URL}${appliedBanner.image_url})`, backgroundSize: "cover", backgroundPosition: "center" }
+              : undefined
+          }
+        />
+        <div className={styles.profileBody}>
+          <div className={styles.avatarWrap}>
             {user?.avatar_url ? (
               <img
-                className={styles["dashboard-page-header-avatar"]}
+                className={styles.profileAvatar}
                 src={`${BASE_URL}${user.avatar_url}`}
                 alt={user.username}
               />
             ) : (
               <div
-                className={styles["dashboard-page-header-avatar"]}
+                className={styles.profileAvatar}
                 style={{
                   background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "clamp(28px, 3vw, 42px)",
+                  fontSize: 32,
                   color: "#fff",
                   fontWeight: 700,
                 }}
@@ -182,124 +189,108 @@ function StudentHome() {
             )}
             {appliedFrame?.image_url && (
               <img
-                className={styles["dashboard-page-header-frame"]}
+                className={styles.profileFrame}
                 src={`${BASE_URL}${appliedFrame.image_url}`}
                 alt="Frame"
-                style={getFrameStyle(appliedFrame, 'home')}
+                style={getFrameStyle(appliedFrame, "home")}
               />
             )}
           </div>
 
-          <div className={styles["dashboard-page-username"]}>
-            <h1>{user?.full_name || user?.username}</h1>
-            <p>{user?.email}</p>
-            <p>{new Date(user?.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}</p>
+          <div className={styles.profileMeta}>
+            <h2 className={styles.profileName}>{user?.full_name || user?.username}</h2>
+            <p className={styles.profileEmail}>{user?.email}</p>
             {groupInfo?.name && (
-              <span className={styles["username-badge"]}>
-                {t("inagroup")}: {groupInfo.name}
-              </span>
+              <span className={styles.groupBadge}>{t("inagroup")}: {groupInfo.name}</span>
             )}
           </div>
-        </div>
 
-        {/* --- Баллы --- */}
-        <div className={styles["dashboard-page-points"]}>
-          <div className={styles["mini-stat"]}>
-            <div className={styles["mini-stat-icon"]}><FaBitcoin /></div>
-            <div className={styles["mini-stat-body"]}>
-              <div className={styles["mini-stat-value"]}>{user?.points ?? 0}</div>
-              <div className={styles["mini-stat-label"]}>{t("mypoints")}</div>
+          <div className={styles.statsStack}>
+            {/* Баллы */}
+            <div className={styles.statRow}>
+              <div className={styles.statIcon} style={{ background: "rgba(234,179,8,0.12)", color: "#ca8a04" }}>
+                <FaBitcoin />
+              </div>
+              <div className={styles.statBody}>
+                <span className={styles.statValue}>{user?.points ?? 0}</span>
+                <span className={styles.statLabel}>{t("mypoints")}</span>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* --- Уровень --- */}
-        <div className={styles["dashboard-page-level"]}>
-          <div className={styles["mini-stat"]}>
-            <div className={styles["mini-stat-icon"]}>
-              {userLevel?.image_url ? (
-                <img
-                  src={userLevel.image_url.startsWith("http") ? userLevel.image_url : `${BASE_URL}${userLevel.image_url}`}
-                  alt={`${t("level")} ${userLevel.level_number}`}
-                  style={{ width: 28, height: 28, objectFit: "contain" }}
-                />
-              ) : (
-                <SiLevelsdotfyi />
-              )}
-            </div>
-            <div className={styles["mini-stat-body"]}>
-              <div className={styles["mini-stat-value"]}>
-                {t("level")} {userLevel?.level_number ?? 1}
+            {/* Уровень */}
+            <div className={styles.statRow}>
+              <div className={styles.statIcon} style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                {userLevel?.image_url ? (
+                  <img
+                    src={userLevel.image_url.startsWith("http") ? userLevel.image_url : `${BASE_URL}${userLevel.image_url}`}
+                    alt="level"
+                    style={{ width: 20, height: 20, objectFit: "contain" }}
+                  />
+                ) : (
+                  <SiLevelsdotfyi />
+                )}
               </div>
-              <div className={styles["mini-stat-label"]}>
-                {userExperience}{nextLevel ? ` / ${nextLevel.experience_required} XP` : ""}
-              </div>
-              {nextLevel && (
-                <div className={styles["xp-bar-wrap"]}>
-                  <div className={styles["xp-bar-track"]}>
-                    <div
-                      className={styles["xp-bar-fill"]}
-                      style={{ width: `${xpPercent}%` }}
-                    />
+              <div className={styles.statBody}>
+                <span className={styles.statValue}>{t("level")} {userLevel?.level_number ?? 1}</span>
+                <span className={styles.statLabel}>{userExperience}{nextLevel ? ` / ${nextLevel.experience_required} XP` : ""}</span>
+                {nextLevel && (
+                  <div className={styles["xp-bar-wrap"]}>
+                    <div className={styles["xp-bar-track"]}>
+                      <div className={styles["xp-bar-fill"]} style={{ width: `${xpPercent}%` }} />
+                    </div>
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* Задания */}
+            <div className={styles.statRow}>
+              <div className={styles.statIcon} style={{ background: "rgba(16,185,129,0.12)", color: "#059669" }}>
+                <FaTasks />
+              </div>
+              <div className={styles.statBody}>
+                <span className={styles.statValue}>{pendingHW.length}</span>
+                <span className={styles.statLabel}>{t("pending")}</span>
+              </div>
+            </div>
+
+            {/* Время */}
+            <div className={styles.statRow}>
+              <div className={styles.statIcon} style={{ background: "rgba(99,102,241,0.12)", color: "#6366f1" }}>
+                <FaClock />
+              </div>
+              <div className={styles.statBody}>
+                <span className={styles.statValue}>
+                  {currentTime.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                <span className={styles.statLabel}>
+                  {currentTime.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" })}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* ===== CENTER: QUICK ACTIONS + HOMEWORKS ===== */}
+      <div className={styles.centerCol}>
+        <div className={styles.widget}>
+          <div className={styles["widget-header"]}>
+            <span className={styles["widget-title"]}>{t("quickactions")}</span>
+          </div>
+          <div className={styles["quick-actions"]}>
+            {quickActions.map(({ icon: Icon, label, path, color }) => (
+              <button key={path} className={styles["action-card"]} onClick={() => navigate(path)}>
+                <div className={styles["action-icon"]} style={{ color, background: `${color}18` }}>
+                  <Icon />
                 </div>
-              )}
-            </div>
+                <span className={styles["action-label"]}>{label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* --- Задани мини-стат --- */}
-        <div className={styles["div1_4"]}>
-          <div className={styles["mini-stat"]}>
-            <div className={styles["mini-stat-icon"]}><FaTasks /></div>
-            <div className={styles["mini-stat-body"]}>
-              <div className={styles["mini-stat-value"]}>{pendingHW.length}</div>
-              <div className={styles["mini-stat-label"]}>{t("pending")}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- Время --- */}
-        <div className={styles["div1_5"]}>
-          <div className={styles["mini-stat"]}>
-            <div className={styles["mini-stat-icon"]}><FaClock /></div>
-            <div className={styles["mini-stat-body"]}>
-              <div className={styles["mini-stat-value"]}>
-                {currentTime.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-              </div>
-              <div className={styles["mini-stat-label"]}>
-                {currentTime.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== БЫСТРЫЕ ДЕЙСТВИЯ ===== */}
-      <div className={styles["div2"]}>
-        <div className={styles["widget-header"]}>
-          <span className={styles["widget-title"]}>{t("quickactions")}</span>
-        </div>
-        <div className={styles["quick-actions"]}>
-          {quickActions.map(({ icon: Icon, label, path, color }) => (
-            <button
-              key={path}
-              className={styles["action-card"]}
-              onClick={() => navigate(path)}
-            >
-              <div className={styles["action-icon"]} style={{ color, background: `${color}18` }}>
-                <Icon />
-              </div>
-              <span className={styles["action-label"]}>{label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ===== ЗАДАНИЯ + РАСПИСАНИЕ ===== */}
-      <div className={styles["div3"]}>
-        {/* Домашние задания */}
-        <div className={styles["section-col"]}>
+        <div className={styles.widget}>
           <div className={styles["widget-header"]}>
             <span className={styles["widget-title"]}><FaFileAlt /> {t("homeworks")}</span>
             <button className={styles["view-all-btn"]} onClick={() => navigate("/student/homeworks")}>
@@ -312,7 +303,7 @@ function StudentHome() {
               <span>{t("nohomeworks")}</span>
             </div>
           ) : (
-            pendingHW.slice(0, 4).map(hw => (
+            pendingHW.slice(0, 5).map(hw => (
               <div key={hw.id} className={styles["hw-item"]}>
                 <div className={styles["hw-dot"]} />
                 <div className={styles["hw-info"]}>
@@ -333,9 +324,11 @@ function StudentHome() {
             ))
           )}
         </div>
+      </div>
 
-        {/* Календарь расписания */}
-        <div className={styles["section-col"]}>
+      {/* ===== RIGHT: CALENDAR + UPDATES ===== */}
+      <div className={styles.rightCol}>
+        <div className={styles.widget}>
           <div className={styles["widget-header"]}>
             <span className={styles["widget-title"]}><FaCalendarAlt /> {t("schedule")}</span>
             <button className={styles["view-all-btn"]} onClick={() => navigate("/student/schedule")}>
@@ -344,32 +337,32 @@ function StudentHome() {
           </div>
           <DashboardCalendar />
         </div>
-      </div>
 
-      {/* ===== ПОСЛЕДНИЕ ОБНОВЛЕНИЯ ===== */}
-      <div className={styles["div4"]}>
-        <div className={styles["widget-header"]}>
-          <span className={styles["widget-title"]}><FaBell /> {t("recentupdates")}</span>
-        </div>
-        {updates.length === 0 ? (
-          <div className={styles["empty-state"]}>
-            <FaBell />
-            <span>{t("noupdates")}</span>
+        <div className={styles.widget}>
+          <div className={styles["widget-header"]}>
+            <span className={styles["widget-title"]}><FaBell /> {t("recentupdates")}</span>
           </div>
-        ) : (
-          updates.map(u => (
-            <div key={u.id} className={styles["update-item"]}>
-              <div className={styles["update-version"]}>v{u.version}</div>
-              <div className={styles["update-info"]}>
-                <div className={styles["update-title"]}>{u.title}</div>
-                <div className={styles["update-date"]}>
-                  {new Date(u.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+          {updates.length === 0 ? (
+            <div className={styles["empty-state"]}>
+              <FaBell />
+              <span>{t("noupdates")}</span>
+            </div>
+          ) : (
+            updates.map(u => (
+              <div key={u.id} className={styles["update-item"]}>
+                <div className={styles["update-version"]}>v{u.version}</div>
+                <div className={styles["update-info"]}>
+                  <div className={styles["update-title"]}>{u.title}</div>
+                  <div className={styles["update-date"]}>
+                    {new Date(u.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
+
     </div>
   );
 }
