@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowLeft } from "react-icons/fa";
 import styles from "./Login.module.css";
 
 function Login() {
@@ -65,6 +65,9 @@ function Login() {
 
   return (
     <div className={styles.container}>
+      <button className={styles.backBtn} onClick={() => navigate("/")}>
+        <FaArrowLeft /> На главную
+      </button>
       <div className={styles.leftSide}>
       </div>
 

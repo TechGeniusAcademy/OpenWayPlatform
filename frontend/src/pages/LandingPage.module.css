@@ -1,0 +1,740 @@
+/* ── Reset / base ── */
+.page {
+  min-height: 100vh;
+  background: #080c14;
+  color: #e2e8f0;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  /* clip (not hidden!) — doesn't create a scroll container, keeps sticky working */
+  overflow-x: clip;
+}
+
+/* ══════════════════════════════════════
+   NAVBAR  — floating pill style
+══════════════════════════════════════ */
+.navbar {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  width: calc(100% - 48px);
+  max-width: 1300px;
+  height: 60px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 20px;
+
+  background: rgba(10, 13, 24, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Logo */
+.navLogo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.navLogo img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.navLogo span {
+  font-size: 18px;
+  font-weight: 900;
+  color: #f1f5f9;
+  letter-spacing: -0.3px;
+}
+
+.navLogo em {
+  font-style: normal;
+  background: white;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Center links */
+.navCenter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navItem {
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: background 0.18s, color 0.18s;
+  white-space: nowrap;
+}
+
+.navItem:hover {
+  background: rgba(99, 102, 241, 0.12);
+  color: #e2e8f0;
+}
+
+/* Right side */
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.navLoginBtn {
+  padding: 8px 20px;
+  border-radius: 10px;
+  background: white;
+  border: none;
+  color: black;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: opacity 0.18s, transform 0.15s, box-shadow 0.18s;
+  box-shadow: 0 2px 14px rgba(99, 102, 241, 0.4);
+}
+
+.navLoginBtn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 22px rgba(99, 102, 241, 0.55);
+}
+
+/* Burger button */
+.burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.burger span {
+  display: block;
+  height: 2px;
+  background: #94a3b8;
+  border-radius: 2px;
+  transition: transform 0.25s, opacity 0.2s;
+}
+
+.burgerOpen span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burgerOpen span:nth-child(2) { opacity: 0; }
+.burgerOpen span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Mobile dropdown */
+@media (max-width: 768px) {
+  .navbar {
+    top: 10px;
+    width: calc(100% - 24px);
+    flex-wrap: wrap;
+    height: auto;
+    padding: 12px 16px;
+    border-radius: 14px;
+  }
+
+  .burger {
+    display: flex;
+  }
+
+  .navCenter {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .navCenterOpen {
+    display: flex;
+  }
+
+  .navItem {
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+
+  .navLoginBtn {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════
+   HERO
+══════════════════════════════════════ */
+.hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  min-height: 100vh;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 64px;
+  gap: 40px;
+}
+
+.heroBg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 70% at 75% 45%, rgba(99,102,241,0.13) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 50% at 20% 75%, rgba(168,85,247,0.08) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.heroLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.heroH1 {
+  font-size: clamp(48px, 5.5vw, 82px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -2.5px;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.heroAccent {
+  color: #f1f5f9;
+}
+
+.heroDesc {
+  font-size: 16px;
+  color: #64748b;
+  line-height: 1.75;
+  max-width: 460px;
+  margin: 0;
+}
+
+.heroBtn {
+  padding: 15px 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 28px rgba(99, 102, 241, 0.45);
+  transition: transform 0.15s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.heroBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 38px rgba(99, 102, 241, 0.65);
+}
+
+.heroRight {
+  height: 440px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 120px 32px 60px;
+    min-height: unset;
+  }
+  .heroRight {
+    height: 380px;
+  }
+  .heroH1 {
+    font-size: clamp(40px, 9vw, 60px);
+  }
+}
+
+
+/* ══════════════════════════════════════
+   SHARED SECTION STYLES
+══════════════════════════════════════ */
+.sectionInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.sectionTag {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #818cf8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  font-size: clamp(26px, 4vw, 42px);
+  font-weight: 900;
+  color: #f1f5f9;
+  letter-spacing: -0.5px;
+  margin: 0 0 16px;
+}
+
+.sectionDesc {
+  font-size: 16px;
+  color: #64748b;
+  line-height: 1.7;
+  max-width: 640px;
+  margin: 0 auto 48px;
+}
+
+/* ══════════════════════════════════════
+   ABOUT
+══════════════════════════════════════ */
+.about {
+  padding: 100px 0;
+  background: rgba(15, 23, 42, 0.5);
+  border-top: 1px solid rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.aboutGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  text-align: left;
+}
+
+.aboutCard {
+  padding: 28px 24px;
+  border-radius: 14px;
+  background: rgba(10, 15, 28, 0.8);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.aboutCard:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-3px);
+}
+
+.aboutIcon {
+  font-size: 36px;
+  margin-bottom: 14px;
+}
+
+.aboutCard h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 10px;
+}
+
+.aboutCard p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ══════════════════════════════════════
+   FEATURES
+══════════════════════════════════════ */
+.features {
+  padding: 100px 0;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  text-align: left;
+}
+
+.featureCard {
+  padding: 24px 22px;
+  border-radius: 12px;
+  background: rgba(10, 15, 28, 0.7);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.featureCard:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
+}
+
+.featureIcon {
+  font-size: 30px;
+  margin-bottom: 12px;
+}
+
+.featureCard h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 8px;
+}
+
+.featureCard p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ══════════════════════════════════════
+   COURSES
+══════════════════════════════════════ */
+.courses {
+  padding: 100px 0;
+  background: rgba(15, 23, 42, 0.4);
+  border-top: 1px solid rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.coursesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  text-align: left;
+}
+
+.courseCard {
+  padding: 24px;
+  border-radius: 14px;
+  background: rgba(10, 15, 28, 0.85);
+  border: 1.5px solid rgba(var(--accent-rgb, 99,102,241), 0.15);
+  border-color: color-mix(in srgb, var(--accent, #6366f1) 20%, transparent);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.courseCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+
+.courseEmoji {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.courseName {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 6px;
+}
+
+.courseLevel {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 20px;
+}
+
+.courseFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.courseStudents {
+  font-size: 12px;
+  color: #475569;
+}
+
+.courseBtn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent, #6366f1) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent, #6366f1) 40%, transparent);
+  color: var(--accent, #818cf8);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.courseBtn:hover {
+  background: color-mix(in srgb, var(--accent, #6366f1) 28%, transparent);
+}
+
+/* ══════════════════════════════════════
+   CTA BANNER
+══════════════════════════════════════ */
+.ctaBanner {
+  padding: 80px 24px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(168,85,247,0.1) 100%);
+  border-top: 1px solid rgba(99, 102, 241, 0.2);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+  text-align: center;
+}
+
+.ctaBannerInner {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.ctaBannerInner h2 {
+  font-size: 36px;
+  font-weight: 900;
+  color: #f1f5f9;
+  margin: 0 0 12px;
+}
+
+.ctaBannerInner p {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0 0 32px;
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════
+   FOOTER
+══════════════════════════════════════ */
+.footer {
+  padding: 48px 24px;
+  border-top: 1px solid rgba(99, 102, 241, 0.12);
+}
+
+.footerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.footerLogo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footerLogo img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.footerLogo span {
+  font-size: 17px;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.footerDesc {
+  font-size: 13px;
+  color: #475569;
+  margin: 0;
+}
+
+.footerCopy {
+  font-size: 12px;
+  color: #334155;
+  margin: 0;
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .hero {
+    flex-direction: column;
+    padding-top: 100px;
+    text-align: center;
+  }
+
+  .heroActions {
+    justify-content: center;
+  }
+
+  .heroStats {
+    justify-content: center;
+  }
+
+  .heroVisual {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .aboutGrid,
+  .featuresGrid,
+  .coursesGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .navLinks {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .aboutGrid,
+  .featuresGrid,
+  .coursesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroVisual {
+    display: none;
+  }
+}
+
+
+/* ══════════════════════════════════════
+   BURN-REVEAL SCROLL TUNNEL
+══════════════════════════════════════ */
+
+/* Tall tunnel that drives the sticky animation */
+.burnTunnel {
+  height: 260vh; /* 260-100=160vh of actual burning ≈ 2 screens of scroll */
+  position: relative;
+}
+
+/* Sticky frame — stays pinned while user scrolls through the tunnel */
+.burnFrame {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  /* promote to own GPU layer so map repaint doesn't affect parent */
+  will-change: transform;
+  contain: strict;
+}
+
+/* Map fills the sticky frame */
+.mapScreen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #090d18;
+}
+
+/* Force Roadmap's <section> to fill the frame fully */
+.mapScreen :global(#roadmap) {
+  position: absolute !important;
+  inset: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.mapScreen :global([class*="inner"]) {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  /* no height:100% — flex:1 already sizes it */
+}
+
+.mapScreen :global([class*="tag"]),
+.mapScreen :global([class*="heading"]),
+.mapScreen :global([class*="sub"]) {
+  display: none !important;
+}
+
+/* mapWrap becomes absolute so size comes from parent, not content */
+.mapScreen :global([class*="mapWrap"]) {
+  position: absolute !important;
+  inset: 4px !important;         /* tiny inset so shadow/border stay visible */
+  width: auto !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+.mapScreen :global([class*="svg"]) {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* SVG overlay sits on top of the map */
+.burnSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+  display: block;
+}
+
+/* Scroll nudge arrow on the hero */
+.scrollHint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.35;
+  animation: scrollBounce 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.scrollHint span {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #c9a84c;
+  font-family: serif;
+  font-style: italic;
+}
+
+.scrollHint svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #c9a84c;
+  stroke-width: 1.5;
+}
+
+@keyframes scrollBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(8px); }
+}

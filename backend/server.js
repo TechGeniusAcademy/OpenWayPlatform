@@ -43,6 +43,7 @@ import scheduleRoutes from './routes/schedule.js';
 import boostsRoutes, { startBoostXpTick } from './routes/boosts.js';
 import cityRoutes from './routes/city.js';
 import searchRoutes from './routes/search.js';
+import hostingRoutes from './routes/hosting.js';
 
 dotenv.config();
 
@@ -80,6 +81,7 @@ app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/shop', express.static(path.join(__dirname, 'uploads', 'shop')));
+app.use('/hosted', express.static(path.join(__dirname, 'uploads', 'hosting')));
 
 // io доступным в маршрутах
 app.set('io', io);
@@ -128,6 +130,7 @@ app.use('/api/schedule', scheduleRoutes);
 app.use('/api/boosts', boostsRoutes);
 app.use('/api/city',   cityRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/hosting', hostingRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

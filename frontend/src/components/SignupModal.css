@@ -1,0 +1,507 @@
+/* ════════════════════════════════
+   Signup Modal
+   ════════════════════════════════ */
+
+.smod-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.smod-box {
+  position: relative;
+  background: #1e2235;
+  border-radius: 20px;
+  width: 560px;
+  max-width: 95vw;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  animation: smod-pop 0.22s ease;
+}
+
+@keyframes smod-pop {
+  from { transform: scale(0.93); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.smod-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: #94a3b8;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.smod-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+}
+
+/* ── Character scene ── */
+.smod-scene-wrap {
+  background: #444;
+  height: 220px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+.smod-header {
+  position: relative;
+  width: 500px;
+  min-width: 500px;
+  height: 220px;
+}
+
+/* papers */
+.smod-paper {
+  position: absolute;
+  top: 55px;
+  left: 125px;
+  width: 60px;
+  height: 65px;
+  background: #fff;
+  border-bottom-right-radius: 10px;
+  border-top-left-radius: 10px;
+}
+.smod-paper-2 {
+  position: absolute;
+  top: 95px;
+  left: 75px;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border-bottom-right-radius: 10px;
+  border-top-left-radius: 10px;
+}
+
+/* table */
+.smod-table {
+  position: absolute;
+  top: 195px;
+  width: 500px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50px;
+}
+
+/* character body */
+.smod-me {
+  position: absolute;
+  top: 50px;
+  left: 215px;
+}
+.smod-me-body {
+  position: absolute;
+  top: 50px;
+  width: 100px;
+  height: 65px;
+  border-radius: 50%;
+  background: #F8B899;
+  animation: smod-own 1.2s infinite linear;
+}
+.smod-me-head {
+  position: absolute;
+  top: -17px;
+  left: 25px;
+  width: 45px;
+  height: 65px;
+  animation: smod-own 1.2s infinite linear;
+  z-index: 1;
+}
+.smod-face {
+  position: absolute;
+  width: 45px;
+  height: 65px;
+  border-radius: 25px;
+  background: #fff;
+}
+.smod-hair {
+  position: absolute;
+  left: -10px;
+  width: 60px;
+  height: 65px;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  border-bottom-left-radius: 30px;
+  background: #333;
+}
+.smod-hair-front {
+  position: absolute;
+  top: -2px;
+  width: 55px;
+  height: 43px;
+  border-top-right-radius: 30px;
+  border-bottom-left-radius: 30px;
+  background: #333;
+}
+.smod-eye-1 {
+  position: absolute;
+  top: 40px;
+  left: 12px;
+  width: 3px;
+  height: 3px;
+  background: #333;
+  border-radius: 10px;
+  animation: smod-blink 1s infinite alternate ease-in-out;
+}
+.smod-eye-1::before {
+  position: absolute;
+  top: -5px;
+  left: -3px;
+  width: 5px;
+  height: 2px;
+  background: #333;
+  border-radius: 10px;
+  content: "";
+  animation: smod-down 3s infinite;
+}
+.smod-eye-2 {
+  position: absolute;
+  top: 40px;
+  left: 32px;
+  width: 3px;
+  height: 3px;
+  background: #333;
+  border-radius: 10px;
+  animation: smod-blink 1s infinite alternate ease-in-out;
+}
+.smod-mouth {
+  position: absolute;
+  top: 55px;
+  left: 19px;
+  width: 10px;
+  height: 3px;
+  border-bottom-left-radius: 100px;
+  border-bottom-right-radius: 100px;
+  border: 2px solid #F8B899;
+  border-top: 0;
+  box-sizing: border-box;
+  animation: smod-smile 5s infinite;
+}
+
+/* plant bowl */
+.smod-bowl {
+  position: absolute;
+  top: -25px;
+  left: 400px;
+  width: 50px;
+  height: 25px;
+  background: #fff;
+  border-bottom-right-radius: 30px;
+  border-top-left-radius: 30px;
+}
+.smod-bowl::after {
+  position: absolute;
+  left: 2px;
+  width: 50px;
+  height: 25px;
+  background: #fff;
+  border-bottom-right-radius: 30px;
+  border-top-left-radius: 30px;
+  content: "";
+}
+.smod-bowl-2 {
+  position: absolute;
+  top: -25px;
+  left: 50px;
+  width: 50px;
+  height: 25px;
+  background: #fff;
+  border-bottom-right-radius: 30px;
+  border-top-left-radius: 30px;
+}
+.smod-leaf-1 { position: absolute; top: -14px; left: 35px; width: 20px; height: 20px; border-bottom-right-radius: 30px; border-top-left-radius: 30px; background: #ABD9B5; animation: smod-fly 2s infinite alternate ease-in-out; transform: rotate(30deg); }
+.smod-leaf-2 { position: absolute; top: -14px; left: 15px; width: 20px; height: 20px; border-bottom-left-radius: 30px; border-top-right-radius: 30px; background: #ABD9B5; animation: smod-fly 2s infinite alternate ease-in-out; transform: rotate(-40deg); }
+.smod-leaf-3 { position: absolute; top: -18px; left: 30px; width: 20px; height: 20px; border-bottom-right-radius: 30px; border-top-left-radius: 30px; background: #ABD9B5; animation: smod-fly 2s infinite alternate ease-in-out; transform: rotate(20deg); }
+.smod-leaf-4 { position: absolute; top: -18px; left: 20px; width: 20px; height: 20px; border-bottom-left-radius: 30px; border-top-right-radius: 30px; background: #ABD9B5; animation: smod-fly 3s infinite alternate ease-in-out; transform: rotate(30deg); }
+.smod-leaf-5 { position: absolute; top: -23px; left: 25px; width: 20px; height: 20px; border-bottom-left-radius: 30px; border-top-right-radius: 30px; background: #ABD9B5; animation: smod-fly 2s infinite alternate ease-in-out; transform: rotate(70deg); }
+
+/* pens */
+.smod-caneta-1 { position: absolute; top: -20px; left: 25px; width: 3px; height: 20px; background: #F8B899; }
+.smod-caneta-2 { position: absolute; top: -25px; left: 30px; width: 5px; height: 25px; background: #ABD9B5; }
+
+/* notebook */
+.smod-notebook {
+  position: absolute;
+  top: -80px;
+  left: 200px;
+  width: 120px;
+  height: 75px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  background: #fff;
+}
+.smod-notebook::after {
+  position: absolute;
+  top: 70px;
+  left: -10px;
+  width: 140px;
+  height: 10px;
+  background: #fff;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  content: "";
+}
+
+/* books */
+.smod-book-1 { position: absolute; top: -24px; left: 35px; width: 70px; height: 12px; border-top-left-radius: 10px; border-bottom-left-radius: 10px; border: 2px solid #ABD9B5; border-right: 0; background: #fff; }
+.smod-book-2 { position: absolute; top: -15px; left: 105px; width: 70px; height: 3px; border-top-left-radius: 10px; border-bottom-left-radius: 10px; background: #F8B899; }
+.smod-book-3 { position: absolute; top: -13px; left: 115px; width: 70px; height: 3px; border-top-left-radius: 10px; border-bottom-left-radius: 10px; background: #F8B899; }
+
+/* coffee */
+.smod-coffee {
+  position: absolute;
+  top: -58px;
+  left: 50px;
+  width: 50px;
+  height: 30px;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  background: #fff;
+}
+.smod-coffee::after {
+  position: absolute;
+  top: 3px;
+  left: -15px;
+  width: 22px;
+  height: 18px;
+  border-bottom-right-radius: 30px;
+  border: 4px solid #fff;
+  border-top: 0;
+  box-sizing: border-box;
+  transform: rotate(-270deg);
+  content: "";
+}
+.smod-smoke {
+  position: absolute;
+  top: -35px;
+  left: 25px;
+  width: 5px;
+  height: 17px;
+  background: #fff;
+  border-radius: 10px;
+  opacity: 0.1;
+  animation: smod-flyy 1.5s infinite alternate ease-in-out;
+}
+.smod-smoke::after {
+  position: absolute;
+  top: -7px;
+  left: 5px;
+  width: 5px;
+  height: 15px;
+  background: #fff;
+  border-radius: 10px;
+  opacity: 0.9;
+  content: "";
+}
+
+/* music box */
+.smod-box-item {
+  position: absolute;
+  top: -70px;
+  left: 270px;
+  width: 40px;
+  height: 60px;
+  background: #fff;
+  border-radius: 10px;
+}
+.smod-circle {
+  position: absolute;
+  top: 32px;
+  left: 7px;
+  width: 26px;
+  height: 26px;
+  background: #eee;
+  border-radius: 50%;
+}
+.smod-circle::before {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  width: 12px;
+  height: 13px;
+  background: #eee;
+  border: solid 3px #fff;
+  border-radius: 10px;
+  content: "";
+  animation: smod-beat 0.5s infinite;
+}
+.smod-circle-2 {
+  top: 5px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+}
+.smod-circle-2::before {
+  width: 10px;
+  height: 10px;
+}
+
+/* ── Form area ── */
+.smod-form-area {
+  padding: 24px 36px 36px;
+}
+.smod-form-area h2 {
+  color: #f1f5f9;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  text-align: center;
+}
+.smod-form-area p {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0 0 20px;
+  text-align: center;
+}
+.smod-form-area form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.smod-form-area input {
+  padding: 13px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+.smod-form-area input::placeholder {
+  color: #475569;
+}
+.smod-form-area input:focus {
+  border-color: #6366f1;
+}
+.smod-submit {
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.45);
+  font-family: inherit;
+  width: 100%;
+}
+.smod-submit:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* social icons */
+.smod-socials {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.smod-social {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  text-decoration: none;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.smod-social:hover {
+  transform: translateY(-3px);
+  opacity: 0.85;
+}
+.smod-instagram { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.smod-whatsapp  { background: #25d366; }
+.smod-phone     { background: #6366f1; }
+
+/* success state */
+.smod-success {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.smod-check {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+}
+.smod-success h2 { margin: 0; color: #f1f5f9; }
+.smod-success p  { margin: 0; color: #64748b; font-size: 14px; }
+.smod-success .smod-submit { margin-top: 8px; }
+
+/* ── Keyframes ── */
+@keyframes smod-own {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(-8deg); }
+  50%  { transform: rotate(0deg); }
+  75%  { transform: rotate(8deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes smod-down {
+  0%   { transform: translateY(0px); }
+  25%  { transform: translateY(2px); }
+  50%  { transform: translateY(0px); }
+  75%  { transform: translateY(2px); }
+  100% { transform: translateY(0px); }
+}
+@keyframes smod-smile {
+  0%   { transform: scaleX(1); }
+  25%  { transform: scaleX(1); }
+  50%  { transform: scaleX(1.5); }
+  75%  { transform: scaleX(1.5); }
+  100% { transform: scaleX(1); }
+}
+@keyframes smod-blink {
+  0%   { background-color: #000; }
+  75%  { background-color: #000; }
+  100% { background-color: #fff; }
+}
+@keyframes smod-flyy {
+  50% { transform: translateY(15px); }
+}
+@keyframes smod-fly {
+  50% { transform: rotate(1deg); }
+}
+@keyframes smod-beat {
+  0%   { transform: scaleX(1); }
+  25%  { transform: scaleX(1.5); }
+  50%  { transform: scaleY(1); }
+  75%  { transform: scaleX(1.5); }
+  100% { transform: scaleY(1); }
+}

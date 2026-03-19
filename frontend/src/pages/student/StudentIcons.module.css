@@ -1,0 +1,487 @@
+/* ─────────────────────────────────────────────
+   StudentIcons.module.css
+   ───────────────────────────────────────────── */
+
+.page {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 80px 28px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: calc(100vh - 64px);
+}
+
+/* ── Шапка ────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.headerLeft { flex: 1 1 260px; }
+
+.title {
+  font-size: clamp(22px, 2.8vw, 30px);
+  font-weight: 800;
+  color: var(--text-color);
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -0.02em;
+}
+
+.titleIcon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Copy-mode switcher */
+.copyModeGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.copyModeLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.copyModeBtn {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: "Fira Mono", monospace;
+}
+.copyModeBtn:hover { border-color: var(--accent); color: var(--accent); }
+.copyModeBtnActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── Поиск ────────────────────────────────── */
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  font-size: 18px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  user-select: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 40px 12px 42px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text-color);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+.searchInput::placeholder { color: var(--text-secondary); }
+.searchInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.searchClear {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.searchClear:hover { color: var(--text-color); }
+
+/* ── Табы ─────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.tab:hover { border-color: var(--accent); color: var(--accent); }
+.tabActive {
+  background: var(--tab-accent, var(--accent));
+  border-color: var(--tab-accent, var(--accent));
+  color: #fff;
+}
+
+/* ── Контент ──────────────────────────────── */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* ── Секция ───────────────────────────────── */
+.section {}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sectionDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.sectionPkg {
+  font-size: 11px;
+  background: var(--card-bg-alt);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 2px 8px;
+  color: var(--accent);
+  font-family: "Fira Mono", monospace;
+}
+
+.sectionCount {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--card-bg-alt);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+
+/* ── Сетка иконок ─────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 6px;
+}
+
+/* ── Карточка иконки ──────────────────────── */
+.iconCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, transform 0.1s, box-shadow 0.12s;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  min-width: 0;
+}
+.iconCard:hover {
+  background: var(--card-bg-alt);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.iconCardCopied {
+  border-color: #22c55e !important;
+  background: rgba(34, 197, 94, 0.08) !important;
+}
+
+.iconSvg {
+  font-size: 22px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+.iconCard:hover .iconSvg { transform: scale(1.15); }
+
+.iconName {
+  font-size: 10px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  text-align: center;
+  font-family: "Fira Mono", monospace;
+  line-height: 1.3;
+}
+
+.copiedBadge {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  font-size: 10px;
+  color: #22c55e;
+  font-weight: 700;
+}
+
+/* ── Пустой результат ─────────────────────── */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+.emptyIcon { font-size: 48px; }
+
+/* ── Toast ────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22c55e;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 24px;
+  box-shadow: 0 6px 24px rgba(34,197,94,0.35);
+  z-index: 9999;
+  pointer-events: none;
+  animation: toastIn 0.2s ease;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── Адаптив ──────────────────────────────── */
+@media (max-width: 768px) {
+  .page { padding: 80px 14px 48px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 4px; }
+  .iconCard { padding: 10px 4px 8px; }
+  .iconSvg { font-size: 18px; }
+  .header { flex-direction: column; }
+}
+
+/* ── Гайд ─────────────────────────────────────────────────────── */
+.guideWrap {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+.guideToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.guideToggle:hover { background: var(--card-bg-alt); }
+
+.guideToggleIcon {
+  font-size: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.guideToggleHint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.guidePanel {
+  border-top: 1px solid var(--border-color);
+}
+
+.guideTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--card-bg-alt);
+  overflow-x: auto;
+}
+
+.guideTab {
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.guideTab:hover { color: var(--text-color); }
+.guideTabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--card-bg);
+}
+
+.guideBody {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guideStep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-color);
+  font-weight: 500;
+  margin: 4px 0 2px;
+}
+.guideStep code {
+  background: var(--card-bg-alt);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--accent);
+  font-family: "Fira Mono", monospace;
+}
+
+.guideNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.guideTip {
+  background: var(--card-bg-alt);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.guideTip strong { color: var(--text-color); }
+.guideTip code {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+  color: var(--accent);
+  font-family: "Fira Mono", monospace;
+}
+
+/* ── Code Block ───────────────────────────────────────────────── */
+.codeBlock {
+  position: relative;
+  background: var(--card-bg-alt);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.codePre {
+  margin: 0;
+  padding: 12px 80px 12px 16px;
+  font-family: "Fira Mono", "Cascadia Code", "Consolas", monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-color);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+.codeBlockCopy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.codeBlockCopy:hover { background: var(--accent); color: #fff; border-color: var(--accent); }

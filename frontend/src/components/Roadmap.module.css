@@ -1,0 +1,227 @@
+/* ════════════════════════════════
+   Roadmap — Vintage Fantasy Map
+   ════════════════════════════════ */
+
+.section {
+  padding: 100px 24px 120px;
+  position: relative;
+}
+
+.inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.tag {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #c9a84c;
+  text-align: center;
+  margin: 0 0 14px;
+}
+
+.heading {
+  font-size: clamp(28px, 4vw, 46px);
+  font-weight: 900;
+  color: #f1f5f9;
+  text-align: center;
+  margin: 0 0 12px;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.sub {
+  color: #475569;
+  font-size: 16px;
+  text-align: center;
+  margin: 0 0 52px;
+  line-height: 1.6;
+}
+
+/* ── Map container ── */
+.mapWrap {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px rgba(200, 160, 60, 0.14),
+    0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+/* ── Hit area (invisible interaction zone per node) ── */
+.hitArea {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  cursor: pointer;
+  z-index: 20;
+}
+
+/* ── Tooltip ── */
+.tooltip {
+  position: absolute;
+  width: 260px;
+  background: rgba(9, 12, 24, 0.97);
+  border: 1px solid rgba(200, 160, 60, 0.28);
+  border-radius: 13px;
+  padding: 14px 16px 16px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 200;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(200, 160, 60, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.tooltipOn {
+  opacity: 1;
+}
+
+/* Direction variants */
+.ttRight {
+  left: calc(50% + 44px);
+  top: 50%;
+  transform: translateY(-50%) translateX(12px);
+}
+.tooltipOn.ttRight {
+  transform: translateY(-50%) translateX(0);
+}
+
+.ttLeft {
+  right: calc(50% + 44px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-12px);
+}
+.tooltipOn.ttLeft {
+  transform: translateY(-50%) translateX(0);
+}
+
+.ttBelow {
+  top: calc(50% + 44px);
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+}
+.tooltipOn.ttBelow {
+  transform: translateX(-50%) translateY(0);
+}
+
+.ttAbove {
+  bottom: calc(50% + 44px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+}
+.tooltipOn.ttAbove {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Tooltip contents */
+.ttHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(200, 160, 60, 0.12);
+}
+
+.ttIcon {
+  font-size: 22px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.ttMeta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ttNum {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #c9a84c;
+  font-family: monospace;
+  line-height: 1;
+}
+
+.ttTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.25;
+}
+
+.ttDur {
+  font-size: 10px;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ttDesc {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 12px;
+  line-height: 1.65;
+}
+
+.ttSkills {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.ttSkills li {
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 4px 8px;
+  background: rgba(200, 160, 60, 0.07);
+  border: 1px solid rgba(200, 160, 60, 0.12);
+  border-radius: 5px;
+  line-height: 1.35;
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .tooltip {
+    width: 210px;
+  }
+  /* On small screens all tooltips appear below the node */
+  .ttRight,
+  .ttLeft {
+    left: 50%;
+    right: auto;
+    top: calc(50% + 40px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(12px);
+  }
+  .tooltipOn.ttRight,
+  .tooltipOn.ttLeft {
+    transform: translateX(-50%) translateY(0);
+  }
+  .ttSkills {
+    grid-template-columns: 1fr;
+  }
+}

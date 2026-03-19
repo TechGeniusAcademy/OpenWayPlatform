@@ -17,6 +17,8 @@ import StudentUpdates from './student/StudentUpdates';
 import Games from './student/Games';
 import DesignEditor from '../components/DesignEditor';
 import StudentTechnicalSpecs from './student/StudentTechnicalSpecs';
+import StudentHosting from './student/StudentHosting';
+import StudentIcons from './student/StudentIcons';
 import StudentExtra from './student/StudentExtra';
 import StudentMusic from './student/StudentMusic';
 import StudentMovies from './student/StudentMovies';
@@ -45,6 +47,8 @@ function StudentDashboard() {
       <Route path="games" element={<StudentLayout><Games /></StudentLayout>} />
       <Route path="design" element={<DesignEditor />} />
       <Route path="technical-specs" element={<StudentLayout><StudentTechnicalSpecs /></StudentLayout>} />
+      <Route path="hosting" element={<StudentLayout><StudentHosting /></StudentLayout>} />
+      <Route path="icons" element={<StudentLayout><StudentIcons /></StudentLayout>} />
       <Route path="extra" element={<StudentLayout><StudentExtra /></StudentLayout>} />
       <Route path="music" element={<StudentLayout><StudentMusic /></StudentLayout>} />
       <Route path="movies" element={<StudentLayout><StudentMovies /></StudentLayout>} />
