@@ -148,7 +148,38 @@
 }
 
 /* Conversation item */
+.convItemWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+.convItemWrap:hover { background: var(--card-bg-alt); }
+.convItemWrap:hover .deleteChatBtn { opacity: 1; pointer-events: auto; }
+
+.deleteChatBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+.deleteChatBtn:hover { background: #450a0a; color: #f87171; }
+
 .convItem {
+  flex: 1;
   width: 100%; display: flex; align-items: center; gap: 12px;
   padding: 10px 10px;
   border-radius: 12px;
@@ -156,7 +187,7 @@
   cursor: pointer; transition: background 0.15s;
   text-align: left;
 }
-.convItem:hover { background: var(--card-bg-alt); }
+.convItem:hover { background: transparent; }
 .convActive { background: var(--accent-soft) !important; }
 
 /* Pinned group item */

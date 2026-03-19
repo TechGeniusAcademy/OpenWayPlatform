@@ -13,6 +13,7 @@ import {
   IoAttachOutline,
   IoSearchOutline,
   IoPinOutline,
+  IoTrashOutline,
 } from "react-icons/io5";
 import { BsFileEarmarkText } from "react-icons/bs";
 import { MdOutlineForum } from "react-icons/md";
@@ -332,6 +333,23 @@ function Chat() {
     } catch {}
   };
 
+  const deleteChat = async (chat, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Удалить всю переписку с ${chat.name}? Это действие необратимо.`)) return;
+    try {
+      await api.delete(`/chat/${chat.id}`);
+      setChats(prev => prev.filter(c => c.id !== chat.id));
+      if (activeChat?.id === chat.id) {
+        setActiveChat(null);
+        setMessages([]);
+        setShowMobileChat(false);
+      }
+    } catch (err) {
+      console.error('deleteChat:', err);
+      alert('Не удалось удалить чат');
+    }
+  };
+
   const formatTime = (ts) => {
     if (!ts) return "";
     const d = new Date(ts);
@@ -496,28 +514,36 @@ function Chat() {
                     {privateChats.length === 0 && groupChats.length === 0
                       ? <p className={styles.emptyList}>Нет чатов</p>
                       : privateChats.map(chat => (
-                          <button
-                            key={chat.id}
-                            className={`${styles.convItem} ${activeChat?.id === chat.id ? styles.convActive : ""}`}
-                            onClick={() => handleSelectChat(chat)}
-                          >
-                            <div className={styles.convAvatarWrap}>
-                              <AvatarImg src={chat.avatarSrc} name={chat.name} className={styles.convAvatar} />
-                              <span className={`${styles.dot} ${chat.isOnline ? styles.dotOnline : styles.dotOff}`} />
-                            </div>
-                            <div className={styles.convInfo}>
-                              <div className={styles.convTop}>
-                                <span className={styles.convName}>{chat.name}</span>
-                                <span className={styles.convTime}>{chat.lastMessageTime}</span>
+                          <div key={chat.id} className={styles.convItemWrap}>
+                            <button
+                              className={`${styles.convItem} ${activeChat?.id === chat.id ? styles.convActive : ""}`}
+                              onClick={() => handleSelectChat(chat)}
+                            >
+                              <div className={styles.convAvatarWrap}>
+                                <AvatarImg src={chat.avatarSrc} name={chat.name} className={styles.convAvatar} />
+                                <span className={`${styles.dot} ${chat.isOnline ? styles.dotOnline : styles.dotOff}`} />
                               </div>
-                              <div className={styles.convBottom}>
-                                <span className={styles.convLast}>{chat.lastMessage}</span>
-                                {chat.unreadCount > 0 && (
-                                  <span className={styles.unread}>{chat.unreadCount}</span>
-                                )}
+                              <div className={styles.convInfo}>
+                                <div className={styles.convTop}>
+                                  <span className={styles.convName}>{chat.name}</span>
+                                  <span className={styles.convTime}>{chat.lastMessageTime}</span>
+                                </div>
+                                <div className={styles.convBottom}>
+                                  <span className={styles.convLast}>{chat.lastMessage}</span>
+                                  {chat.unreadCount > 0 && (
+                                    <span className={styles.unread}>{chat.unreadCount}</span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </button>
+                            </button>
+                            <button
+                              className={styles.deleteChatBtn}
+                              title="Удалить переписку"
+                              onClick={e => deleteChat(chat, e)}
+                            >
+                              <IoTrashOutline />
+                            </button>
+                          </div>
                         ))
                     }
                   </>

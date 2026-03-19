@@ -621,6 +621,40 @@ router.put('/:chatId/pin', authenticate, async (req, res) => {
   }
 });
 
+// Удалить всю переписку (только для текущего пользователя — он покидает чат и его сообщения скрываются)
+router.delete('/:chatId', authenticate, async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const userId = req.user.id;
+
+    // Проверяем, что пользователь является участником этого чата
+    const participantCheck = await pool.query(
+      'SELECT * FROM chat_participants WHERE chat_id = $1 AND user_id = $2',
+      [chatId, userId]
+    );
+    if (participantCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Вы не являетесь участником этого чата' });
+    }
+
+    // Проверяем тип чата — групповые не удаляем, только покидаем
+    const chatInfo = await pool.query('SELECT type FROM chats WHERE id = $1', [chatId]);
+    if (!chatInfo.rows.length) return res.status(404).json({ error: 'Чат не найден' });
+    if (chatInfo.rows[0].type === 'group') {
+      return res.status(400).json({ error: 'Нельзя удалить групповой чат' });
+    }
+
+    // Удаляем все сообщения чата и сам чат (оба участника теряют переписку)
+    await pool.query('DELETE FROM messages WHERE chat_id = $1', [chatId]);
+    await pool.query('DELETE FROM chat_participants WHERE chat_id = $1', [chatId]);
+    await pool.query('DELETE FROM chats WHERE id = $1', [chatId]);
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Ошибка удаления чата:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
 // Удалить сообщение
 // Удалить сообщение
 router.delete('/messages/:messageId', authenticate, async (req, res) => {
