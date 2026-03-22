@@ -1,23 +1,28 @@
 // ─── Town Hall — item config ──────────────────────────────────────────────────
-// Принимает монеты и конвертирует 1000 монет → 1 очко рейтинга.
-// Принимает монеты через конвейеры от money-factory или energy-storage.
+// ⚠️  workArea dimensions → buildingsConfig.json → workAreas['town-hall']
+// ⚠️  coinsPerPoint per level → buildingsConfig.json → levels['town-hall']
+// Принимает монеты и конвертирует N монет → 1 очко рейтинга.
 
 import { registerStorage } from '../systems/energy.js';
+import cfg from './buildingsConfig.json';
+
+const _wa  = cfg.workAreas['town-hall'];
+const _lvl = cfg.levels['town-hall'];
 
 export const TOWN_HALL_CONFIG = {
   /** Visible work-area zone shown when the building is selected */
   workArea: {
-    width:   22,
-    depth:   22,
-    color:   '#f59e0b',  // amber
-    opacity: 0.12,
+    width:   _wa.width,
+    depth:   _wa.depth,
+    color:   _wa.color,
+    opacity: _wa.opacity,
     label:   'Зона ратуши',
   },
   /** Height of the floating StorageBadge above ground (world units) */
   badgeHeight: 13,
 
-  /** Points conversion: coinsPerPoint монет → 1 очко */
-  coinsPerPoint: 1000,
+  /** Points conversion at level 1 — from buildingsConfig.json */
+  coinsPerPoint: _lvl[0].coinsPerPoint,
 };
 
 // ─── Storage capacity ────────────────────────────────────────────────────────

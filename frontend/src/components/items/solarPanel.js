@@ -1,15 +1,17 @@
 // ─── Solar Panel — item config ───────────────────────────────────────────────
-// Visual work-area zone: shown when building is selected.
-// Collision footprint: edit ITEM_FOOTPRINTS['solar-panel'] in collision.js
+// ⚠️  workArea dimensions → buildingsConfig.json → workAreas['solar-panel']
 import { registerProducer, registerEnergyZone } from '../systems/energy.js';
+import cfg from './buildingsConfig.json';
+
+const _wa = cfg.workAreas['solar-panel'];
 
 export const SOLAR_PANEL_CONFIG = {
   /** Visible work-area zone shown when the building is selected */
   workArea: {
-    width:   100,       // X size in world units
-    depth:   100,       // Z size in world units
-    color:   '#00aaff', // zone fill / border colour
-    opacity: 0.14,     // fill transparency (0 = invisible, 1 = solid)
+    width:   _wa.width,
+    depth:   _wa.depth,
+    color:   _wa.color,
+    opacity: _wa.opacity,
     label:   'Зона выработки',
   },
   /** Height of the floating energy badge above ground (world units) */
@@ -17,7 +19,7 @@ export const SOLAR_PANEL_CONFIG = {
 };
 
 // ─── Energy supply zone (matches the visual work-area)
-registerEnergyZone('solar-panel', { width: 100, depth: 100 });
+registerEnergyZone('solar-panel', { width: _wa.width, depth: _wa.depth });
 
 // ─── Energy production ────────────────────────────────────────────────
 registerProducer('solar-panel', [

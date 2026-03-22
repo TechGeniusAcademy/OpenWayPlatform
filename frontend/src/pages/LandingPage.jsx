@@ -68,7 +68,7 @@ function TypedH1() {
 import styles from "./LandingPage.module.css";
 import BongoCat from "../components/BongoCat";
 import SignupModal from "../components/SignupModal";
-import Roadmap from "../components/Roadmap";
+import Roadmap from "./Roadmap";
 
 // Burn shapes: [cxPct, cyPct, startP, rate, polygonPoints]
 // Each shape is a unique irregular polygon centered at (0,0), unit scale.
@@ -197,7 +197,7 @@ export default function LandingPage() {
           </svg>
         </div>
       </section>
-
+      <Roadmap></Roadmap>
       {/* ━━━ BURN-REVEAL SCROLL TUNNEL ━━━ */}
       
 

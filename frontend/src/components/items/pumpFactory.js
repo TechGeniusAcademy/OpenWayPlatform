@@ -1,35 +1,33 @@
 // ─── Pump Factory (Насосная станция) — item config ────────────────────────────
 //
-// The pump factory receives water from one or more pumps via pump drones.
-// It requires energy to operate. Water is stored in its internal tank.
+// ⚠️  workArea dimensions → buildingsConfig.json → workAreas['pump-factory']
+// ⚠️  storage capacities per level → buildingsConfig.json → levels['pump-factory']
 //
-// Storage capacity per level:
-//   Level 1 →   200 л
-//   Level 2 →   400 л
-//   Level 3 →   800 л
-//   Level 4 → 1 200 л
-//   Level 5 → 1 500 л
+//   Level 1 →   200 л  |  Level 2 →   400 л  |  Level 3 →   800 л
+//   Level 4 → 1 200 л  |  Level 5 → 1 500 л
 
 import { registerStorage } from '../systems/energy.js';
+import cfg from './buildingsConfig.json';
+
+const _wa  = cfg.workAreas['pump-factory'];
+const _lvl = cfg.levels['pump-factory'];
 
 export const PUMP_FACTORY_CONFIG = {
   /** Visible work-area zone shown when the building is selected */
   workArea: {
-    width:   60,
-    depth:   60,
-    color:   '#0ea5e9',
-    opacity: 0.14,
+    width:   _wa.width,
+    depth:   _wa.depth,
+    color:   _wa.color,
+    opacity: _wa.opacity,
     label:   'Зона насосной станции',
   },
   /** Height of the floating badges above ground (world units) */
   badgeHeight: 8,
-  /** Base water tank capacity at level 1 */
-  baseCapacity: 200,
+  /** Base water tank capacity at level 1 — from buildingsConfig.json */
+  baseCapacity: _lvl[0].waterCapacity,
 };
 
 // ─── Internal water storage tank ──────────────────────────────────────────────
-// The pump drone fills this tank. The game loop uses the capacityMultiplier from
-// buildingLevels to scale the effective capacity at higher levels.
 registerStorage('pump-factory', [
-  { type: 'water', capacity: 200, unit: 'л.' },
+  { type: 'water', capacity: _lvl[0].waterCapacity, unit: 'л.' },
 ]);

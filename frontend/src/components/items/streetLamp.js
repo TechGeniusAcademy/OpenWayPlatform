@@ -1,48 +1,37 @@
 // ─── Street Lamp — item config ────────────────────────────────────────────────
 //
-// Decorative infrastructure. Illuminates a circle around the pole at night.
-// The actual Three.js PointLight lives in city/buildings/StreetLamp.jsx.
-//
-// All visual/gameplay values can be tuned here without touching the component.
+// ⚠️  workArea dimensions   → buildingsConfig.json → workAreas['street-lamp']
+// ⚠️  light stats per level → buildingsConfig.json → levels['street-lamp']
+
+import cfg from './buildingsConfig.json';
+
+const _wa  = cfg.workAreas['street-lamp'];
+const _lvl = cfg.levels['street-lamp'];
 
 // ─── Lamp visual settings ─────────────────────────────────────────────────────
 export const STREET_LAMP_CONFIG = {
-  // ── Pole dimensions ───────────────────────────────────────────────────────
-  poleHeight:    8.0,     // total height of the pole (world units)
-  poleRadius:    0.12,    // base radius of the pole
-  armLength:     1.6,     // horizontal arm that holds the lamp head
-  armHeight:     7.4,     // Y of the arm + lamp head
-
-  // ── Lamp head ─────────────────────────────────────────────────────────────
-  headRadius:    0.55,    // radius of the glass bulb housing
-
-  // ── Light (PointLight) ────────────────────────────────────────────────────
-  lightColor:    '#ffffff',   // warm-white sodium-vapour colour
-  lightIntensity: 200,        // light intensity (Three.js units)
-  lightDistance:  135,         // maximum reach of the light in world units
-  lightDecay:     1.0,        // physically-based falloff (1 = linear, 2 = quadratic)
-
-  // ── Active hours (24-h game clock) ────────────────────────────────────────
-  // Lamp turns ON outside this window (i.e. at dusk / night / dawn).
-  dayStart: 9,    // game hour when lamp switches OFF  (09:00)
-  dayEnd:   16,   // game hour when lamp switches ON   (16:00)
-
-  // ── Energy requirement ────────────────────────────────────────────────────
-  // The lamp must be inside an active generator's energy zone (or connected
-  // via cable) to light up.  This value is display-only — the zone system
-  // handles the power-check automatically.
-  powerRequired: 2,   // кВт потребляет один фонарь
-
-  // ── Work-area overlay (illumination zone) ─────────────────────────────────
+  poleHeight:    8.0,
+  poleRadius:    0.12,
+  armLength:     1.6,
+  armHeight:     7.4,
+  headRadius:    0.55,
+  lightColor:    '#ffffff',
+  /** Base light intensity at level 1 — from buildingsConfig.json */
+  lightIntensity: _lvl[0].lightIntensity,
+  /** Base light distance at level 1 — from buildingsConfig.json */
+  lightDistance:  _lvl[0].lightDistance,
+  lightDecay:     1.0,
+  dayStart: 9,
+  dayEnd:   16,
+  /** Base power required at level 1 — from buildingsConfig.json */
+  powerRequired: _lvl[0].powerRequired,
   workArea: {
-    width:   44,          // X extent  (= 2 × lightDistance, approx)
-    depth:   44,          // Z extent
-    color:   '#ffe699',
-    opacity: 0.07,
+    width:   _wa.width,
+    depth:   _wa.depth,
+    color:   _wa.color,
+    opacity: _wa.opacity,
     label:   'Зона освещения',
   },
-
-  /** Height of the floating placement badge above ground */
   badgeHeight: 9,
 };
 

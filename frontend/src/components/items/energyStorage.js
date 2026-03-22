@@ -1,20 +1,19 @@
 // ─── EnergyStorage config ────────────────────────────────────────────────────
 //
-// Model file: /models/EnergyStorage.glb
-//
-// This file registers the energy STORAGE capacity for the "energy-storage"
-// building type.  To add more storage buildings later, create a new file
-// following this same pattern and call registerStorage() there.
+// ⚠️  workArea dimensions → buildingsConfig.json → workAreas['energy-storage']
 
 import { registerStorage } from '../systems/energy.js';
+import cfg from './buildingsConfig.json';
+
+const _wa = cfg.workAreas['energy-storage'];
 
 export const ENERGY_STORAGE_CONFIG = {
   /** Work-area highlight shown beneath the placed model. */
   workArea: {
-    width:   14,
-    depth:   14,
-    color:   '#a855f7',   // purple
-    opacity: 0.14,
+    width:   _wa.width,
+    depth:   _wa.depth,
+    color:   _wa.color,
+    opacity: _wa.opacity,
     label:   'Зона хранения',
   },
   /** Height (world units) of the floating StorageBadge above the origin. */

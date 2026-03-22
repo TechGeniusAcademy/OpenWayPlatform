@@ -1,29 +1,29 @@
 // ─── Military Hangar (Военный Ангар) — item config ───────────────────────────
 //
-// The hangar houses fighter jets that can be ordered for in-game coins.
-// Each ordered fighter spawns on the procedural tarmac platform next to
-// the hangar and can be selected + directed to a flight target via RMB.
-//
-// Levels:
-//   Level 1 → max 1 fighter
-//   Level 2 → max 2 fighters
-//   Level 3 → max 3 fighters
+// ⚠️  workArea dimensions → buildingsConfig.json → workAreas['hangar']
+// ⚠️  max fighters per level → buildingsConfig.json → levels['hangar'][*].maxFighters
+// ⚠️  fighter coin cost → buildingsConfig.json → levels['hangar'][0].fighterCoinCost
+
+import cfg from './buildingsConfig.json';
+
+const _wa  = cfg.workAreas['hangar'];
+const _lvl = cfg.levels['hangar'];
 
 export const HANGAR_CONFIG = {
   /** Visible work-area zone shown when the building is selected */
   workArea: {
-    width:   60,
-    depth:   60,
-    color:   '#6366f1',
-    opacity: 0.12,
+    width:   _wa.width,
+    depth:   _wa.depth,
+    color:   _wa.color,
+    opacity: _wa.opacity,
     label:   'Военная зона',
   },
   /** Height of floating badges above ground (world units) */
   badgeHeight: 9,
-  /** Cost per fighter in in-game coins (0 = free) */
-  fighterCoinCost: 10,
+  /** Cost per fighter in in-game coins — from buildingsConfig.json */
+  fighterCoinCost: _lvl[0].fighterCoinCost,
   /** Platform offset from hangar center (world units along -X, i.e. to the left) */
   platformOffsetX: -14,
-  /** Slots on the platform (per level) */
-  maxFightersPerLevel: [1, 2, 3],
+  /** Slots on the platform (per level) — from buildingsConfig.json */
+  maxFightersPerLevel: _lvl.map(l => l.maxFighters),
 };

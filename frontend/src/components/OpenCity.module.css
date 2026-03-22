@@ -718,3 +718,194 @@
   white-space: nowrap;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   MOBILE ROTATE BUTTONS  (скрыты на десктопе)
+════════════════════════════════════════════════════════════════ */
+.mobileRotate {
+  display: none;
+}
+
+.mobileRotBtn {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: rgba(20, 25, 45, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  color: #94a3b8;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mobileRotBtn:active {
+  background: rgba(99, 102, 241, 0.32);
+  color: #a5b4fc;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE  (≤768px или тач-устройства)
+════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px), (pointer: coarse) {
+
+  /* Показать кнопки поворота камеры */
+  .mobileRotate {
+    display: flex;
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 30;
+    gap: 6px;
+  }
+
+  .mobileRotBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  /* Скрыть подсказки клавиатуры — на мобиле бесполезны */
+  .miniControls {
+    display: none;
+  }
+
+  /* Скрыть координаты — занимают место */
+  .coords {
+    display: none;
+  }
+
+  /* Кнопки шопа и дронов — меньше на мобиле */
+  .shopBtn {
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
+    bottom: 16px;
+    left: 16px;
+    border-radius: 12px;
+  }
+
+  .dronesBtn {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+    bottom: 70px;
+    left: 16px;
+    border-radius: 12px;
+  }
+
+  /* Кнопка «Назад» — компактнее на мобиле */
+  .backBtn {
+    top: 16px;
+    left: 16px;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* Часы — скрыть на мобильных */
+  .gameClock {
+    display: none;
+  }
+
+  /* Панель энергии — мельче */
+  .energyPanel {
+    top: 50px;
+    right: 16px;
+  }
+
+  .energyRow {
+    font-size: 10px;
+    padding: 3px 8px;
+    gap: 4px;
+  }
+
+  /* FPS строка */
+  .fpsRow {
+    top: 58px;
+    left: 16px;
+    gap: 4px;
+  }
+
+  /* Дебаг-панель */
+  .debugPanel {
+    top: 86px;
+    left: 16px;
+    min-width: 180px;
+  }
+
+  /* Инфо о выделении */
+  .selectionInfo {
+    font-size: 11px;
+    padding: 4px 10px 4px 12px;
+    gap: 6px;
+  }
+
+  /* Хинт «размещение» */
+  .placingHint {
+    font-size: 12px;
+    padding: 8px 16px;
+    bottom: 96px;
+    left: 90px; /* не перекрывать кнопку шопа */
+    transform: translateX(0);
+    right: 16px;
+    text-align: center;
+  }
+
+  /* Офлайн-тост */
+  .offlineToast {
+    bottom: 170px;
+    font-size: 12px;
+    padding: 8px 18px;
+  }
+
+  /* Шоп-модал — на весь экран снизу (bottom sheet) */
+  .shopOverlay {
+    align-items: flex-end;
+  }
+
+  .shopModal {
+    border-radius: 20px 20px 0 0;
+    max-height: 88vh;
+    max-width: 100vw;
+    width: 100%;
+  }
+
+  /* Табы — горизонтальный скролл */
+  .shopTabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .shopTabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .shopTab {
+    flex-shrink: 0;
+    padding: 8px 13px;
+    font-size: 12px;
+  }
+
+  /* Элементы шопа — чуть крупнее тап-целей */
+  .shopItem {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .shopItemName {
+    font-size: 13px;
+  }
+
+  .shopItemBtn {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+}

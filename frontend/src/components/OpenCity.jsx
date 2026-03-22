@@ -1541,6 +1541,81 @@ export default function OpenCity({ onBack }) {
     el.addEventListener('mouseleave',   onLeave);
     el.addEventListener('wheel',        onWheel, { passive: false });
     el.addEventListener('contextmenu',  onContext);
+
+    // ── Touch controls (mobile pan + pinch-zoom) ──────────────────────────
+    let touchStartX = 0, touchStartY = 0, touchMoved = false;
+    let prevPinchDist = 0, longPressTimer = null;
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        const t   = e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchMoved  = false;
+        const inp   = inputRef.current;
+        inp.mouseX  = t.clientX;
+        inp.mouseY  = t.clientY;
+        inp.lastMX  = t.clientX;
+        inp.lastMY  = t.clientY;
+        // Long press (≥650 ms, no movement) → context menu like RMB
+        longPressTimer = setTimeout(() => {
+          if (!touchMoved && rightClickRef.current) {
+            setContextMenu(rightClickRef.current);
+            rightClickRef.current = null;
+          }
+        }, 650);
+      } else if (e.touches.length === 2) {
+        clearTimeout(longPressTimer);
+        inputRef.current.middleDrag = false;
+        const t1 = e.touches[0], t2 = e.touches[1];
+        prevPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      }
+    };
+
+    const onTouchMove = (e) => {
+      const inp = inputRef.current;
+      if (e.touches.length === 1) {
+        const t = e.touches[0];
+        if (!touchMoved) {
+          const moved = Math.hypot(t.clientX - touchStartX, t.clientY - touchStartY);
+          if (moved > 8) {
+            touchMoved = true;
+            clearTimeout(longPressTimer);
+            inp.middleDrag = true;
+          }
+        }
+        if (inp.middleDrag) {
+          inp.dragDeltaX += t.clientX - inp.lastMX;
+          inp.dragDeltaY += t.clientY - inp.lastMY;
+          e.preventDefault(); // stop page scroll while panning
+        }
+        inp.mouseX = t.clientX;
+        inp.mouseY = t.clientY;
+        inp.lastMX = t.clientX;
+        inp.lastMY = t.clientY;
+      } else if (e.touches.length === 2) {
+        const t1 = e.touches[0], t2 = e.touches[1];
+        const dist  = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const delta = prevPinchDist - dist; // positive = fingers closing = zoom in
+        if (Math.abs(delta) > 1) {
+          inp.wheelDelta += delta * 0.08;
+          prevPinchDist   = dist;
+        }
+        e.preventDefault();
+      }
+    };
+
+    const onTouchEnd = () => {
+      clearTimeout(longPressTimer);
+      inputRef.current.middleDrag = false;
+      // Keep mouseX/mouseY for placement preview until next interaction
+      // Tap (touchMoved=false): browser will fire compat pointer/mouse events → R3F handles selection/placement
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    el.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
     return () => {
       el.removeEventListener('mousemove',   onMove);
       el.removeEventListener('mousedown',   onDown);
@@ -1548,6 +1623,10 @@ export default function OpenCity({ onBack }) {
       el.removeEventListener('mouseleave',  onLeave);
       el.removeEventListener('wheel',       onWheel);
       el.removeEventListener('contextmenu', onContext);
+      el.removeEventListener('touchstart',  onTouchStart);
+      el.removeEventListener('touchmove',   onTouchMove);
+      el.removeEventListener('touchend',    onTouchEnd);
+      clearTimeout(longPressTimer);
     };
   }, []);
 
@@ -1985,6 +2064,22 @@ export default function OpenCity({ onBack }) {
             🕒 Пока вас не было: прошло <strong>{offlineHours.toFixed(1)} игр. ч.</strong>
           </div>
         )}
+
+        {/* ── Mobile: camera rotate buttons (hidden on desktop via CSS) ── */}
+        <div className={styles.mobileRotate}>
+          <button
+            className={styles.mobileRotBtn}
+            onPointerDown={() => { keysRef.current['KeyQ'] = true; }}
+            onPointerUp={() => { keysRef.current['KeyQ'] = false; }}
+            onPointerLeave={() => { keysRef.current['KeyQ'] = false; }}
+          >↺</button>
+          <button
+            className={styles.mobileRotBtn}
+            onPointerDown={() => { keysRef.current['KeyE'] = true; }}
+            onPointerUp={() => { keysRef.current['KeyE'] = false; }}
+            onPointerLeave={() => { keysRef.current['KeyE'] = false; }}
+          >↻</button>
+        </div>
       </div>
     </CityContext.Provider>
   );

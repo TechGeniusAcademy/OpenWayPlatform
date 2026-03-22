@@ -2,32 +2,13 @@
 // AABB (axis-aligned bounding box) half-extents in world units.
 // hw = half-width along X,  hd = half-depth along Z.
 //
-// Every building type must appear here.  Buildings without an entry are
-// invisible to the collision system and can be stacked freely.
-// These represent the physical model footprint used for path-routing helpers.
+// ⚠️  Single source of truth: buildingsConfig.json → collisionFootprints
+//     Edit footprint sizes ONLY in that JSON file.
 
-export const ITEM_FOOTPRINTS = {
-  // ── Production / extraction ─────────────────────────────────────────────────
-  'extractor':       { hw: 2.5, hd: 2.5 },
-  'pump':            { hw: 2.5, hd: 2.5 },
-  'pump-factory':    { hw: 4,   hd: 4   },
-  'lab-factory':     { hw: 3,   hd: 6   },
-  'money-factory':   { hw: 7,   hd: 7   },
-  // ── Energy ──────────────────────────────────────────────────────────────────
-  'solar-panel':     { hw: 1,   hd: 1   },
-  'coal-generator':  { hw: 5,   hd: 5   },
-  'steam-generator': { hw: 5,   hd: 5   },
-  'energy-storage':  { hw: 5,   hd: 5   },
-  // ── City buildings ───────────────────────────────────────────────────────────
-  'town-hall':       { hw: 5,   hd: 5   },
-  'builder-house':   { hw: 3.5, hd: 3.5 },
-  'hangar':          { hw: 8,   hd: 8   },
-  // ── Small structures & decorations ───────────────────────────────────────────
-  'street-lamp':     { hw: 1.5, hd: 1.5 },
-  'splitter':        { hw: 1.5, hd: 1.5 },
-  'merger':          { hw: 1.5, hd: 1.5 },
-  'wall':            { hw: 0.8, hd: 0.8 },
-};
+import cfg from './buildingsConfig.json';
+
+/** Physical collision half-extents per building type — from buildingsConfig.json */
+export const ITEM_FOOTPRINTS = cfg.collisionFootprints;
 
 // ─── Energy-generator exclusion zones ────────────────────────────────────────
 // Energy-generating buildings (those with a zone-based power radius) also
@@ -39,12 +20,11 @@ export const ITEM_FOOTPRINTS = {
 // These values are used INSTEAD OF the physical footprint in isColliding().
 // The path-routing helpers (isPointInsideBuilding / isSegmentIntersectsBuilding)
 // continue to use the smaller physical footprints.
+//
+// ⚠️  Single source of truth: buildingsConfig.json → energyExclusionZones
 
-export const ENERGY_EXCLUSION_ZONES = {
-  'solar-panel':     { hw: 10, hd: 10 },  // energy zone 100×100; keep-clear 20×20
-  'coal-generator':  { hw: 12, hd: 12 },  // energy zone  80×80;  keep-clear 24×24
-  'steam-generator': { hw: 12, hd: 12 },  // energy zone  90×90;  keep-clear 24×24
-};
+/** Energy exclusion zones per generator type — from buildingsConfig.json */
+export const ENERGY_EXCLUSION_ZONES = cfg.energyExclusionZones;
 
 // ─── Helper: pick the right zone for collision purposes ──────────────────────
 // Energy generators use their exclusion zone; all others use the footprint.

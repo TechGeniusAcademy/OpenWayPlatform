@@ -1,25 +1,26 @@
 // ─── Extractor (Добытчик руды) — item config ──────────────────────────────────
 //
-// The extractor mines ore into a small internal buffer.
-// Ore type and mining rate depend on building level (see buildingLevels.js):
+// ⚠️  workArea dimensions → buildingsConfig.json → workAreas['extractor']
+// ⚠️  mining rates per level → buildingsConfig.json → levels['extractor']
+//
 //   Level 1 → Уголь   (coal)     — 3 ед./ч
 //   Level 2 → Железо  (iron)     — 4.5 ед./ч
 //   Level 3 → Серебро (silver)   — 6 ед./ч
 //   Level 4 → Золото  (gold)     — 9 ед./ч
 //   Level 5 → Алмаз   (diamond)  — 15 ед./ч
-//
-// Connect via Conveyor to an EnergyStorage to transfer the mined ore.
-// The buffer is consumed first; when empty, nothing is transferred.
 
 import { registerStorage }  from '../systems/energy.js';
+import cfg from './buildingsConfig.json';
+
+const _wa = cfg.workAreas['extractor'];
 
 export const EXTRACTOR_CONFIG = {
   /** Work-area zone shown when selected. */
   workArea: {
-    width:   10,
-    depth:   10,
-    color:   '#92400e',
-    opacity: 0.18,
+    width:   _wa.width,
+    depth:   _wa.depth,
+    color:   _wa.color,
+    opacity: _wa.opacity,
     label:   'Зона добычи',
   },
   /** Height of the floating ore badge above ground (world units). */

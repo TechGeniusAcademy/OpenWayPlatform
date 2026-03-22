@@ -619,7 +619,8 @@ export function MiniMap({
   onToggleFullscreen,
   ownUsername      = 'Вы',
 }) {
-  const MINI_SIZE = 240;
+  const isMobileMM = window.innerWidth <= 768;
+  const MINI_SIZE = isMobileMM ? 110 : 240;
   const FULL_SIZE = Math.min(window.innerWidth, window.innerHeight) * 0.80 | 0;
   const fullMapControlRef = useRef(null);
 
@@ -738,7 +739,10 @@ export function MiniMap({
         <div
           data-no-world-input="true"
           style={{
-            position: 'absolute', top: 14, right: 14, zIndex: 50,
+            position: 'absolute',
+            top: 14,
+            right: 14,
+            zIndex: 50,
             background: BG, border: '1.5px solid rgba(148,163,184,0.22)',
             borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.7)', overflow: 'hidden',
             opacity: miniOpacity, transition: 'opacity 0.25s',

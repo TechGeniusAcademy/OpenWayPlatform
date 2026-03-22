@@ -6,7 +6,7 @@ import {
   FaSun, FaCoins, FaBolt, FaMoon, FaCloudSun,
   FaShieldAlt, FaChessRook,
   FaBatteryFull, FaLightbulb, FaIndustry, FaLandmark, FaHome,
-  FaHardHat, FaArrowUp, FaBuilding, FaMedal, FaFighterJet,
+  FaHardHat, FaArrowUp, FaBuilding, FaMedal, FaFighterJet, FaChartBar,
 } from 'react-icons/fa';
 import { MdArrowBack } from 'react-icons/md';
 import { GiBattery100, GiMining, GiFireBowl, GiWhirlwind } from 'react-icons/gi';
@@ -54,7 +54,7 @@ function InfoRow({ label, value, unit = '', color = '#e2e8f0', icon: Icon, iconC
   );
 }
 
-function CityInfoPanel({ energyTotals, storageTotals, storedCurrentTotals, points, userPoints, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, itemsCount, dronesCount, timeString, ingots, oreRates }) {
+function CityInfoPanel({ energyTotals, storageTotals, storedCurrentTotals, points, userPoints, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, itemsCount, dronesCount, timeString, ingots, oreRates, staticMode }) {
   const hasProd    = energyTotals  && Object.keys(energyTotals).length  > 0;
 
   const buildersOk   = (freeBuilders ?? 0) > 0;
@@ -62,8 +62,18 @@ function CityInfoPanel({ energyTotals, storageTotals, storedCurrentTotals, point
 
   return (
     <div style={{
-      position: 'fixed', right: 12, top: '50%', transform: 'translateY(-50%)',
-      width: 210,
+      ...(staticMode ? {
+        // Inside modal: no fixed positioning
+        position: 'relative',
+        width: '100%',
+        maxWidth: 360,
+        maxHeight: '80vh',
+        overflowY: 'auto',
+      } : {
+        // Desktop: fixed right side panel
+        position: 'fixed', right: 12, top: '50%', transform: 'translateY(-50%)',
+        width: 210,
+      }),
       background: 'rgba(8,15,28,0.84)',
       border: '1px solid rgba(255,255,255,0.09)',
       borderRadius: 14,
@@ -319,6 +329,8 @@ function DayPeriodIcon({ hour }) {
 
 export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onDrones, onBack, placingItem, timeString, energyTotals, storageTotals, droneMode, droneFromId, wallMode, wallFromPoint, towerMode, points, fps, debugOpen, onToggleDebug, rendererStats, itemsCount, dronesCount, onStartPlacing, coinBalance, freeBuilders, totalBuilders, constructingCount, upgradingCount, userPoints, allEnergyTotals, storedCurrentTotals, ingots, oreRates }) {
   const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#fbbf24' : '#f87171';
+  const isMobile = window.innerWidth <= 768;
+  const [infoPanelOpen, setInfoPanelOpen] = useState(false);
 
   // thresholds: [goodMax, warnMax]  — above warnMax = critical
   function stat(label, value, norm, goodMax, warnMax, fmt) {
@@ -346,21 +358,6 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onDron
       {timeString && (
         <div className={styles.gameClock}>
           <DayPeriodIcon hour={parseInt(timeString, 10)} /> {timeString}
-        </div>
-      )}
-
-      {energyTotals && Object.keys(energyTotals).length > 0 && (
-        <div className={styles.energyPanel}>
-          {Object.entries(energyTotals).filter(([type]) => type !== 'coins').map(([type, val]) => {
-            const meta = ENERGY_TYPES[type];
-            return (
-              <div key={type} className={styles.energyRow} style={{ color: meta?.color ?? '#fff' }}>
-                <span><EnergyIcon type={type} /></span>
-                <span>{meta?.label ?? type}</span>
-                <strong>{val} {meta?.unit ?? ''}/ч</strong>
-              </div>
-            );
-          })}
         </div>
       )}
 
@@ -424,44 +421,104 @@ export function HUD({ pos, zoom, selectedCount, onClearSelection, onShop, onDron
           <FaRobot />
         </button>
       )}
+
+      {/* Кнопка Инфо-панели (только мобайл) */}
+      {isMobile && (
+        <button
+          className={styles.dronesBtn}
+          style={{ bottom: 124, borderColor: 'rgba(56,189,248,0.4)', color: '#38bdf8' }}
+          onClick={() => setInfoPanelOpen(v => !v)}
+          title="Статистика города"
+        >
+          <FaChartBar />
+        </button>
+      )}
       <button className={styles.backBtn} onClick={onBack}>
         <MdArrowBack style={{ verticalAlign: 'middle', marginRight: 4 }} /> Назад
       </button>
 
-      {onStartPlacing && (
+      {onStartPlacing && !isMobile && (
         <BuildingHotbar onStartPlacing={onStartPlacing} placingItem={placingItem} />
       )}
 
-      <CityInfoPanel
-        energyTotals={allEnergyTotals ?? energyTotals}
-        storageTotals={storageTotals}
-        storedCurrentTotals={storedCurrentTotals}
+      {/* Инфо-панель: на десктопе — фиксированная, на мобайле — модальное окно */}
+      {!isMobile && (
+        <CityInfoPanel
+          energyTotals={allEnergyTotals ?? energyTotals}
+          storageTotals={storageTotals}
+          storedCurrentTotals={storedCurrentTotals}
           ingots={ingots}
           oreRates={oreRates}
-        points={points}
-        userPoints={userPoints}
-        coinBalance={coinBalance}
-        freeBuilders={freeBuilders}
-        totalBuilders={totalBuilders}
-        constructingCount={constructingCount}
-        upgradingCount={upgradingCount}
-        itemsCount={itemsCount}
-        dronesCount={dronesCount}
-        timeString={timeString}
-      />
+          points={points}
+          userPoints={userPoints}
+          coinBalance={coinBalance}
+          freeBuilders={freeBuilders}
+          totalBuilders={totalBuilders}
+          constructingCount={constructingCount}
+          upgradingCount={upgradingCount}
+          itemsCount={itemsCount}
+          dronesCount={dronesCount}
+          timeString={timeString}
+        />
+      )}
+
+      {isMobile && infoPanelOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1100,
+            background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={() => setInfoPanelOpen(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 360, position: 'relative' }}>
+            <button
+              onClick={() => setInfoPanelOpen(false)}
+              style={{
+                position: 'absolute', top: 10, right: 10, zIndex: 10,
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8, color: '#64748b', width: 28, height: 28,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', fontSize: 13, fontWeight: 700,
+              }}
+            >✕</button>
+            <CityInfoPanel
+              energyTotals={allEnergyTotals ?? energyTotals}
+              storageTotals={storageTotals}
+              storedCurrentTotals={storedCurrentTotals}
+              ingots={ingots}
+              oreRates={oreRates}
+              points={points}
+              userPoints={userPoints}
+              coinBalance={coinBalance}
+              freeBuilders={freeBuilders}
+              totalBuilders={totalBuilders}
+              constructingCount={constructingCount}
+              upgradingCount={upgradingCount}
+              itemsCount={itemsCount}
+              dronesCount={dronesCount}
+              timeString={timeString}
+              staticMode
+            />
+          </div>
+        </div>
+      )}
 
       {/* FPS badge + Debug toggle — anchored below the back button */}
       <div className={styles.fpsRow}>
         <span className={styles.fpsBadge} style={{ color: fpsColor }}>
           {fps} FPS
         </span>
-        <button
-          className={styles.debugBtn + (debugOpen ? ' ' + styles.debugBtnActive : '')}
-          onClick={onToggleDebug}
-          title="Открыть/закрыть панель отладки [F3]"
-        >
-          F3
-        </button>
+        {!isMobile && (
+          <button
+            className={styles.debugBtn + (debugOpen ? ' ' + styles.debugBtnActive : '')}
+            onClick={onToggleDebug}
+            title="Открыть/закрыть панель отладки [F3]"
+          >
+            F3
+          </button>
+        )}
       </div>
 
       {debugOpen && (

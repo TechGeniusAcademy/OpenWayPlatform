@@ -1,19 +1,20 @@
 // ─── Builder's House (Дом строителя) — item config ───────────────────────────
 //
-// A small house that provides builders.
+// ⚠️  workArea dimensions → buildingsConfig.json → workAreas['builder-house']
+// ⚠️  builders per level  → buildingsConfig.json → levels['builder-house'][*].buildersCount
 // Level 1: 1 builder  | Level 2: 2 builders | Level 3: 3 builders
-//
-// The first builder-house is free (0 points).
-// 2nd and 3rd cost in-game coins (see shopPrices.js).
-// Builder-houses do NOT need a builder to place (they self-construct).
+
+import cfg from './buildingsConfig.json';
+
+const _wa = cfg.workAreas['builder-house'];
 
 export const BUILDER_HOUSE_CONFIG = {
   /** Work-area overlay radius */
   workArea: {
-    width:   9,
-    depth:   9,
-    color:   '#f59e0b',
-    opacity: 0.12,
+    width:   _wa.width,
+    depth:   _wa.depth,
+    color:   _wa.color,
+    opacity: _wa.opacity,
     label:   'Зона строителей',
   },
   /** Badge height above the house */

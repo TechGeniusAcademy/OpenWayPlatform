@@ -1,0 +1,932 @@
+{
+  "_comment": "Единый конфиг всех зданий OpenCity. Здесь можно менять любые характеристики.",
+
+  "shop": {
+    "solar-panel": {
+      "name": "Солнечная панель",
+      "desc": "Генерирует электроэнергию в дневное время",
+      "tab": "energy",
+      "iconColor": "#f59e0b",
+      "pointCost": 200,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 12000
+    },
+    "energy-storage": {
+      "name": "Хранилище энергии",
+      "desc": "Накапливает 100 кВт·ч, 50 л воды и монеты",
+      "tab": "energy",
+      "iconColor": "#22d3ee",
+      "pointCost": 500,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 20000
+    },
+    "street-lamp": {
+      "name": "Фонарный столб",
+      "desc": "Освещает прилегающую территорию ночью",
+      "tab": "energy",
+      "iconColor": "#fde68a",
+      "pointCost": 50,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 6000
+    },
+    "money-factory": {
+      "name": "Денежная фабрика",
+      "desc": "Производит 10 монет в час",
+      "tab": "production",
+      "iconColor": "#818cf8",
+      "pointCost": 400,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 25000
+    },
+    "town-hall": {
+      "name": "Ратуша",
+      "desc": "Конвертирует 1000 монет → 1 очко города",
+      "tab": "production",
+      "iconColor": "#a78bfa",
+      "pointCost": 1000,
+      "coinCost": null,
+      "placeLimit": 1,
+      "constructionMs": 45000
+    },
+    "extractor": {
+      "name": "Добытчик руды",
+      "desc": "Размещайте на рудных залежах. Ур.1→уголь · Ур.5→алмаз",
+      "tab": "production",
+      "iconColor": "#f97316",
+      "pointCost": 150,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 15000
+    },
+    "coal-generator": {
+      "name": "Угольный генератор",
+      "desc": "Принимает уголь от добытчика через дронов, вырабатывает 8 л топлива/ч и отдаёт в хранилище",
+      "tab": "production",
+      "iconColor": "#f97316",
+      "pointCost": 300,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 20000
+    },
+    "lab-factory": {
+      "name": "Лаборатория-завод",
+      "desc": "Перерабатывает руду (железо / серебро / медь) в слитки. Рецепт выбирается через ПКМ.",
+      "tab": "production",
+      "iconColor": "#a855f7",
+      "pointCost": 500,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 30000
+    },
+    "pump": {
+      "name": "Насос",
+      "desc": "Устанавливается прямо на водоём. Дрон забирает воду и доставляет в насосную станцию",
+      "tab": "water",
+      "iconColor": "#38bdf8",
+      "pointCost": 120,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 10000
+    },
+    "pump-factory": {
+      "name": "Насосная станция",
+      "desc": "Принимает воду от насоса через дрона. Требует энергию. Ур.1→200 л, Ур.5→1 500 л",
+      "tab": "water",
+      "iconColor": "#0ea5e9",
+      "pointCost": 350,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 22000
+    },
+    "steam-generator": {
+      "name": "Паровой генератор",
+      "desc": "Сжигает уголь + воду для выработки электричества и пара в зоне 90×90",
+      "tab": "water",
+      "iconColor": "#a78bfa",
+      "pointCost": 450,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 28000
+    },
+    "hangar": {
+      "name": "Военный ангар",
+      "desc": "Размещайте истребители на тарм-платформе рядом с ангаром. ЛКМ для управления. Ур.1 → 1 истребитель",
+      "tab": "military",
+      "iconColor": "#8b5cf6",
+      "pointCost": 600,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 30000
+    },
+    "defense-tower": {
+      "name": "Оборонительная башня",
+      "desc": "Не потребляет ресурсы. Создаёт защитный купол радиусом 32 ед. на 2 часа реального времени",
+      "tab": "defence",
+      "iconColor": "#22d3ee",
+      "pointCost": 600,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 20000
+    },
+    "wall": {
+      "name": "Стена",
+      "desc": "Соединяйте точки для постройки стены. 7 уровней прочности: от дерева до адаманта",
+      "tab": "defence",
+      "iconColor": "#ef4444",
+      "pointCost": null,
+      "coinCost": 20,
+      "coinCostNote": "монет за сегмент",
+      "placeLimit": null,
+      "constructionMs": 0
+    },
+    "archer-tower": {
+      "name": "Башня со стрелком",
+      "desc": "Встраивается в стены. Внутри лучник с анимированной стрельбой. 5 уровней улучшений",
+      "tab": "defence",
+      "iconColor": "#f97316",
+      "pointCost": null,
+      "coinCost": 150,
+      "placeLimit": null,
+      "constructionMs": 0
+    },
+    "builder-house": {
+      "name": "Дом строителя",
+      "desc": "Первый дом бесплатно! Открывает систему строительства. Каждый даёт +1 рабочего",
+      "tab": "builders",
+      "iconColor": "#f97316",
+      "pointCost": 0,
+      "coinCost": 500,
+      "coinCostNote": "монет за 2-й и 3-й дом",
+      "placeLimit": 3,
+      "constructionMs": 0
+    },
+    "conveyor": {
+      "name": "Конвейер",
+      "desc": "Соединяет здания для автоматической передачи ресурсов",
+      "tab": "logistics",
+      "iconColor": "#94a3b8",
+      "pointCost": 20,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 0
+    },
+    "cable": {
+      "name": "Энергокабель",
+      "desc": "Передаёт электроэнергию между зданиями",
+      "tab": "logistics",
+      "iconColor": "#fbbf24",
+      "pointCost": 10,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 0
+    },
+    "splitter": {
+      "name": "Разветвитель",
+      "desc": "Разделяет поток ресурсов на два выхода",
+      "tab": "logistics",
+      "iconColor": "#f59e0b",
+      "pointCost": 40,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 8000
+    },
+    "merger": {
+      "name": "Объединитель",
+      "desc": "Объединяет два потока ресурсов в один",
+      "tab": "logistics",
+      "iconColor": "#8b5cf6",
+      "pointCost": 40,
+      "coinCost": null,
+      "placeLimit": null,
+      "constructionMs": 8000
+    }
+  },
+
+  "levels": {
+    "money-factory": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0, "coinsPerHour": 10,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#22c55e",
+        "description": "Стандартное производство — 10 монет/ч"
+      },
+      {
+        "level": 2, "name": "Улучшенный",
+        "pointsCost": 8, "xpRequired": 150,
+        "rateMultiplier": 1.5, "coinsPerHour": 15,
+        "scaleBonus": 0.04, "glowIntensity": 0.10,
+        "upgradeDurationMs": 0,
+        "accentColor": "#4ade80",
+        "description": "+50% монет в час → 15 монет/ч"
+      },
+      {
+        "level": 3, "name": "Продвинутый",
+        "pointsCost": 25, "xpRequired": 600,
+        "rateMultiplier": 2.5, "coinsPerHour": 25,
+        "scaleBonus": 0.09, "glowIntensity": 0.28,
+        "upgradeDurationMs": 0,
+        "accentColor": "#fbbf24",
+        "description": "+150% монет в час → 25 монет/ч"
+      },
+      {
+        "level": 4, "name": "Легендарный",
+        "pointsCost": 70, "xpRequired": 2500,
+        "rateMultiplier": 4.0, "coinsPerHour": 40,
+        "scaleBonus": 0.15, "glowIntensity": 0.55,
+        "upgradeDurationMs": 0,
+        "accentColor": "#f97316",
+        "description": "+300% монет в час → 40 монет/ч"
+      }
+    ],
+
+    "solar-panel": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#0ea5e9",
+        "description": "Стандартная генерация энергии"
+      },
+      {
+        "level": 2, "name": "Улучшенный",
+        "pointsCost": 6, "xpRequired": 100,
+        "rateMultiplier": 1.6,
+        "scaleBonus": 0.04, "glowIntensity": 0.10,
+        "upgradeDurationMs": 0,
+        "accentColor": "#22d3ee",
+        "description": "+60% выработки энергии"
+      },
+      {
+        "level": 3, "name": "Продвинутый",
+        "pointsCost": 22, "xpRequired": 500,
+        "rateMultiplier": 2.8,
+        "scaleBonus": 0.09, "glowIntensity": 0.28,
+        "upgradeDurationMs": 0,
+        "accentColor": "#a855f7",
+        "description": "+180% выработки энергии"
+      },
+      {
+        "level": 4, "name": "Легендарный",
+        "pointsCost": 65, "xpRequired": 2000,
+        "rateMultiplier": 4.5,
+        "scaleBonus": 0.15, "glowIntensity": 0.55,
+        "upgradeDurationMs": 0,
+        "accentColor": "#f59e0b",
+        "description": "+350% выработки энергии"
+      }
+    ],
+
+    "energy-storage": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "capacityMultiplier": 1.0,
+        "solarCapacity": 100, "fuelCapacity": 50, "coinsCapacity": 5000,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#a855f7",
+        "description": "Стандартная ёмкость"
+      },
+      {
+        "level": 2, "name": "Расширенный",
+        "pointsCost": 10, "xpRequired": 250,
+        "capacityMultiplier": 2.5,
+        "solarCapacity": 250, "fuelCapacity": 125, "coinsCapacity": 12500,
+        "scaleBonus": 0.06, "glowIntensity": 0.18,
+        "upgradeDurationMs": 0,
+        "accentColor": "#c084fc",
+        "description": "×2.5 ёмкость хранилища"
+      },
+      {
+        "level": 3, "name": "Мощный",
+        "pointsCost": 35, "xpRequired": 1000,
+        "capacityMultiplier": 5.0,
+        "solarCapacity": 500, "fuelCapacity": 250, "coinsCapacity": 25000,
+        "scaleBonus": 0.13, "glowIntensity": 0.45,
+        "upgradeDurationMs": 0,
+        "accentColor": "#fbbf24",
+        "description": "×5 ёмкость хранилища"
+      }
+    ],
+
+    "town-hall": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "coinsPerPoint": 1000,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#fbbf24",
+        "description": "1 балл за 1 000 монет"
+      },
+      {
+        "level": 2, "name": "Развитый",
+        "pointsCost": 12, "xpRequired": 350,
+        "coinsPerPoint": 650,
+        "scaleBonus": 0.06, "glowIntensity": 0.15,
+        "upgradeDurationMs": 0,
+        "accentColor": "#f59e0b",
+        "description": "1 балл за 650 монет"
+      },
+      {
+        "level": 3, "name": "Процветающий",
+        "pointsCost": 45, "xpRequired": 1800,
+        "coinsPerPoint": 300,
+        "scaleBonus": 0.13, "glowIntensity": 0.38,
+        "upgradeDurationMs": 0,
+        "accentColor": "#fb923c",
+        "description": "1 балл за 300 монет"
+      }
+    ],
+
+    "street-lamp": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "lightIntensity": 200, "lightDistance": 135, "powerRequired": 2,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#fde68a",
+        "description": "Стандартное ночное освещение"
+      },
+      {
+        "level": 2, "name": "Яркий",
+        "pointsCost": 4, "xpRequired": 75,
+        "lightIntensity": 300, "lightDistance": 200, "powerRequired": 3,
+        "scaleBonus": 0.05, "glowIntensity": 0.20,
+        "upgradeDurationMs": 0,
+        "accentColor": "#fbbf24",
+        "description": "Больший радиус и яркость"
+      }
+    ],
+
+    "extractor": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0, "ratePerHour": 3,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#52525b",
+        "description": "Базовая добыча — 3 ед./ч"
+      },
+      {
+        "level": 2, "name": "Улучшенный",
+        "pointsCost": 10, "xpRequired": 200,
+        "rateMultiplier": 1.5, "ratePerHour": 4.5,
+        "scaleBonus": 0.04, "glowIntensity": 0.12,
+        "upgradeDurationMs": 30000,
+        "accentColor": "#b45309",
+        "description": "Добыча ×1.5 быстрее — 4.5 ед./ч"
+      },
+      {
+        "level": 3, "name": "Продвинутый",
+        "pointsCost": 28, "xpRequired": 800,
+        "rateMultiplier": 2.0, "ratePerHour": 6,
+        "scaleBonus": 0.08, "glowIntensity": 0.28,
+        "upgradeDurationMs": 60000,
+        "accentColor": "#94a3b8",
+        "description": "Добыча ×2.0 быстрее — 6 ед./ч"
+      },
+      {
+        "level": 4, "name": "Мощный",
+        "pointsCost": 65, "xpRequired": 2500,
+        "rateMultiplier": 3.0, "ratePerHour": 9,
+        "scaleBonus": 0.13, "glowIntensity": 0.45,
+        "upgradeDurationMs": 120000,
+        "accentColor": "#eab308",
+        "description": "Добыча ×3.0 быстрее — 9 ед./ч"
+      },
+      {
+        "level": 5, "name": "Легендарный",
+        "pointsCost": 150, "xpRequired": 8000,
+        "rateMultiplier": 5.0, "ratePerHour": 15,
+        "scaleBonus": 0.20, "glowIntensity": 0.65,
+        "upgradeDurationMs": 300000,
+        "accentColor": "#38bdf8",
+        "description": "Добыча ×5.0 быстрее — 15 ед./ч"
+      }
+    ],
+
+    "coal-generator": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0, "fuelPerHour": 8,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#f97316",
+        "description": "Сжигает уголь — 8 топлива/ч"
+      },
+      {
+        "level": 2, "name": "Улучшенный",
+        "pointsCost": 12, "xpRequired": 300,
+        "rateMultiplier": 1.5, "fuelPerHour": 12,
+        "scaleBonus": 0.05, "glowIntensity": 0.15,
+        "upgradeDurationMs": 45000,
+        "accentColor": "#fb923c",
+        "description": "+50% топлива → 12 топлива/ч"
+      },
+      {
+        "level": 3, "name": "Промышленный",
+        "pointsCost": 40, "xpRequired": 1200,
+        "rateMultiplier": 2.5, "fuelPerHour": 20,
+        "scaleBonus": 0.12, "glowIntensity": 0.40,
+        "upgradeDurationMs": 90000,
+        "accentColor": "#ef4444",
+        "description": "+150% топлива → 20 топлива/ч"
+      }
+    ],
+
+    "lab-factory": [
+      {
+        "level": 1, "name": "Базовая лаборатория",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0, "ingotsPerTick": 1, "ingotsPerMin": 6,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#52525b",
+        "description": "1 слиток / тик · 6 слитков/мин"
+      },
+      {
+        "level": 2, "name": "Улучшенная",
+        "pointsCost": 15, "xpRequired": 400,
+        "rateMultiplier": 2.0, "ingotsPerTick": 2, "ingotsPerMin": 12,
+        "scaleBonus": 0.04, "glowIntensity": 0.12,
+        "upgradeDurationMs": 30000,
+        "accentColor": "#94a3b8",
+        "description": "2 слитка / тик · 12 слитков/мин"
+      },
+      {
+        "level": 3, "name": "Продвинутая",
+        "pointsCost": 35, "xpRequired": 1200,
+        "rateMultiplier": 3.0, "ingotsPerTick": 3, "ingotsPerMin": 18,
+        "scaleBonus": 0.08, "glowIntensity": 0.25,
+        "upgradeDurationMs": 60000,
+        "accentColor": "#4ade80",
+        "description": "3 слитка / тик · 18 слитков/мин"
+      },
+      {
+        "level": 4, "name": "Мощная",
+        "pointsCost": 80, "xpRequired": 3500,
+        "rateMultiplier": 5.0, "ingotsPerTick": 5, "ingotsPerMin": 30,
+        "scaleBonus": 0.13, "glowIntensity": 0.40,
+        "upgradeDurationMs": 120000,
+        "accentColor": "#fbbf24",
+        "description": "5 слитков / тик · 30 слитков/мин"
+      },
+      {
+        "level": 5, "name": "Высокотехнологичная",
+        "pointsCost": 150, "xpRequired": 8000,
+        "rateMultiplier": 8.0, "ingotsPerTick": 8, "ingotsPerMin": 48,
+        "scaleBonus": 0.18, "glowIntensity": 0.55,
+        "upgradeDurationMs": 240000,
+        "accentColor": "#f97316",
+        "description": "8 слитков / тик · 48 слитков/мин"
+      },
+      {
+        "level": 6, "name": "Легендарная",
+        "pointsCost": 300, "xpRequired": 20000,
+        "rateMultiplier": 12.0, "ingotsPerTick": 12, "ingotsPerMin": 72,
+        "scaleBonus": 0.24, "glowIntensity": 0.80,
+        "upgradeDurationMs": 480000,
+        "accentColor": "#38bdf8",
+        "description": "12 слитков / тик · 72 слитка/мин"
+      }
+    ],
+
+    "pump": [
+      {
+        "level": 1, "name": "Насос",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0, "ratePerHour": 20,
+        "bufferCapacity": 50,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#38bdf8",
+        "description": "Базовый водяной насос — устанавливается на водоём"
+      }
+    ],
+
+    "pump-factory": [
+      {
+        "level": 1, "name": "Базовая",
+        "pointsCost": 0, "xpRequired": 0,
+        "capacityMultiplier": 1.0, "waterCapacity": 200,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#38bdf8",
+        "description": "Хранит до 200 л воды"
+      },
+      {
+        "level": 2, "name": "Расширенная",
+        "pointsCost": 15, "xpRequired": 400,
+        "capacityMultiplier": 2.0, "waterCapacity": 400,
+        "scaleBonus": 0.05, "glowIntensity": 0.15,
+        "upgradeDurationMs": 60000,
+        "accentColor": "#7dd3fc",
+        "description": "Хранит до 400 л воды"
+      },
+      {
+        "level": 3, "name": "Промышленная",
+        "pointsCost": 40, "xpRequired": 1500,
+        "capacityMultiplier": 4.0, "waterCapacity": 800,
+        "scaleBonus": 0.10, "glowIntensity": 0.30,
+        "upgradeDurationMs": 120000,
+        "accentColor": "#0ea5e9",
+        "description": "Хранит до 800 л воды"
+      },
+      {
+        "level": 4, "name": "Мощная",
+        "pointsCost": 90, "xpRequired": 4000,
+        "capacityMultiplier": 6.0, "waterCapacity": 1200,
+        "scaleBonus": 0.15, "glowIntensity": 0.50,
+        "upgradeDurationMs": 240000,
+        "accentColor": "#06b6d4",
+        "description": "Хранит до 1 200 л воды"
+      },
+      {
+        "level": 5, "name": "Максимальная",
+        "pointsCost": 200, "xpRequired": 10000,
+        "capacityMultiplier": 7.5, "waterCapacity": 1500,
+        "scaleBonus": 0.22, "glowIntensity": 0.80,
+        "upgradeDurationMs": 480000,
+        "accentColor": "#a5f3fc",
+        "description": "Хранит до 1 500 л воды"
+      }
+    ],
+
+    "pump-drone": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0, "ratePerHour": 20,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#38bdf8",
+        "description": "Перевозит 20 л/ч"
+      },
+      {
+        "level": 2, "name": "Улучшенный",
+        "pointsCost": 12, "xpRequired": 300,
+        "rateMultiplier": 2.0, "ratePerHour": 40,
+        "scaleBonus": 0.04, "glowIntensity": 0.15,
+        "upgradeDurationMs": 45000,
+        "accentColor": "#7dd3fc",
+        "description": "Перевозит 40 л/ч"
+      },
+      {
+        "level": 3, "name": "Быстрый",
+        "pointsCost": 35, "xpRequired": 1200,
+        "rateMultiplier": 6.0, "ratePerHour": 120,
+        "scaleBonus": 0.08, "glowIntensity": 0.40,
+        "upgradeDurationMs": 90000,
+        "accentColor": "#0ea5e9",
+        "description": "Перевозит 120 л/ч"
+      },
+      {
+        "level": 4, "name": "Сверхбыстрый",
+        "pointsCost": 100, "xpRequired": 5000,
+        "rateMultiplier": 10.0, "ratePerHour": 200,
+        "scaleBonus": 0.15, "glowIntensity": 0.70,
+        "upgradeDurationMs": 180000,
+        "accentColor": "#06b6d4",
+        "description": "Перевозит 200 л/ч"
+      }
+    ],
+
+    "steam-generator": [
+      {
+        "level": 1, "name": "Базовый",
+        "coinsCost": 10000, "xpRequired": 1000,
+        "health": 1000,
+        "energyKw": 1,
+        "steamMlPerH": 200,
+        "coalPerH": 20,
+        "waterMlPerH": 200,
+        "rateMultiplier": 1.0,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#a78bfa",
+        "description": "1 кВт/ч · 200 мл пара/ч · потребляет 20 уг/ч + 200 мл/ч"
+      },
+      {
+        "level": 2, "name": "Улучшенный",
+        "coinsCost": 15000, "xpRequired": 1500,
+        "health": 1500,
+        "energyKw": 5,
+        "steamMlPerH": 300,
+        "coalPerH": 20,
+        "waterMlPerH": 300,
+        "rateMultiplier": 5.0,
+        "scaleBonus": 0.06, "glowIntensity": 0.20,
+        "upgradeDurationMs": 60000,
+        "accentColor": "#c4b5fd",
+        "description": "5 кВт/ч · 300 мл пара/ч · потребляет 20 уг/ч + 300 мл/ч"
+      },
+      {
+        "level": 3, "name": "Мощный",
+        "coinsCost": 20000, "xpRequired": 2000,
+        "health": 2000,
+        "energyKw": 10,
+        "steamMlPerH": 400,
+        "coalPerH": 20,
+        "waterMlPerH": 400,
+        "rateMultiplier": 10.0,
+        "scaleBonus": 0.12, "glowIntensity": 0.40,
+        "upgradeDurationMs": 120000,
+        "accentColor": "#8b5cf6",
+        "description": "10 кВт/ч · 400 мл пара/ч · потребляет 20 уг/ч + 400 мл/ч"
+      },
+      {
+        "level": 4, "name": "Промышленный",
+        "coinsCost": 30000, "xpRequired": 3000,
+        "health": 2500,
+        "energyKw": 20,
+        "steamMlPerH": 2000,
+        "coalPerH": 30,
+        "waterMlPerH": 2000,
+        "rateMultiplier": 20.0,
+        "scaleBonus": 0.20, "glowIntensity": 0.65,
+        "upgradeDurationMs": 300000,
+        "accentColor": "#7c3aed",
+        "description": "20 кВт/ч · 2 л пара/ч · потребляет 30 уг/ч + 2 л/ч"
+      }
+    ],
+
+    "hangar": [
+      {
+        "level": 1, "name": "Полевой ангар",
+        "pointsCost": 0, "xpRequired": 0,
+        "maxFighters": 1, "fighterCoinCost": 10,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "upgradeDurationMs": 30000,
+        "accentColor": "#6366f1",
+        "description": "Вмещает 1 истребитель"
+      },
+      {
+        "level": 2, "name": "Боевая база",
+        "pointsCost": 20, "xpRequired": 500,
+        "maxFighters": 2, "fighterCoinCost": 10,
+        "scaleBonus": 0.06, "glowIntensity": 0.15,
+        "upgradeDurationMs": 60000,
+        "accentColor": "#8b5cf6",
+        "description": "Вмещает 2 истребителя"
+      },
+      {
+        "level": 3, "name": "Военная крепость",
+        "pointsCost": 55, "xpRequired": 2000,
+        "maxFighters": 3, "fighterCoinCost": 10,
+        "scaleBonus": 0.12, "glowIntensity": 0.35,
+        "upgradeDurationMs": 120000,
+        "accentColor": "#a855f7",
+        "description": "Вмещает 3 истребителя"
+      }
+    ],
+
+    "builder-house": [
+      {
+        "level": 1, "name": "Маленький дом",
+        "pointsCost": 0, "xpRequired": 0,
+        "buildersCount": 1,
+        "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "upgradeDurationMs": 20000,
+        "accentColor": "#f59e0b",
+        "description": "1 строитель — может строить 1 объект за раз"
+      },
+      {
+        "level": 2, "name": "Средний дом",
+        "pointsCost": 15, "xpRequired": 300,
+        "buildersCount": 2,
+        "scaleBonus": 0.06, "glowIntensity": 0.15,
+        "upgradeDurationMs": 40000,
+        "accentColor": "#fbbf24",
+        "description": "2 строителя — можно строить 2 объекта за раз"
+      },
+      {
+        "level": 3, "name": "Большой дом",
+        "pointsCost": 40, "xpRequired": 1000,
+        "buildersCount": 3,
+        "scaleBonus": 0.12, "glowIntensity": 0.30,
+        "upgradeDurationMs": 80000,
+        "accentColor": "#f97316",
+        "description": "3 строителя — максимальная производительность"
+      }
+    ],
+
+    "splitter": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0, "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#f59e0b",
+        "description": "Стандартное распределение"
+      },
+      {
+        "level": 2, "name": "Улучшенный",
+        "pointsCost": 10, "xpRequired": 200,
+        "rateMultiplier": 2.0, "scaleBonus": 0.05, "glowIntensity": 0.18,
+        "upgradeDurationMs": 0,
+        "accentColor": "#fb923c",
+        "description": "160 монет/ч суммарно (2x80)"
+      },
+      {
+        "level": 3, "name": "Продвинутый",
+        "pointsCost": 30, "xpRequired": 800,
+        "rateMultiplier": 8.0, "scaleBonus": 0.10, "glowIntensity": 0.42,
+        "upgradeDurationMs": 0,
+        "accentColor": "#fbbf24",
+        "description": "640 монет/ч суммарно (2x320)"
+      }
+    ],
+
+    "merger": [
+      {
+        "level": 1, "name": "Базовый",
+        "pointsCost": 0, "xpRequired": 0,
+        "rateMultiplier": 1.0, "scaleBonus": 0.00, "glowIntensity": 0.00,
+        "accentColor": "#8b5cf6",
+        "description": "Стандартное объединение"
+      },
+      {
+        "level": 2, "name": "Улучшенный",
+        "pointsCost": 10, "xpRequired": 200,
+        "rateMultiplier": 2.0, "scaleBonus": 0.05, "glowIntensity": 0.18,
+        "upgradeDurationMs": 0,
+        "accentColor": "#a855f7",
+        "description": "160 монет/ч"
+      },
+      {
+        "level": 3, "name": "Продвинутый",
+        "pointsCost": 30, "xpRequired": 800,
+        "rateMultiplier": 8.0, "scaleBonus": 0.10, "glowIntensity": 0.42,
+        "upgradeDurationMs": 0,
+        "accentColor": "#fbbf24",
+        "description": "640 монет/ч"
+      }
+    ]
+  },
+
+  "walls": {
+    "segmentCoinCost": 20,
+    "snapRadius": 2.5,
+    "gridSnap": 2,
+    "levels": [
+      {
+        "level": 1, "name": "Деревянная",
+        "hp": 100, "upgradeCoinCost": 0,
+        "height": 2.5, "thickness": 0.7,
+        "color": "#92400e", "accentColor": "#b45309",
+        "upgradeDurationMs": 0,
+        "description": "Базовая деревянная стена"
+      },
+      {
+        "level": 2, "name": "Каменная",
+        "hp": 280, "upgradeCoinCost": 40,
+        "height": 2.8, "thickness": 0.8,
+        "color": "#64748b", "accentColor": "#94a3b8",
+        "upgradeDurationMs": 15000,
+        "description": "+180% прочности, каменная кладка"
+      },
+      {
+        "level": 3, "name": "Укреплённая",
+        "hp": 600, "upgradeCoinCost": 100,
+        "height": 3.0, "thickness": 0.9,
+        "color": "#475569", "accentColor": "#60a5fa",
+        "upgradeDurationMs": 30000,
+        "description": "Усиленная ячеистая кладка"
+      },
+      {
+        "level": 4, "name": "Стальная",
+        "hp": 1100, "upgradeCoinCost": 200,
+        "height": 3.2, "thickness": 1.0,
+        "color": "#334155", "accentColor": "#f59e0b",
+        "upgradeDurationMs": 60000,
+        "description": "Стальные пластины поверх камня"
+      },
+      {
+        "level": 5, "name": "Железобетон",
+        "hp": 2000, "upgradeCoinCost": 400,
+        "height": 3.4, "thickness": 1.1,
+        "color": "#1e293b", "accentColor": "#f97316",
+        "upgradeDurationMs": 120000,
+        "description": "Армированный бетон"
+      },
+      {
+        "level": 6, "name": "Мифриловая",
+        "hp": 3500, "upgradeCoinCost": 800,
+        "height": 3.6, "thickness": 1.2,
+        "color": "#0f172a", "accentColor": "#a78bfa",
+        "upgradeDurationMs": 300000,
+        "description": "Мифриловый сплав"
+      },
+      {
+        "level": 7, "name": "Адамантовая",
+        "hp": 6000, "upgradeCoinCost": 1500,
+        "height": 4.0, "thickness": 1.4,
+        "color": "#020617", "accentColor": "#f43f5e",
+        "upgradeDurationMs": 600000,
+        "description": "Нерушимый адамант — максимальная прочность"
+      }
+    ]
+  },
+
+  "archerTowers": {
+    "placeCoinCost": 150,
+    "levels": [
+      {
+        "level": 1, "name": "Деревянная башня",
+        "hp": 200, "upgradeCoinCost": 0,
+        "arrowDamage": 10, "arrowRange": 15,
+        "color": "#92400e", "accentColor": "#b45309",
+        "upgradeDurationMs": 0,
+        "description": "Деревянный лучник на вышке"
+      },
+      {
+        "level": 2, "name": "Каменная башня",
+        "hp": 500, "upgradeCoinCost": 80,
+        "arrowDamage": 22, "arrowRange": 18,
+        "color": "#64748b", "accentColor": "#94a3b8",
+        "upgradeDurationMs": 20000,
+        "description": "Укреплённая башня с обученным лучником"
+      },
+      {
+        "level": 3, "name": "Сторожевая",
+        "hp": 1000, "upgradeCoinCost": 200,
+        "arrowDamage": 40, "arrowRange": 22,
+        "color": "#475569", "accentColor": "#60a5fa",
+        "upgradeDurationMs": 45000,
+        "description": "Арбалетчик с бронебойными болтами"
+      },
+      {
+        "level": 4, "name": "Боевая башня",
+        "hp": 2200, "upgradeCoinCost": 450,
+        "arrowDamage": 70, "arrowRange": 26,
+        "color": "#334155", "accentColor": "#f59e0b",
+        "upgradeDurationMs": 120000,
+        "description": "Мастер-стрелок, двойная скорострельность"
+      },
+      {
+        "level": 5, "name": "Крепостная башня",
+        "hp": 4500, "upgradeCoinCost": 1000,
+        "arrowDamage": 120, "arrowRange": 32,
+        "color": "#1e293b", "accentColor": "#f43f5e",
+        "upgradeDurationMs": 300000,
+        "description": "Легендарный снайпер — максимальный урон"
+      }
+    ]
+  },
+
+  "workAreas": {
+    "_comment": "Зоны влияния зданий (ширина × глубина в игровых единицах)",
+    "solar-panel":     { "width": 100, "depth": 100, "color": "#00aaff", "opacity": 0.14 },
+    "energy-storage":  { "width": 14,  "depth": 14,  "color": "#a855f7", "opacity": 0.14 },
+    "street-lamp":     { "width": 44,  "depth": 44,  "color": "#fde68a", "opacity": 0.07 },
+    "money-factory":   { "width": 18,  "depth": 18,  "color": "#ffaa00", "opacity": 0.14 },
+    "town-hall":       { "width": 22,  "depth": 22,  "color": "#f59e0b", "opacity": 0.12 },
+    "extractor":       { "width": 10,  "depth": 10,  "color": "#92400e", "opacity": 0.18 },
+    "coal-generator":  { "width": 80,  "depth": 80,  "color": "#f97316", "opacity": 0.14 },
+    "lab-factory":     { "width": 20,  "depth": 20,  "color": "#a855f7", "opacity": 0.14 },
+    "pump":            { "width": 12,  "depth": 12,  "color": "#38bdf8", "opacity": 0.20 },
+    "pump-factory":    { "width": 60,  "depth": 60,  "color": "#0ea5e9", "opacity": 0.14 },
+    "steam-generator": { "width": 90,  "depth": 90,  "color": "#a78bfa", "opacity": 0.14 },
+    "hangar":          { "width": 60,  "depth": 60,  "color": "#6366f1", "opacity": 0.12 },
+    "builder-house":   { "width": 9,   "depth": 9,   "color": "#f59e0b", "opacity": 0.12 }
+  },
+
+  "collisionFootprints": {
+    "_comment": "Физические размеры зданий (половина ширины/глубины) для системы столкновений",
+    "extractor":       { "hw": 2.5, "hd": 2.5 },
+    "pump":            { "hw": 2.5, "hd": 2.5 },
+    "pump-factory":    { "hw": 4,   "hd": 4   },
+    "lab-factory":     { "hw": 3,   "hd": 6   },
+    "money-factory":   { "hw": 7,   "hd": 7   },
+    "solar-panel":     { "hw": 1,   "hd": 1   },
+    "coal-generator":  { "hw": 5,   "hd": 5   },
+    "steam-generator": { "hw": 5,   "hd": 5   },
+    "energy-storage":  { "hw": 5,   "hd": 5   },
+    "town-hall":       { "hw": 5,   "hd": 5   },
+    "builder-house":   { "hw": 3.5, "hd": 3.5 },
+    "hangar":          { "hw": 8,   "hd": 8   },
+    "street-lamp":     { "hw": 1.5, "hd": 1.5 },
+    "splitter":        { "hw": 1.5, "hd": 1.5 },
+    "merger":          { "hw": 1.5, "hd": 1.5 },
+    "wall":            { "hw": 0.8, "hd": 0.8 }
+  },
+
+  "energyExclusionZones": {
+    "_comment": "Зоны запрета для энергогенераторов — не позволяют ставить здания внутри",
+    "solar-panel":     { "hw": 10, "hd": 10 },
+    "coal-generator":  { "hw": 12, "hd": 12 },
+    "steam-generator": { "hw": 12, "hd": 12 }
+  },
+
+  "droneRoutes": {
+    "_comment": "Возможные маршруты дронов между зданиями",
+    "routes": [
+      { "from": "money-factory",  "to": "energy-storage",  "resource": "coins", "baseRatePerH": 10,  "color": "#fbbf24" },
+      { "from": "extractor",      "to": "coal-generator",  "resource": "ore",   "baseRatePerH": 3,   "color": "#44403c" },
+      { "from": "coal-generator", "to": "energy-storage",  "resource": "fuel",  "baseRatePerH": 8,   "color": "#f97316" },
+      { "from": "pump",           "to": "pump-factory",    "resource": "water", "baseRatePerH": 20,  "color": "#38bdf8" },
+      { "from": "extractor",      "to": "steam-generator", "resource": "ore",   "baseRatePerH": 2,   "color": "#44403c" },
+      { "from": "pump-factory",   "to": "steam-generator", "resource": "water", "baseRatePerH": 1,   "color": "#38bdf8" }
+    ]
+  }
+}
